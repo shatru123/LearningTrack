@@ -13,4 +13,11 @@
   <Folder Name="/Day02-RefStruct-Memory/tests/">
     <Project Path="Day02-RefStruct-Memory/tests/Day02.RefStructMemory.Tests/Day02.RefStructMemory.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day03-Async-Await/" />
+  <Folder Name="/Day03-Async-Await/src/">
+    <Project Path="Day03-Async-Await/src/Day03.AsyncStateMachine/Day03.AsyncStateMachine.csproj" />
+  </Folder>
+  <Folder Name="/Day03-Async-Await/tests/">
+    <Project Path="Day03-Async-Await/tests/Day03.AsyncStateMachine.Tests/Day03.AsyncStateMachine.Tests.csproj" />
+  </Folder>
 </Solution>

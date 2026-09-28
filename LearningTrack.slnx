@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Day01-CSharp-Memory/" />
+  <Folder Name="/Day01-CSharp-Memory/src/">
+    <Project Path="Day01-CSharp-Memory/src/Day01.MemoryLab/Day01.MemoryLab.csproj" />
+  </Folder>
+  <Folder Name="/Day01-CSharp-Memory/tests/">
+    <Project Path="Day01-CSharp-Memory/tests/Day01.MemoryLab.Tests/Day01.MemoryLab.Tests.csproj" />
+  </Folder>
+</Solution>

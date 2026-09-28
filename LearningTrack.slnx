@@ -34,4 +34,11 @@
   <Folder Name="/Day05-Middleware-Kestrel/tests/">
     <Project Path="Day05-Middleware-Kestrel/tests/Day05.MiddlewareApi.Tests/Day05.MiddlewareApi.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day06-Dependency-Injection/" />
+  <Folder Name="/Day06-Dependency-Injection/src/">
+    <Project Path="Day06-Dependency-Injection/src/Day06.DependencyInjection/Day06.DependencyInjection.csproj" />
+  </Folder>
+  <Folder Name="/Day06-Dependency-Injection/tests/">
+    <Project Path="Day06-Dependency-Injection/tests/Day06.DependencyInjection.Tests/Day06.DependencyInjection.Tests.csproj" />
+  </Folder>
 </Solution>

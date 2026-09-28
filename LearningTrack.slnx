@@ -27,4 +27,11 @@
   <Folder Name="/Day04-Garbage-Collection/tests/">
     <Project Path="Day04-Garbage-Collection/tests/Day04.GarbageCollection.Tests/Day04.GarbageCollection.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day05-Middleware-Kestrel/" />
+  <Folder Name="/Day05-Middleware-Kestrel/src/">
+    <Project Path="Day05-Middleware-Kestrel/src/Day05.MiddlewareApi/Day05.MiddlewareApi.csproj" />
+  </Folder>
+  <Folder Name="/Day05-Middleware-Kestrel/tests/">
+    <Project Path="Day05-Middleware-Kestrel/tests/Day05.MiddlewareApi.Tests/Day05.MiddlewareApi.Tests.csproj" />
+  </Folder>
 </Solution>

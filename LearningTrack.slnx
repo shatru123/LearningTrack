@@ -20,4 +20,11 @@
   <Folder Name="/Day03-Async-Await/tests/">
     <Project Path="Day03-Async-Await/tests/Day03.AsyncStateMachine.Tests/Day03.AsyncStateMachine.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day04-Garbage-Collection/" />
+  <Folder Name="/Day04-Garbage-Collection/src/">
+    <Project Path="Day04-Garbage-Collection/src/Day04.GarbageCollection/Day04.GarbageCollection.csproj" />
+  </Folder>
+  <Folder Name="/Day04-Garbage-Collection/tests/">
+    <Project Path="Day04-Garbage-Collection/tests/Day04.GarbageCollection.Tests/Day04.GarbageCollection.Tests.csproj" />
+  </Folder>
 </Solution>

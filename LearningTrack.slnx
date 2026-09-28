@@ -41,4 +41,11 @@
   <Folder Name="/Day06-Dependency-Injection/tests/">
     <Project Path="Day06-Dependency-Injection/tests/Day06.DependencyInjection.Tests/Day06.DependencyInjection.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day07-Minimal-APIs/" />
+  <Folder Name="/Day07-Minimal-APIs/src/">
+    <Project Path="Day07-Minimal-APIs/src/Day07.MinimalApi/Day07.MinimalApi.csproj" />
+  </Folder>
+  <Folder Name="/Day07-Minimal-APIs/tests/">
+    <Project Path="Day07-Minimal-APIs/tests/Day07.MinimalApi.Tests/Day07.MinimalApi.Tests.csproj" />
+  </Folder>
 </Solution>

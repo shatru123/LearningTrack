@@ -6,4 +6,11 @@
   <Folder Name="/Day01-CSharp-Memory/tests/">
     <Project Path="Day01-CSharp-Memory/tests/Day01.MemoryLab.Tests/Day01.MemoryLab.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day02-RefStruct-Memory/" />
+  <Folder Name="/Day02-RefStruct-Memory/src/">
+    <Project Path="Day02-RefStruct-Memory/src/Day02.RefStructMemory/Day02.RefStructMemory.csproj" />
+  </Folder>
+  <Folder Name="/Day02-RefStruct-Memory/tests/">
+    <Project Path="Day02-RefStruct-Memory/tests/Day02.RefStructMemory.Tests/Day02.RefStructMemory.Tests.csproj" />
+  </Folder>
 </Solution>

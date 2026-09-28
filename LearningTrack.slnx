@@ -48,4 +48,11 @@
   <Folder Name="/Day07-Minimal-APIs/tests/">
     <Project Path="Day07-Minimal-APIs/tests/Day07.MinimalApi.Tests/Day07.MinimalApi.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day08-SQL-Indexes/" />
+  <Folder Name="/Day08-SQL-Indexes/src/">
+    <Project Path="Day08-SQL-Indexes/src/Day08.SqlIndexes/Day08.SqlIndexes.csproj" />
+  </Folder>
+  <Folder Name="/Day08-SQL-Indexes/tests/">
+    <Project Path="Day08-SQL-Indexes/tests/Day08.SqlIndexes.Tests/Day08.SqlIndexes.Tests.csproj" />
+  </Folder>
 </Solution>

@@ -55,4 +55,32 @@
   <Folder Name="/Day08-SQL-Indexes/tests/">
     <Project Path="Day08-SQL-Indexes/tests/Day08.SqlIndexes.Tests/Day08.SqlIndexes.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day09-SQL-Execution-Plans/" />
+  <Folder Name="/Day09-SQL-Execution-Plans/src/">
+    <Project Path="Day09-SQL-Execution-Plans/src/Day09.SqlExecutionPlans/Day09.SqlExecutionPlans.csproj" />
+  </Folder>
+  <Folder Name="/Day09-SQL-Execution-Plans/tests/">
+    <Project Path="Day09-SQL-Execution-Plans/tests/Day09.SqlExecutionPlans.Tests/Day09.SqlExecutionPlans.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day10-Transactions-ACID/" />
+  <Folder Name="/Day10-Transactions-ACID/src/">
+    <Project Path="Day10-Transactions-ACID/src/Day10.TransactionsAcid/Day10.TransactionsAcid.csproj" />
+  </Folder>
+  <Folder Name="/Day10-Transactions-ACID/tests/">
+    <Project Path="Day10-Transactions-ACID/tests/Day10.TransactionsAcid.Tests/Day10.TransactionsAcid.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day11-EFCore-ChangeTracking/" />
+  <Folder Name="/Day11-EFCore-ChangeTracking/src/">
+    <Project Path="Day11-EFCore-ChangeTracking/src/Day11.EfCoreTracking/Day11.EfCoreTracking.csproj" />
+  </Folder>
+  <Folder Name="/Day11-EFCore-ChangeTracking/tests/">
+    <Project Path="Day11-EFCore-ChangeTracking/tests/Day11.EfCoreTracking.Tests/Day11.EfCoreTracking.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day12-EFCore-SplitQueries-Interceptors/" />
+  <Folder Name="/Day12-EFCore-SplitQueries-Interceptors/src/">
+    <Project Path="Day12-EFCore-SplitQueries-Interceptors/src/Day12.SplitQueriesInterceptors/Day12.SplitQueriesInterceptors.csproj" />
+  </Folder>
+  <Folder Name="/Day12-EFCore-SplitQueries-Interceptors/tests/">
+    <Project Path="Day12-EFCore-SplitQueries-Interceptors/tests/Day12.SplitQueriesInterceptors.Tests/Day12.SplitQueriesInterceptors.Tests.csproj" />
+  </Folder>
 </Solution>

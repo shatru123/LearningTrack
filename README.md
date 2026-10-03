@@ -1,8 +1,8 @@
 # 100-Day .NET + AI Engineering Track
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
-[![Status](https://img.shields.io/badge/Roadmap-Days%201--12%20Completed-brightgreen.svg)](#completed-curriculum-days-112)
-[![Tests](https://img.shields.io/badge/Tests-129%20Passed-brightgreen.svg)](#running-builds-and-tests)
+[![Status](https://img.shields.io/badge/Roadmap-Days%201--13%20Completed-brightgreen.svg)](#completed-curriculum-days-113)
+[![Tests](https://img.shields.io/badge/Tests-149%20Passed-brightgreen.svg)](#running-builds-and-tests)
 
 Practical engineering implementations, performance benchmarks, systems architecture labs, and Data Structures & Algorithms (DSA) exercises across the 100-Day .NET + AI Engineering journey.
 
@@ -17,14 +17,14 @@ Practical engineering implementations, performance benchmarks, systems architect
 
 ## Status
 
-**Days 1–12: Completed**
+**Days 1–13: Completed**
 
 Detailed status table: [roadmap/progress.md](roadmap/progress.md)  
 Roadmap overview: [roadmap/100-day-roadmap.md](roadmap/100-day-roadmap.md)
 
 ---
 
-## Completed Curriculum (Days 1–12)
+## Completed Curriculum (Days 1–13)
 
 Each day includes complete practical implementations, xUnit test suites, comprehensive engineering notes, and practical scenarios.
 
@@ -42,6 +42,7 @@ Each day includes complete practical implementations, xUnit test suites, compreh
 | **Day 10** | SQL Transactions, ACID & MVCC | ANSI SQL isolation levels, PostgreSQL MVCC `xmin`/`xmax`/snapshot visibility, anomaly simulation (Dirty Read, Non-Repeatable Read, Phantom Read, Write Skew), DSA (LeetCode #20 Valid Parentheses, LeetCode #155 Min Stack) | [Day10-Transactions-ACID](Day10-Transactions-ACID/) • [README](Day10-Transactions-ACID/README.md) |
 | **Day 11** | EF Core Change Tracking Mechanics | Snapshot vs Notification tracking (`INotifyPropertyChanged`/`Changing`), `DetectChanges()` inspection, `AsNoTracking` vs `AsNoTrackingWithIdentityResolution`, DSA (LeetCode #150 Evaluate Reverse Polish Notation, LeetCode #739 Daily Temperatures) | [Day11-EFCore-ChangeTracking](Day11-EFCore-ChangeTracking/) • [README](Day11-EFCore-ChangeTracking/README.md) |
 | **Day 12** | EF Core Split Queries & Interceptors | Cartesian explosion prevention (`.AsSplitQuery()` vs `.AsSingleQuery()`), query auditing & slow query logging with `DbCommandInterceptor`, DSA (LeetCode #704 Binary Search, LeetCode #74 Search a 2D Matrix) | [Day12-EFCore-SplitQueries-Interceptors](Day12-EFCore-SplitQueries-Interceptors/) • [README](Day12-EFCore-SplitQueries-Interceptors/README.md) |
+| **Day 13** | Dapper Performance & Streaming | Multi-mapping 1:N relations, buffered vs unbuffered queries, async streaming with `IAsyncEnumerable<T>`, Dapper vs EF Core raw SQL profiling, DSA (LeetCode #153 Find Minimum in Rotated Sorted Array & #154 Duplicates) | [Day13-Dapper-Performance](Day13-Dapper-Performance/) • [README](Day13-Dapper-Performance/README.md) |
 
 ---
 
@@ -55,4 +56,4 @@ dotnet build
 dotnet test LearningTrack.sln
 ```
 
-All 129 automated unit and integration tests validate the implementations across Days 1–12.
+All 149 automated unit and integration tests validate the implementations across Days 1–13.

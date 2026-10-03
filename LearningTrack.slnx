@@ -83,4 +83,11 @@
   <Folder Name="/Day12-EFCore-SplitQueries-Interceptors/tests/">
     <Project Path="Day12-EFCore-SplitQueries-Interceptors/tests/Day12.SplitQueriesInterceptors.Tests/Day12.SplitQueriesInterceptors.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day13-Dapper-Performance/" />
+  <Folder Name="/Day13-Dapper-Performance/src/">
+    <Project Path="Day13-Dapper-Performance/src/Day13.DapperPerformance/Day13.DapperPerformance.csproj" />
+  </Folder>
+  <Folder Name="/Day13-Dapper-Performance/tests/">
+    <Project Path="Day13-Dapper-Performance/tests/Day13.DapperPerformance.Tests/Day13.DapperPerformance.Tests.csproj" />
+  </Folder>
 </Solution>

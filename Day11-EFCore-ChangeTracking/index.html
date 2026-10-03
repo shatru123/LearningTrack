@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 11: EF Core Change Tracking Mechanics &amp; Optimization | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-size: 13px;
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .markdown-content th {
+      background: rgba(30, 41, 59, 0.8);
+      color: #fff;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 8px 16px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      color: #e2e8f0;
+    }
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    pre[class*="language-"] {
+      margin: 0 !important;
+      border-radius: 0 !important;
+      background: var(--bg-code) !important;
+      padding: 16px !important;
+      font-size: 13px !important;
+      line-height: 1.5 !important;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 11</span>
+        <span class="badge badge-category">EF Core &amp; ORM</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day10-Transactions-ACID/index.html" class="nav-btn">← Day 10</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+
+        </select>
+        <a href="../Day12-EFCore-SplitQueries-Interceptors/index.html" class="nav-btn">Day 12 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 11: EF Core Change Tracking Mechanics &amp; Optimization</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
+      
+      
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (4 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-readme" class="tab-pane active">
+      <div class="markdown-content" id="readme-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    
+    
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day11.EfCoreTracking/ChangeTrackingService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd11-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d11-src-code-0" class="language-csharp">using Microsoft.EntityFrameworkCore;
+
+namespace Day11.EfCoreTracking;
+
+public record StateTransitionStep(string Action, EntityState State);
+
+public record IdentityResolutionResult(
+    int OrderCount,
+    bool NoTrackingReferencesAreEqual,
+    int NoTrackingDistinctCustomerInstances,
+    bool WithIdentityResolutionReferencesAreEqual,
+    int WithIdentityResolutionDistinctCustomerInstances);
+
+public record DetectChangesResult(
+    bool IsModifiedBeforeDetectChanges,
+    bool IsModifiedAfterDetectChanges,
+    string OriginalValue,
+    string CurrentValue);
+
+public class ChangeTrackingService
+{
+    /// &lt;summary&gt;
+    /// Demonstrates the full lifecycle state transitions of an entity:
+    /// Detached -&gt; Added -&gt; Unchanged (post-save) -&gt; Modified -&gt; Deleted -&gt; Detached (post-save).
+    /// &lt;/summary&gt;
+    public async Task&lt;List&lt;StateTransitionStep&gt;&gt; DemonstrateStateTransitionsAsync(
+        TrackingDbContext db,
+        string customerName,
+        string customerEmail)
+    {
+        var steps = new List&lt;StateTransitionStep&gt;();
+
+        var customer = new Customer { Name = customerName, Email = customerEmail };
+        steps.Add(new StateTransitionStep(&quot;Instantiation&quot;, db.Entry(customer).State)); // Detached
+
+        db.Customers.Add(customer);
+        steps.Add(new StateTransitionStep(&quot;Add&quot;, db.Entry(customer).State)); // Added
+
+        await db.SaveChangesAsync();
+        steps.Add(new StateTransitionStep(&quot;SaveChanges (Insert)&quot;, db.Entry(customer).State)); // Unchanged
+
+        customer.Name = $&quot;{customerName} (Updated)&quot;;
+        steps.Add(new StateTransitionStep(&quot;Property Mutation&quot;, db.Entry(customer).State)); // Modified
+
+        await db.SaveChangesAsync();
+        steps.Add(new StateTransitionStep(&quot;SaveChanges (Update)&quot;, db.Entry(customer).State)); // Unchanged
+
+        db.Customers.Remove(customer);
+        steps.Add(new StateTransitionStep(&quot;Remove&quot;, db.Entry(customer).State)); // Deleted
+
+        await db.SaveChangesAsync();
+        steps.Add(new StateTransitionStep(&quot;SaveChanges (Delete)&quot;, db.Entry(customer).State)); // Detached
+
+        return steps;
+    }
+
+    /// &lt;summary&gt;
+    /// Compares AsNoTracking() vs AsNoTrackingWithIdentityResolution().
+    /// AsNoTracking creates duplicate heap instances for duplicate parent entities across a relationship graph.
+    /// AsNoTrackingWithIdentityResolution maintains an ephemeral query-level identity map to ensure single instances.
+    /// &lt;/summary&gt;
+    public async Task&lt;IdentityResolutionResult&gt; CompareIdentityResolutionAsync(
+        TrackingDbContext db,
+        int customerId)
+    {
+        // 1. AsNoTracking()
+        var noTrackingOrders = await db.Orders
+            .AsNoTracking()
+            .Include(o =&gt; o.Customer)
+            .Where(o =&gt; o.CustomerId == customerId)
+            .ToListAsync();
+
+        var noTrackingRefsEqual = noTrackingOrders.Count &gt;= 2 &amp;&amp;
+            ReferenceEquals(noTrackingOrders[0].Customer, noTrackingOrders[1].Customer);
+
+        var noTrackingDistinctInstances = noTrackingOrders
+            .Select(o =&gt; o.Customer)
+            .Where(c =&gt; c != null)
+            .Distinct(new ReferenceEqualityComparer&lt;Customer?&gt;())
+            .Count();
+
+        // 2. AsNoTrackingWithIdentityResolution()
+        var withIdentOrders = await db.Orders
+            .AsNoTrackingWithIdentityResolution()
+            .Include(o =&gt; o.Customer)
+            .Where(o =&gt; o.CustomerId == customerId)
+            .ToListAsync();
+
+        var withIdentRefsEqual = withIdentOrders.Count &gt;= 2 &amp;&amp;
+            ReferenceEquals(withIdentOrders[0].Customer, withIdentOrders[1].Customer);
+
+        var withIdentDistinctInstances = withIdentOrders
+            .Select(o =&gt; o.Customer)
+            .Where(c =&gt; c != null)
+            .Distinct(new ReferenceEqualityComparer&lt;Customer?&gt;())
+            .Count();
+
+        return new IdentityResolutionResult(
+            OrderCount: noTrackingOrders.Count,
+            NoTrackingReferencesAreEqual: noTrackingRefsEqual,
+            NoTrackingDistinctCustomerInstances: noTrackingDistinctInstances,
+            WithIdentityResolutionReferencesAreEqual: withIdentRefsEqual,
+            WithIdentityResolutionDistinctCustomerInstances: withIdentDistinctInstances);
+    }
+
+    /// &lt;summary&gt;
+    /// Demonstrates snapshot change tracking and DetectChanges() behavior when AutoDetectChangesEnabled is false.
+    /// &lt;/summary&gt;
+    public DetectChangesResult InspectDetectChanges(
+        TrackingDbContext db,
+        Customer customer,
+        string updatedName)
+    {
+        var originalValue = customer.Name;
+        db.ChangeTracker.AutoDetectChangesEnabled = false;
+
+        try
+        {
+            customer.Name = updatedName;
+
+            var propEntry = db.Entry(customer).Property(c =&gt; c.Name);
+            bool isModifiedBefore = propEntry.IsModified;
+
+            db.ChangeTracker.DetectChanges();
+            bool isModifiedAfter = propEntry.IsModified;
+
+            return new DetectChangesResult(
+                IsModifiedBeforeDetectChanges: isModifiedBefore,
+                IsModifiedAfterDetectChanges: isModifiedAfter,
+                OriginalValue: originalValue,
+                CurrentValue: customer.Name);
+        }
+        finally
+        {
+            db.ChangeTracker.AutoDetectChangesEnabled = true;
+        }
+    }
+}
+
+public class ReferenceEqualityComparer&lt;T&gt; : IEqualityComparer&lt;T&gt; where T : class?
+{
+    public bool Equals(T? x, T? y) =&gt; ReferenceEquals(x, y);
+    public int GetHashCode(T? obj) =&gt; obj == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day11.EfCoreTracking/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd11-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d11-src-code-1" class="language-csharp">using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
+namespace Day11.EfCoreTracking;
+
+public class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public List&lt;Order&gt; Orders { get; set; } = new();
+}
+
+public class Order
+{
+    public int Id { get; set; }
+    public decimal TotalAmount { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public int CustomerId { get; set; }
+    public Customer? Customer { get; set; }
+}
+
+/// &lt;summary&gt;
+/// Demonstrates notification-based change tracking via INotifyPropertyChanged and INotifyPropertyChanging.
+/// EF Core can track changes immediately when properties are set without requiring snapshot comparisons during DetectChanges().
+/// &lt;/summary&gt;
+public class NotificationCustomer : INotifyPropertyChanged, INotifyPropertyChanging
+{
+    private int _id;
+    private string _name = string.Empty;
+    private string _email = string.Empty;
+
+    public int Id
+    {
+        get =&gt; _id;
+        set
+        {
+            if (_id != value)
+            {
+                OnPropertyChanging();
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string Name
+    {
+        get =&gt; _name;
+        set
+        {
+            if (_name != value)
+            {
+                OnPropertyChanging();
+                _name = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string Email
+    {
+        get =&gt; _email;
+        set
+        {
+            if (_email != value)
+            {
+                OnPropertyChanging();
+                _email = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public event PropertyChangingEventHandler? PropertyChanging;
+
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        =&gt; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    protected void OnPropertyChanging([CallerMemberName] string? propertyName = null)
+        =&gt; PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day11.EfCoreTracking/MonotonicStackSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd11-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d11-src-code-2" class="language-csharp">namespace Day11.EfCoreTracking;
+
+public static class MonotonicStackSolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #150: Evaluate Reverse Polish Notation.
+    /// Evaluates arithmetic expressions written in Postfix notation using a Stack.
+    /// Division truncates toward zero. Time Complexity: O(n), Space Complexity: O(n).
+    /// &lt;/summary&gt;
+    public static int EvalRpn(string[] tokens)
+    {
+        ArgumentNullException.ThrowIfNull(tokens);
+        if (tokens.Length == 0)
+        {
+            throw new ArgumentException(&quot;Tokens array cannot be empty.&quot;, nameof(tokens));
+        }
+
+        var stack = new Stack&lt;int&gt;();
+
+        foreach (var token in tokens)
+        {
+            switch (token)
+            {
+                case &quot;+&quot;:
+                    stack.Push(stack.Pop() + stack.Pop());
+                    break;
+                case &quot;-&quot;:
+                {
+                    int b = stack.Pop();
+                    int a = stack.Pop();
+                    stack.Push(a - b);
+                    break;
+                }
+                case &quot;*&quot;:
+                    stack.Push(stack.Pop() * stack.Pop());
+                    break;
+                case &quot;/&quot;:
+                {
+                    int b = stack.Pop();
+                    int a = stack.Pop();
+                    if (b == 0)
+                    {
+                        throw new DivideByZeroException(&quot;Division by zero in RPN evaluation.&quot;);
+                    }
+                    // C# integer division truncates toward zero
+                    stack.Push(a / b);
+                    break;
+                }
+                default:
+                    if (int.TryParse(token, out int number))
+                    {
+                        stack.Push(number);
+                    }
+                    else
+                    {
+                        throw new ArgumentException($&quot;Invalid token: &#x27;{token}&#x27;&quot;, nameof(tokens));
+                    }
+                    break;
+            }
+        }
+
+        if (stack.Count != 1)
+        {
+            throw new ArgumentException(&quot;Invalid RPN expression format.&quot;);
+        }
+
+        return stack.Pop();
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #739: Daily Temperatures.
+    /// Finds the number of days until a warmer temperature using a monotonic decreasing stack of indices.
+    /// Time Complexity: O(n), Space Complexity: O(n).
+    /// &lt;/summary&gt;
+    public static int[] DailyTemperatures(int[] temperatures)
+    {
+        ArgumentNullException.ThrowIfNull(temperatures);
+        int n = temperatures.Length;
+        var answer = new int[n];
+        var stack = new Stack&lt;int&gt;(); // Stores indices of daily temperatures in strictly non-increasing order
+
+        for (int i = 0; i &lt; n; i++)
+        {
+            while (stack.Count &gt; 0 &amp;&amp; temperatures[i] &gt; temperatures[stack.Peek()])
+            {
+                int prevIndex = stack.Pop();
+                answer[prevIndex] = i - prevIndex;
+            }
+
+            stack.Push(i);
+        }
+
+        return answer;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day11.EfCoreTracking/TrackingDbContext.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd11-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d11-src-code-3" class="language-csharp">using Microsoft.EntityFrameworkCore;
+
+namespace Day11.EfCoreTracking;
+
+public class TrackingDbContext : DbContext
+{
+    public DbSet&lt;Customer&gt; Customers =&gt; Set&lt;Customer&gt;();
+    public DbSet&lt;Order&gt; Orders =&gt; Set&lt;Order&gt;();
+    public DbSet&lt;NotificationCustomer&gt; NotificationCustomers =&gt; Set&lt;NotificationCustomer&gt;();
+
+    public TrackingDbContext(DbContextOptions&lt;TrackingDbContext&gt; options)
+        : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity&lt;Customer&gt;(entity =&gt;
+        {
+            entity.HasKey(c =&gt; c.Id);
+            entity.Property(c =&gt; c.Name).IsRequired().HasMaxLength(100);
+            entity.Property(c =&gt; c.Email).IsRequired().HasMaxLength(150);
+
+            entity.HasMany(c =&gt; c.Orders)
+                .WithOne(o =&gt; o.Customer)
+                .HasForeignKey(o =&gt; o.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity&lt;Order&gt;(entity =&gt;
+        {
+            entity.HasKey(o =&gt; o.Id);
+            entity.Property(o =&gt; o.TotalAmount).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity&lt;NotificationCustomer&gt;(entity =&gt;
+        {
+            entity.HasKey(nc =&gt; nc.Id);
+            entity.Property(nc =&gt; nc.Name).IsRequired().HasMaxLength(100);
+            entity.Property(nc =&gt; nc.Email).IsRequired().HasMaxLength(150);
+
+            // Configure entity to use notification-based change tracking instead of snapshot tracking
+            entity.HasChangeTrackingStrategy(ChangeTrackingStrategy.ChangingAndChangedNotificationsWithOriginalValues);
+        });
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day11.EfCoreTracking.Tests/Day11Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd11-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d11-tests-code-0" class="language-csharp">using FluentAssertions;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Xunit;
+
+namespace Day11.EfCoreTracking.Tests;
+
+public class Day11Tests
+{
+    private static TrackingDbContext CreateInMemoryContext(out SqliteConnection connection)
+    {
+        connection = new SqliteConnection(&quot;DataSource=:memory:&quot;);
+        connection.Open();
+
+        var options = new DbContextOptionsBuilder&lt;TrackingDbContext&gt;()
+            .UseSqlite(connection)
+            .Options;
+
+        var context = new TrackingDbContext(options);
+        context.Database.EnsureCreated();
+        return context;
+    }
+
+    [Fact]
+    public async Task DemonstrateStateTransitions_ShouldFollowExpectedLifecycle()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext(out var connection);
+        using (connection)
+        {
+            var service = new ChangeTrackingService();
+
+            // Act
+            var steps = await service.DemonstrateStateTransitionsAsync(
+                context, &quot;Alice Smith&quot;, &quot;alice@example.com&quot;);
+
+            // Assert
+            steps.Should().HaveCount(7);
+            steps[0].Should().Be(new StateTransitionStep(&quot;Instantiation&quot;, EntityState.Detached));
+            steps[1].Should().Be(new StateTransitionStep(&quot;Add&quot;, EntityState.Added));
+            steps[2].Should().Be(new StateTransitionStep(&quot;SaveChanges (Insert)&quot;, EntityState.Unchanged));
+            steps[3].Should().Be(new StateTransitionStep(&quot;Property Mutation&quot;, EntityState.Modified));
+            steps[4].Should().Be(new StateTransitionStep(&quot;SaveChanges (Update)&quot;, EntityState.Unchanged));
+            steps[5].Should().Be(new StateTransitionStep(&quot;Remove&quot;, EntityState.Deleted));
+            steps[6].Should().Be(new StateTransitionStep(&quot;SaveChanges (Delete)&quot;, EntityState.Detached));
+        }
+    }
+
+    [Fact]
+    public async Task CompareIdentityResolution_ShouldDemonstrateInstanceReuseDifference()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext(out var connection);
+        using (connection)
+        {
+            var customer = new Customer { Name = &quot;Enterprise Corp&quot;, Email = &quot;ops@enterprise.com&quot; };
+            context.Customers.Add(customer);
+            await context.SaveChangesAsync();
+
+            context.Orders.AddRange(
+                new Order { CustomerId = customer.Id, TotalAmount = 150.00m },
+                new Order { CustomerId = customer.Id, TotalAmount = 350.50m },
+                new Order { CustomerId = customer.Id, TotalAmount = 99.99m });
+            await context.SaveChangesAsync();
+
+            var service = new ChangeTrackingService();
+
+            // Act
+            var result = await service.CompareIdentityResolutionAsync(context, customer.Id);
+
+            // Assert
+            result.OrderCount.Should().Be(3);
+
+            // AsNoTracking: multiple copies of the same parent entity created on the heap
+            result.NoTrackingReferencesAreEqual.Should().BeFalse();
+            result.NoTrackingDistinctCustomerInstances.Should().Be(3);
+
+            // AsNoTrackingWithIdentityResolution: single shared instance reused across all child rows
+            result.WithIdentityResolutionReferencesAreEqual.Should().BeTrue();
+            result.WithIdentityResolutionDistinctCustomerInstances.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDetectChanges_ShouldDetectMutationsOnlyWhenInvoked()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext(out var connection);
+        using (connection)
+        {
+            var customer = new Customer { Name = &quot;Original Name&quot;, Email = &quot;test@example.com&quot; };
+            context.Customers.Add(customer);
+            await context.SaveChangesAsync();
+
+            var service = new ChangeTrackingService();
+
+            // Act
+            var result = service.InspectDetectChanges(context, customer, &quot;Updated Name&quot;);
+
+            // Assert
+            result.OriginalValue.Should().Be(&quot;Original Name&quot;);
+            result.CurrentValue.Should().Be(&quot;Updated Name&quot;);
+            result.IsModifiedBeforeDetectChanges.Should().BeFalse();
+            result.IsModifiedAfterDetectChanges.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task NotificationCustomer_ShouldTrackChangesDirectlyWithoutSnapshotScan()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext(out var connection);
+        using (connection)
+        {
+            var notifCustomer = new NotificationCustomer { Name = &quot;Notification Bob&quot;, Email = &quot;bob@example.com&quot; };
+            context.NotificationCustomers.Add(notifCustomer);
+            await context.SaveChangesAsync();
+
+            context.Entry(notifCustomer).State.Should().Be(EntityState.Unchanged);
+
+            // Act: mutate property directly while AutoDetectChangesEnabled is false
+            context.ChangeTracker.AutoDetectChangesEnabled = false;
+            notifCustomer.Name = &quot;Notification Bob 2.0&quot;;
+
+            // Assert: Notification-based entity informs EF Core directly via INotifyPropertyChanged
+            context.Entry(notifCustomer).State.Should().Be(EntityState.Modified);
+            context.Entry(notifCustomer).Property(x =&gt; x.Name).IsModified.Should().BeTrue();
+        }
+    }
+
+    [Theory]
+    [InlineData(new[] { &quot;2&quot;, &quot;1&quot;, &quot;+&quot;, &quot;3&quot;, &quot;*&quot; }, 9)]
+    [InlineData(new[] { &quot;4&quot;, &quot;13&quot;, &quot;5&quot;, &quot;/&quot;, &quot;+&quot; }, 6)]
+    [InlineData(new[] { &quot;10&quot;, &quot;6&quot;, &quot;9&quot;, &quot;3&quot;, &quot;+&quot;, &quot;-11&quot;, &quot;*&quot;, &quot;/&quot;, &quot;*&quot;, &quot;17&quot;, &quot;+&quot;, &quot;5&quot;, &quot;+&quot; }, 22)]
+    public void EvalRpn_ShouldEvaluateCorrectly(string[] tokens, int expected)
+    {
+        // Act
+        var result = MonotonicStackSolvers.EvalRpn(tokens);
+
+        // Assert
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void EvalRpn_DivisionByZero_ShouldThrowException()
+    {
+        // Arrange
+        var tokens = new[] { &quot;4&quot;, &quot;0&quot;, &quot;/&quot; };
+
+        // Act &amp; Assert
+        FluentActions.Invoking(() =&gt; MonotonicStackSolvers.EvalRpn(tokens))
+            .Should().Throw&lt;DivideByZeroException&gt;();
+    }
+
+    [Theory]
+    [InlineData(
+        new[] { 73, 74, 75, 71, 69, 72, 76, 73 },
+        new[] { 1, 1, 4, 2, 1, 1, 0, 0 })]
+    [InlineData(
+        new[] { 30, 40, 50, 60 },
+        new[] { 1, 1, 1, 0 })]
+    [InlineData(
+        new[] { 30, 60, 90 },
+        new[] { 1, 1, 0 })]
+    [InlineData(
+        new[] { 90, 80, 70 },
+        new[] { 0, 0, 0 })]
+    [InlineData(
+        new[] { 50 },
+        new[] { 0 })]
+    [InlineData(
+        new[] { 70, 70, 70 },
+        new[] { 0, 0, 0 })]
+    public void DailyTemperatures_ShouldComputeWaitDaysAccurately(int[] temps, int[] expected)
+    {
+        // Act
+        var result = MonotonicStackSolvers.DailyTemperatures(temps);
+
+        // Assert
+        result.Should().Equal(expected);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div class="footer-bar">
+      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
+    </div>
+  </div>
+
+  <!-- Raw Content Payloads for Client-side Rendering -->
+  <script type="text/markdown" id="raw-readme"># Day 11: EF Core Change Tracking &amp; Stack Problems
+
+## Overview
+This module explores internal Entity Framework Core change tracking mechanics, comparing snapshot tracking against notification tracking, analyzing performance implications of `AsNoTracking()` vs `AsNoTrackingWithIdentityResolution()`, and solving foundational stack algorithmic problems.
+
+---
+
+## 1. EF Core Change Tracking Mechanics
+
+### Entity Lifecycle States
+EF Core tracks entity instances using `EntityEntry.State`:
+1. **Detached**: The entity is not tracked by the context.
+2. **Added**: The entity is tracked and scheduled for an `INSERT` upon `SaveChanges()`.
+3. **Unchanged**: The entity is tracked and has no pending modifications.
+4. **Modified**: One or more properties have changed and an `UPDATE` will be generated.
+5. **Deleted**: The entity is tracked and scheduled for a `DELETE` upon `SaveChanges()`.
+
+### Snapshot vs. Notification Tracking
+- **Snapshot Tracking (Default POCO)**:
+  - EF Core takes a snapshot clone of property values when an entity is queried or attached.
+  - Calling `ChangeTracker.DetectChanges()` performs an $O(N \times P)$ field-by-field comparison between current values and snapshot values.
+  - Can incur CPU and memory overhead with thousands of entities.
+- **Notification Tracking (`INotifyPropertyChanged`, `INotifyPropertyChanging`)**:
+  - The entity immediately notifies the DbContext whenever a property is mutated.
+  - Eliminates the need for full snapshot comparison scans during `DetectChanges()`.
+
+### `AsNoTracking()` vs `AsNoTrackingWithIdentityResolution()`
+- **`AsNoTracking()`**:
+  - No entities are added to the `ChangeTracker`.
+  - Fast for read-only queries.
+  - **Caveat**: When querying relationships (e.g., Orders with Customer), duplicate parent instances are created across child entities (referential inequality `!ReferenceEquals(o1.Customer, o2.Customer)`), leading to memory duplication.
+- **`AsNoTrackingWithIdentityResolution()`**:
+  - Does NOT track entities for changes (remains read-only).
+  - Uses a lightweight, query-scoped identity map to guarantee that identical primary keys resolve to the exact same object reference (`ReferenceEquals(o1.Customer, o2.Customer) == true`).
+
+---
+
+## 2. LeetCode Stack Solvers
+
+### LeetCode #150: Evaluate Reverse Polish Notation (Medium)
+- **Problem**: Evaluate postfix arithmetic expressions using operators `+`, `-`, `*`, `/`.
+- **Approach**: Push operands onto a stack. When an operator is encountered, pop the right operand followed by the left operand, evaluate, and push the result back. Integer division truncates toward zero.
+- **Complexity**: Time: $O(n)$, Space: $O(n)$.
+
+### LeetCode #739: Daily Temperatures (Medium)
+- **Problem**: Given daily temperatures, find how many days to wait for a warmer temperature.
+- **Approach**: Monotonic decreasing stack holding indices. When current temperature is higher than the index at `stack.Peek()`, resolve the wait days as `i - prevIndex`.
+- **Complexity**: Time: $O(n)$, Space: $O(n)$.
+
+---
+
+## Running Tests
+```bash
+dotnet test tests/Day11.EfCoreTracking.Tests/Day11.EfCoreTracking.Tests.csproj
+```
+</script>
+  
+  
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    // Render Markdown when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.marked) {
+        const rEl = document.getElementById('raw-readme');
+        if (rEl) {
+          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
+        }
+        const nEl = document.getElementById('raw-notes');
+        if (nEl) {
+          const nTarget = document.getElementById('notes-container');
+          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
+        }
+        const iEl = document.getElementById('raw-interview');
+        if (iEl) {
+          const iTarget = document.getElementById('interview-container');
+          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
+        }
+      }
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

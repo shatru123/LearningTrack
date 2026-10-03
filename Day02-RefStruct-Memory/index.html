@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 02: ref struct &amp; Memory&lt;T&gt; in Async Pipelines | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-size: 13px;
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .markdown-content th {
+      background: rgba(30, 41, 59, 0.8);
+      color: #fff;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 8px 16px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      color: #e2e8f0;
+    }
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    pre[class*="language-"] {
+      margin: 0 !important;
+      border-radius: 0 !important;
+      background: var(--bg-code) !important;
+      padding: 16px !important;
+      font-size: 13px !important;
+      line-height: 1.5 !important;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 02</span>
+        <span class="badge badge-category">Memory &amp; Performance</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day01-CSharp-Memory/index.html" class="nav-btn">← Day 01</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+
+        </select>
+        <a href="../Day03-Async-Await/index.html" class="nav-btn">Day 03 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 02: ref struct &amp; Memory&lt;T&gt; in Async Pipelines</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (2 files)</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-readme" class="tab-pane active">
+      <div class="markdown-content" id="readme-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    
+            <div id="pane-notes" class="tab-pane">
+              <div class="markdown-content" id="notes-container"></div>
+            </div>
+            
+    
+            <div id="pane-interview" class="tab-pane">
+              <div class="markdown-content" id="interview-container"></div>
+            </div>
+            
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day02.RefStructMemory/CsvEventParser.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd2-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d2-src-code-0" class="language-csharp">namespace Day02.RefStructMemory;
+
+public record EventTicket(int EventId, string Name, decimal Price, string Status);
+
+/// &lt;summary&gt;
+/// Parser 1: Traditional string CSV parser.
+/// Incurs allocations for lines array, line strings, comma splits, and substrings.
+/// &lt;/summary&gt;
+public class TraditionalCsvParser
+{
+    public static List&lt;EventTicket&gt; Parse(string csvContent)
+    {
+        if (string.IsNullOrWhiteSpace(csvContent))
+            return new List&lt;EventTicket&gt;();
+
+        List&lt;EventTicket&gt; results = new();
+        string[] lines = csvContent.Split(new[] { &quot;\r\n&quot;, &quot;\r&quot;, &quot;\n&quot; }, StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (string line in lines)
+        {
+            string[] cols = line.Split(&#x27;,&#x27;);
+            if (cols.Length != 4) continue;
+
+            int eventId = int.Parse(cols[0].Trim());
+            string name = cols[1].Trim();
+            decimal price = decimal.Parse(cols[2].Trim());
+            string status = cols[3].Trim();
+
+            results.Add(new EventTicket(eventId, name, price, status));
+        }
+
+        return results;
+    }
+}
+
+/// &lt;summary&gt;
+/// Parser 2: Span-based CSV parser.
+/// Slices ReadOnlySpan&amp;lt;char&amp;gt; for zero intermediate allocations during line and column extraction.
+/// &lt;/summary&gt;
+public class SpanCsvParser
+{
+    public static List&lt;EventTicket&gt; Parse(ReadOnlySpan&lt;char&gt; csvSpan)
+    {
+        List&lt;EventTicket&gt; results = new();
+        ReadOnlySpan&lt;char&gt; remaining = csvSpan;
+
+        while (!remaining.IsEmpty)
+        {
+            int lineEndIndex = remaining.IndexOfAny(&#x27;\r&#x27;, &#x27;\n&#x27;);
+            ReadOnlySpan&lt;char&gt; line;
+
+            if (lineEndIndex &gt;= 0)
+            {
+                line = remaining.Slice(0, lineEndIndex);
+                // Skip newline sequence (\r\n or single \n or \r)
+                int skipCount = 1;
+                if (lineEndIndex + 1 &lt; remaining.Length &amp;&amp; remaining[lineEndIndex] == &#x27;\r&#x27; &amp;&amp; remaining[lineEndIndex + 1] == &#x27;\n&#x27;)
+                {
+                    skipCount = 2;
+                }
+                remaining = remaining.Slice(lineEndIndex + skipCount);
+            }
+            else
+            {
+                line = remaining;
+                remaining = ReadOnlySpan&lt;char&gt;.Empty;
+            }
+
+            line = line.Trim();
+            if (line.IsEmpty) continue;
+
+            // Slicing columns: 1001,Arsenal Match,1500,Available
+            int c1 = line.IndexOf(&#x27;,&#x27;);
+            if (c1 &lt; 0) continue;
+            ReadOnlySpan&lt;char&gt; col1 = line.Slice(0, c1).Trim();
+            ReadOnlySpan&lt;char&gt; rest1 = line.Slice(c1 + 1);
+
+            int c2 = rest1.IndexOf(&#x27;,&#x27;);
+            if (c2 &lt; 0) continue;
+            ReadOnlySpan&lt;char&gt; col2 = rest1.Slice(0, c2).Trim();
+            ReadOnlySpan&lt;char&gt; rest2 = rest1.Slice(c2 + 1);
+
+            int c3 = rest2.IndexOf(&#x27;,&#x27;);
+            if (c3 &lt; 0) continue;
+            ReadOnlySpan&lt;char&gt; col3 = rest2.Slice(0, c3).Trim();
+            ReadOnlySpan&lt;char&gt; col4 = rest2.Slice(c3 + 1).Trim();
+
+            int eventId = int.Parse(col1);
+            string name = col2.ToString();
+            decimal price = decimal.Parse(col3);
+            string status = col4.ToString();
+
+            results.Add(new EventTicket(eventId, name, price, status));
+        }
+
+        return results;
+    }
+}
+
+/// &lt;summary&gt;
+/// Parser 3: Asynchronous Memory&amp;lt;T&amp;gt; parser.
+/// Demonstrates that ReadOnlyMemory&amp;lt;char&amp;gt; is heap-safe, can cross await boundaries,
+/// and can be stored in async state machines without stack corruption.
+/// &lt;/summary&gt;
+public class AsyncMemoryCsvParser
+{
+    public static async IAsyncEnumerable&lt;EventTicket&gt; ParseStreamAsync(ReadOnlyMemory&lt;char&gt; csvMemory, int simulatedDelayMs = 1)
+    {
+        ReadOnlyMemory&lt;char&gt; remaining = csvMemory;
+
+        while (!remaining.IsEmpty)
+        {
+            if (simulatedDelayMs &gt; 0)
+            {
+                await Task.Delay(simulatedDelayMs).ConfigureAwait(false);
+            }
+
+            int newlineIndex = IndexOfNewline(remaining);
+            ReadOnlyMemory&lt;char&gt; lineMemory;
+
+            if (newlineIndex &gt;= 0)
+            {
+                lineMemory = remaining.Slice(0, newlineIndex);
+                int skip = IsCrLf(remaining, newlineIndex) ? 2 : 1;
+                remaining = remaining.Slice(newlineIndex + skip);
+            }
+            else
+            {
+                lineMemory = remaining;
+                remaining = ReadOnlyMemory&lt;char&gt;.Empty;
+            }
+
+            EventTicket? ticket = ParseSingleLine(lineMemory);
+            if (ticket != null)
+            {
+                yield return ticket;
+            }
+        }
+    }
+
+    private static int IndexOfNewline(ReadOnlyMemory&lt;char&gt; memory)
+    {
+        ReadOnlySpan&lt;char&gt; span = memory.Span;
+        return span.IndexOfAny(&#x27;\r&#x27;, &#x27;\n&#x27;);
+    }
+
+    private static bool IsCrLf(ReadOnlyMemory&lt;char&gt; memory, int newlineIndex)
+    {
+        ReadOnlySpan&lt;char&gt; span = memory.Span;
+        return newlineIndex + 1 &lt; span.Length &amp;&amp; span[newlineIndex] == &#x27;\r&#x27; &amp;&amp; span[newlineIndex + 1] == &#x27;\n&#x27;;
+    }
+
+    private static EventTicket? ParseSingleLine(ReadOnlyMemory&lt;char&gt; lineMemory)
+    {
+        ReadOnlySpan&lt;char&gt; lineSpan = lineMemory.Span.Trim();
+        if (lineSpan.IsEmpty) return null;
+
+        int c1 = lineSpan.IndexOf(&#x27;,&#x27;);
+        if (c1 &lt; 0) return null;
+        ReadOnlySpan&lt;char&gt; col1 = lineSpan.Slice(0, c1).Trim();
+        ReadOnlySpan&lt;char&gt; rest1 = lineSpan.Slice(c1 + 1);
+
+        int c2 = rest1.IndexOf(&#x27;,&#x27;);
+        if (c2 &lt; 0) return null;
+        ReadOnlySpan&lt;char&gt; col2 = rest1.Slice(0, c2).Trim();
+        ReadOnlySpan&lt;char&gt; rest2 = rest1.Slice(c2 + 1);
+
+        int c3 = rest2.IndexOf(&#x27;,&#x27;);
+        if (c3 &lt; 0) return null;
+        ReadOnlySpan&lt;char&gt; col3 = rest2.Slice(0, c3).Trim();
+        ReadOnlySpan&lt;char&gt; col4 = rest2.Slice(c3 + 1).Trim();
+
+        int eventId = int.Parse(col1);
+        string name = col2.ToString();
+        decimal price = decimal.Parse(col3);
+        string status = col4.ToString();
+
+        return new EventTicket(eventId, name, price, status);
+    }
+
+    /// &lt;summary&gt;
+    /// Demonstrates &#x27;in&#x27; parameters for read-only pass-by-reference.
+    /// Avoids copying large structs/records while guaranteeing immutability.
+    /// &lt;/summary&gt;
+    public static bool IsAffordable(in EventTicket ticket, in decimal maxBudget)
+    {
+        return ticket.Price &lt;= maxBudget &amp;&amp; ticket.Status.Equals(&quot;Available&quot;, StringComparison.OrdinalIgnoreCase);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day02.RefStructMemory/DsaExercises.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd2-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d2-src-code-1" class="language-csharp">namespace Day02.RefStructMemory;
+
+public static class DsaExercises
+{
+    /// &lt;summary&gt;
+    /// LeetCode 242 - Valid Anagram
+    /// Given two strings s and t, return true if t is an anagram of s, and false otherwise.
+    /// Time Complexity: O(n).
+    /// Space Complexity: O(1) using fixed-size 26-element array for lowercase English letters.
+    /// &lt;/summary&gt;
+    public static bool IsAnagram(string s, string t)
+    {
+        if (s == null || t == null || s.Length != t.Length)
+            return false;
+
+        Span&lt;int&gt; counts = stackalloc int[26];
+        for (int i = 0; i &lt; s.Length; i++)
+        {
+            counts[s[i] - &#x27;a&#x27;]++;
+            counts[t[i] - &#x27;a&#x27;]--;
+        }
+
+        foreach (int count in counts)
+        {
+            if (count != 0) return false;
+        }
+
+        return true;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode 49 - Group Anagrams
+    /// Given an array of strings strs, group the anagrams together.
+    /// Time Complexity: O(N * K log K) or O(N * K) with character count hashing.
+    /// Space Complexity: O(N * K).
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;string&gt;&gt; GroupAnagrams(string[] strs)
+    {
+        if (strs == null || strs.Length == 0)
+            return new List&lt;IList&lt;string&gt;&gt;();
+
+        Dictionary&lt;string, List&lt;string&gt;&gt; groups = new();
+
+        foreach (string str in strs)
+        {
+            char[] chars = str.ToCharArray();
+            Array.Sort(chars);
+            string key = new string(chars);
+
+            if (!groups.TryGetValue(key, out var list))
+            {
+                list = new List&lt;string&gt;();
+                groups[key] = list;
+            }
+            list.Add(str);
+        }
+
+        IList&lt;IList&lt;string&gt;&gt; result = new List&lt;IList&lt;string&gt;&gt;();
+        foreach (var group in groups.Values)
+        {
+            result.Add(group);
+        }
+        return result;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day02.RefStructMemory/RefStructLimitations.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd2-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d2-src-code-2" class="language-csharp">namespace Day02.RefStructMemory;
+
+/// &lt;summary&gt;
+/// Custom ref struct demonstrating stack-only semantics.
+/// Useful for high-performance stack-only state machines or zero-allocation lexers.
+/// &lt;/summary&gt;
+public ref struct StackOnlyEventBuffer
+{
+    private ReadOnlySpan&lt;char&gt; _buffer;
+    public int Length =&gt; _buffer.Length;
+
+    public StackOnlyEventBuffer(ReadOnlySpan&lt;char&gt; buffer)
+    {
+        _buffer = buffer;
+    }
+
+    public ReadOnlySpan&lt;char&gt; Peek(int length)
+    {
+        return _buffer.Slice(0, Math.Min(length, _buffer.Length));
+    }
+
+    // COMPILER RESTRICTIONS ON ref struct:
+    // 1. Cannot implement interfaces (pre-C# 13).
+    // 2. Cannot be boxed: `object obj = this;` -&gt; CS4013
+    // 3. Cannot be a field of a non-ref struct or class: `class Host { StackOnlyEventBuffer buf; }` -&gt; CS8345
+    // 4. Cannot be an array element: `StackOnlyEventBuffer[] arr;` -&gt; CS8345
+    // 5. Cannot be used inside async methods across await boundaries or iterators (yield return).
+}
+
+/// &lt;summary&gt;
+/// MemoryHolder demonstrates how Memory&amp;lt;T&amp;gt; resolves ref struct limitations.
+/// Because Memory&amp;lt;T&amp;gt; is a standard value type (not a ref struct), it can safely live on the heap.
+/// &lt;/summary&gt;
+public class HeapSafeEventBatch
+{
+    // Storing memory as a class field is fully allowed for Memory&lt;T&gt;, but impossible for Span&lt;T&gt;!
+    public ReadOnlyMemory&lt;char&gt; RawPayload { get; }
+    public DateTime ReceivedAtUtc { get; }
+
+    public HeapSafeEventBatch(ReadOnlyMemory&lt;char&gt; rawPayload)
+    {
+        RawPayload = rawPayload;
+        ReceivedAtUtc = DateTime.UtcNow;
+    }
+
+    public ReadOnlySpan&lt;char&gt; AsSpan() =&gt; RawPayload.Span;
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day02.RefStructMemory.Tests/CsvEventParserTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd2-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d2-tests-code-0" class="language-csharp">using Xunit;
+using Day02.RefStructMemory;
+
+namespace Day02.RefStructMemory.Tests;
+
+public class CsvEventParserTests
+{
+    private const string SampleCsv = @&quot;1001,Arsenal Match,1500,Available
+1002,Chelsea Match,2000,SoldOut
+1003,Liverpool Match,1800,Available&quot;;
+
+    [Fact]
+    public void TraditionalParser_ParsesAllRows_Correctly()
+    {
+        var records = TraditionalCsvParser.Parse(SampleCsv);
+
+        Assert.Equal(3, records.Count);
+        Assert.Equal(1001, records[0].EventId);
+        Assert.Equal(&quot;Arsenal Match&quot;, records[0].Name);
+        Assert.Equal(1500m, records[0].Price);
+        Assert.Equal(&quot;Available&quot;, records[0].Status);
+
+        Assert.Equal(1002, records[1].EventId);
+        Assert.Equal(&quot;Chelsea Match&quot;, records[1].Name);
+        Assert.Equal(&quot;SoldOut&quot;, records[1].Status);
+    }
+
+    [Fact]
+    public void SpanParser_ParsesAllRows_Equivalently()
+    {
+        var spanRecords = SpanCsvParser.Parse(SampleCsv.AsSpan());
+        var traditionalRecords = TraditionalCsvParser.Parse(SampleCsv);
+
+        Assert.Equal(traditionalRecords.Count, spanRecords.Count);
+        for (int i = 0; i &lt; traditionalRecords.Count; i++)
+        {
+            Assert.Equal(traditionalRecords[i], spanRecords[i]);
+        }
+    }
+
+    [Fact]
+    public async Task AsyncMemoryParser_ParsesStreamAcrossAwaitBoundaries_Correctly()
+    {
+        var streamResults = new List&lt;EventTicket&gt;();
+        await foreach (var ticket in AsyncMemoryCsvParser.ParseStreamAsync(SampleCsv.AsMemory(), simulatedDelayMs: 2))
+        {
+            streamResults.Add(ticket);
+        }
+
+        Assert.Equal(3, streamResults.Count);
+        Assert.Equal(1003, streamResults[2].EventId);
+        Assert.Equal(&quot;Liverpool Match&quot;, streamResults[2].Name);
+    }
+
+    [Fact]
+    public void InParameter_ValidatesAffordability_WithoutCopying()
+    {
+        var affordable = new EventTicket(1001, &quot;Arsenal Match&quot;, 1500m, &quot;Available&quot;);
+        var expensive = new EventTicket(1002, &quot;VIP Box&quot;, 5000m, &quot;Available&quot;);
+        var soldOut = new EventTicket(1003, &quot;Liverpool Match&quot;, 1800m, &quot;SoldOut&quot;);
+
+        decimal budget = 2000m;
+
+        Assert.True(AsyncMemoryCsvParser.IsAffordable(in affordable, in budget));
+        Assert.False(AsyncMemoryCsvParser.IsAffordable(in expensive, in budget));
+        Assert.False(AsyncMemoryCsvParser.IsAffordable(in soldOut, in budget));
+    }
+
+    [Fact]
+    public void HeapSafeEventBatch_HoldsMemoryOnHeap_Successfully()
+    {
+        var batch = new HeapSafeEventBatch(SampleCsv.AsMemory());
+        Assert.Equal(SampleCsv.Length, batch.RawPayload.Length);
+        Assert.Equal(&#x27;1&#x27;, batch.AsSpan()[0]);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day02.RefStructMemory.Tests/DsaExercisesTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd2-tests-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d2-tests-code-1" class="language-csharp">using Xunit;
+using Day02.RefStructMemory;
+
+namespace Day02.RefStructMemory.Tests;
+
+public class DsaExercisesTests
+{
+    [Theory]
+    [InlineData(&quot;anagram&quot;, &quot;nagaram&quot;, true)]
+    [InlineData(&quot;rat&quot;, &quot;car&quot;, false)]
+    [InlineData(&quot;listen&quot;, &quot;silent&quot;, true)]
+    [InlineData(&quot;a&quot;, &quot;ab&quot;, false)]
+    public void IsAnagram_EvaluatesCorrectly(string s, string t, bool expected)
+    {
+        bool result = DsaExercises.IsAnagram(s, t);
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void GroupAnagrams_GroupsValidSets()
+    {
+        string[] input = { &quot;eat&quot;, &quot;tea&quot;, &quot;tan&quot;, &quot;ate&quot;, &quot;nat&quot;, &quot;bat&quot; };
+        var grouped = DsaExercises.GroupAnagrams(input);
+
+        Assert.Equal(3, grouped.Count);
+
+        // Verify &quot;bat&quot; is by itself
+        Assert.Contains(grouped, g =&gt; g.Count == 1 &amp;&amp; g.Contains(&quot;bat&quot;));
+
+        // Verify &quot;nat&quot; and &quot;tan&quot; are together
+        Assert.Contains(grouped, g =&gt; g.Count == 2 &amp;&amp; g.Contains(&quot;nat&quot;) &amp;&amp; g.Contains(&quot;tan&quot;));
+
+        // Verify &quot;eat&quot;, &quot;tea&quot;, &quot;ate&quot; are together
+        Assert.Contains(grouped, g =&gt; g.Count == 3 &amp;&amp; g.Contains(&quot;eat&quot;) &amp;&amp; g.Contains(&quot;tea&quot;) &amp;&amp; g.Contains(&quot;ate&quot;));
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div class="footer-bar">
+      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
+    </div>
+  </div>
+
+  <!-- Raw Content Payloads for Client-side Rendering -->
+  <script type="text/markdown" id="raw-readme"># Day 02 - Ref Struct Limitations &amp; Memory&lt;T&gt; in Async Pipelines
+
+## Objective
+Master the architectural and runtime restrictions of `ref struct` (such as `Span&lt;T&gt;`), understand why they cannot cross asynchronous boundaries, and implement production-grade streaming pipelines using `Memory&lt;T&gt;` and `ReadOnlyMemory&lt;T&gt;` alongside `in` parameters.
+
+## Original Learning Tasks
+1. Master `ref struct` limitations &amp; `Memory&lt;T&gt;` async usage
+2. DSA: Valid Anagram, Group Anagrams
+
+## Practical Problem
+High-performance backend systems often ingest CSV or delimited event payloads over asynchronous network streams:
+```text
+1001,Arsenal Match,1500,Available
+1002,Chelsea Match,2000,SoldOut
+1003,Liverpool Match,1800,Available
+```
+While `Span&lt;T&gt;` provides zero-allocation parsing for synchronous blocks, attempts to use `Span&lt;T&gt;` inside asynchronous pipelines or retain it across `await` boundaries fail at compile time due to stack safety rules. If an engineer doesn&#x27;t understand the bridge between `Span&lt;T&gt;` and `Memory&lt;T&gt;`, they either revert to allocating strings everywhere or struggle with async compiler errors.
+
+## What I Implemented
+1. **TraditionalCsvParser**: Line-by-line parser using `string.Split()` and substrings, demonstrating allocation overhead.
+2. **SpanCsvParser**: Zero-allocation synchronous parser slicing `ReadOnlySpan&lt;char&gt;` across lines and columns.
+3. **AsyncMemoryCsvParser**: Asynchronous streaming parser using `IAsyncEnumerable&lt;EventTicket&gt;` and `ReadOnlyMemory&lt;char&gt;` that processes batches across `await` boundaries safely.
+4. **RefStructLimitations**: Explored and documented `ref struct` compiler restrictions and demonstrated `HeapSafeEventBatch` using `ReadOnlyMemory&lt;char&gt;` for class field storage.
+5. **Pass-by-Reference with `in` Parameters**: Implemented `IsAffordable(in EventTicket ticket, in decimal maxBudget)` to pass read-only references and prevent unnecessary struct copying.
+6. **DSA Solutions**:
+   - `Valid Anagram`: $O(n)$ time, $O(1)$ space character frequency counter using stackalloc.
+   - `Group Anagrams`: $O(N \cdot K \log K)$ sorted-key hash table grouping.
+
+## Architecture
+```text
+                    Asynchronous I/O Stream (Socket / Pipe)
+                                      │
+                                      ▼
+                        ReadOnlyMemory&lt;char&gt; / byte
+                        (Heap-safe, can cross await)
+                                      │
+               ┌──────────────────────┴──────────────────────┐
+               │                                             │
+      Await Boundary (I/O)                          Synchronous Slice
+               │                                             │
+               ▼                                             ▼
+  Compiler-Generated State Machine            .Span (ref struct on stack)
+  (Hoists ReadOnlyMemory&lt;T&gt; safely)          (Ultra-fast zero-allocation tokenizing)
+```
+
+## Key Concepts
+- **`ref struct` Constraints**: Enforced by the CLR type system to prevent stack tearing. A `ref struct` cannot be boxed, cannot implement interfaces (pre-C# 13), cannot be an array element, cannot be a field of a reference type, and cannot exist across `await` or `yield return` in state machines.
+- **`Memory&lt;T&gt;` and `ReadOnlyMemory&lt;T&gt;`**: Standard structs (not `ref struct`) that represent contiguous memory backed by an array, a string, or unmanaged memory. They can safely live on the heap, be passed into async methods, and yield a `Span&lt;T&gt;` via `.Span` for synchronous operations.
+- **`in` Parameters**: Passes an argument by reference (`readonly ref`) rather than by value, avoiding copying large structs while guaranteeing callers that the method cannot mutate the value.
+
+## Testing
+- Automated xUnit test suite (`CsvEventParserTests`, `DsaExercisesTests`).
+- Verifies equality of parsing output between `TraditionalCsvParser` and `SpanCsvParser`.
+- Verifies asynchronous streaming using `AsyncMemoryCsvParser` with simulated async network delays.
+- Verifies `in` parameter business logic and heap-safe memory encapsulation.
+- Verifies anagram algorithms across various test cases.
+
+## Performance Observations
+- Slicing `ReadOnlyMemory&lt;T&gt;` is an $O(1)$ index adjustment without data duplication.
+- When crossing `await` boundaries, `ReadOnlyMemory&lt;T&gt;` is stored as a 16-byte struct field inside the async state machine without memory leaks or unsafe pointer tracking.
+
+## Production Relevance
+- Real-world high-throughput pipelines (e.g., ASP.NET Core Kestrel `PipeReader`, message brokers like Kafka/RabbitMQ consumers) read data into memory buffers. Combining `Memory&lt;T&gt;` for async lifetime management and `.Span` for inner synchronous parsing achieves maximum throughput and minimal GC pause times.
+
+## Common Mistakes
+1. Trying to hold a `Span&lt;T&gt;` in a class field or caching dictionary.
+2. Passing `Span&lt;T&gt;` into an async method expecting it to survive `await`.
+3. Creating defensive copies of `ReadOnlyMemory&lt;T&gt;` when only slicing is required.
+4. Using `in` parameters on tiny 4-byte primitives (like `in int`), which actually introduces pointer dereferencing overhead compared to pass-by-value.
+
+## Senior Interview Questions
+See [interview-questions.md](file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day02-RefStruct-Memory/interview-questions.md) for 10 in-depth architectural questions.
+
+## What I Practically Understood
+- How the C# compiler enforces `ref struct` constraints to protect memory safety.
+- The dual-tier pattern: use `Memory&lt;T&gt;` for asynchronous transport and storage, and obtain `.Span` for tight synchronous computational loops.
+- When `in` parameters actually benefit performance vs. when they degrade performance due to aliasing and pointer dereference overhead.
+
+## What I Need to Read Later
+- C# 13 `allows ref struct` anti-constraint and generic ref struct arguments.
+- Custom memory pooling via `MemoryManager&lt;T&gt;`.
+
+## Key Takeaways
+`Span&lt;T&gt;` provides pure speed on the stack, while `Memory&lt;T&gt;` provides heap-safe flexibility for async workflows. Modern .NET architectures achieve zero-allocation high throughput by orchestrating both types seamlessly.
+</script>
+  <script type="text/markdown" id="raw-notes"># Day 02 - Engineering Notes: Ref Struct Limitations &amp; Memory&lt;T&gt;
+
+## 1. Why `ref struct` Cannot Cross Async Boundaries
+
+When a C# method is marked `async`, the compiler performs a lower-level rewrite:
+1. It generates a state machine structure implementing `IAsyncStateMachine`.
+2. All parameters and local variables that need to survive across an `await` expression are hoisted into fields of this state machine.
+3. When the awaited operation is incomplete, the state machine is boxed or captured on the managed heap (inside `AsyncTaskMethodBuilder` / `TaskPromise`).
+4. If a `ref struct` (such as `Span&lt;T&gt;`) were permitted as a field of that state machine, a stack-bound reference would escape to the managed heap!
+5. When the continuation resumes (often on a different ThreadPool thread), the original stack frame is long gone. Accessing the interior pointer would lead to **stack tearing**, memory corruption, or hard crashes.
+
+```text
+Thread 1 (Initial Call Stack)                ThreadPool Thread 2 (Continuation)
+┌─────────────────────────────────┐         ┌─────────────────────────────────┐
+│ Method Frame:                   │         │ Continuation Frame:             │
+│  Span&lt;byte&gt; points here ────┐   │         │                                 │
+└─────────────────────────────┼───┘         │                                 │
+                              │             │                                 │
+                              ▼             │                                 │
+                        Stack Memory        │                                 │
+                       (Deallocated         │  State Machine on Heap          │
+                        after await!)       │  Attempts to access pointer ──X │
+                                            └─────────────────────────────────┘
+```
+
+---
+
+## 2. The Architectural Role of `Memory&lt;T&gt;` and `ReadOnlyMemory&lt;T&gt;`
+
+`Memory&lt;T&gt;` is a regular `struct`, not a `ref struct`:
+```csharp
+public readonly struct Memory&lt;T&gt;
+{
+    private readonly object? _object; // Could be T[], string, or MemoryManager&lt;T&gt;
+    private readonly int _index;
+    private readonly int _length;
+}
+```
+Because it does not hold a raw unmanaged stack interior pointer, `Memory&lt;T&gt;`:
+- Can be stored as a field in a class or standard struct.
+- Can be boxed or stored in collections (`List&lt;Memory&lt;byte&gt;&gt;`).
+- Can survive across `await` expressions in async methods.
+- Exposes a `.Span` property to obtain a temporary `Span&lt;T&gt;` on the current execution stack when synchronous work needs to happen.
+
+---
+
+## 3. The `in` Parameter Modifier: Pass-By-Reference for Read-Only Semantics
+
+- **Declaration**: `void Process(in LargeStruct data)`
+- **Behavior**: The runtime passes a pointer/reference to `data` instead of making a 32-byte or 64-byte value copy on the stack.
+- **Immutability**: The compiler rejects any code within `Process` that attempts to mutate fields of `data`.
+- **Defensive Copies**: If `LargeStruct` is NOT declared as `readonly struct`, calling any method or property on `data` causes the compiler to create a defensive copy on the stack to prevent hidden mutations! Always mark structs passed by `in` as `readonly struct`.
+- **Warning for small types**: Never use `in int` or `in bool`. Passing a 64-bit reference address and dereferencing it is more expensive than copying a 4-byte integer.
+
+---
+
+## 4. DSA Takeaways
+- **Valid Anagram**: A fixed-size array of 26 integers on the stack (`stackalloc int[26]`) tracks character delta counts in a single pass ($O(n)$ time, $O(1)$ memory).
+- **Group Anagrams**: Sorting each string ($O(K \log K)$) yields a canonical signature to bucket anagrams into a `Dictionary&lt;string, List&lt;string&gt;&gt;`.
+</script>
+  <script type="text/markdown" id="raw-interview"># Day 02 - Senior .NET Interview Questions: ref struct &amp; Memory&lt;T&gt;
+
+### Q1: Why can&#x27;t `Span&lt;T&gt;` be used across an `await` statement in C#?
+- **Short answer**: Because `Span&lt;T&gt;` is a `ref struct` that could point to stack memory; hoisting it into an async state machine on the managed heap could lead to stack tearing and memory corruption.
+- **Deeper answer**: When an async method pauses at an `await` that doesn&#x27;t complete synchronously, its state machine is preserved on the heap. If `Span&lt;T&gt;` were permitted in that state machine, its interior pointer would reference stack memory that is invalidated when the initial thread unwinds. The continuation could then execute on a different thread with an invalid pointer.
+- **Practical example**: Use `Memory&lt;T&gt;` or `ReadOnlyMemory&lt;T&gt;` to store buffer state across `await`, and access `.Span` only within synchronous code blocks between awaits.
+
+---
+
+### Q2: What is the internal memory layout of `Memory&lt;T&gt;` compared to `Span&lt;T&gt;`?
+- **Short answer**: `Span&lt;T&gt;` contains a managed interior pointer (`ref T`) and length (`int`). `Memory&lt;T&gt;` contains an object reference (`object?`), starting offset (`int`), and length (`int`).
+- **Deeper answer**: Because `Memory&lt;T&gt;` refers to the owning heap object (such as an array, string, or `MemoryManager&lt;T&gt;`) rather than an ephemeral interior pointer directly on the stack, the GC can track the root object safely on the heap. Calling `.Span` performs the pointer calculation dynamically for stack-only usage.
+- **Practical example**:
+```csharp
+ReadOnlyMemory&lt;byte&gt; memory = new byte[1024]; // Safe on heap
+ReadOnlySpan&lt;byte&gt; span = memory.Span; // Safe on stack only
+```
+
+---
+
+### Q3: What is the purpose of the `in` parameter modifier and what is its performance trap?
+- **Short answer**: `in` passes an argument by reference for read-only access. Its trap is hidden defensive copying when used with non-`readonly` structs.
+- **Deeper answer**: If a struct is not declared with the `readonly struct` modifier, the C# compiler cannot prove that accessing its properties or methods won&#x27;t mutate its internal state. Therefore, the compiler silently creates a temporary defensive copy on the stack before invoking any member, destroying any performance gain.
+- **Practical example**:
+```csharp
+public struct MutablePoint { public int X; public int GetX() =&gt; X; }
+public void Process(in MutablePoint p) { p.GetX(); /* Compiler inserts defensive copy! */ }
+```
+
+---
+
+### Q4: When should you NOT use the `in` parameter modifier?
+- **Short answer**: Do not use `in` for primitive types (e.g., `int`, `float`, `bool`) or small structs ($\le 16$ bytes).
+- **Deeper answer**: On 64-bit architectures, passing by reference requires pushing an 8-byte memory pointer onto the stack. Reading the value requires an extra pointer dereference. For types that fit in a 32-bit or 64-bit CPU register, passing by value is faster and avoids dereferencing overhead.
+- **Practical example**: Prefer `void Add(int a, int b)` over `void Add(in int a, in int b)`.
+
+---
+
+### Q5: How do `System.IO.Pipelines` leverage `ReadOnlySequence&lt;T&gt;` and `Memory&lt;T&gt;`?
+- **Short answer**: `System.IO.Pipelines` breaks network socket streams into linked segments of memory, exposing them as `ReadOnlySequence&lt;byte&gt;` without continuous heap reallocation.
+- **Deeper answer**: In high-throughput servers like Kestrel, incoming data arrives in variable-sized buffers. `ReadOnlySequence&lt;byte&gt;` can span multiple distinct memory blocks (`ReadOnlyMemory&lt;byte&gt;`). Code can parse contiguous chunks as `ReadOnlySpan&lt;byte&gt;` without reallocating a single monolithic array.
+- **Practical example**:
+```csharp
+ReadResult result = await pipeReader.ReadAsync();
+ReadOnlySequence&lt;byte&gt; buffer = result.Buffer;
+// Inspect buffer without copying
+pipeReader.AdvanceTo(buffer.Start, buffer.End);
+```
+
+---
+
+### Q6: Can a `ref struct` implement an interface in modern C#?
+- **Short answer**: Prior to C# 13, no. In C# 13 (.NET 9), ref structs can implement interfaces if the interface is constrained with `allows ref struct`.
+- **Deeper answer**: Historically, calling an interface method on a struct requires boxing it to the interface type, which is forbidden for `ref struct`. In C# 13, the anti-constraint `where T : allows ref struct` allows generic code and interfaces to work with ref structs without boxing.
+- **Practical example**: In C# 12 / .NET 8, `public ref struct MySpan : IDisposable` compiles only if `Dispose()` is implemented via duck-typing pattern (a public `void Dispose()` method) rather than explicit interface implementation.
+
+---
+
+### Q7: What is `MemoryManager&lt;T&gt;` and when is it necessary in production?
+- **Short answer**: An abstract base class used to wrap custom or unmanaged memory (like native memory, memory-mapped files, or hardware buffers) inside a safe `Memory&lt;T&gt;`.
+- **Deeper answer**: When integrating with native C libraries or GPU/DMA buffers, you cannot wrap unmanaged memory into a standard `Memory&lt;T&gt;` directly. Subclassing `MemoryManager&lt;T&gt;` allows you to implement pinning, span retrieval, and custom disposal lifecycle while exposing idiomatic `Memory&lt;T&gt;` to downstream .NET code.
+- **Practical example**: Wrapping memory mapped files or native ring buffers in zero-copy messaging architectures.
+
+---
+
+### Q8: What is the difference between `ReadOnlySpan&lt;T&gt;.Slice()` and `ReadOnlyMemory&lt;T&gt;.Slice()`?
+- **Short answer**: Both perform $O(1)$ zero-allocation slicing by adjusting the offset and length, but `ReadOnlySpan&lt;T&gt;` produces a stack-only `ref struct`, while `ReadOnlyMemory&lt;T&gt;` produces a heap-safe struct.
+- **Deeper answer**: `Span.Slice()` adjusts the internal interior pointer `_reference + (offset * sizeof(T))` and decrements length. `Memory.Slice()` simply calculates `newIndex = _index + offset` and updates length, retaining the original root object reference.
+- **Practical example**: Slicing a 1MB payload into 100 individual records across asynchronous tasks requires `ReadOnlyMemory&lt;T&gt;.Slice()`.
+
+---
+
+### Q9: Why is `stackalloc` dangerous if used without length validation?
+- **Short answer**: Unbounded `stackalloc` can cause a `StackOverflowException`, which terminates the process immediately and cannot be caught by a `try/catch` block.
+- **Deeper answer**: The execution stack is small (typically 1MB on Windows, 1.5MB on Linux/macOS). If user-supplied input dictates the size of `stackalloc char[userSize]`, a malicious or large payload will blow the stack, causing an unrecoverable crash (denial of service). Always guard with a threshold (e.g. $\le 256$ elements) and fallback to `ArrayPool&lt;T&gt;.Shared`.
+- **Practical example**:
+```csharp
+Span&lt;char&gt; buffer = size &lt;= 256 ? stackalloc char[size] : (rented = ArrayPool&lt;char&gt;.Shared.Rent(size));
+```
+
+---
+
+### Q10: How does `ArrayPool&lt;T&gt;.Shared` interact with `Memory&lt;T&gt;` in async pipelines?
+- **Short answer**: You rent an array from the pool, wrap it in `Memory&lt;T&gt;`, slice it to the valid data length, process it asynchronously, and return the underlying array in a `finally` block.
+- **Deeper answer**: Because rented arrays may be larger than the requested size, `Memory&lt;T&gt;.Slice(0, actualBytes)` restricts consumer visibility to the valid portion. Returning the array prematurely before an `await` finishes will lead to race conditions where other threads overwrite active data.
+- **Practical example**:
+```csharp
+byte[] rented = ArrayPool&lt;byte&gt;.Shared.Rent(4096);
+try {
+    int read = await stream.ReadAsync(rented.AsMemory(0, 4096));
+    await ProcessDataAsync(rented.AsMemory(0, read));
+} finally {
+    ArrayPool&lt;byte&gt;.Shared.Return(rented);
+}
+```
+</script>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    // Render Markdown when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.marked) {
+        const rEl = document.getElementById('raw-readme');
+        if (rEl) {
+          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
+        }
+        const nEl = document.getElementById('raw-notes');
+        if (nEl) {
+          const nTarget = document.getElementById('notes-container');
+          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
+        }
+        const iEl = document.getElementById('raw-interview');
+        if (iEl) {
+          const iTarget = document.getElementById('interview-container');
+          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
+        }
+      }
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

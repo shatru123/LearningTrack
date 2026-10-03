@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 10: SQL Transactions, ACID &amp; MVCC Isolation Anomaly Simulator | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-size: 13px;
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .markdown-content th {
+      background: rgba(30, 41, 59, 0.8);
+      color: #fff;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 8px 16px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      color: #e2e8f0;
+    }
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    pre[class*="language-"] {
+      margin: 0 !important;
+      border-radius: 0 !important;
+      background: var(--bg-code) !important;
+      padding: 16px !important;
+      font-size: 13px !important;
+      line-height: 1.5 !important;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 10</span>
+        <span class="badge badge-category">SQL &amp; Relational DB</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day09-SQL-Execution-Plans/index.html" class="nav-btn">← Day 09</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+
+        </select>
+        <a href="../Day11-EFCore-ChangeTracking/index.html" class="nav-btn">Day 11 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 10: SQL Transactions, ACID &amp; MVCC Isolation Anomaly Simulator</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
+      
+      
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-readme" class="tab-pane active">
+      <div class="markdown-content" id="readme-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    
+    
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day10.TransactionsAcid/StackProblems.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd10-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d10-src-code-0" class="language-csharp">namespace Day10.TransactionsAcid;
+
+public static class ValidParenthesesSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #20: Valid Parentheses
+    /// Determines if an input string composed of &#x27;()[]{}&#x27; is valid.
+    /// Time Complexity: O(N)
+    /// Space Complexity: O(N)
+    /// &lt;/summary&gt;
+    public static bool IsValid(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return true;
+        if (s.Length % 2 != 0) return false;
+
+        var stack = new Stack&lt;char&gt;(s.Length);
+
+        foreach (char c in s)
+        {
+            switch (c)
+            {
+                case &#x27;(&#x27;:
+                    stack.Push(&#x27;)&#x27;);
+                    break;
+                case &#x27;[&#x27;:
+                    stack.Push(&#x27;]&#x27;);
+                    break;
+                case &#x27;{&#x27;:
+                    stack.Push(&#x27;}&#x27;);
+                    break;
+                default:
+                    if (stack.Count == 0 || stack.Pop() != c)
+                    {
+                        return false;
+                    }
+                    break;
+            }
+        }
+
+        return stack.Count == 0;
+    }
+}
+
+/// &lt;summary&gt;
+/// LeetCode #155: Min Stack
+/// Stack supporting Push, Pop, Top, and retrieving the minimum element in O(1) time.
+/// &lt;/summary&gt;
+public sealed class MinStack
+{
+    private readonly Stack&lt;(int Value, int CurrentMin)&gt; _stack = new();
+
+    public void Push(int val)
+    {
+        int min = _stack.Count == 0 ? val : Math.Min(val, _stack.Peek().CurrentMin);
+        _stack.Push((val, min));
+    }
+
+    public void Pop()
+    {
+        if (_stack.Count == 0)
+        {
+            throw new InvalidOperationException(&quot;Stack is empty.&quot;);
+        }
+        _stack.Pop();
+    }
+
+    public int Top()
+    {
+        if (_stack.Count == 0)
+        {
+            throw new InvalidOperationException(&quot;Stack is empty.&quot;);
+        }
+        return _stack.Peek().Value;
+    }
+
+    public int GetMin()
+    {
+        if (_stack.Count == 0)
+        {
+            throw new InvalidOperationException(&quot;Stack is empty.&quot;);
+        }
+        return _stack.Peek().CurrentMin;
+    }
+
+    public int Count =&gt; _stack.Count;
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day10.TransactionsAcid/TransactionIsolationSimulator.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd10-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d10-src-code-1" class="language-csharp">namespace Day10.TransactionsAcid;
+
+public enum SqlIsolationLevel
+{
+    ReadUncommitted,
+    ReadCommitted,
+    RepeatableRead,
+    Serializable
+}
+
+public sealed class MvccTuple&lt;T&gt;
+{
+    public long TupleId { get; init; }
+    public T Value { get; set; }
+    public long Xmin { get; set; } // Tx that created this version
+    public long? Xmax { get; set; } // Tx that deleted or updated this version (null if live)
+
+    public MvccTuple(long tupleId, T value, long xmin)
+    {
+        TupleId = tupleId;
+        Value = value;
+        Xmin = xmin;
+        Xmax = null;
+    }
+}
+
+public sealed record MvccSnapshot(long SnapshotXmin, long SnapshotXmax, HashSet&lt;long&gt; ActiveXids);
+
+public sealed record AnomalyResult(
+    bool AnomalyObserved,
+    string AnomalyName,
+    SqlIsolationLevel IsolationLevel,
+    string Summary);
+
+public static class TransactionIsolationSimulator
+{
+    /// &lt;summary&gt;
+    /// Checks if a tuple is visible to a snapshot under PostgreSQL MVCC rules.
+    /// &lt;/summary&gt;
+    public static bool IsVisible(MvccTuple&lt;int&gt; tuple, MvccSnapshot snapshot, HashSet&lt;long&gt; committedXids)
+    {
+        // 1. If inserting transaction has not committed, it is invisible to other transactions
+        if (!committedXids.Contains(tuple.Xmin))
+        {
+            return false;
+        }
+
+        // 2. If inserting transaction was active when snapshot was taken, it is invisible
+        if (snapshot.ActiveXids.Contains(tuple.Xmin))
+        {
+            return false;
+        }
+
+        // 3. If inserting transaction started AFTER snapshot was taken, it is invisible
+        if (tuple.Xmin &gt;= snapshot.SnapshotXmax)
+        {
+            return false;
+        }
+
+        // 4. If tuple was deleted/updated by Xmax:
+        if (tuple.Xmax.HasValue)
+        {
+            // If deleting transaction is committed AND was committed before or outside our snapshot:
+            if (committedXids.Contains(tuple.Xmax.Value) &amp;&amp;
+                !snapshot.ActiveXids.Contains(tuple.Xmax.Value) &amp;&amp;
+                tuple.Xmax.Value &lt; snapshot.SnapshotXmax)
+            {
+                return false; // Deleted and deletion is visible to this snapshot
+            }
+        }
+
+        return true;
+    }
+
+    /// &lt;summary&gt;
+    /// Simulates a Dirty Read anomaly: Tx1 modifies row but does NOT commit; Tx2 reads the row.
+    /// &lt;/summary&gt;
+    public static AnomalyResult SimulateDirtyRead(SqlIsolationLevel level)
+    {
+        // Initial state: Row 1 = 100
+        int committedValue = 100;
+        int uncommittedValue = 999; // Tx1 writes this but does NOT commit
+
+        int valueReadByTx2 = level == SqlIsolationLevel.ReadUncommitted
+            ? uncommittedValue // Dirty read observed
+            : committedValue;  // Read Committed blocks or reads previous MVCC version
+
+        bool anomalyOccurred = valueReadByTx2 == uncommittedValue;
+        return new AnomalyResult(
+            AnomalyObserved: anomalyOccurred,
+            AnomalyName: &quot;DirtyRead&quot;,
+            IsolationLevel: level,
+            Summary: anomalyOccurred
+                ? &quot;Dirty Read observed: Tx2 read uncommitted value 999 from uncommitted Tx1.&quot;
+                : &quot;Dirty Read prevented: Tx2 read only committed value 100.&quot;);
+    }
+
+    /// &lt;summary&gt;
+    /// Simulates a Non-Repeatable Read anomaly: Tx1 reads row; Tx2 modifies row and COMMITS; Tx1 reads row again.
+    /// &lt;/summary&gt;
+    public static AnomalyResult SimulateNonRepeatableRead(SqlIsolationLevel level)
+    {
+        int initialVal = 100;
+        int firstRead = initialVal;
+
+        // Tx2 updates to 250 and COMMITS
+        int updatedVal = 250;
+
+        int secondRead = level switch
+        {
+            SqlIsolationLevel.ReadUncommitted or SqlIsolationLevel.ReadCommitted =&gt; updatedVal, // New snapshot per query
+            _ =&gt; firstRead // RepeatableRead &amp; Serializable maintain transaction snapshot
+        };
+
+        bool anomalyOccurred = firstRead != secondRead;
+        return new AnomalyResult(
+            AnomalyObserved: anomalyOccurred,
+            AnomalyName: &quot;NonRepeatableRead&quot;,
+            IsolationLevel: level,
+            Summary: anomalyOccurred
+                ? $&quot;Non-Repeatable Read observed: First read was {firstRead}, second read was {secondRead}.&quot;
+                : $&quot;Non-Repeatable Read prevented: Both reads returned identical value {firstRead}.&quot;);
+    }
+
+    /// &lt;summary&gt;
+    /// Simulates a Phantom Read anomaly: Tx1 queries range; Tx2 inserts new matching row and COMMITS; Tx1 queries same range.
+    /// In PostgreSQL, Repeatable Read prevents Phantom Reads because of transaction-level MVCC snapshots!
+    /// &lt;/summary&gt;
+    public static AnomalyResult SimulatePhantomRead(SqlIsolationLevel level)
+    {
+        var initialList = new List&lt;int&gt; { 120, 150 }; // WHERE amount &gt; 100 (Count = 2)
+        int firstCount = initialList.Count;
+
+        // Tx2 inserts 180 and commits
+        int secondCount = level switch
+        {
+            SqlIsolationLevel.ReadUncommitted or SqlIsolationLevel.ReadCommitted =&gt; firstCount + 1, // 3 rows
+            _ =&gt; firstCount // RepeatableRead &amp; Serializable prevent phantoms in PostgreSQL MVCC
+        };
+
+        bool anomalyOccurred = firstCount != secondCount;
+        return new AnomalyResult(
+            AnomalyObserved: anomalyOccurred,
+            AnomalyName: &quot;PhantomRead&quot;,
+            IsolationLevel: level,
+            Summary: anomalyOccurred
+                ? $&quot;Phantom Read observed: Row count changed from {firstCount} to {secondCount} within the transaction.&quot;
+                : $&quot;Phantom Read prevented: Both range scans observed {firstCount} rows.&quot;);
+    }
+
+    /// &lt;summary&gt;
+    /// Simulates Write Skew (Doctor on-call constraint: at least 1 must remain on-call).
+    /// Dr. A and Dr. B are both on-call (Count = 2). Both request leave at the same time.
+    /// Under Repeatable Read, both succeed (0 on call =&gt; invariant broken!).
+    /// Under Serializable (SSI), rw-conflict aborts one transaction.
+    /// &lt;/summary&gt;
+    public static AnomalyResult SimulateWriteSkew(SqlIsolationLevel level)
+    {
+        bool bothSucceeded = level != SqlIsolationLevel.Serializable;
+        bool anomalyOccurred = bothSucceeded;
+
+        return new AnomalyResult(
+            AnomalyObserved: anomalyOccurred,
+            AnomalyName: &quot;SerializationAnomaly_WriteSkew&quot;,
+            IsolationLevel: level,
+            Summary: anomalyOccurred
+                ? &quot;Write Skew occurred: Under Repeatable Read, both doctors went off-call simultaneously (0 remaining).&quot;
+                : &quot;Write Skew prevented: Under Serializable (SSI), rw-antidependency detected, one transaction aborted with 40001.&quot;);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day10.TransactionsAcid.Tests/Day10Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd10-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d10-tests-code-0" class="language-csharp">using FluentAssertions;
+using Xunit;
+
+namespace Day10.TransactionsAcid.Tests;
+
+public class TransactionIsolationSimulatorTests
+{
+    [Fact]
+    public void SimulateDirtyRead_ShouldAllowInReadUncommitted_AndPreventInReadCommitted()
+    {
+        var dirtyAllowed = TransactionIsolationSimulator.SimulateDirtyRead(SqlIsolationLevel.ReadUncommitted);
+        var dirtyPrevented = TransactionIsolationSimulator.SimulateDirtyRead(SqlIsolationLevel.ReadCommitted);
+
+        dirtyAllowed.AnomalyObserved.Should().BeTrue();
+        dirtyPrevented.AnomalyObserved.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SimulateNonRepeatableRead_ShouldOccurInReadCommitted_AndBePreventedInRepeatableRead()
+    {
+        var committedResult = TransactionIsolationSimulator.SimulateNonRepeatableRead(SqlIsolationLevel.ReadCommitted);
+        var repeatableResult = TransactionIsolationSimulator.SimulateNonRepeatableRead(SqlIsolationLevel.RepeatableRead);
+
+        committedResult.AnomalyObserved.Should().BeTrue();
+        repeatableResult.AnomalyObserved.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SimulatePhantomRead_ShouldOccurInReadCommitted_AndBePreventedInRepeatableRead()
+    {
+        var committedResult = TransactionIsolationSimulator.SimulatePhantomRead(SqlIsolationLevel.ReadCommitted);
+        var repeatableResult = TransactionIsolationSimulator.SimulatePhantomRead(SqlIsolationLevel.RepeatableRead);
+
+        committedResult.AnomalyObserved.Should().BeTrue();
+        repeatableResult.AnomalyObserved.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SimulateWriteSkew_ShouldOccurInRepeatableRead_AndBePreventedInSerializable()
+    {
+        var rrResult = TransactionIsolationSimulator.SimulateWriteSkew(SqlIsolationLevel.RepeatableRead);
+        var serResult = TransactionIsolationSimulator.SimulateWriteSkew(SqlIsolationLevel.Serializable);
+
+        rrResult.AnomalyObserved.Should().BeTrue();
+        serResult.AnomalyObserved.Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsVisible_ShouldRespectMvccVisibilityRules()
+    {
+        // Snapshot taken at Tx 100 with active Tx [102]
+        var snapshot = new MvccSnapshot(SnapshotXmin: 100, SnapshotXmax: 105, ActiveXids: [102]);
+        var committed = new HashSet&lt;long&gt; { 98, 99, 101 };
+
+        // Tuple created by uncommitted Tx 104 =&gt; invisible
+        var uncommittedTuple = new MvccTuple&lt;int&gt;(1, 50, xmin: 104);
+        TransactionIsolationSimulator.IsVisible(uncommittedTuple, snapshot, committed).Should().BeFalse();
+
+        // Tuple created by committed Tx 99 before snapshot =&gt; visible
+        var committedTuple = new MvccTuple&lt;int&gt;(2, 100, xmin: 99);
+        TransactionIsolationSimulator.IsVisible(committedTuple, snapshot, committed).Should().BeTrue();
+
+        // Tuple created by Tx 102 (active when snapshot was taken) =&gt; invisible
+        committed.Add(102);
+        var inFlightTuple = new MvccTuple&lt;int&gt;(3, 150, xmin: 102);
+        TransactionIsolationSimulator.IsVisible(inFlightTuple, snapshot, committed).Should().BeFalse();
+    }
+}
+
+public class StackProblemsTests
+{
+    [Theory]
+    [InlineData(&quot;()&quot;, true)]
+    [InlineData(&quot;()[]{}&quot;, true)]
+    [InlineData(&quot;{[]}&quot;, true)]
+    [InlineData(&quot;(]&quot;, false)]
+    [InlineData(&quot;([)]&quot;, false)]
+    [InlineData(&quot;]&quot;, false)]
+    [InlineData(&quot;[&quot;, false)]
+    [InlineData(&quot;&quot;, true)]
+    public void ValidParentheses_ShouldValidateProperly(string s, bool expected)
+    {
+        ValidParenthesesSolver.IsValid(s).Should().Be(expected);
+    }
+
+    [Fact]
+    public void MinStack_ShouldMaintainConstantTimeMinimum()
+    {
+        var minStack = new MinStack();
+
+        minStack.Push(-2);
+        minStack.Push(0);
+        minStack.Push(-3);
+
+        minStack.GetMin().Should().Be(-3);
+        minStack.Pop();
+        minStack.Top().Should().Be(0);
+        minStack.GetMin().Should().Be(-2);
+
+        minStack.Push(-5);
+        minStack.GetMin().Should().Be(-5);
+        minStack.Pop();
+        minStack.GetMin().Should().Be(-2);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div class="footer-bar">
+      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
+    </div>
+  </div>
+
+  <!-- Raw Content Payloads for Client-side Rendering -->
+  <script type="text/markdown" id="raw-readme"># Day 10: SQL Transactions, ACID &amp; Isolation Levels
+
+## Overview
+Day 10 covers relational database transaction guarantees (ACID), Write-Ahead Logging (WAL), multi-version concurrency control (MVCC) in PostgreSQL, simulating transaction isolation anomalies (Dirty Read, Non-Repeatable Read, Phantom Read, Write Skew), and classic stack data structures (Valid Parentheses &amp; MinStack).
+
+---
+
+## 1. ACID Guarantees &amp; PostgreSQL MVCC
+
+- **Atomicity**: All changes within a `BEGIN ... COMMIT` block succeed or all are rolled back. Guaranteed via Write-Ahead Log (WAL) records before page flushes to disk.
+- **Consistency**: Invariants and constraints (foreign keys, uniqueness, check constraints) are preserved across transactions.
+- **Isolation**: Concurrent transactions execute without cross-contamination.
+- **Durability**: Committed data survives system crashes once WAL is fsynced to non-volatile storage.
+
+### PostgreSQL MVCC Tuple Structure:
+Every row in a PostgreSQL heap page includes system columns:
+- `xmin`: 32-bit transaction ID (XID) that inserted this tuple.
+- `xmax`: 32-bit XID of the transaction that updated or deleted this tuple (0 if live).
+- `t_ctid`: Physical tuple identifier `(block_number, offset)`.
+
+---
+
+## 2. SQL Isolation Levels &amp; Concurrency Anomalies
+
+| Isolation Level | Dirty Read | Non-Repeatable Read | Phantom Read | Serialization Anomaly (Write Skew) |
+| :--- | :---: | :---: | :---: | :---: |
+| **Read Uncommitted** | Allowed in ANSI *(Prevented in PG)* | Allowed | Allowed | Allowed |
+| **Read Committed** *(PG Default)* | **Prevented** | Allowed | Allowed | Allowed |
+| **Repeatable Read** | **Prevented** | **Prevented** | **Prevented in PG** *(Snapshot at Tx start)* | Allowed |
+| **Serializable (SSI)** | **Prevented** | **Prevented** | **Prevented** | **Prevented** *(SIREAD locks abort on conflict)* |
+
+&gt; [!NOTE]
+&gt; In PostgreSQL, `Repeatable Read` prevents **both** Non-Repeatable Reads and Phantom Reads because a single MVCC snapshot is captured at transaction start (`xmin`, `xmax`, `xip_list`). Only **Serializable** prevents Write Skew / Serialization Anomalies via Serializable Snapshot Isolation (SSI).
+
+---
+
+## 3. DSA Challenges: Stack Data Structures
+
+### LeetCode #20: Valid Parentheses
+- Uses a `Stack&lt;char&gt;` to verify matched pairs `()`, `[]`, `{}` in $O(N)$ time and $O(N)$ space.
+- Fast-fail condition: Odd string lengths are immediately invalid.
+
+### LeetCode #155: Min Stack
+- Supports `Push`, `Pop`, `Top`, and `GetMin` in $O(1)$ constant time.
+- Implemented using pairs `(Value, CurrentMin)` where `CurrentMin = Math.Min(val, previousMin)`.
+</script>
+  
+  
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    // Render Markdown when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.marked) {
+        const rEl = document.getElementById('raw-readme');
+        if (rEl) {
+          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
+        }
+        const nEl = document.getElementById('raw-notes');
+        if (nEl) {
+          const nTarget = document.getElementById('notes-container');
+          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
+        }
+        const iEl = document.getElementById('raw-interview');
+        if (iEl) {
+          const iTarget = document.getElementById('interview-container');
+          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
+        }
+      }
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

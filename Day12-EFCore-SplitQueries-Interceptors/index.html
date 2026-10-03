@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 12: EF Core Split Queries &amp; DbCommandInterceptor | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-size: 13px;
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .markdown-content th {
+      background: rgba(30, 41, 59, 0.8);
+      color: #fff;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 8px 16px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      color: #e2e8f0;
+    }
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    pre[class*="language-"] {
+      margin: 0 !important;
+      border-radius: 0 !important;
+      background: var(--bg-code) !important;
+      padding: 16px !important;
+      font-size: 13px !important;
+      line-height: 1.5 !important;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 12</span>
+        <span class="badge badge-category">EF Core &amp; ORM</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day11-EFCore-ChangeTracking/index.html" class="nav-btn">← Day 11</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+
+        </select>
+        <a href="../Day13-Dapper-Performance/index.html" class="nav-btn">Day 13 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 12: EF Core Split Queries &amp; DbCommandInterceptor</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
+      
+      
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (5 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-readme" class="tab-pane active">
+      <div class="markdown-content" id="readme-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    
+    
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day12.SplitQueriesInterceptors/BinarySearchSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd12-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d12-src-code-0" class="language-csharp">namespace Day12.SplitQueriesInterceptors;
+
+public static class BinarySearchSolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #704: Binary Search.
+    /// Finds target in a sorted ascending array in O(log n) time and O(1) space.
+    /// Returns 0-based index if found; otherwise -1.
+    /// &lt;/summary&gt;
+    public static int Search(int[] nums, int target)
+    {
+        ArgumentNullException.ThrowIfNull(nums);
+        if (nums.Length == 0) return -1;
+
+        int left = 0;
+        int right = nums.Length - 1;
+
+        while (left &lt;= right)
+        {
+            // Avoid potential integer overflow
+            int mid = left + (right - left) / 2;
+
+            if (nums[mid] == target)
+            {
+                return mid;
+            }
+            if (nums[mid] &lt; target)
+            {
+                left = mid + 1;
+            }
+            else
+            {
+                right = mid - 1;
+            }
+        }
+
+        return -1;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #74: Search a 2D Matrix.
+    /// Treats an m x n matrix as a contiguous 1D sorted array of length m * n.
+    /// Maps virtual index &#x27;mid&#x27; to 2D coordinates: row = mid / n, col = mid % n.
+    /// Time Complexity: O(log(m * n)), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static bool SearchMatrix(int[][] matrix, int target)
+    {
+        ArgumentNullException.ThrowIfNull(matrix);
+        if (matrix.Length == 0 || matrix[0].Length == 0)
+        {
+            return false;
+        }
+
+        int m = matrix.Length;
+        int n = matrix[0].Length;
+
+        int left = 0;
+        int right = m * n - 1;
+
+        while (left &lt;= right)
+        {
+            int mid = left + (right - left) / 2;
+            int row = mid / n;
+            int col = mid % n;
+
+            int value = matrix[row][col];
+
+            if (value == target)
+            {
+                return true;
+            }
+            if (value &lt; target)
+            {
+                left = mid + 1;
+            }
+            else
+            {
+                right = mid - 1;
+            }
+        }
+
+        return false;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day12.SplitQueriesInterceptors/EcommerceDbContext.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd12-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d12-src-code-1" class="language-csharp">using Microsoft.EntityFrameworkCore;
+
+namespace Day12.SplitQueriesInterceptors;
+
+public class EcommerceDbContext : DbContext
+{
+    public DbSet&lt;Customer&gt; Customers =&gt; Set&lt;Customer&gt;();
+    public DbSet&lt;Order&gt; Orders =&gt; Set&lt;Order&gt;();
+    public DbSet&lt;OrderItem&gt; OrderItems =&gt; Set&lt;OrderItem&gt;();
+    public DbSet&lt;Shipment&gt; Shipments =&gt; Set&lt;Shipment&gt;();
+
+    public EcommerceDbContext(DbContextOptions&lt;EcommerceDbContext&gt; options)
+        : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity&lt;Customer&gt;(entity =&gt;
+        {
+            entity.HasKey(c =&gt; c.Id);
+            entity.Property(c =&gt; c.Name).IsRequired().HasMaxLength(100);
+            entity.Property(c =&gt; c.Email).IsRequired().HasMaxLength(150);
+
+            entity.HasMany(c =&gt; c.Orders)
+                .WithOne(o =&gt; o.Customer)
+                .HasForeignKey(o =&gt; o.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity&lt;Order&gt;(entity =&gt;
+        {
+            entity.HasKey(o =&gt; o.Id);
+
+            entity.HasMany(o =&gt; o.Items)
+                .WithOne(i =&gt; i.Order)
+                .HasForeignKey(i =&gt; i.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(o =&gt; o.Shipments)
+                .WithOne(s =&gt; s.Order)
+                .HasForeignKey(s =&gt; s.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity&lt;OrderItem&gt;(entity =&gt;
+        {
+            entity.HasKey(i =&gt; i.Id);
+            entity.Property(i =&gt; i.ProductName).IsRequired().HasMaxLength(100);
+            entity.Property(i =&gt; i.UnitPrice).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity&lt;Shipment&gt;(entity =&gt;
+        {
+            entity.HasKey(s =&gt; s.Id);
+            entity.Property(s =&gt; s.Carrier).IsRequired().HasMaxLength(50);
+            entity.Property(s =&gt; s.TrackingNumber).IsRequired().HasMaxLength(100);
+        });
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day12.SplitQueriesInterceptors/Entities.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd12-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d12-src-code-2" class="language-csharp">namespace Day12.SplitQueriesInterceptors;
+
+public class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public List&lt;Order&gt; Orders { get; set; } = new();
+}
+
+public class Order
+{
+    public int Id { get; set; }
+    public int CustomerId { get; set; }
+    public Customer? Customer { get; set; }
+    public DateTime OrderDateUtc { get; set; } = DateTime.UtcNow;
+    public List&lt;OrderItem&gt; Items { get; set; } = new();
+    public List&lt;Shipment&gt; Shipments { get; set; } = new();
+}
+
+public class OrderItem
+{
+    public int Id { get; set; }
+    public int OrderId { get; set; }
+    public Order? Order { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+}
+
+public class Shipment
+{
+    public int Id { get; set; }
+    public int OrderId { get; set; }
+    public Order? Order { get; set; }
+    public string Carrier { get; set; } = string.Empty;
+    public string TrackingNumber { get; set; } = string.Empty;
+    public DateTime ShippedAtUtc { get; set; } = DateTime.UtcNow;
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day12.SplitQueriesInterceptors/QueryAuditingInterceptor.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd12-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d12-src-code-3" class="language-csharp">using System.Collections.Concurrent;
+using System.Data.Common;
+using System.Diagnostics;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+
+namespace Day12.SplitQueriesInterceptors;
+
+public record CommandAuditLog(
+    string CommandText,
+    long DurationMilliseconds,
+    bool IsSlowQuery,
+    DateTime ExecutedAtUtc);
+
+public class QueryAuditingInterceptor : DbCommandInterceptor
+{
+    private readonly long _slowQueryThresholdMs;
+    private readonly ConcurrentBag&lt;CommandAuditLog&gt; _logs = new();
+    private readonly Action&lt;CommandAuditLog&gt;? _onQueryLogged;
+
+    public QueryAuditingInterceptor(long slowQueryThresholdMs = 100, Action&lt;CommandAuditLog&gt;? onQueryLogged = null)
+    {
+        _slowQueryThresholdMs = slowQueryThresholdMs;
+        _onQueryLogged = onQueryLogged;
+    }
+
+    public IReadOnlyList&lt;CommandAuditLog&gt; Logs =&gt; _logs.ToArray();
+
+    public int ExecutedCommandCount =&gt; _logs.Count;
+
+    public void ClearLogs() =&gt; _logs.Clear();
+
+    public override InterceptionResult&lt;DbDataReader&gt; ReaderExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult&lt;DbDataReader&gt; result)
+    {
+        return base.ReaderExecuting(command, eventData, result);
+    }
+
+    public override DbDataReader ReaderExecuted(
+        DbCommand command,
+        CommandExecutedEventData eventData,
+        DbDataReader result)
+    {
+        RecordExecution(command, eventData.Duration);
+        return base.ReaderExecuted(command, eventData, result);
+    }
+
+    public override ValueTask&lt;InterceptionResult&lt;DbDataReader&gt;&gt; ReaderExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult&lt;DbDataReader&gt; result,
+        CancellationToken cancellationToken = default)
+    {
+        return base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
+    }
+
+    public override ValueTask&lt;DbDataReader&gt; ReaderExecutedAsync(
+        DbCommand command,
+        CommandExecutedEventData eventData,
+        DbDataReader result,
+        CancellationToken cancellationToken = default)
+    {
+        RecordExecution(command, eventData.Duration);
+        return base.ReaderExecutedAsync(command, eventData, result, cancellationToken);
+    }
+
+    public override DbCommand CommandCreated(CommandEndEventData eventData, DbCommand result)
+    {
+        return base.CommandCreated(eventData, result);
+    }
+
+    public override int NonQueryExecuted(
+        DbCommand command,
+        CommandExecutedEventData eventData,
+        int result)
+    {
+        RecordExecution(command, eventData.Duration);
+        return base.NonQueryExecuted(command, eventData, result);
+    }
+
+    public override ValueTask&lt;int&gt; NonQueryExecutedAsync(
+        DbCommand command,
+        CommandExecutedEventData eventData,
+        int result,
+        CancellationToken cancellationToken = default)
+    {
+        RecordExecution(command, eventData.Duration);
+        return base.NonQueryExecutedAsync(command, eventData, result, cancellationToken);
+    }
+
+    public override object? ScalarExecuted(
+        DbCommand command,
+        CommandExecutedEventData eventData,
+        object? result)
+    {
+        RecordExecution(command, eventData.Duration);
+        return base.ScalarExecuted(command, eventData, result);
+    }
+
+    public override ValueTask&lt;object?&gt; ScalarExecutedAsync(
+        DbCommand command,
+        CommandExecutedEventData eventData,
+        object? result,
+        CancellationToken cancellationToken = default)
+    {
+        RecordExecution(command, eventData.Duration);
+        return base.ScalarExecutedAsync(command, eventData, result, cancellationToken);
+    }
+
+    private void RecordExecution(DbCommand command, TimeSpan duration)
+    {
+        var elapsedMs = (long)duration.TotalMilliseconds;
+        var isSlow = elapsedMs &gt;= _slowQueryThresholdMs;
+
+        var log = new CommandAuditLog(
+            CommandText: command.CommandText,
+            DurationMilliseconds: elapsedMs,
+            IsSlowQuery: isSlow,
+            ExecutedAtUtc: DateTime.UtcNow);
+
+        _logs.Add(log);
+        _onQueryLogged?.Invoke(log);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day12.SplitQueriesInterceptors/SplitQueryService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd12-src-code-4')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d12-src-code-4" class="language-csharp">using Microsoft.EntityFrameworkCore;
+
+namespace Day12.SplitQueriesInterceptors;
+
+public record QueryComparisonResult(
+    int SingleQueryCommandCount,
+    int SplitQueryCommandCount,
+    int TotalOrders,
+    int TotalItems,
+    int TotalShipments,
+    int TheoreticalCartesianRowCount,
+    int SplitQueryTotalRowCount,
+    double ExplosionFactor);
+
+public class SplitQueryService
+{
+    /// &lt;summary&gt;
+    /// Demonstrates the difference between single query (Cartesian product across multiple 1:N collections)
+    /// versus split queries (.AsSplitQuery()).
+    /// &lt;/summary&gt;
+    public async Task&lt;QueryComparisonResult&gt; CompareSingleVsSplitQueryAsync(
+        EcommerceDbContext db,
+        QueryAuditingInterceptor interceptor)
+    {
+        // 1. Single Query (Default or explicit .AsSingleQuery())
+        interceptor.ClearLogs();
+        var singleQueryOrders = await db.Orders
+            .AsNoTracking()
+            .AsSingleQuery()
+            .Include(o =&gt; o.Items)
+            .Include(o =&gt; o.Shipments)
+            .ToListAsync();
+
+        var singleQueryCommandCount = interceptor.ExecutedCommandCount;
+
+        // 2. Split Query (.AsSplitQuery())
+        interceptor.ClearLogs();
+        var splitQueryOrders = await db.Orders
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(o =&gt; o.Items)
+            .Include(o =&gt; o.Shipments)
+            .ToListAsync();
+
+        var splitQueryCommandCount = interceptor.ExecutedCommandCount;
+
+        // Calculate Cartesian row stats
+        int totalOrders = splitQueryOrders.Count;
+        int totalItems = splitQueryOrders.Sum(o =&gt; o.Items.Count);
+        int totalShipments = splitQueryOrders.Sum(o =&gt; o.Shipments.Count);
+
+        // In a single query with multiple collection JOINs:
+        // Each order generates: (Items.Count * Shipments.Count) rows (or 1 row if collections are empty).
+        int theoreticalCartesianRows = splitQueryOrders.Sum(o =&gt;
+        {
+            int itemCount = Math.Max(1, o.Items.Count);
+            int shipmentCount = Math.Max(1, o.Shipments.Count);
+            return itemCount * shipmentCount;
+        });
+
+        // In a split query:
+        // EF Core issues 1 query for Orders, 1 for Items, 1 for Shipments:
+        int splitQueryTotalRows = totalOrders + totalItems + totalShipments;
+
+        double explosionFactor = splitQueryTotalRows &gt; 0
+            ? (double)theoreticalCartesianRows / splitQueryTotalRows
+            : 1.0;
+
+        return new QueryComparisonResult(
+            SingleQueryCommandCount: singleQueryCommandCount,
+            SplitQueryCommandCount: splitQueryCommandCount,
+            TotalOrders: totalOrders,
+            TotalItems: totalItems,
+            TotalShipments: totalShipments,
+            TheoreticalCartesianRowCount: theoreticalCartesianRows,
+            SplitQueryTotalRowCount: splitQueryTotalRows,
+            ExplosionFactor: explosionFactor);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day12.SplitQueriesInterceptors.Tests/Day12Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd12-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d12-tests-code-0" class="language-csharp">using FluentAssertions;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Xunit;
+
+namespace Day12.SplitQueriesInterceptors.Tests;
+
+public class Day12Tests
+{
+    private static EcommerceDbContext CreateInMemoryContext(
+        QueryAuditingInterceptor interceptor,
+        out SqliteConnection connection)
+    {
+        connection = new SqliteConnection(&quot;DataSource=:memory:&quot;);
+        connection.Open();
+
+        var options = new DbContextOptionsBuilder&lt;EcommerceDbContext&gt;()
+            .UseSqlite(connection)
+            .AddInterceptors(interceptor)
+            .Options;
+
+        var context = new EcommerceDbContext(options);
+        context.Database.EnsureCreated();
+        return context;
+    }
+
+    [Fact]
+    public async Task SplitQueryService_ShouldDemonstrateCommandSplittingAndPreventCartesianExplosion()
+    {
+        // Arrange
+        var interceptor = new QueryAuditingInterceptor(slowQueryThresholdMs: 200);
+        using var context = CreateInMemoryContext(interceptor, out var connection);
+        using (connection)
+        {
+            var customer = new Customer { Name = &quot;Global Logistics&quot;, Email = &quot;ops@globallogistics.com&quot; };
+            context.Customers.Add(customer);
+            await context.SaveChangesAsync();
+
+            // Order 1: 5 items, 3 shipments =&gt; Cartesian = 15 rows
+            var order1 = new Order { CustomerId = customer.Id };
+            for (int i = 1; i &lt;= 5; i++)
+            {
+                order1.Items.Add(new OrderItem { ProductName = $&quot;Item {i}&quot;, Quantity = i, UnitPrice = 10m * i });
+            }
+            for (int s = 1; s &lt;= 3; s++)
+            {
+                order1.Shipments.Add(new Shipment { Carrier = &quot;FedEx&quot;, TrackingNumber = $&quot;TRK-1-{s}&quot; });
+            }
+
+            // Order 2: 4 items, 2 shipments =&gt; Cartesian = 8 rows
+            var order2 = new Order { CustomerId = customer.Id };
+            for (int i = 1; i &lt;= 4; i++)
+            {
+                order2.Items.Add(new OrderItem { ProductName = $&quot;Item B-{i}&quot;, Quantity = i, UnitPrice = 25m });
+            }
+            for (int s = 1; s &lt;= 2; s++)
+            {
+                order2.Shipments.Add(new Shipment { Carrier = &quot;UPS&quot;, TrackingNumber = $&quot;TRK-2-{s}&quot; });
+            }
+
+            context.Orders.AddRange(order1, order2);
+            await context.SaveChangesAsync();
+
+            var service = new SplitQueryService();
+
+            // Act
+            var result = await service.CompareSingleVsSplitQueryAsync(context, interceptor);
+
+            // Assert
+            result.TotalOrders.Should().Be(2);
+            result.TotalItems.Should().Be(9);
+            result.TotalShipments.Should().Be(5);
+
+            // Single query emits 1 SQL query with Cartesian joins
+            result.SingleQueryCommandCount.Should().Be(1);
+
+            // Split query emits 3 distinct SQL queries (Orders, OrderItems, Shipments)
+            result.SplitQueryCommandCount.Should().Be(3);
+
+            // Theoretical Cartesian rows: 15 + 8 = 23 rows
+            result.TheoreticalCartesianRowCount.Should().Be(23);
+
+            // Split query total rows: 2 + 9 + 5 = 16 rows
+            result.SplitQueryTotalRowCount.Should().Be(16);
+
+            result.ExplosionFactor.Should().BeGreaterThan(1.0);
+        }
+    }
+
+    [Fact]
+    public async Task QueryAuditingInterceptor_ShouldCaptureCommandsAndExecutionMetrics()
+    {
+        // Arrange
+        var capturedLogs = new List&lt;CommandAuditLog&gt;();
+        var interceptor = new QueryAuditingInterceptor(
+            slowQueryThresholdMs: 0, // Flag everything to verify slow query detection
+            onQueryLogged: log =&gt; capturedLogs.Add(log));
+
+        using var context = CreateInMemoryContext(interceptor, out var connection);
+        using (connection)
+        {
+            // Act
+            context.Customers.Add(new Customer { Name = &quot;Audit Customer&quot;, Email = &quot;audit@test.com&quot; });
+            await context.SaveChangesAsync();
+
+            var customers = await context.Customers.ToListAsync();
+
+            // Assert
+            interceptor.ExecutedCommandCount.Should().BeGreaterThan(0);
+            interceptor.Logs.Should().NotBeEmpty();
+            capturedLogs.Should().NotBeEmpty();
+
+            // All logged commands should have non-null command text and valid timestamp
+            interceptor.Logs.Should().AllSatisfy(log =&gt;
+            {
+                log.CommandText.Should().NotBeNullOrWhiteSpace();
+                log.DurationMilliseconds.Should().BeGreaterThanOrEqualTo(0);
+                log.ExecutedAtUtc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+                log.IsSlowQuery.Should().BeTrue(); // because threshold was 0
+            });
+        }
+    }
+
+    [Theory]
+    [InlineData(new[] { -1, 0, 3, 5, 9, 12 }, 9, 4)]
+    [InlineData(new[] { -1, 0, 3, 5, 9, 12 }, 2, -1)]
+    [InlineData(new[] { 5 }, 5, 0)]
+    [InlineData(new[] { 5 }, 1, -1)]
+    [InlineData(new[] { 1, 2, 3, 4, 5 }, 1, 0)]
+    [InlineData(new[] { 1, 2, 3, 4, 5 }, 5, 4)]
+    [InlineData(new int[0], 10, -1)]
+    public void BinarySearch_ShouldFindExpectedIndices(int[] nums, int target, int expected)
+    {
+        // Act
+        var result = BinarySearchSolvers.Search(nums, target);
+
+        // Assert
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void SearchMatrix_ShouldFindTargetInMatrix()
+    {
+        // Arrange
+        int[][] matrix =
+        [
+            [1, 3, 5, 7],
+            [10, 11, 16, 20],
+            [23, 30, 34, 60]
+        ];
+
+        // Act &amp; Assert
+        BinarySearchSolvers.SearchMatrix(matrix, 3).Should().BeTrue();
+        BinarySearchSolvers.SearchMatrix(matrix, 1).Should().BeTrue();
+        BinarySearchSolvers.SearchMatrix(matrix, 60).Should().BeTrue();
+        BinarySearchSolvers.SearchMatrix(matrix, 16).Should().BeTrue();
+        BinarySearchSolvers.SearchMatrix(matrix, 13).Should().BeFalse();
+        BinarySearchSolvers.SearchMatrix(matrix, 0).Should().BeFalse();
+        BinarySearchSolvers.SearchMatrix(matrix, 100).Should().BeFalse();
+    }
+
+    [Fact]
+    public void SearchMatrix_SingleRowAndSingleColumn_ShouldWorkCorrectly()
+    {
+        // 1x3 matrix
+        int[][] singleRow = [[1, 3, 5]];
+        BinarySearchSolvers.SearchMatrix(singleRow, 3).Should().BeTrue();
+        BinarySearchSolvers.SearchMatrix(singleRow, 4).Should().BeFalse();
+
+        // 3x1 matrix
+        int[][] singleCol = [[1], [3], [5]];
+        BinarySearchSolvers.SearchMatrix(singleCol, 3).Should().BeTrue();
+        BinarySearchSolvers.SearchMatrix(singleCol, 2).Should().BeFalse();
+
+        // 1x1 matrix
+        int[][] singleCell = [[42]];
+        BinarySearchSolvers.SearchMatrix(singleCell, 42).Should().BeTrue();
+        BinarySearchSolvers.SearchMatrix(singleCell, 10).Should().BeFalse();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div class="footer-bar">
+      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
+    </div>
+  </div>
+
+  <!-- Raw Content Payloads for Client-side Rendering -->
+  <script type="text/markdown" id="raw-readme"># Day 12: EF Core Split Queries, DbCommandInterceptor &amp; Binary Search
+
+## Overview
+This module explores advanced Entity Framework Core query optimization by mitigating Cartesian explosion using `.AsSplitQuery()`, implementing database observability with `DbCommandInterceptor` for slow query auditing, and mastering $O(\log n)$ Binary Search algorithms.
+
+---
+
+## 1. EF Core Split Queries &amp; Cartesian Explosion
+
+### The Cartesian Product Problem
+When loading multiple 1-to-many collection relationships with `.Include(...)` in a single SQL query:
+- E.g., `Customer -&gt; Orders -&gt; OrderItems + Shipments`
+- The database generates a CROSS/INNER JOIN among the collections.
+- Result: **Cartesian Product**: If an order has 10 items and 4 shipments, the database returns $10 \times 4 = 40$ duplicate rows for that single order.
+- Across 1,000 orders, this leads to tens of thousands of duplicate rows sent over the wire, driving massive network latency, high database memory pressure, and client deserialization overhead.
+
+### Solution: `.AsSplitQuery()`
+- EF Core issues separate SQL queries for each collection level:
+  1. `SELECT ... FROM Orders`
+  2. `SELECT ... FROM OrderItems WHERE OrderId IN (...)`
+  3. `SELECT ... FROM Shipments WHERE OrderId IN (...)`
+- Total rows transferred: $O(\text{Orders} + \text{Items} + \text{Shipments})$ instead of $O(\text{Orders} \times \text{Items} \times \text{Shipments})$.
+- Trade-off: Multiple database roundtrips vs massive single-payload size. Recommended when multiple collection navigations are loaded.
+
+---
+
+## 2. Database Observability: `DbCommandInterceptor`
+
+EF Core&#x27;s interception mechanism allows deep hooks into command generation and execution:
+- Inherit from `DbCommandInterceptor`.
+- Override `ReaderExecuting` / `ReaderExecuted`, `ScalarExecuted`, `NonQueryExecuted` (both synchronous and asynchronous).
+- Captures SQL text, execution duration, and flags queries exceeding latency thresholds (e.g. &gt; 100ms) for alerting and APM telemetry.
+
+---
+
+## 3. Binary Search Algorithms
+
+### LeetCode #704: Binary Search (Easy)
+- **Problem**: Search for `target` in a sorted array in $O(\log n)$ time.
+- **Approach**: Classic two-pointer (`left`, `right`) with midpoint calculation `left + (right - left) / 2` to prevent 32-bit integer overflow.
+- **Complexity**: Time: $O(\log n)$, Space: $O(1)$.
+
+### LeetCode #74: Search a 2D Matrix (Medium)
+- **Problem**: Search an $m \times n$ matrix where each row is sorted and the first element of each row is greater than the last element of the previous row.
+- **Approach**: Map the 2D matrix into a virtual 1D array of size $m \times n$. Use binary search from index `0` to `m * n - 1`. Map `mid` index to matrix coordinates:
+  $$\text{row} = \lfloor\text{mid} / n\rfloor, \quad \text{col} = \text{mid} \bmod n$$
+- **Complexity**: Time: $O(\log(m \cdot n))$, Space: $O(1)$.
+
+---
+
+## Running Tests
+```bash
+dotnet test tests/Day12.SplitQueriesInterceptors.Tests/Day12.SplitQueriesInterceptors.Tests.csproj
+```
+</script>
+  
+  
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    // Render Markdown when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.marked) {
+        const rEl = document.getElementById('raw-readme');
+        if (rEl) {
+          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
+        }
+        const nEl = document.getElementById('raw-notes');
+        if (nEl) {
+          const nTarget = document.getElementById('notes-container');
+          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
+        }
+        const iEl = document.getElementById('raw-interview');
+        if (iEl) {
+          const iTarget = document.getElementById('interview-container');
+          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
+        }
+      }
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 13: High-Performance Data Access with Dapper &amp; Rotated Array Search | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-size: 13px;
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .markdown-content th {
+      background: rgba(30, 41, 59, 0.8);
+      color: #fff;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 8px 16px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      color: #e2e8f0;
+    }
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    pre[class*="language-"] {
+      margin: 0 !important;
+      border-radius: 0 !important;
+      background: var(--bg-code) !important;
+      padding: 16px !important;
+      font-size: 13px !important;
+      line-height: 1.5 !important;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 13</span>
+        <span class="badge badge-category">Dapper &amp; Performance</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day12-EFCore-SplitQueries-Interceptors/index.html" class="nav-btn">← Day 12</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+
+        </select>
+        <span class="nav-btn" style="opacity:0.4; cursor:default;">Next Day →</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 13: High-Performance Data Access with Dapper &amp; Rotated Array Search</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
+      
+      
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-readme" class="tab-pane active">
+      <div class="markdown-content" id="readme-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    
+    
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day13.DapperPerformance/DapperDataService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd13-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d13-src-code-0" class="language-csharp">using System.Data;
+using System.Data.Common;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using Dapper;
+using Microsoft.EntityFrameworkCore;
+
+namespace Day13.DapperPerformance;
+
+public class DapperDataService
+{
+    /// &lt;summary&gt;
+    /// Demonstrates Dapper Multi-Mapping for 1-to-many relationships (Customer -&gt; Orders).
+    /// Uses splitOn: &quot;Id&quot; to delineate boundary between Customer and Order columns.
+    /// Deduplicates parent Customer entities using a lookup dictionary.
+    /// &lt;/summary&gt;
+    public async Task&lt;List&lt;Customer&gt;&gt; GetCustomersWithOrdersAsync(IDbConnection conn)
+    {
+        const string sql = &quot;&quot;&quot;
+            SELECT 
+                c.Id, c.Name, c.Email,
+                o.Id, o.CustomerId, o.TotalAmount, o.CreatedAtUtc
+            FROM Customers c
+            LEFT JOIN Orders o ON c.Id = o.CustomerId
+            ORDER BY c.Id;
+            &quot;&quot;&quot;;
+
+        var customerLookup = new Dictionary&lt;int, Customer&gt;();
+
+        await conn.QueryAsync&lt;Customer, Order?, Customer&gt;(
+            sql,
+            (customer, order) =&gt;
+            {
+                if (!customerLookup.TryGetValue(customer.Id, out var existingCustomer))
+                {
+                    existingCustomer = customer;
+                    customerLookup.Add(existingCustomer.Id, existingCustomer);
+                }
+
+                if (order != null &amp;&amp; order.Id &gt; 0)
+                {
+                    existingCustomer.Orders.Add(order);
+                }
+
+                return existingCustomer;
+            },
+            splitOn: &quot;Id&quot;);
+
+        return customerLookup.Values.ToList();
+    }
+
+    /// &lt;summary&gt;
+    /// Demonstrates Dapper&#x27;s buffered query parameter.
+    /// When buffered = true, Dapper eagerly materializes all rows into an internal List in memory.
+    /// When buffered = false, Dapper defers execution and yields rows lazily from the active IDataReader.
+    /// &lt;/summary&gt;
+    public IEnumerable&lt;Order&gt; GetOrders(IDbConnection conn, bool buffered)
+    {
+        const string sql = &quot;SELECT Id, CustomerId, TotalAmount, CreatedAtUtc FROM Orders;&quot;;
+        return conn.Query&lt;Order&gt;(sql, buffered: buffered);
+    }
+
+    /// &lt;summary&gt;
+    /// Implements true non-allocating asynchronous streaming using IAsyncEnumerable.
+    /// Leverages DbDataReader.ReadAsync() with Dapper&#x27;s compiled row parser.
+    /// &lt;/summary&gt;
+    public async IAsyncEnumerable&lt;Order&gt; StreamOrdersAsync(
+        DbConnection conn,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (conn.State != ConnectionState.Open)
+        {
+            await conn.OpenAsync(cancellationToken);
+        }
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = &quot;SELECT Id, CustomerId, TotalAmount, CreatedAtUtc FROM Orders ORDER BY Id;&quot;;
+
+        await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess, cancellationToken);
+        var rowParser = reader.GetRowParser&lt;Order&gt;();
+
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            yield return rowParser(reader);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Profiles performance and memory allocation between Dapper raw SQL vs EF Core raw SQL (FromSqlRaw with AsNoTracking).
+    /// &lt;/summary&gt;
+    public async Task&lt;(BenchmarkExecutionMetric Dapper, BenchmarkExecutionMetric EfCore)&gt; ProfileDapperVsEfCoreAsync(
+        DbConnection conn,
+        BenchmarkDbContext efContext)
+    {
+        const string sql = &quot;SELECT Id, CustomerId, TotalAmount, CreatedAtUtc FROM Orders;&quot;;
+
+        // 1. Profile Dapper
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        long dapperAllocBefore = GC.GetAllocatedBytesForCurrentThread();
+        var sw = Stopwatch.StartNew();
+
+        var dapperOrders = (await conn.QueryAsync&lt;Order&gt;(sql)).ToList();
+
+        sw.Stop();
+        long dapperAllocAfter = GC.GetAllocatedBytesForCurrentThread();
+        var dapperMetric = new BenchmarkExecutionMetric(
+            QueryType: &quot;Dapper QueryAsync&quot;,
+            RecordsFetched: dapperOrders.Count,
+            AllocatedBytes: dapperAllocAfter - dapperAllocBefore,
+            ElapsedMilliseconds: sw.Elapsed.TotalMilliseconds);
+
+        // 2. Profile EF Core Raw SQL
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        long efAllocBefore = GC.GetAllocatedBytesForCurrentThread();
+        sw.Restart();
+
+        var efOrders = await efContext.Orders
+            .FromSqlRaw(sql)
+            .AsNoTracking()
+            .ToListAsync();
+
+        sw.Stop();
+        long efAllocAfter = GC.GetAllocatedBytesForCurrentThread();
+        var efMetric = new BenchmarkExecutionMetric(
+            QueryType: &quot;EF Core FromSqlRaw (AsNoTracking)&quot;,
+            RecordsFetched: efOrders.Count,
+            AllocatedBytes: efAllocAfter - efAllocBefore,
+            ElapsedMilliseconds: sw.Elapsed.TotalMilliseconds);
+
+        return (dapperMetric, efMetric);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day13.DapperPerformance/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd13-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d13-src-code-1" class="language-csharp">using Microsoft.EntityFrameworkCore;
+
+namespace Day13.DapperPerformance;
+
+public class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public List&lt;Order&gt; Orders { get; set; } = new();
+}
+
+public class Order
+{
+    public int Id { get; set; }
+    public int CustomerId { get; set; }
+    public decimal TotalAmount { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+public record CustomerOrderFlatDto(
+    int CustomerId,
+    string CustomerName,
+    string CustomerEmail,
+    int? OrderId,
+    decimal? TotalAmount,
+    DateTime? CreatedAtUtc);
+
+public record BenchmarkExecutionMetric(
+    string QueryType,
+    int RecordsFetched,
+    long AllocatedBytes,
+    double ElapsedMilliseconds);
+
+public class BenchmarkDbContext : DbContext
+{
+    public DbSet&lt;Customer&gt; Customers =&gt; Set&lt;Customer&gt;();
+    public DbSet&lt;Order&gt; Orders =&gt; Set&lt;Order&gt;();
+
+    public BenchmarkDbContext(DbContextOptions&lt;BenchmarkDbContext&gt; options)
+        : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity&lt;Customer&gt;(entity =&gt;
+        {
+            entity.HasKey(c =&gt; c.Id);
+            entity.Property(c =&gt; c.Name).IsRequired().HasMaxLength(100);
+            entity.Property(c =&gt; c.Email).IsRequired().HasMaxLength(150);
+            entity.HasMany(c =&gt; c.Orders)
+                .WithOne()
+                .HasForeignKey(o =&gt; o.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity&lt;Order&gt;(entity =&gt;
+        {
+            entity.HasKey(o =&gt; o.Id);
+            entity.Property(o =&gt; o.TotalAmount).HasPrecision(18, 2);
+        });
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day13.DapperPerformance/RotatedSortedArraySolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd13-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d13-src-code-2" class="language-csharp">namespace Day13.DapperPerformance;
+
+public static class RotatedSortedArraySolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #153: Find Minimum in Rotated Sorted Array.
+    /// An ascending sorted array of unique elements was rotated between 1 and n times.
+    /// Uses modified binary search with pivot detection to find the minimum element in O(log n) time and O(1) space.
+    /// &lt;/summary&gt;
+    public static int FindMin(int[] nums)
+    {
+        ArgumentNullException.ThrowIfNull(nums);
+        if (nums.Length == 0)
+        {
+            throw new ArgumentException(&quot;Array cannot be empty.&quot;, nameof(nums));
+        }
+
+        int left = 0;
+        int right = nums.Length - 1;
+
+        // If already completely sorted (0 rotations or n rotations)
+        if (nums[left] &lt;= nums[right])
+        {
+            return nums[left];
+        }
+
+        while (left &lt; right)
+        {
+            int mid = left + (right - left) / 2;
+
+            // If middle element is strictly greater than right element,
+            // the pivot (minimum) MUST lie in the right half: [mid + 1, right]
+            if (nums[mid] &gt; nums[right])
+            {
+                left = mid + 1;
+            }
+            // Otherwise, the pivot lies at mid or in the left half: [left, mid]
+            else
+            {
+                right = mid;
+            }
+        }
+
+        return nums[left];
+    }
+
+    /// &lt;summary&gt;
+    /// Finds the 0-based index of the minimum element (the rotation pivot point).
+    /// &lt;/summary&gt;
+    public static int FindPivotIndex(int[] nums)
+    {
+        ArgumentNullException.ThrowIfNull(nums);
+        if (nums.Length == 0)
+        {
+            throw new ArgumentException(&quot;Array cannot be empty.&quot;, nameof(nums));
+        }
+
+        int left = 0;
+        int right = nums.Length - 1;
+
+        if (nums[left] &lt;= nums[right])
+        {
+            return left;
+        }
+
+        while (left &lt; right)
+        {
+            int mid = left + (right - left) / 2;
+            if (nums[mid] &gt; nums[right])
+            {
+                left = mid + 1;
+            }
+            else
+            {
+                right = mid;
+            }
+        }
+
+        return left;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #154: Find Minimum in Rotated Sorted Array II (Handles Duplicates).
+    /// When nums[mid] == nums[right], decrement right by 1 to shrink search space safely.
+    /// Time Complexity: Average O(log n), Worst-case O(n). Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int FindMinWithDuplicates(int[] nums)
+    {
+        ArgumentNullException.ThrowIfNull(nums);
+        if (nums.Length == 0)
+        {
+            throw new ArgumentException(&quot;Array cannot be empty.&quot;, nameof(nums));
+        }
+
+        int left = 0;
+        int right = nums.Length - 1;
+
+        while (left &lt; right)
+        {
+            int mid = left + (right - left) / 2;
+
+            if (nums[mid] &gt; nums[right])
+            {
+                left = mid + 1;
+            }
+            else if (nums[mid] &lt; nums[right])
+            {
+                right = mid;
+            }
+            else
+            {
+                // nums[mid] == nums[right]: cannot determine which half contains minimum, safely decrement right
+                right--;
+            }
+        }
+
+        return nums[left];
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day13.DapperPerformance.Tests/Day13Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd13-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d13-tests-code-0" class="language-csharp">using System.Data;
+using FluentAssertions;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Xunit;
+
+namespace Day13.DapperPerformance.Tests;
+
+public class Day13Tests : IDisposable
+{
+    private readonly SqliteConnection _connection;
+    private readonly BenchmarkDbContext _efContext;
+    private readonly DapperDataService _service;
+
+    public Day13Tests()
+    {
+        _connection = new SqliteConnection(&quot;DataSource=:memory:&quot;);
+        _connection.Open();
+
+        var options = new DbContextOptionsBuilder&lt;BenchmarkDbContext&gt;()
+            .UseSqlite(_connection)
+            .Options;
+
+        _efContext = new BenchmarkDbContext(options);
+        _efContext.Database.EnsureCreated();
+
+        _service = new DapperDataService();
+
+        SeedTestData();
+    }
+
+    private void SeedTestData()
+    {
+        var customer1 = new Customer { Name = &quot;Alice&quot;, Email = &quot;alice@example.com&quot; };
+        var customer2 = new Customer { Name = &quot;Bob&quot;, Email = &quot;bob@example.com&quot; };
+        var customer3 = new Customer { Name = &quot;Charlie&quot;, Email = &quot;charlie@example.com&quot; };
+
+        _efContext.Customers.AddRange(customer1, customer2, customer3);
+        _efContext.SaveChanges();
+
+        _efContext.Orders.AddRange(
+            new Order { CustomerId = customer1.Id, TotalAmount = 100.50m, CreatedAtUtc = DateTime.UtcNow.AddDays(-2) },
+            new Order { CustomerId = customer1.Id, TotalAmount = 250.00m, CreatedAtUtc = DateTime.UtcNow.AddDays(-1) },
+            new Order { CustomerId = customer2.Id, TotalAmount = 75.25m, CreatedAtUtc = DateTime.UtcNow }
+            // customer3 has 0 orders to test LEFT JOIN
+        );
+        _efContext.SaveChanges();
+    }
+
+    public void Dispose()
+    {
+        _efContext.Dispose();
+        _connection.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    [Fact]
+    public async Task GetCustomersWithOrdersAsync_ShouldCorrectlyMultiMapAndDeduplicate()
+    {
+        // Act
+        var customers = await _service.GetCustomersWithOrdersAsync(_connection);
+
+        // Assert
+        customers.Should().HaveCount(3);
+
+        var alice = customers.Single(c =&gt; c.Name == &quot;Alice&quot;);
+        alice.Orders.Should().HaveCount(2);
+        alice.Orders.Select(o =&gt; o.TotalAmount).Should().Contain([100.50m, 250.00m]);
+
+        var bob = customers.Single(c =&gt; c.Name == &quot;Bob&quot;);
+        bob.Orders.Should().HaveCount(1);
+        bob.Orders.First().TotalAmount.Should().Be(75.25m);
+
+        var charlie = customers.Single(c =&gt; c.Name == &quot;Charlie&quot;);
+        charlie.Orders.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetOrders_BufferedVsUnbuffered_ShouldYieldIdenticalResults()
+    {
+        // Act
+        var bufferedOrders = _service.GetOrders(_connection, buffered: true).ToList();
+        var unbufferedOrders = _service.GetOrders(_connection, buffered: false).ToList();
+
+        // Assert
+        bufferedOrders.Should().HaveCount(3);
+        unbufferedOrders.Should().HaveCount(3);
+        bufferedOrders.Select(o =&gt; o.Id).Should().Equal(unbufferedOrders.Select(o =&gt; o.Id));
+    }
+
+    [Fact]
+    public async Task StreamOrdersAsync_ShouldStreamRecordsViaIAsyncEnumerable()
+    {
+        // Act
+        var streamedOrders = new List&lt;Order&gt;();
+        await foreach (var order in _service.StreamOrdersAsync(_connection))
+        {
+            streamedOrders.Add(order);
+        }
+
+        // Assert
+        streamedOrders.Should().HaveCount(3);
+        streamedOrders.Select(o =&gt; o.Id).Should().BeInAscendingOrder();
+    }
+
+    [Fact]
+    public async Task ProfileDapperVsEfCore_ShouldFetchSameRowsAndMeasureMetrics()
+    {
+        // Act
+        var (dapper, efCore) = await _service.ProfileDapperVsEfCoreAsync(_connection, _efContext);
+
+        // Assert
+        dapper.RecordsFetched.Should().Be(3);
+        efCore.RecordsFetched.Should().Be(3);
+        dapper.ElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(0);
+        efCore.ElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(0);
+    }
+
+    [Theory]
+    [InlineData(new[] { 3, 4, 5, 1, 2 }, 1)]
+    [InlineData(new[] { 4, 5, 6, 7, 0, 1, 2 }, 0)]
+    [InlineData(new[] { 11, 13, 15, 17 }, 11)]
+    [InlineData(new[] { 2, 1 }, 1)]
+    [InlineData(new[] { 1, 2 }, 1)]
+    [InlineData(new[] { 42 }, 42)]
+    [InlineData(new[] { -2, -1, -5, -4, -3 }, -5)]
+    [InlineData(new[] { 5, 1, 2, 3, 4 }, 1)]
+    public void FindMin_ShouldReturnMinimumElement(int[] nums, int expectedMin)
+    {
+        // Act
+        int min = RotatedSortedArraySolvers.FindMin(nums);
+
+        // Assert
+        min.Should().Be(expectedMin);
+    }
+
+    [Fact]
+    public void FindPivotIndex_ShouldReturnCorrectIndex()
+    {
+        // Arrange
+        int[] nums = [4, 5, 6, 7, 0, 1, 2];
+
+        // Act
+        int pivotIndex = RotatedSortedArraySolvers.FindPivotIndex(nums);
+
+        // Assert
+        pivotIndex.Should().Be(4);
+        nums[pivotIndex].Should().Be(0);
+    }
+
+    [Fact]
+    public void FindMin_EmptyArray_ShouldThrowArgumentException()
+    {
+        // Act &amp; Assert
+        FluentActions.Invoking(() =&gt; RotatedSortedArraySolvers.FindMin([]))
+            .Should().Throw&lt;ArgumentException&gt;();
+    }
+
+    [Theory]
+    [InlineData(new[] { 2, 2, 2, 0, 1 }, 0)]
+    [InlineData(new[] { 1, 3, 5 }, 1)]
+    [InlineData(new[] { 3, 3, 1, 3 }, 1)]
+    [InlineData(new[] { 10, 1, 10, 10, 10 }, 1)]
+    [InlineData(new[] { 3, 1, 3, 3 }, 1)]
+    [InlineData(new[] { 1, 1, 1, 1 }, 1)]
+    public void FindMinWithDuplicates_ShouldHandleDuplicatesCorrectly(int[] nums, int expectedMin)
+    {
+        // Act
+        int min = RotatedSortedArraySolvers.FindMinWithDuplicates(nums);
+
+        // Assert
+        min.Should().Be(expectedMin);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div class="footer-bar">
+      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
+    </div>
+  </div>
+
+  <!-- Raw Content Payloads for Client-side Rendering -->
+  <script type="text/markdown" id="raw-readme"># Day 13: High-Performance Data Access with Dapper &amp; Rotated Array Search
+
+## Overview
+This module explores high-performance relational data access patterns using Dapper, multi-mapping relationships, memory-optimized buffered vs unbuffered query execution, non-allocating asynchronous streaming via `IAsyncEnumerable&lt;T&gt;`, comparative benchmarking against EF Core raw SQL queries, and modified binary search algorithms for rotated sorted arrays.
+
+---
+
+## 1. Dapper Architectural Mechanics
+
+### Micro-ORM Philosophy
+- Dapper operates as a lightweight extension method library on `IDbConnection`.
+- It executes raw SQL directly against ADO.NET and materializes objects using dynamically emitted IL (`DynamicMethod`) cached in a global delegate dictionary.
+- **Zero Change Tracking**: Dapper has no `ChangeTracker`, no identity map overhead, and no entity lifecycle state machines.
+
+### Multi-Mapping (`1:1` and `1:N`)
+- When joining tables (e.g. `Customers` and `Orders`), Dapper splits columns based on a delimiter (`splitOn: &quot;Id&quot;`).
+- For `1:N` relationships, a local aggregation lookup (`Dictionary&lt;int, Customer&gt;`) deduplicates parent instances while accumulating child order records:
+  ```csharp
+  var lookup = new Dictionary&lt;int, Customer&gt;();
+  await conn.QueryAsync&lt;Customer, Order, Customer&gt;(
+      sql,
+      (customer, order) =&gt; {
+          if (!lookup.TryGetValue(customer.Id, out var current))
+              lookup.Add(customer.Id, current = customer);
+          if (order != null)
+              current.Orders.Add(order);
+          return current;
+      },
+      splitOn: &quot;Id&quot;);
+  ```
+
+### Buffered vs Unbuffered Queries
+- **`buffered: true` (Default)**:
+  - Reads the entire `IDataReader` into an in-memory `List&lt;T&gt;`, immediately closes the reader, and returns `IEnumerable&lt;T&gt;`.
+  - Suitable for small-to-medium result sets where the connection should be returned to the pool immediately.
+- **`buffered: false`**:
+  - Defers reader consumption, yielding rows lazily using a custom iterator over the open `IDataReader`.
+  - Dramatically lowers peak heap memory allocations when processing large datasets.
+
+### Asynchronous Streaming (`IAsyncEnumerable&lt;T&gt;`)
+- True asynchronous, non-buffering streaming over network sockets:
+  ```csharp
+  await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess, ct);
+  var parser = reader.GetRowParser&lt;Order&gt;();
+  while (await reader.ReadAsync(ct))
+  {
+      yield return parser(reader);
+  }
+  ```
+
+### Dapper vs EF Core Raw SQL
+| Metric | Dapper (`QueryAsync`) | EF Core (`FromSqlRaw` / `SqlQuery`) |
+|---|---|---|
+| Materialization | Dynamic IL emit / compiled delegate | Expression tree compilation / materialized pipeline |
+| Change Tracking | None (Native read-only) | Optional (`AsNoTracking()`) |
+| Memory Overhead | Extremely low | Low with `AsNoTracking`, Moderate with tracking |
+| Multi-mapping | Explicit `splitOn` | Automatic navigation graph resolution |
+
+---
+
+## 2. DSA: Find Minimum in Rotated Sorted Array
+
+### LeetCode #153: Find Minimum in Rotated Sorted Array (Medium)
+- **Problem**: An ascending sorted array with unique elements was rotated $k$ times ($1 \le k \le n$). Find the minimum element in $O(\log n)$ time.
+- **Algorithm (Modified Binary Search)**:
+  - Compare `nums[mid]` with `nums[right]`.
+  - If `nums[mid] &gt; nums[right]`: the pivot (minimum element) MUST lie in the right sub-array `[mid + 1, right]`. Hence, `left = mid + 1`.
+  - Else (`nums[mid] &lt;= nums[right]`): the pivot is either at `mid` or in the left sub-array `[left, mid]`. Hence, `right = mid`.
+  - Terminate when `left == right`. The element at `nums[left]` is the minimum.
+- **Complexity**: Time: $O(\log n)$, Space: $O(1)$.
+
+### LeetCode #154: With Duplicates (Hard Extension)
+- When `nums[mid] == nums[right]`, we cannot definitively discard either half. We safely decrement `right--`.
+- Average Time: $O(\log n)$, Worst-case Time: $O(n)$ (e.g. all identical elements except one).
+
+---
+
+## Running Tests
+```bash
+dotnet test tests/Day13.DapperPerformance.Tests/Day13.DapperPerformance.Tests.csproj
+```
+</script>
+  
+  
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    // Render Markdown when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.marked) {
+        const rEl = document.getElementById('raw-readme');
+        if (rEl) {
+          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
+        }
+        const nEl = document.getElementById('raw-notes');
+        if (nEl) {
+          const nTarget = document.getElementById('notes-container');
+          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
+        }
+        const iEl = document.getElementById('raw-interview');
+        if (iEl) {
+          const iTarget = document.getElementById('interview-container');
+          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
+        }
+      }
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

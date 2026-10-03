@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 05: ASP.NET Core Middleware &amp; Kestrel Server | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-size: 13px;
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .markdown-content th {
+      background: rgba(30, 41, 59, 0.8);
+      color: #fff;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 8px 16px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      color: #e2e8f0;
+    }
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    pre[class*="language-"] {
+      margin: 0 !important;
+      border-radius: 0 !important;
+      background: var(--bg-code) !important;
+      padding: 16px !important;
+      font-size: 13px !important;
+      line-height: 1.5 !important;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 05</span>
+        <span class="badge badge-category">Web Architecture</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day04-Garbage-Collection/index.html" class="nav-btn">← Day 04</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+
+        </select>
+        <a href="../Day06-Dependency-Injection/index.html" class="nav-btn">Day 06 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 05: ASP.NET Core Middleware &amp; Kestrel Server</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (5 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (2 files)</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-readme" class="tab-pane active">
+      <div class="markdown-content" id="readme-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    
+            <div id="pane-notes" class="tab-pane">
+              <div class="markdown-content" id="notes-container"></div>
+            </div>
+            
+    
+            <div id="pane-interview" class="tab-pane">
+              <div class="markdown-content" id="interview-container"></div>
+            </div>
+            
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day05.MiddlewareApi/DsaExercises.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd5-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d5-src-code-0" class="language-csharp">namespace Day05.MiddlewareApi;
+
+public static class DsaExercises
+{
+    /// &lt;summary&gt;
+    /// LeetCode 125 - Valid Palindrome
+    /// A phrase is a palindrome if, after converting all uppercase letters into lowercase letters
+    /// and removing all non-alphanumeric characters, it reads the same forward and backward.
+    /// Time Complexity: O(n) using two pointers.
+    /// Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static bool IsPalindrome(string s)
+    {
+        if (s == null) return false;
+
+        int left = 0;
+        int right = s.Length - 1;
+
+        while (left &lt; right)
+        {
+            while (left &lt; right &amp;&amp; !char.IsLetterOrDigit(s[left]))
+            {
+                left++;
+            }
+            while (left &lt; right &amp;&amp; !char.IsLetterOrDigit(s[right]))
+            {
+                right--;
+            }
+
+            if (char.ToLowerInvariant(s[left]) != char.ToLowerInvariant(s[right]))
+            {
+                return false;
+            }
+
+            left++;
+            right--;
+        }
+
+        return true;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode 167 - Two Sum II - Input Array Is Sorted
+    /// Given a 1-indexed array of integers numbers that is already sorted in non-decreasing order,
+    /// find two numbers such that they add up to a specific target number.
+    /// Time Complexity: O(n) using two pointers.
+    /// Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int[] TwoSum(int[] numbers, int target)
+    {
+        if (numbers == null || numbers.Length &lt; 2)
+            throw new ArgumentException(&quot;Array must contain at least 2 numbers.&quot;, nameof(numbers));
+
+        int left = 0;
+        int right = numbers.Length - 1;
+
+        while (left &lt; right)
+        {
+            int sum = numbers[left] + numbers[right];
+            if (sum == target)
+            {
+                // Return 1-based indices
+                return new[] { left + 1, right + 1 };
+            }
+            if (sum &lt; target)
+            {
+                left++;
+            }
+            else
+            {
+                right--;
+            }
+        }
+
+        throw new InvalidOperationException(&quot;No two sum solution found.&quot;);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day05.MiddlewareApi/Program.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd5-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d5-src-code-1" class="language-csharp">using Day05.MiddlewareApi.Middleware;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Register factory-activated middleware in DI
+builder.Services.AddTransient&lt;RequestLoggingMiddleware&gt;();
+
+var app = builder.Build();
+
+// Middleware Pipeline Ordering:
+// 1. Correlation ID (establishes request identity)
+app.UseMiddleware&lt;CorrelationIdMiddleware&gt;();
+
+// 2. Exception Handling (catches unhandled exceptions from downstream)
+app.UseMiddleware&lt;ExceptionHandlingMiddleware&gt;();
+
+// 3. Request Logging (factory activated via IMiddleware)
+app.UseMiddleware&lt;RequestLoggingMiddleware&gt;();
+
+// Endpoints
+app.MapGet(&quot;/health&quot;, () =&gt; Results.Ok(new { status = &quot;Healthy&quot;, timestampUtc = DateTime.UtcNow }));
+
+app.MapGet(&quot;/events&quot;, () =&gt; Results.Ok(new[]
+{
+    new { id = 1001, name = &quot;Arsenal vs Chelsea&quot;, venue = &quot;Emirates Stadium&quot;, price = 1500m },
+    new { id = 1002, name = &quot;Liverpool vs Man City&quot;, venue = &quot;Anfield&quot;, price = 1800m }
+}));
+
+app.MapGet(&quot;/events/{id:int}&quot;, (int id) =&gt;
+{
+    if (id == 1001)
+    {
+        return Results.Ok(new { id = 1001, name = &quot;Arsenal vs Chelsea&quot;, venue = &quot;Emirates Stadium&quot;, price = 1500m });
+    }
+    return Results.NotFound(new { message = $&quot;Event {id} not found&quot; });
+});
+
+app.MapGet(&quot;/failure&quot;, () =&gt;
+{
+    throw new InvalidOperationException(&quot;Simulated catastrophic failure in pipeline.&quot;);
+});
+
+app.Run();
+
+// Required for WebApplicationFactory&lt;Program&gt; integration testing in .NET 8
+public partial class Program { }
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day05.MiddlewareApi/Middleware/CorrelationIdMiddleware.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd5-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d5-src-code-2" class="language-csharp">namespace Day05.MiddlewareApi.Middleware;
+
+/// &lt;summary&gt;
+/// Convention-based middleware using RequestDelegate.
+/// Inspects or creates &#x27;X-Correlation-ID&#x27; header, sets context.TraceIdentifier,
+/// and attaches header to outgoing HTTP response.
+/// &lt;/summary&gt;
+public class CorrelationIdMiddleware
+{
+    public const string CorrelationHeaderName = &quot;X-Correlation-ID&quot;;
+    private readonly RequestDelegate _next;
+
+    public CorrelationIdMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        string correlationId;
+        if (context.Request.Headers.TryGetValue(CorrelationHeaderName, out var existingCorrelationId) &amp;&amp;
+            !string.IsNullOrWhiteSpace(existingCorrelationId))
+        {
+            correlationId = existingCorrelationId.ToString();
+        }
+        else
+        {
+            correlationId = Guid.NewGuid().ToString(&quot;N&quot;);
+        }
+
+        context.TraceIdentifier = correlationId;
+        context.Response.Headers[CorrelationHeaderName] = correlationId;
+
+        await _next(context);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day05.MiddlewareApi/Middleware/ExceptionHandlingMiddleware.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd5-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d5-src-code-3" class="language-csharp">using System.Net;
+using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Day05.MiddlewareApi.Middleware;
+
+/// &lt;summary&gt;
+/// Global exception handling middleware using RequestDelegate.
+/// Catches unhandled exceptions, ensures no leakage of sensitive stack traces,
+/// and returns RFC 7807 compliant ProblemDetails with trace and correlation identifiers.
+/// &lt;/summary&gt;
+public class ExceptionHandlingMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger&lt;ExceptionHandlingMiddleware&gt; _logger;
+
+    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger&lt;ExceptionHandlingMiddleware&gt; logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await _next(context);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, &quot;Unhandled exception occurred for request {Path} with trace {TraceId}&quot;,
+                context.Request.Path, context.TraceIdentifier);
+
+            await HandleExceptionAsync(context, ex);
+        }
+    }
+
+    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        context.Response.ContentType = &quot;application/problem+json&quot;;
+        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+        var problemDetails = new ProblemDetails
+        {
+            Status = (int)HttpStatusCode.InternalServerError,
+            Title = &quot;An unexpected server error occurred.&quot;,
+            Detail = exception.Message,
+            Instance = context.Request.Path
+        };
+
+        problemDetails.Extensions[&quot;traceId&quot;] = context.TraceIdentifier;
+        problemDetails.Extensions[&quot;timestamp&quot;] = DateTime.UtcNow;
+
+        string json = JsonSerializer.Serialize(problemDetails);
+        await context.Response.WriteAsync(json);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day05.MiddlewareApi/Middleware/RequestLoggingMiddleware.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd5-src-code-4')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d5-src-code-4" class="language-csharp">using System.Diagnostics;
+
+namespace Day05.MiddlewareApi.Middleware;
+
+/// &lt;summary&gt;
+/// Factory-activated middleware implementing IMiddleware.
+/// Unlike convention-based middleware (which is instantiated once at startup),
+/// factory middleware is resolved from the DI container (typically Transient or Scoped),
+/// enabling scoped dependency injection directly into the middleware class.
+/// &lt;/summary&gt;
+public class RequestLoggingMiddleware : IMiddleware
+{
+    private readonly ILogger&lt;RequestLoggingMiddleware&gt; _logger;
+
+    public RequestLoggingMiddleware(ILogger&lt;RequestLoggingMiddleware&gt; logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
+    {
+        var sw = Stopwatch.StartNew();
+        string method = context.Request.Method;
+        string path = context.Request.Path;
+        string traceId = context.TraceIdentifier;
+
+        try
+        {
+            await next(context);
+        }
+        finally
+        {
+            sw.Stop();
+            int statusCode = context.Response.StatusCode;
+            long elapsedMs = sw.ElapsedMilliseconds;
+
+            _logger.LogInformation(
+                &quot;HTTP {Method} {Path} responded {StatusCode} in {ElapsedMs}ms [TraceId: {TraceId}]&quot;,
+                method, path, statusCode, elapsedMs, traceId);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day05.MiddlewareApi.Tests/DsaExercisesTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd5-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d5-tests-code-0" class="language-csharp">using Xunit;
+using Day05.MiddlewareApi;
+
+namespace Day05.MiddlewareApi.Tests;
+
+public class DsaExercisesTests
+{
+    [Theory]
+    [InlineData(&quot;A man, a plan, a canal: Panama&quot;, true)]
+    [InlineData(&quot;race a car&quot;, false)]
+    [InlineData(&quot; &quot;, true)]
+    [InlineData(&quot;0P&quot;, false)]
+    public void IsPalindrome_EvaluatesCorrectly(string input, bool expected)
+    {
+        bool result = DsaExercises.IsPalindrome(input);
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData(new[] { 2, 7, 11, 15 }, 9, new[] { 1, 2 })]
+    [InlineData(new[] { 2, 3, 4 }, 6, new[] { 1, 3 })]
+    [InlineData(new[] { -1, 0 }, -1, new[] { 1, 2 })]
+    public void TwoSum_Returns1BasedIndices(int[] numbers, int target, int[] expected)
+    {
+        int[] result = DsaExercises.TwoSum(numbers, target);
+        Assert.Equal(expected, result);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day05.MiddlewareApi.Tests/MiddlewarePipelineTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd5-tests-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d5-tests-code-1" class="language-csharp">using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Xunit;
+
+namespace Day05.MiddlewareApi.Tests;
+
+public class MiddlewarePipelineTests : IClassFixture&lt;WebApplicationFactory&lt;Program&gt;&gt;
+{
+    private readonly WebApplicationFactory&lt;Program&gt; _factory;
+
+    public MiddlewarePipelineTests(WebApplicationFactory&lt;Program&gt; factory)
+    {
+        _factory = factory;
+    }
+
+    [Fact]
+    public async Task HealthEndpoint_Returns200_AndAttachesGeneratedCorrelationId()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync(&quot;/health&quot;);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.Contains(&quot;X-Correlation-ID&quot;));
+        var correlationId = response.Headers.GetValues(&quot;X-Correlation-ID&quot;).First();
+        Assert.False(string.IsNullOrWhiteSpace(correlationId));
+    }
+
+    [Fact]
+    public async Task CorrelationId_PreservesIncomingHeader()
+    {
+        var client = _factory.CreateClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, &quot;/events&quot;);
+        const string customId = &quot;client-req-999888&quot;;
+        request.Headers.Add(&quot;X-Correlation-ID&quot;, customId);
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.Contains(&quot;X-Correlation-ID&quot;));
+        var responseId = response.Headers.GetValues(&quot;X-Correlation-ID&quot;).First();
+        Assert.Equal(customId, responseId);
+    }
+
+    [Fact]
+    public async Task EventsEndpoints_ReturnExpectedData()
+    {
+        var client = _factory.CreateClient();
+
+        var listResponse = await client.GetAsync(&quot;/events&quot;);
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+
+        var singleResponse = await client.GetAsync(&quot;/events/1001&quot;);
+        Assert.Equal(HttpStatusCode.OK, singleResponse.StatusCode);
+
+        var missingResponse = await client.GetAsync(&quot;/events/9999&quot;);
+        Assert.Equal(HttpStatusCode.NotFound, missingResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task FailureEndpoint_ReturnsProblemDetails_WithStatus500AndTraceId()
+    {
+        var client = _factory.CreateClient();
+        const string customId = &quot;failure-test-trace-id&quot;;
+        var request = new HttpRequestMessage(HttpMethod.Get, &quot;/failure&quot;);
+        request.Headers.Add(&quot;X-Correlation-ID&quot;, customId);
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal(&quot;application/problem+json&quot;, response.Content.Headers.ContentType?.MediaType);
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        Assert.Equal(500, root.GetProperty(&quot;status&quot;).GetInt32());
+        Assert.Contains(&quot;Simulated catastrophic failure&quot;, root.GetProperty(&quot;detail&quot;).GetString());
+        Assert.Equal(customId, root.GetProperty(&quot;traceId&quot;).GetString());
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div class="footer-bar">
+      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
+    </div>
+  </div>
+
+  <!-- Raw Content Payloads for Client-side Rendering -->
+  <script type="text/markdown" id="raw-readme"># Day 05 - ASP.NET Core Custom Middleware &amp; Kestrel Server Internals
+
+## Objective
+Build custom asynchronous middleware components using both convention-based (`RequestDelegate`) and factory-activated (`IMiddleware`) patterns, implement cross-cutting concerns (correlation tracking, RFC 7807 `ProblemDetails` exception handling, request logging), understand pipeline ordering, and dissect request flow from Kestrel to endpoints.
+
+## Original Learning Tasks
+1. Build custom async middleware with RequestDelegate &amp; factory activation
+2. DSA: Valid Palindrome, Two Sum II (Input Array Is Sorted)
+
+## Practical Problem
+In microservice architectures, unhandled exceptions that return raw HTML stack traces leak internal secrets, break frontend JSON parsers, and violate security standards. Furthermore, without a uniform correlation ID flowing across downstream services, debugging distributed transaction failures and performance bottlenecks in log aggregators (Elasticsearch, Datadog) is nearly impossible.
+
+## What I Implemented
+1. **CorrelationIdMiddleware**: Convention-based middleware using `RequestDelegate`. Extracts or generates `X-Correlation-ID`, attaches it to `context.TraceIdentifier` and outgoing HTTP headers.
+2. **ExceptionHandlingMiddleware**: Global exception filter catching unhandled downstream exceptions and returning standardized RFC 7807 `application/problem+json` with HTTP 500 status and correlation IDs.
+3. **RequestLoggingMiddleware**: Factory-activated middleware implementing `IMiddleware`, resolved from the DI container with scoped lifecycle support, measuring exact request duration.
+4. **Program.cs API Pipeline**: Configured middleware ordering and endpoints (`/health`, `/events`, `/events/{id}`, `/failure`).
+5. **WebApplicationFactory Integration Tests**: End-to-end HTTP tests validating correlation propagation, status codes, and JSON problem details.
+6. **DSA Solutions**:
+   - `Valid Palindrome`: Two-pointer string validation in $O(n)$ time and $O(1)$ space.
+   - `Two Sum II`: Two-pointer search on sorted array in $O(n)$ time and $O(1)$ space.
+
+## Architecture
+```text
+                      Incoming TCP Socket (OS Network Stack)
+                                        │
+                                        ▼
+                              Kestrel Web Server
+                      (Libuv / Socket Transport Layer)
+                                        │
+                         HttpContext Created &amp; Pooled
+                                        │
+                                        ▼
+    ┌──────────────────────── Middleware Pipeline ────────────────────────┐
+    │                                                                     │
+    │  1. CorrelationIdMiddleware (Sets X-Correlation-ID &amp; TraceId)       │
+    │                      │                                              │
+    │                      ▼                                              │
+    │  2. ExceptionHandlingMiddleware (try { await next() } catch)        │
+    │                      │                                              │
+    │                      ▼                                              │
+    │  3. RequestLoggingMiddleware (IMiddleware factory activation)       │
+    │                      │                                              │
+    │                      ▼                                              │
+    │  4. RoutingMiddleware (Matches URL to Endpoint Metadata)            │
+    │                      │                                              │
+    │                      ▼                                              │
+    │  5. Endpoint Execution (MapGet delegate / Filters)                  │
+    │                                                                     │
+    └─────────────────────────────────────────────────────────────────────┘
+```
+
+## Key Concepts
+- **Kestrel Web Server**: High-performance, cross-platform web server based on non-blocking asynchronous socket I/O (`System.IO.Pipelines`).
+- **Convention-based Middleware**: Initialized once at application startup. Its constructor accepts `RequestDelegate next`. It cannot accept scoped services in its constructor (causes captive dependency), but can accept them in `InvokeAsync(HttpContext context, IScopedService scoped)`.
+- **Factory-activated Middleware (`IMiddleware`)**: Implements `IMiddleware` interface. Registered in DI (Transient or Scoped) and resolved by `IMiddlewareFactory` per request. Enables constructor injection of scoped dependencies.
+- **Middleware Ordering**: Order matters fundamentally! Exception handling middleware must be registered before logging and endpoint execution so that it surrounds downstream execution in its `try/catch` block.
+
+## Testing
+- Automated integration test suite (`MiddlewarePipelineTests`, `DsaExercisesTests`) using `WebApplicationFactory&lt;Program&gt;`.
+- Verifies generation and propagation of correlation IDs.
+- Validates exception interception and RFC 7807 `ProblemDetails` output on `/failure`.
+- Verifies two-pointer palindrome and sorted two-sum algorithms.
+
+## Performance Observations
+- Using convention-based middleware for singleton operations avoids per-request DI resolution overhead.
+- `HttpContext` is pooled by Kestrel; storing references to `HttpContext` beyond the request lifetime leads to data corruption across requests.
+
+## Production Relevance
+- Standardized error contracts (`ProblemDetails`) prevent breaking API gateways and mobile clients. Correlation IDs are the foundation of distributed tracing across microservices (OpenTelemetry, W3C Trace Context).
+
+## Common Mistakes
+1. Registering exception handling middleware at the *end* of the pipeline (catches nothing!).
+2. Injecting a Scoped service into the *constructor* of convention-based middleware (becomes a captive dependency!).
+3. Calling `await next(context)` multiple times or modifying response headers after `await next(context)` when headers have already been sent (`Response.HasStarted == true`).
+4. Writing raw exception stack traces to client responses in production.
+
+## Senior Interview Questions
+See [interview-questions.md](file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day05-Middleware-Kestrel/interview-questions.md) for 10 in-depth architectural questions.
+
+## What I Practically Understood
+- The fundamental difference between convention-based and `IMiddleware` factory activation in ASP.NET Core.
+- Why modifying response headers after `next(context)` crashes if response streaming has started.
+- How Kestrel passes requests through the `RequestDelegate` chain via Russian-doll wrapping.
+
+## What I Need to Read Later
+- HTTP/3 and QUIC transport support in Kestrel.
+- Rate limiting middleware (`System.Threading.RateLimiting`) in ASP.NET Core.
+
+## Key Takeaways
+ASP.NET Core&#x27;s middleware pipeline is an asynchronous chain of responsibility. Mastering middleware ordering, lifetime activation, and exception isolation is essential for building production-grade microservices.
+</script>
+  <script type="text/markdown" id="raw-notes"># Day 05 - Engineering Notes: Middleware Pipeline &amp; Kestrel
+
+## 1. Request Flow: From Socket to Endpoint
+
+```text
+OS Socket -&gt; Kestrel Sockets/IO -&gt; HttpContext -&gt; Middleware Pipeline -&gt; Endpoint
+```
+1. **Kestrel Transport Layer**: Uses `SocketTransport` and `System.IO.Pipelines` to read bytes from network sockets into pooled memory without blocking threads.
+2. **HttpContext Allocation**: Kestrel allocates an `HttpContext` instance from an internal object pool (`DefaultHttpContext`).
+3. **Pipeline Dispatch**: The pipeline is built at application startup by chaining delegates:
+   `Func&lt;RequestDelegate, RequestDelegate&gt;`.
+   The final delegate is invoked for each request.
+
+---
+
+## 2. Convention-Based vs IMiddleware (Factory-Activated)
+
+### Convention-Based Middleware
+- **Signature**: Class with `InvokeAsync(HttpContext context)` (or with scoped services as additional parameters).
+- **Lifetime**: Created **once** at startup (effectively a Singleton).
+- **Dependency Rule**: **NEVER** inject scoped services (like `DbContext`) into its constructor! Doing so makes the scoped service a captive dependency that never gets disposed.
+- **Injecting Scoped Services**: Inject scoped services as method parameters in `InvokeAsync(HttpContext context, IScopedService scoped)`.
+
+### Factory-Activated (`IMiddleware`)
+- **Signature**: Implements `IMiddleware` interface: `InvokeAsync(HttpContext context, RequestDelegate next)`.
+- **Lifetime**: Managed by the DI container (`services.AddTransient&lt;MyMiddleware&gt;()`).
+- **Activation**: Resolved per-request by `IMiddlewareFactory`.
+- **Benefit**: Scoped services can be safely injected directly into the constructor.
+
+---
+
+## 3. The `Response.HasStarted` Trap
+
+When streaming data or sending headers to the client:
+```csharp
+await _next(context);
+// WARNING: At this point, context.Response.HasStarted may be true!
+// Calling context.Response.Headers.Add(...) will throw InvalidOperationException!
+```
+Any header modifications (like `X-Correlation-ID`) MUST happen **before** calling `await _next(context)`.
+
+---
+
+## 4. DSA Takeaways
+- **Valid Palindrome**: Two-pointer convergence skipping non-alphanumeric characters validates palindromes in $O(n)$ time with $0$ extra heap allocation.
+- **Two Sum II**: In a sorted array, if `arr[left] + arr[right] &lt; target`, incrementing `left` increases the sum; if `&gt; target`, decrementing `right` decreases the sum ($O(n)$ time, $O(1)$ space).
+</script>
+  <script type="text/markdown" id="raw-interview"># Day 05 - Senior .NET Interview Questions: Middleware &amp; Kestrel
+
+### Q1: What is the architectural difference between convention-based and factory-activated (`IMiddleware`) middleware?
+- **Short answer**: Convention-based middleware is instantiated once at startup (Singleton lifecycle); factory middleware (`IMiddleware`) is resolved from the DI container per request.
+- **Deeper answer**: Convention-based middleware takes `RequestDelegate next` in its constructor and cannot have scoped dependencies injected into its constructor without causing captive dependencies. Factory middleware implements `IMiddleware`, takes `next` as a method argument in `InvokeAsync`, and can safely inject transient or scoped services directly into its constructor.
+- **Practical example**: Injecting `DbContext` into the constructor of convention middleware creates a captive dependency; with `IMiddleware`, `DbContext` can be injected into the constructor safely.
+
+---
+
+### Q2: Why does middleware order matter in ASP.NET Core? Give a concrete example.
+- **Short answer**: Middleware executes in the order it is registered in `Program.cs`. Surrounding concerns (exception handling, authentication) must wrap inner execution.
+- **Deeper answer**: The middleware pipeline is a nested Russian-doll structure. If `ExceptionHandlingMiddleware` is registered *after* `Routing` or endpoint execution, any exception thrown in downstream endpoints will bypass the exception handler and bubble up directly to Kestrel, returning raw 500 errors to the client.
+- **Practical example**:
+```csharp
+app.UseMiddleware&lt;ExceptionHandlingMiddleware&gt;(); // Catches all below
+app.UseAuthentication();                         // Establishes ClaimsPrincipal
+app.UseAuthorization();                          // Enforces policy
+app.MapControllers();                            // Executes action
+```
+
+---
+
+### Q3: What happens if you try to modify `context.Response.Headers` after calling `await next(context)`?
+- **Short answer**: An `InvalidOperationException` is thrown: &quot;Headers are read-only, response has already started.&quot;
+- **Deeper answer**: Once the endpoint or downstream middleware starts writing bytes to the response body stream, Kestrel flushes the HTTP headers to the network socket (`Response.HasStarted = true`). After this point, no HTTP headers or status codes can be modified.
+- **Practical example**: Always attach correlation IDs or security headers *before* calling `await _next(context)`.
+
+---
+
+### Q4: How does Kestrel achieve high throughput compared to traditional IIS / HttpListener?
+- **Short answer**: Through non-blocking asynchronous socket I/O built on `System.IO.Pipelines`, zero-copy buffer pooling, and minimal abstraction overhead.
+- **Deeper answer**: Kestrel avoids thread-per-request models. It uses OS-level epoll (Linux) or kqueue (macOS) / IOCP (Windows) via Libuv or managed sockets. Request reading and response writing happen over reusable pooled memory buffers (`MemoryPool&lt;byte&gt;`), virtually eliminating GC allocations on the request hot path.
+- **Practical example**: Kestrel can process hundreds of thousands of plaintext requests per second per machine on standard commodity hardware.
+
+---
+
+### Q5: What is the RFC 7807 standard and why should production APIs adopt it?
+- **Short answer**: RFC 7807 defines `ProblemDetails`, a standard machine-readable JSON structure for reporting HTTP API errors.
+- **Deeper answer**: Without RFC 7807, APIs return arbitrary error structures (`{ &quot;error&quot;: &quot;msg&quot; }` vs `{ &quot;message&quot;: &quot;msg&quot; }` vs raw text), forcing API clients to write brittle parsing logic. ProblemDetails standardizes `type`, `title`, `status`, `detail`, `instance`, and custom extensions (like `traceId`).
+- **Practical example**:
+```json
+{
+  &quot;status&quot;: 500,
+  &quot;title&quot;: &quot;An unexpected server error occurred.&quot;,
+  &quot;detail&quot;: &quot;Database connection timed out.&quot;,
+  &quot;traceId&quot;: &quot;d7a71141-8ddb-4e17&quot;
+}
+```
+
+---
+
+### Q6: Can you resolve a Scoped service inside a convention-based middleware? If yes, how?
+- **Short answer**: Yes, by adding the Scoped service as a parameter to the `InvokeAsync` method rather than the constructor.
+- **Deeper answer**: At runtime, ASP.NET Core inspects the parameters of `InvokeAsync` via reflection/compiled expressions and resolves them from the current request&#x27;s `HttpContext.RequestServices` (the request scope).
+- **Practical example**:
+```csharp
+public async Task InvokeAsync(HttpContext context, IOrderRepository scopedRepo) {
+    // scopedRepo is correctly scoped to this specific HTTP request
+    await _next(context);
+}
+```
+
+---
+
+### Q7: Why is storing `HttpContext` in a static field or background task hazardous?
+- **Short answer**: `HttpContext` is not thread-safe and is pooled/recycled by Kestrel as soon as the request completes.
+- **Deeper answer**: After the response finishes, Kestrel resets the `DefaultHttpContext` instance and returns it to the object pool. If a background task holds a reference to it, it will observe corrupted or completely different request data from a subsequent user&#x27;s HTTP request, creating severe security vulnerabilities.
+- **Practical example**: If a background fire-and-forget task needs request data, extract the specific values (e.g. `userId`, `correlationId`) into immutable local variables before firing the task.
+
+---
+
+### Q8: What is the difference between `EndpointRoutingMiddleware` and `EndpointMiddleware`?
+- **Short answer**: `UseRouting()` matches the request URL to an endpoint and attaches metadata to `HttpContext`. `UseEndpoints()` executes the matched endpoint delegate.
+- **Deeper answer**: Splitting routing into two phases allows middleware positioned between `UseRouting` and `UseEndpoints` (like `UseAuthentication`, `UseAuthorization`, and `UseCors`) to inspect endpoint metadata (e.g. `[Authorize]`, `[AllowAnonymous]`) before deciding whether to allow the request to proceed.
+- **Practical example**: Authorization middleware checks `context.GetEndpoint()?.Metadata.GetMetadata&lt;AuthorizeAttribute&gt;()`.
+
+---
+
+### Q9: How does the Correlation ID pattern facilitate observability in microservices?
+- **Short answer**: It generates a unique identifier at the API gateway and propagates it across all downstream HTTP, gRPC, and message queues to stitch distributed logs together.
+- **Deeper answer**: In a distributed system, a single user click may trigger calls across 10 distinct microservices. By propagating `X-Correlation-ID` across HTTP headers and logging it with every log message (via Serilog/OpenTelemetry log scopes), engineers can query `correlationId: xyz` and view the entire causal chain of events.
+- **Practical example**: Sending `X-Correlation-ID: 7a9b-4c2d` in outgoing `HttpClient` calls via a `DelegatingHandler`.
+
+---
+
+### Q10: How does ASP.NET Core short-circuit the middleware pipeline?
+- **Short answer**: By not calling `await next(context)` and returning directly from `InvokeAsync`.
+- **Deeper answer**: When a middleware decides the request cannot proceed (e.g., authentication failure, rate limit exceeded, static file found and served), it writes the response directly and returns without invoking `next(context)`. Execution immediately unwinds back up through the previous middleware layers.
+- **Practical example**: Static file middleware returns the cached file and terminates the pipeline without routing or hitting endpoint handlers.
+</script>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    // Render Markdown when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.marked) {
+        const rEl = document.getElementById('raw-readme');
+        if (rEl) {
+          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
+        }
+        const nEl = document.getElementById('raw-notes');
+        if (nEl) {
+          const nTarget = document.getElementById('notes-container');
+          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
+        }
+        const iEl = document.getElementById('raw-interview');
+        if (iEl) {
+          const iTarget = document.getElementById('interview-container');
+          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
+        }
+      }
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

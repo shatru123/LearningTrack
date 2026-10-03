@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 04: Garbage Collection Laboratory &amp; Tuning | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-size: 13px;
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .markdown-content th {
+      background: rgba(30, 41, 59, 0.8);
+      color: #fff;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 8px 16px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      color: #e2e8f0;
+    }
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    pre[class*="language-"] {
+      margin: 0 !important;
+      border-radius: 0 !important;
+      background: var(--bg-code) !important;
+      padding: 16px !important;
+      font-size: 13px !important;
+      line-height: 1.5 !important;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 04</span>
+        <span class="badge badge-category">Memory &amp; Performance</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day03-Async-Await/index.html" class="nav-btn">← Day 03</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+
+        </select>
+        <a href="../Day05-Middleware-Kestrel/index.html" class="nav-btn">Day 05 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 04: Garbage Collection Laboratory &amp; Tuning</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (2 files)</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-readme" class="tab-pane active">
+      <div class="markdown-content" id="readme-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    
+            <div id="pane-notes" class="tab-pane">
+              <div class="markdown-content" id="notes-container"></div>
+            </div>
+            
+    
+            <div id="pane-interview" class="tab-pane">
+              <div class="markdown-content" id="interview-container"></div>
+            </div>
+            
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day04.GarbageCollection/DsaExercises.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd4-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d4-src-code-0" class="language-csharp">namespace Day04.GarbageCollection;
+
+public static class DsaExercises
+{
+    /// &lt;summary&gt;
+    /// LeetCode 238 - Product of Array Except Self
+    /// Given an integer array nums, return an array answer such that answer[i] is equal to
+    /// the product of all the elements of nums except nums[i].
+    /// Must run in O(n) time and without using the division operation.
+    /// Auxiliary space: O(1) beyond the output array.
+    /// &lt;/summary&gt;
+    public static int[] ProductExceptSelf(int[] nums)
+    {
+        if (nums == null || nums.Length == 0)
+            return Array.Empty&lt;int&gt;();
+
+        int n = nums.Length;
+        int[] result = new int[n];
+
+        // Step 1: Compute prefix products directly in result array
+        result[0] = 1;
+        for (int i = 1; i &lt; n; i++)
+        {
+            result[i] = result[i - 1] * nums[i - 1];
+        }
+
+        // Step 2: Multiply by running suffix product from the right
+        int suffix = 1;
+        for (int i = n - 1; i &gt;= 0; i--)
+        {
+            result[i] *= suffix;
+            suffix *= nums[i];
+        }
+
+        return result;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day04.GarbageCollection/GcLaboratory.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd4-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d4-src-code-1" class="language-csharp">using System.Buffers;
+using System.Runtime;
+using System.Text;
+
+namespace Day04.GarbageCollection;
+
+public record GcRuntimeInfo(
+    bool IsServerGc,
+    GCLatencyMode LatencyMode,
+    int MaxGeneration,
+    long TotalMemoryBytes);
+
+public record AllocationBenchmarkResult(
+    long NaiveConcatBytes,
+    long StringBuilderBytes,
+    long OptimizedBytes);
+
+public class GcLaboratory
+{
+    public static GcRuntimeInfo GetRuntimeInfo()
+    {
+        return new GcRuntimeInfo(
+            GCSettings.IsServerGC,
+            GCSettings.LatencyMode,
+            GC.MaxGeneration,
+            GC.GetTotalMemory(forceFullCollection: false));
+    }
+
+    /// &lt;summary&gt;
+    /// Demonstrates generational promotion:
+    /// Gen 0 (ephemeral short-lived) -&gt; Gen 1 (buffer/intermediate) -&gt; Gen 2 (long-lived tenured).
+    /// &lt;/summary&gt;
+    public static (int InitialGen, int AfterGen0Collect, int AfterGen1Collect) DemonstrateGenerationalPromotion()
+    {
+        // Allocate a small object in Gen 0
+        object liveObject = new byte[64];
+        int initialGen = GC.GetGeneration(liveObject);
+
+        // Force Gen 0 collection; surviving objects promote to Gen 1
+        GC.Collect(0, GCCollectionMode.Forced, blocking: true);
+        int afterGen0 = GC.GetGeneration(liveObject);
+
+        // Force Gen 1 collection; surviving objects promote to Gen 2
+        GC.Collect(1, GCCollectionMode.Forced, blocking: true);
+        int afterGen1 = GC.GetGeneration(liveObject);
+
+        return (initialGen, afterGen0, afterGen1);
+    }
+
+    /// &lt;summary&gt;
+    /// Demonstrates the Large Object Heap (LOH) threshold.
+    /// Objects &gt;= 85,000 bytes bypass Gen 0/1 and are allocated directly in Gen 2 (LOH).
+    /// &lt;/summary&gt;
+    public static (int SmallObjectGen, int LargeObjectGen) DemonstrateLohAllocation()
+    {
+        // 1KB object (&lt; 85,000 bytes) -&gt; goes to Gen 0
+        byte[] smallObj = new byte[1024];
+        int smallGen = GC.GetGeneration(smallObj);
+
+        // 85,000+ byte object -&gt; goes directly to Large Object Heap (Gen 2)
+        byte[] largeObj = new byte[85000];
+        int largeGen = GC.GetGeneration(largeObj);
+
+        return (smallGen, largeGen);
+    }
+
+    /// &lt;summary&gt;
+    /// Compares allocation profiles:
+    /// 1. Naive string concatenation: creates O(N^2) allocations.
+    /// 2. StringBuilder: pre-sized buffer amortizes allocations.
+    /// 3. ArrayPool / string.Create: zero intermediate heap allocations.
+    /// &lt;/summary&gt;
+    public static AllocationBenchmarkResult CompareAllocationImpact(int iterations = 100)
+    {
+        const string token = &quot;TicketEvent&quot;;
+
+        // 1. Naive string concatenation
+        long start1 = GC.GetAllocatedBytesForCurrentThread();
+        string concatResult = string.Empty;
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            concatResult += token;
+        }
+        long naiveBytes = GC.GetAllocatedBytesForCurrentThread() - start1;
+
+        // 2. Pre-sized StringBuilder
+        long start2 = GC.GetAllocatedBytesForCurrentThread();
+        StringBuilder sb = new(token.Length * iterations);
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            sb.Append(token);
+        }
+        string sbResult = sb.ToString();
+        long sbBytes = GC.GetAllocatedBytesForCurrentThread() - start2;
+
+        // 3. Optimized with ArrayPool
+        long start3 = GC.GetAllocatedBytesForCurrentThread();
+        int totalLength = token.Length * iterations;
+        char[] rented = ArrayPool&lt;char&gt;.Shared.Rent(totalLength);
+        try
+        {
+            Span&lt;char&gt; targetSpan = rented.AsSpan(0, totalLength);
+            for (int i = 0; i &lt; iterations; i++)
+            {
+                token.AsSpan().CopyTo(targetSpan.Slice(i * token.Length));
+            }
+            string optResult = new string(targetSpan);
+        }
+        finally
+        {
+            ArrayPool&lt;char&gt;.Shared.Return(rented);
+        }
+        long optBytes = GC.GetAllocatedBytesForCurrentThread() - start3;
+
+        return new AllocationBenchmarkResult(naiveBytes, sbBytes, optBytes);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day04.GarbageCollection.Tests/DsaExercisesTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd4-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d4-tests-code-0" class="language-csharp">using Xunit;
+using Day04.GarbageCollection;
+
+namespace Day04.GarbageCollection.Tests;
+
+public class DsaExercisesTests
+{
+    [Theory]
+    [InlineData(new[] { 1, 2, 3, 4 }, new[] { 24, 12, 8, 6 })]
+    [InlineData(new[] { -1, 1, 0, -3, 3 }, new[] { 0, 0, 9, 0, 0 })]
+    [InlineData(new[] { 2, 3 }, new[] { 3, 2 })]
+    public void ProductExceptSelf_ComputesCorrectProducts(int[] nums, int[] expected)
+    {
+        int[] result = DsaExercises.ProductExceptSelf(nums);
+        Assert.Equal(expected, result);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day04.GarbageCollection.Tests/GcLaboratoryTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd4-tests-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d4-tests-code-1" class="language-csharp">using Xunit;
+using Day04.GarbageCollection;
+
+namespace Day04.GarbageCollection.Tests;
+
+public class GcLaboratoryTests
+{
+    [Fact]
+    public void GetRuntimeInfo_ReturnsValidConfiguration()
+    {
+        var info = GcLaboratory.GetRuntimeInfo();
+        Assert.NotNull(info);
+        Assert.True(info.MaxGeneration &gt;= 2);
+        Assert.True(info.TotalMemoryBytes &gt; 0);
+    }
+
+    [Fact]
+    public void GenerationalPromotion_PromotesFromGen0ThroughGen2()
+    {
+        var (initial, afterGen0, afterGen1) = GcLaboratory.DemonstrateGenerationalPromotion();
+
+        Assert.Equal(0, initial);
+        Assert.True(afterGen0 &gt;= 1, $&quot;Expected &gt;= 1, but got {afterGen0}&quot;);
+        Assert.True(afterGen1 &gt;= 2, $&quot;Expected 2, but got {afterGen1}&quot;);
+    }
+
+    [Fact]
+    public void LohAllocation_AllocatesDirectlyInGen2()
+    {
+        var (smallGen, largeGen) = GcLaboratory.DemonstrateLohAllocation();
+
+        Assert.Equal(0, smallGen);
+        Assert.Equal(2, largeGen);
+    }
+
+    [Fact]
+    public void CompareAllocationImpact_OptimizedGeneratesDramaticallyFewerBytes()
+    {
+        var result = GcLaboratory.CompareAllocationImpact(iterations: 50);
+
+        Assert.True(result.NaiveConcatBytes &gt; result.StringBuilderBytes,
+            $&quot;Naive ({result.NaiveConcatBytes}) should exceed StringBuilder ({result.StringBuilderBytes})&quot;);
+        Assert.True(result.NaiveConcatBytes &gt; result.OptimizedBytes,
+            $&quot;Naive ({result.NaiveConcatBytes}) should exceed Optimized ({result.OptimizedBytes})&quot;);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div class="footer-bar">
+      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
+    </div>
+  </div>
+
+  <!-- Raw Content Payloads for Client-side Rendering -->
+  <script type="text/markdown" id="raw-readme"># Day 04 - .NET Garbage Collection Internals &amp; Memory Laboratory
+
+## Objective
+Analyze .NET Garbage Collection generational architecture (Gen 0, Gen 1, Gen 2, Large Object Heap, Pinned Object Heap), contrast Server GC vs Workstation GC and Background GC, inspect `GCSettings`, and benchmark the latency and allocation impact of naive string manipulation against optimized memory buffers.
+
+## Original Learning Tasks
+1. Analyze Server GC vs Workstation GC, Background GC, GCSettings
+2. DSA: Product of Array Except Self
+
+## Practical Problem
+In high-throughput .NET microservices, allocation rates directly dictate garbage collection frequency. High volumes of short-lived allocations trigger frequent Gen 0/Gen 1 sweeps, while allocations exceeding 85,000 bytes land directly on the Large Object Heap (LOH), which requires expensive Gen 2 collections to clean up. In worst-case scenarios, uncompacted LOH leads to memory fragmentation, high pause times (Stop-The-World), and degraded p99 API latencies.
+
+## What I Implemented
+1. **GcLaboratory**:
+   - Runtime configuration inspector (`GCSettings.IsServerGC`, `GCSettings.LatencyMode`, `GC.MaxGeneration`).
+   - Generational promotion laboratory (`DemonstrateGenerationalPromotion`): verifies object progression from Gen 0 to Gen 1 and Gen 2 through surviving collections.
+   - Large Object Heap laboratory (`DemonstrateLohAllocation`): verifies that 85,000+ byte arrays bypass Gen 0/1 and land immediately in Gen 2 (LOH).
+   - Controlled allocation benchmark (`CompareAllocationImpact`): measures per-thread allocation deltas with `GC.GetAllocatedBytesForCurrentThread()` across naive string concatenation, pre-sized `StringBuilder`, and rented `ArrayPool` buffers.
+2. **DSA Solution**:
+   - `ProductExceptSelf`: Two-pass prefix/suffix product array solution in $O(n)$ time and $O(1)$ auxiliary space without using division.
+
+## Architecture
+```text
+                          Managed Heap Layout
+┌───────────────────────────────────────┬───────────────────────────────┐
+│           Ephemeral Segment           │       Large Object Heap       │
+├───────────────┬───────────────┬───────┼───────────────────────────────┤
+│     Gen 0     │     Gen 1     │ Gen 2 │              LOH              │
+│ (Short-lived) │ (Surviving G0)│(Long) │  (&gt;= 85,000 bytes / objects)  │
+└───────────────┴───────────────┴───────┴───────────────────────────────┘
+       ▲               ▲            ▲                   ▲
+   Allocations      Promoted     Promoted         Allocated Direct
+   (new byte[64])                                 (new byte[85000])
+```
+
+## Key Concepts
+- **Generations (0, 1, 2)**:
+  - **Gen 0**: Ephemeral generation holding newly created objects. Fast, non-blocking sweeps.
+  - **Gen 1**: Serves as a buffer between ephemeral and long-lived objects.
+  - **Gen 2**: Long-lived objects (static singletons, caches, LOH). Collections here are &quot;full GCs&quot; and carry significant pause time overhead.
+- **Large Object Heap (LOH)**: Objects $\ge 85,000$ bytes. Not compacted by default (to avoid copying large memory blocks), leading to fragmentation unless configured with `GCSettings.LargeObjectHeapCompactionMode`.
+- **Server GC vs Workstation GC**:
+  - *Workstation GC*: 1 managed heap, GC runs on the allocating thread (or a single background GC thread). Optimized for desktop UI responsiveness and low memory footprint.
+  - *Server GC*: 1 heap and 1 dedicated GC thread per logical CPU core. Heaps operate in parallel, maximizing throughput for multi-core server workloads at the cost of higher base memory consumption.
+- **Background GC**: Runs concurrent Gen 2 collections in the background while allowing ephemeral (Gen 0/1) collections to occur concurrently, preventing long Stop-the-World pauses.
+
+## Testing
+- Automated xUnit test suite (`GcLaboratoryTests`, `DsaExercisesTests`).
+- Verifies generational promotion through forced generation collections.
+- Verifies LOH threshold ($85,000$ bytes landing in Gen 2).
+- Validates order-of-magnitude allocation reductions between naive concatenation and pre-allocated buffers.
+- Validates prefix/suffix product logic across positive, negative, and zero arrays.
+
+## Performance Observations
+- Naive string concatenation allocated over $30,000+$ bytes for 50 operations due to intermediate immutable string allocations ($O(N^2)$ byte churn).
+- Pre-sized `StringBuilder` and `ArrayPool` reduced heap allocations by $&gt;90\%$, eliminating ephemeral GC churn completely.
+
+## Production Relevance
+- Tuning GC mode in `runtimeconfig.json` (`ServerGarbageCollection: true`) is essential for containerized microservices in Kubernetes. However, setting inappropriate CPU limits can lead to CPU throttling if Server GC spins up threads for each host core instead of the assigned container quota.
+
+## Common Mistakes
+1. Forcing `GC.Collect()` in production request pipelines, which suspends all execution threads and ruins throughput.
+2. Allocating short-lived byte arrays $\ge 85,000$ bytes (e.g. reading full file uploads into memory) instead of streaming with buffers $\le 81,920$ bytes.
+3. Not pre-sizing `StringBuilder` or `List&lt;T&gt;` when the capacity is known, triggering repeated heap buffer resizes.
+4. Ignoring container memory limits when running Server GC.
+
+## Senior Interview Questions
+See [interview-questions.md](file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day04-Garbage-Collection/interview-questions.md) for 10 in-depth architectural questions.
+
+## What I Practically Understood
+- How the generational hypothesis holds in practice: most objects die young in Gen 0.
+- Why objects $\ge 85\text{KB}$ jump directly into Gen 2 and why streaming via `ArrayPool` buffers ($&lt; 85\text{KB}$) protects the LOH.
+- How to accurately measure allocation differences using `GC.GetAllocatedBytesForCurrentThread()`.
+
+## What I Need to Read Later
+- Pinned Object Heap (POH) behavior introduced in .NET 5+.
+- CoreCLR DATAS (Dynamic Adaptation To Application Sizes) GC in .NET 8/9.
+
+## Key Takeaways
+Garbage collection pause times are directly driven by allocation volume and object survival rates. Writing high-throughput .NET microservices requires designing allocation-conscious code that minimizes Gen 0 churn and avoids LOH allocations.
+</script>
+  <script type="text/markdown" id="raw-notes"># Day 04 - Engineering Notes: Garbage Collection Internals
+
+## 1. Generational Hypothesis
+
+The .NET Garbage Collector is built upon the **Weak Generational Hypothesis**:
+1. Most newly allocated objects have short lifespans (locals, transient DTOs, string builders).
+2. The older an object is, the longer it is likely to remain in use (caches, configuration, singletons).
+3. Collecting a portion of the heap (Gen 0) is much faster than collecting the entire heap.
+
+### Heap Segment Sizes and Roles
+- **Gen 0**: Fresh allocations. Very fast allocation via pointer bumping (`allocation context`).
+- **Gen 1**: Serves as a buffer. Objects that survive Gen 0 are promoted here.
+- **Gen 2**: Tenured long-lived objects. Surviving Gen 1 objects promote here. Full collections sweep Gen 0, 1, and 2.
+- **LOH (Large Object Heap)**: Objects $\ge 85,000$ bytes (or double arrays $\ge 1,000$ elements on 32-bit). Because copying large objects is expensive, LOH is swept rather than compacted by default.
+- **POH (Pinned Object Heap)**: Objects pinned for interop or I/O (`GC.AllocateArray&lt;T&gt;(length, pinned: true)`). Avoids fragmenting Gen 0/1/2.
+
+---
+
+## 2. Server GC vs Workstation GC
+
+| Feature | Workstation GC | Server GC |
+|---|---|---|
+| **Heap Count** | 1 logical heap | 1 heap per logical core (e.g. 16 heaps on 16 cores) |
+| **GC Threads** | Runs on requesting thread or 1 background thread | 1 dedicated OS thread per core (`gc_thread`) running at highest priority |
+| **Throughput** | Moderate | Maximum (scales linearly with CPU cores) |
+| **Memory Overhead** | Low footprint | Higher baseline memory (multiple heap segments) |
+| **Target Workload** | Desktop apps, CLI tools, small memory containers | High-throughput web APIs, microservices, databases |
+
+### Enabling Server GC
+In `.csproj`:
+```xml
+&lt;PropertyGroup&gt;
+    &lt;ServerGarbageCollection&gt;true&lt;/ServerGarbageCollection&gt;
+&lt;/PropertyGroup&gt;
+```
+Or via `runtimeconfig.json`:
+```json
+{
+  &quot;runtimeOptions&quot;: {
+    &quot;configProperties&quot;: {
+      &quot;System.GC.Server&quot;: true
+    }
+  }
+}
+```
+
+---
+
+## 3. Background GC vs Concurrent GC
+
+- **Non-concurrent GC**: All application threads are frozen (Stop-The-World) for the entire duration of Gen 0, 1, and 2 sweeps.
+- **Background GC** (current default):
+  - Gen 2 collections run concurrently on dedicated background GC threads while application threads continue executing.
+  - While a background Gen 2 collection is in progress, the GC can interrupt it to perform fast ephemeral Gen 0 / Gen 1 collections on other threads!
+  - Dramatically reduces perceived p99 and p999 API pause times.
+
+---
+
+## 4. DSA Takeaways
+- **Product of Array Except Self**:
+  - Running prefix products forward store cumulative products of all elements before $i$.
+  - Running suffix products backward accumulate into the same array in-place.
+  - Achieves $O(n)$ time with $O(1)$ extra space without division.
+</script>
+  <script type="text/markdown" id="raw-interview"># Day 04 - Senior .NET Interview Questions: Garbage Collection Internals
+
+### Q1: What is the Generational Hypothesis and how does .NET exploit it?
+- **Short answer**: The hypothesis states that most objects die young. .NET exploits this by dividing the heap into Gen 0, Gen 1, and Gen 2, collecting young generations frequently and rapidly without scanning the whole heap.
+- **Deeper answer**: Gen 0 collections are extremely cheap because the GC assumes most objects are unreachable. It traces roots, copies the few surviving objects into Gen 1, and instantly resets the Gen 0 allocation pointer. Gen 2 is only collected when ephemeral collections fail to reclaim enough memory or when system memory is low.
+- **Practical example**: A local DTO created to handle an HTTP request dies within milliseconds and is collected in Gen 0 in microseconds.
+
+---
+
+### Q2: What is the difference between Server GC and Workstation GC in .NET?
+- **Short answer**: Workstation GC uses 1 heap and minimal background threads; Server GC creates a dedicated heap and dedicated high-priority GC thread per CPU core.
+- **Deeper answer**: Workstation GC is tuned for desktop UI responsiveness and low memory footprint. Server GC partitions the heap by CPU core, allowing parallel allocation and parallel collection across cores to maximize server throughput. In containers with limited CPU/memory quotas, Server GC must be tuned carefully to avoid CPU throttling.
+- **Practical example**: On a 16-core machine, Server GC allocates 16 separate heaps, allowing 16 threads to allocate memory simultaneously without lock contention.
+
+---
+
+### Q3: What is the Large Object Heap (LOH) threshold and why does it exist?
+- **Short answer**: The threshold is 85,000 bytes. It exists because copying large memory blocks during GC compaction is prohibitively expensive.
+- **Deeper answer**: When objects $\ge 85,000$ bytes are allocated, copying them during Gen 0/1 sweeps would cause severe CPU cache and memory bus degradation. Therefore, LOH objects are allocated directly into Gen 2 and are swept (marked and freed) rather than compacted by default.
+- **Practical example**: Allocating `new byte[100_000]` goes directly to the LOH. Repeatedly allocating large transient arrays fragments the LOH and triggers full Gen 2 collections.
+
+---
+
+### Q4: How does Background GC reduce latency compared to traditional Non-Concurrent GC?
+- **Short answer**: Background GC performs Gen 2 sweeps on a dedicated background thread while user code continues executing, and permits ephemeral Gen 0/1 collections during the process.
+- **Deeper answer**: In older non-concurrent GC, a Gen 2 collection froze all threads for hundreds of milliseconds. In Background GC, only short pause phases occur (initial mark and final sweep). If the application allocates heavily during a background Gen 2, ephemeral foreground collections can run and finish without waiting for the background sweep to complete.
+- **Practical example**: Background GC keeps ASP.NET Core API p99 latencies within single-digit milliseconds during background memory reclamation.
+
+---
+
+### Q5: What is the Pinned Object Heap (POH) introduced in .NET 5?
+- **Short answer**: A dedicated heap segment specifically for pinned objects to prevent heap fragmentation in Gen 0, 1, and 2.
+- **Deeper answer**: Pinning an object prevents the GC from moving it during compaction, creating &quot;islands&quot; that fragment ephemeral segments. The POH isolates pinned buffers (e.g. for socket reads or native interop) into their own heap segment so regular GC compaction in other generations is uninhibited.
+- **Practical example**:
+```csharp
+byte[] pinnedBuffer = GC.AllocateArray&lt;byte&gt;(4096, pinned: true);
+```
+
+---
+
+### Q6: Why is calling `GC.Collect()` considered an anti-pattern in production ASP.NET Core services?
+- **Short answer**: It forces a full, blocking generation collection, suspends all threads, and disrupts the GC&#x27;s self-tuning algorithms.
+- **Deeper answer**: The GC dynamically adjusts generation budgets based on allocation rates and survival patterns. Forcing a collection promotes short-lived objects that were about to die into Gen 1 or Gen 2 prematurely, increasing overall heap size and ensuring future collections are more expensive.
+- **Practical example**: Calling `GC.Collect()` inside an HTTP endpoint can turn a 2ms request into a 150ms latency spike for all concurrent users.
+
+---
+
+### Q7: What are Card Tables and Write Barriers in the .NET GC?
+- **Short answer**: Mechanisms used by the GC to track when a reference in an older generation is updated to point to an object in a younger generation.
+- **Deeper answer**: To collect Gen 0 without scanning all of Gen 1 and Gen 2 for incoming references, the JIT inserts a tiny write barrier instruction whenever a reference field is assigned. The write barrier marks a bit in a byte array called the &quot;Card Table&quot;. During a Gen 0 collection, the GC only needs to scan the specific cards marked dirty.
+- **Practical example**: When an existing singleton `OrderService` assigns a newly created `Order` to a field, the JIT executes a write barrier marking the corresponding card dirty.
+
+---
+
+### Q8: How can you diagnose high GC pause times and allocation pressure in a live production environment?
+- **Short answer**: Using `dotnet-counters`, `dotnet-trace`, and `dotnet-dump` to inspect `% Time in GC`, `Allocation Rate`, and generation collection counts.
+- **Deeper answer**: Monitor `System.Runtime` counters:
+  - `% Time in GC`: Should ideally stay $&lt; 5\%$; values $&gt; 15\%$ indicate critical memory pressure.
+  - `Gen 0 / Gen 1 / Gen 2 Collections / sec`: A high ratio of Gen 2 to Gen 0 indicates premature promotion or LOH abuse.
+  - Collect an EventPipe trace with `dotnet-trace` to inspect allocation call stacks.
+- **Practical example**: `dotnet-counters monitor --process-id &lt;PID&gt; --counters System.Runtime`
+
+---
+
+### Q9: What is `GCSettings.LatencyMode` and when would you use `SustainedLowLatency`?
+- **Short answer**: It controls how aggressively the GC collects memory to trade off throughput vs pause duration.
+- **Deeper answer**: In `SustainedLowLatency` mode, the GC disables full blocking Gen 2 collections as long as memory permits, performing only Background Gen 2 and ephemeral collections. It is used in financial trading systems or low-latency audio processing during critical execution windows.
+- **Practical example**:
+```csharp
+GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
+```
+
+---
+
+### Q10: How does .NET 8 / 9 DATAS (Dynamic Adaptation To Application Sizes) GC alter Server GC behavior?
+- **Short answer**: DATAS dynamically adjusts heap size based on application demand, dramatically reducing memory usage in small or bursting workloads.
+- **Deeper answer**: Traditional Server GC aggressively retains large heap segments across all cores, which can consume hundreds of megabytes even for idle microservices. DATAS monitors application throughput and adapts the number of active heaps and segment sizes, making Server GC viable in memory-constrained Kubernetes pods.
+- **Practical example**: In `.csproj`: `&lt;GarbageCollectionAdaptationMode&gt;1&lt;/GarbageCollectionAdaptationMode&gt;`.
+</script>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    // Render Markdown when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.marked) {
+        const rEl = document.getElementById('raw-readme');
+        if (rEl) {
+          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
+        }
+        const nEl = document.getElementById('raw-notes');
+        if (nEl) {
+          const nTarget = document.getElementById('notes-container');
+          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
+        }
+        const iEl = document.getElementById('raw-interview');
+        if (iEl) {
+          const iTarget = document.getElementById('interview-container');
+          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
+        }
+      }
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

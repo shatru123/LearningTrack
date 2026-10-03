@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>100-Day .NET + AI Engineering Track | Knowledge Hub</title>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --border: #1e293b;
+      --border-accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      padding: 32px 24px 80px;
+      line-height: 1.6;
+    }
+    .container { max-width: 1300px; margin: 0 auto; }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.lead {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 800px;
+      margin: 0 auto 20px;
+    }
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 36px;
+    }
+    .stat-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 8px 18px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .stat-pill span { color: var(--accent); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 20px;
+    }
+    .day-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-decoration: none;
+      color: inherit;
+    }
+    .day-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-accent);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      background: var(--bg-card-hover);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .day-badge {
+      font-size: 12px;
+      font-weight: 700;
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      padding: 3px 10px;
+      border-radius: 9999px;
+    }
+    .category-badge {
+      font-size: 11px;
+      font-weight: 600;
+      background: #064e3b;
+      color: #6ee7b7;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    h2.card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 10px;
+    }
+    p.card-desc {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 18px;
+      flex-grow: 1;
+    }
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .view-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>100-Day .NET + AI Engineering Track</h1>
+      <p class="lead">Complete knowledge repository containing all daily architectural guides, technical notes, senior interview questions, C# source implementations, unit tests, and DSA problem solvers.</p>
+      <div class="stats-bar">
+        <div class="stat-pill">Completed: <span>13 / 100 Days</span></div>
+        <div class="stat-pill">Test Suite: <span>149 / 149 Passed (100%)</span></div>
+        <div class="stat-pill">Platform: <span>.NET 8 / C# 12</span></div>
+        <div class="stat-pill">Streak: <span>13 Days Active</span></div>
+      </div>
+    </header>
+
+    <div class="grid">
+      
+        <a href="Day01-CSharp-Memory/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 01</span>
+              <span class="category-badge">Memory & Performance</span>
+            </div>
+            <h2 class="card-title">C# Memory Model, Span & ReadOnlySpan</h2>
+            <p class="card-desc">Understand the reality of C# memory allocation, debunk common myths around value vs. reference types and stack vs. heap, and master zero-all...</p>
+          </div>
+          <div class="card-footer">
+            <span>5 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 01 →</span>
+          </div>
+        </a>
+        
+        <a href="Day02-RefStruct-Memory/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 02</span>
+              <span class="category-badge">Memory & Performance</span>
+            </div>
+            <h2 class="card-title">ref struct & Memory<T> in Async Pipelines</h2>
+            <p class="card-desc">Master the architectural and runtime restrictions of `ref struct` (such as `Span&lt;T&gt;`), understand why they cannot cross asynchronous boundar...</p>
+          </div>
+          <div class="card-footer">
+            <span>5 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 02 →</span>
+          </div>
+        </a>
+        
+        <a href="Day03-Async-Await/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 03</span>
+              <span class="category-badge">Async & Concurrency</span>
+            </div>
+            <h2 class="card-title">Async/Await & AsyncStateMachine Compiler Lowering</h2>
+            <p class="card-desc">Dissect how the C# Roslyn compiler transforms asynchronous methods into `IAsyncStateMachine` structs, analyze how `await`, continuations, an...</p>
+          </div>
+          <div class="card-footer">
+            <span>5 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 03 →</span>
+          </div>
+        </a>
+        
+        <a href="Day04-Garbage-Collection/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 04</span>
+              <span class="category-badge">Memory & Performance</span>
+            </div>
+            <h2 class="card-title">Garbage Collection Laboratory & Tuning</h2>
+            <p class="card-desc">Analyze .NET Garbage Collection generational architecture (Gen 0, Gen 1, Gen 2, Large Object Heap, Pinned Object Heap), contrast Server GC v...</p>
+          </div>
+          <div class="card-footer">
+            <span>4 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 04 →</span>
+          </div>
+        </a>
+        
+        <a href="Day05-Middleware-Kestrel/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 05</span>
+              <span class="category-badge">Web Architecture</span>
+            </div>
+            <h2 class="card-title">ASP.NET Core Middleware & Kestrel Server</h2>
+            <p class="card-desc">Build custom asynchronous middleware components using both convention-based (`RequestDelegate`) and factory-activated (`IMiddleware`) patter...</p>
+          </div>
+          <div class="card-footer">
+            <span>7 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 05 →</span>
+          </div>
+        </a>
+        
+        <a href="Day06-Dependency-Injection/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 06</span>
+              <span class="category-badge">Architecture & Patterns</span>
+            </div>
+            <h2 class="card-title">Dependency Injection Lifetimes & Captive Dependencies</h2>
+            <p class="card-desc">Deep dive into .NET Dependency Injection lifetimes (Transient, Scoped, Singleton), isolate the dangerous &quot;Captive Dependency&quot; anti-pattern, ...</p>
+          </div>
+          <div class="card-footer">
+            <span>4 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 06 →</span>
+          </div>
+        </a>
+        
+        <a href="Day07-Minimal-APIs/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 07</span>
+              <span class="category-badge">Web Architecture</span>
+            </div>
+            <h2 class="card-title">Minimal APIs, Endpoint Filters & TypedResults</h2>
+            <p class="card-desc">Master .NET Minimal APIs, route groups (`MapGroup`), strongly typed results (`TypedResults`), cross-cutting validation and observability wit...</p>
+          </div>
+          <div class="card-footer">
+            <span>6 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 07 →</span>
+          </div>
+        </a>
+        
+        <a href="Day08-SQL-Indexes/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 08</span>
+              <span class="category-badge">SQL & Relational DB</span>
+            </div>
+            <h2 class="card-title">PostgreSQL B-Tree Indexing & 8KB Page Layout</h2>
+            <p class="card-desc">Analyze B-Tree index physical layout and page structures in PostgreSQL and SQL Server, inspect index metadata using PostgreSQL&#x27;s `pageinspec...</p>
+          </div>
+          <div class="card-footer">
+            <span>5 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 08 →</span>
+          </div>
+        </a>
+        
+        <a href="Day09-SQL-Execution-Plans/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 09</span>
+              <span class="category-badge">SQL & Relational DB</span>
+            </div>
+            <h2 class="card-title">SQL Execution Plans & Index Tuning</h2>
+            <p class="card-desc">Day 09 focuses on relational database query execution plan internals in PostgreSQL (`EXPLAIN (ANALYZE, BUFFERS)`), identifying execution nod...</p>
+          </div>
+          <div class="card-footer">
+            <span>3 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 09 →</span>
+          </div>
+        </a>
+        
+        <a href="Day10-Transactions-ACID/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 10</span>
+              <span class="category-badge">SQL & Relational DB</span>
+            </div>
+            <h2 class="card-title">SQL Transactions, ACID & MVCC Isolation Anomaly Simulator</h2>
+            <p class="card-desc">Day 10 covers relational database transaction guarantees (ACID), Write-Ahead Logging (WAL), multi-version concurrency control (MVCC) in Post...</p>
+          </div>
+          <div class="card-footer">
+            <span>3 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 10 →</span>
+          </div>
+        </a>
+        
+        <a href="Day11-EFCore-ChangeTracking/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 11</span>
+              <span class="category-badge">EF Core & ORM</span>
+            </div>
+            <h2 class="card-title">EF Core Change Tracking Mechanics & Optimization</h2>
+            <p class="card-desc">This module explores internal Entity Framework Core change tracking mechanics, comparing snapshot tracking against notification tracking, an...</p>
+          </div>
+          <div class="card-footer">
+            <span>5 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 11 →</span>
+          </div>
+        </a>
+        
+        <a href="Day12-EFCore-SplitQueries-Interceptors/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 12</span>
+              <span class="category-badge">EF Core & ORM</span>
+            </div>
+            <h2 class="card-title">EF Core Split Queries & DbCommandInterceptor</h2>
+            <p class="card-desc">This module explores advanced Entity Framework Core query optimization by mitigating Cartesian explosion using `.AsSplitQuery()`, implementi...</p>
+          </div>
+          <div class="card-footer">
+            <span>6 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 12 →</span>
+          </div>
+        </a>
+        
+        <a href="Day13-Dapper-Performance/index.html" class="day-card">
+          <div>
+            <div class="card-header">
+              <span class="day-badge">Day 13</span>
+              <span class="category-badge">Dapper & Performance</span>
+            </div>
+            <h2 class="card-title">High-Performance Data Access with Dapper & Rotated Array Search</h2>
+            <p class="card-desc">This module explores high-performance relational data access patterns using Dapper, multi-mapping relationships, memory-optimized buffered v...</p>
+          </div>
+          <div class="card-footer">
+            <span>4 C# Files • Markdown Included</span>
+            <span class="view-btn">Explore Day 13 →</span>
+          </div>
+        </a>
+        
+    </div>
+  </div>
+</body>
+</html>

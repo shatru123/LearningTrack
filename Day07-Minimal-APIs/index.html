@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Day 07: Minimal APIs, Endpoint Filters &amp; TypedResults | 100-Day .NET + AI Track</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
@@ -17,7 +16,7 @@
       --bg-card-hover: #1f2937;
       --bg-code: #0f172a;
       --border: #1e293b;
-      --border-accent: #3b82f6;
+      --border-accent: #38bdf8;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
@@ -25,6 +24,7 @@
       --accent-glow: rgba(56, 189, 248, 0.15);
       --success: #10b981;
       --warning: #f59e0b;
+      --purple: #c084fc;
     }
     * {
       box-sizing: border-box;
@@ -143,6 +143,24 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
     .diagram-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -167,10 +185,13 @@
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 24px;
       overflow-x: auto;
       padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
     }
     .tab-btn {
       background: transparent;
@@ -180,7 +201,7 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      border-bottom: 2px solid transparent;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -189,10 +210,13 @@
     }
     .tab-btn:hover {
       color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
     }
     .tab-btn.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .tab-pane {
       display: none;
@@ -213,70 +237,87 @@
       line-height: 1.7;
     }
     .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
     .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
-    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
     .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
-    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
     .markdown-content code {
-      background: rgba(56, 189, 248, 0.1);
+      background: rgba(56, 189, 248, 0.12);
       color: #38bdf8;
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 13px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
     .markdown-content pre {
       background: var(--bg-code);
-      padding: 16px;
-      border-radius: 8px;
+      padding: 18px;
       overflow-x: auto;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
     .markdown-content pre code {
       background: transparent;
       padding: 0;
-      color: inherit;
-      font-size: 13px;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
     }
     .markdown-content table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
+      font-size: 14px;
+      text-align: left;
     }
     .markdown-content th, .markdown-content td {
       padding: 10px 14px;
       border: 1px solid var(--border);
-      text-align: left;
     }
     .markdown-content th {
-      background: rgba(30, 41, 59, 0.8);
-      color: #fff;
+      background: #1e293b;
+      color: #f8fafc;
       font-weight: 600;
     }
     .markdown-content tr:nth-child(even) {
-      background: rgba(15, 23, 42, 0.4);
+      background: rgba(15, 23, 42, 0.5);
     }
     .markdown-content blockquote {
       border-left: 4px solid var(--accent);
-      padding: 8px 16px;
+      padding: 10px 18px;
       background: var(--accent-glow);
       border-radius: 0 8px 8px 0;
-      margin-bottom: 16px;
+      margin: 16px 0;
       color: #e2e8f0;
     }
-    /* QA Accordion Cards */
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
     .qa-controls {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
-    .qa-card {
+    details.qa-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -284,10 +325,10 @@
       overflow: hidden;
       transition: border-color 0.2s;
     }
-    .qa-card:hover {
+    details.qa-card:hover {
       border-color: var(--border-accent);
     }
-    .qa-header {
+    summary.qa-header {
       padding: 16px 20px;
       background: #1e293b;
       cursor: pointer;
@@ -295,6 +336,13 @@
       align-items: center;
       justify-content: space-between;
       user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
     }
     .qa-badge {
       background: #1e3a8a;
@@ -316,16 +364,13 @@
       color: var(--accent);
       transition: transform 0.2s;
     }
-    .qa-card.open .qa-toggle-icon {
+    details.qa-card[open] .qa-toggle-icon {
       transform: rotate(180deg);
     }
     .qa-body {
       padding: 24px;
-      border-top: 1px solid var(--border);
-      display: none;
-    }
-    .qa-card.open .qa-body {
-      display: block;
+      background: #111827;
+      line-height: 1.7;
     }
     /* Code Viewer Styles */
     .file-card {
@@ -365,19 +410,29 @@
     .copy-btn:hover {
       background: #475569;
     }
-    pre[class*="language-"] {
-      margin: 0 !important;
-      border-radius: 0 !important;
-      background: var(--bg-code) !important;
-      padding: 16px !important;
-      font-size: 13px !important;
-      line-height: 1.5 !important;
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .footer-bar {
       text-align: center;
       margin-top: 40px;
       color: var(--text-dim);
       font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
     }
   </style>
 </head>
@@ -389,7 +444,7 @@
         <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
         <span class="badge badge-day">Day 07</span>
         <span class="badge badge-category">Web Architecture</span>
-        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
       </div>
       <div class="nav-controls">
         <a href="../Day06-Dependency-Injection/index.html" class="nav-btn">← Day 06</a>
@@ -418,11 +473,17 @@
     <div class="hero">
       <h1>Day 07: Minimal APIs, Endpoint Filters &amp; TypedResults</h1>
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 4 Source & 2 Test Files</span>
+      </div>
     </div>
 
     <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
     <div class="diagram-card">
-      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
       
         <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
           <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
@@ -450,23 +511,227 @@
     </div>
 
     <div class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
-      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
       <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (4 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
     </div>
 
     <!-- Tab Panes -->
-    <div id="pane-readme" class="tab-pane active">
-      <div class="markdown-content" id="readme-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 07 - Engineering Notes: Minimal APIs vs Controllers</h1>
+<h2>1. Minimal APIs vs Controllers Architectural Comparison</h2>
+<div class="table-container"><table><thead><tr>
+<th>Dimension</th>
+<th>Minimal APIs</th>
+<th>Traditional MVC Controllers</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Underlying Mechanism</strong></td>
+<td>Direct <code>RequestDelegate</code> mapped to endpoint</td>
+<td><code>ControllerActionInvoker</code>, Action Descriptors, Filter Pipelines</td>
+</tr>
+<tr>
+<td><strong>Startup Discovery</strong></td>
+<td>Expressive delegate mapping at startup</td>
+<td>Assembly scanning, reflection over all controller classes</td>
+</tr>
+<tr>
+<td><strong>Allocations per Request</strong></td>
+<td>Zero controller object allocations</td>
+<td>Instantiates new Controller class instance per request</td>
+</tr>
+<tr>
+<td><strong>Filter Model</strong></td>
+<td><code>IEndpointFilter</code></td>
+<td><code>IActionFilter</code>, <code>IResourceFilter</code>, <code>IResultFilter</code></td>
+</tr>
+<tr>
+<td><strong>Return Typing</strong></td>
+<td><code>TypedResults</code> (<code>Results&lt;Ok&lt;T&gt;, NotFound&gt;</code>)</td>
+<td><code>IActionResult</code> / <code>ActionResult&lt;T&gt;</code></td>
+</tr>
+<tr>
+<td><strong>OpenAPI / Swagger</strong></td>
+<td>Inferred automatically from <code>TypedResults</code></td>
+<td>Requires <code>[ProducesResponseType]</code> annotations</td>
+</tr>
+<tr>
+<td><strong>Native AOT Compatibility</strong></td>
+<td>Fully supported via RequestDelegateGenerator</td>
+<td>Limited (reflection in model binding and controllers)</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>2. The Power of <code>TypedResults</code></h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">// Returns Results&lt;Ok&lt;EventDto&gt;, NotFound&lt;ProblemDetails&gt;&gt;
+app.MapGet(&quot;/events/{id}&quot;, Results&lt;Ok&lt;EventDto&gt;, NotFound&lt;ProblemDetails&gt;&gt; (int id, IEventService service) =&gt;
+{
+    var evt = service.Find(id);
+    return evt != null
+        ? TypedResults.Ok(evt)
+        : TypedResults.NotFound(new ProblemDetails { Detail = &quot;Event not found&quot; });
+});</code></pre></div>
+<h3>Key Advantages:</h3>
+<ol>
+<li><strong>Unit Testability</strong>: The handler returns concrete types (<code>Ok&lt;EventDto&gt;</code>, <code>NotFound&lt;ProblemDetails&gt;</code>) whose <code>.Value</code> or <code>.StatusCode</code> can be tested directly without casting or mocking <code>HttpContext</code>.</li>
+<li><strong>OpenAPI Generation</strong>: Endpoint metadata generators automatically inspect the generic type arguments of <code>Results&lt;...&gt;</code> and generate complete OpenAPI 3.0 response schemas for <code>200</code> and <code>404</code> with correct schemas.</li>
+</ol>
+<hr/>
+<h2>3. Anatomy of <code>IEndpointFilter</code></h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public class MyEndpointFilter : IEndpointFilter
+{
+    public async ValueTask&lt;object?&gt; InvokeAsync(
+        EndpointFilterInvocationContext context,
+        EndpointFilterDelegate next)
+    {
+        // 1. Pre-execution inspection
+        var httpContext = context.HttpContext;
+        var arg0 = context.GetArgument&lt;MyDto&gt;(0);
+
+        // 2. Can short-circuit before handler runs!
+        if (arg0 == null) return TypedResults.BadRequest();
+
+        // 3. Invoke handler or next filter
+        var result = await next(context);
+
+        // 4. Post-execution mutation
+        return result;
+    }
+}</code></pre></div>
+<hr/>
+<h2>4. DSA Takeaways</h2>
+<ul>
+<li><strong>Best Time to Buy and Sell Stock</strong>:</li>
+<li>Keep track of the minimum price observed so far (<code>minPrice = Math.Min(minPrice, price)</code>).</li>
+<li>Calculate potential profit on current day (<code>price - minPrice</code>).</li>
+<li>Update <code>maxProfit = Math.Max(maxProfit, potentialProfit)</code>.</li>
+<li>Single pass $O(n)$ time with $O(1)$ space.</li>
+</ul>
       </div>
     </div>
 
-    <div id="pane-notes" class="tab-pane">
-      <div class="markdown-content" id="notes-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 07 - ASP.NET Core Minimal APIs, Endpoint Routing, TypedResults & Filters</h1>
+<h2>Objective</h2>
+<p>Master .NET Minimal APIs, route groups (<code>MapGroup</code>), strongly typed results (<code>TypedResults</code>), cross-cutting validation and observability with <code>IEndpointFilter</code>, OpenAPI metadata enrichment, and contrast Minimal API internals against traditional MVC Controllers.</p>
+<h2>Original Learning Tasks</h2>
+<ol>
+<li>Endpoint routing, IEndpointFilter, TypedResults, and validation</li>
+<li>DSA: Best Time to Buy and Sell Stock</li>
+</ol>
+<h2>Practical Problem</h2>
+<p>Traditional ASP.NET Core MVC Controllers incur significant overhead: reflection-based action discovery, heavy controller context allocations, model binding filters, and untyped <code>IActionResult</code> returns that obscure OpenAPI response schemas. In high-performance microservices, teams need lightweight routing with zero controller bloat, compile-time type safety via <code>TypedResults</code>, and composable endpoint filters.</p>
+<h2>What I Implemented</h2>
+<ol>
+<li><strong>Event Minimal API</strong>:</li>
+</ol>
+<ul>
+<li><code>MapGroup(&quot;/api/events&quot;)</code>: Route prefixing and unified filter application.</li>
+<li><code>GET /api/events</code>: Query string filtering (<code>?status=...</code>).</li>
+<li><code>GET /api/events/{id}</code>: Route parameter binding.</li>
+<li><code>POST /api/events</code>: JSON request body binding with automatic <code>201 Created</code> Location header.</li>
+<li><code>PUT /api/events/{id}</code>: Update operation returning strongly-typed <code>Results&lt;Ok, NotFound, ProblemHttpResult&gt;</code>.</li>
+<li><code>DELETE /api/events/{id}</code>: Returns <code>204 NoContent</code> or <code>404 NotFound</code>.</li>
+</ul>
+<ol>
+<li><strong>IEndpointFilter Implementations</strong>:</li>
+</ol>
+<ul>
+<li><code>ValidationFilter&lt;T&gt;</code>: Reusable filter intercepting incoming DTOs, validating constraints, and short-circuiting with RFC 7807 <code>ProblemDetails</code> on validation failure.</li>
+<li><code>ExecutionTimingFilter</code>: Attaches custom <code>X-Endpoint-Time-Ms</code> response header measuring handler execution.</li>
+</ul>
+<ol>
+<li><strong>TypedResults Union Types</strong>:</li>
+</ol>
+<ul>
+<li>Strongly-typed compile-time result unions (<code>Results&lt;Ok&lt;T&gt;, NotFound&lt;ProblemDetails&gt;, ProblemHttpResult&gt;</code>) that automatically populate Swagger/OpenAPI response schemas without manual <code>[ProducesResponseType]</code> attributes.</li>
+</ul>
+<ol>
+<li><strong>WebApplicationFactory Integration Tests</strong>:</li>
+</ol>
+<ul>
+<li>End-to-end integration tests validating CRUD lifecycles, filter short-circuiting, and response headers.</li>
+</ul>
+<ol>
+<li><strong>DSA Solution</strong>:</li>
+</ol>
+<ul>
+<li><code>MaxProfit</code>: Single-pass running minimum price and maximum profit tracker in $O(n)$ time and $O(1)$ space.</li>
+</ul>
+<h2>Architecture</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                             HTTP Request (Kestrel)
+                                       │
+                                       ▼
+                             Endpoint Routing Match
+                                       │
+                         Endpoint Filter Pipeline
+                         ┌─────────────────────────────┐
+                         │ 1. ExecutionTimingFilter    │
+                         │             │               │
+                         │             ▼               │
+                         │ 2. ValidationFilter&lt;T&gt;      │
+                         │   (Fails fast if invalid)   │
+                         └─────────────┬───────────────┘
+                                       │ (Valid)
+                                       ▼
+                              Endpoint Handler
+                         (Func&lt;..., IResult&gt; Delegate)
+                                       │
+                                       ▼
+                              IEventManager (Service)
+                                       │
+                                       ▼
+                       TypedResults (Strongly Typed IResult)</code></pre></div>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong><code>MapGroup</code></strong>: Enables modular endpoint organization, shared route prefixes, shared authorization policies, and shared endpoint filters across related route handlers.</li>
+<li><strong><code>TypedResults</code> vs <code>Results</code></strong>: <code>Results.Ok(...)</code> returns <code>IResult</code> (boxing return type and requiring reflection for Swagger). <code>TypedResults.Ok(...)</code> returns concrete <code>Ok&lt;T&gt;</code>, enabling compile-time return type checking and automatic OpenAPI schema extraction.</li>
+<li><strong><code>IEndpointFilter</code></strong>: Replaces MVC action filters in Minimal APIs. Can inspect handler arguments, short-circuit execution, and mutate responses before or after handler invocation.</li>
+<li><strong>Minimal APIs vs. Controllers</strong>: Minimal APIs compile directly to <code>RequestDelegate</code> invocation graphs at startup, bypassing controller activation, action descriptor lookups, and model binding reflection trees.</li>
+</ul>
+<h2>Testing</h2>
+<ul>
+<li>Automated integration test suite (<code>MinimalApiTests</code>, <code>DsaExercisesTests</code>) using <code>WebApplicationFactory&lt;Program&gt;</code>.</li>
+<li>Validates full CRUD lifecycles (Create -> Read -> Update -> Delete -> Verify 404).</li>
+<li>Confirms validation filter short-circuiting on negative prices with <code>400 Bad Request</code>.</li>
+<li>Confirms timing filter header presence (<code>X-Endpoint-Time-Ms</code>).</li>
+<li>Validates stock profit calculation across varied market patterns.</li>
+</ul>
+<h2>Performance Observations</h2>
+<ul>
+<li>Minimal APIs eliminate controller activation allocations (<code>ControllerBase</code> instantiation, action filter arrays).</li>
+<li><code>TypedResults</code> avoid boxing allocations associated with untyped <code>IActionResult</code>.</li>
+</ul>
+<h2>Production Relevance</h2>
+<ul>
+<li>Minimal APIs are the standard for high-performance .NET microservices, cloud-native serverless functions (AWS Lambda, Azure Functions), and containerized APIs where startup time, memory footprint, and RPS throughput are critical.</li>
+</ul>
+<h2>Common Mistakes</h2>
+<ol>
+<li>Using untyped <code>Results.Ok()</code> instead of <code>TypedResults.Ok()</code> in unit-testable APIs.</li>
+<li>Writing validation logic directly inside endpoint handler bodies rather than encapsulating it in reusable <code>IEndpointFilter</code> classes.</li>
+<li>Forgetting route parameter constraints (e.g. <code>{id:int}</code>), leading to routing ambiguity.</li>
+</ol>
+<h2>Senior Interview Questions</h2>
+<p>See <a href="file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day07-Minimal-APIs/interview-questions.md" target="_blank" rel="noopener noreferrer">interview-questions.md</a> for 10 in-depth architectural questions.</p>
+<h2>What I Practically Understood</h2>
+<ul>
+<li>How <code>IEndpointFilter</code> chains wrap endpoint delegate invocation.</li>
+<li>How <code>TypedResults</code> union types (<code>Results&lt;T1, T2, ...&gt;</code>) provide compile-time safety for multiple HTTP status codes.</li>
+<li>How <code>MapGroup</code> eliminates repetitive routing prefixes and middleware attachment.</li>
+</ul>
+<h2>What I Need to Read Later</h2>
+<ul>
+<li>Source-generated Minimal APIs (<code>Microsoft.AspNetCore.Http.RequestDelegateGenerator</code>) for Native AOT compilation.</li>
+<li>OpenApi document transformers and scalar API documentation in .NET 8 / 9.</li>
+</ul>
+<h2>Key Takeaways</h2>
+<p>Minimal APIs are not just syntactically cleaner; they represent an architectural shift in ASP.NET Core toward lean, delegate-based, allocation-reduced endpoint routing that natively supports Native AOT.</p>
       </div>
     </div>
 
@@ -480,206 +745,213 @@
       </div>
       <div id="interview-cards-container">
         
-        <div class="qa-card open" id="qa-card-1">
-          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+        <details class="qa-card" open>
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q1</span>
               <span class="qa-title">What makes Minimal APIs more performant than MVC Controllers in ASP.NET Core?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Minimal APIs bypass the MVC action execution pipeline, eliminate per-request controller activations, and map directly to compiled request delegates.</li>
+<li><strong>Deeper answer</strong>: MVC controllers require reflection-based discovery, controller factory instantiations, action descriptor cache lookups, model state validation dictionaries, and filter pipeline allocations on every request. Minimal APIs use compiled lambda expressions or source-generated request delegates, drastically reducing memory allocations and instruction counts on the request hot path.</li>
+<li><strong>Practical example</strong>: A Minimal API endpoint can achieve $15–30\%$ higher throughput (requests per second) and lower memory footprint compared to the equivalent MVC controller action.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Minimal APIs bypass the MVC action execution pipeline, eliminate per-request controller activations, and map directly to compiled request delegates.
-- **Deeper answer**: MVC controllers require reflection-based discovery, controller factory instantiations, action descriptor cache lookups, model state validation dictionaries, and filter pipeline allocations on every request. Minimal APIs use compiled lambda expressions or source-generated request delegates, drastically reducing memory allocations and instruction counts on the request hot path.
-- **Practical example**: A Minimal API endpoint can achieve $15–30\%$ higher throughput (requests per second) and lower memory footprint compared to the equivalent MVC controller action.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card open" id="qa-card-2">
-          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+        <details class="qa-card" open>
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q2</span>
               <span class="qa-title">What is the difference between `Results` and `TypedResults` in Minimal APIs?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>Results</code> returns <code>IResult</code> (untyped); <code>TypedResults</code> returns concrete types (e.g. <code>Ok&lt;T&gt;</code>, <code>Created&lt;T&gt;</code>), enabling compile-time return type verification and automatic OpenAPI response schema generation.</li>
+<li><strong>Deeper answer</strong>: <code>Results.Ok(data)</code> returns an object implementing <code>IResult</code>, forcing Swagger/OpenAPI generators to guess the response schema or require <code>[ProducesResponseType]</code> annotations. <code>TypedResults.Ok(data)</code> returns <code>Ok&lt;T&gt;</code>, which enables the endpoint to return <code>Results&lt;Ok&lt;T&gt;, NotFound&gt;</code> union types. Unit tests can assert directly on <code>result.Result.Value</code> without running an HTTP server.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">Results&lt;Ok&lt;UserDto&gt;, NotFound&gt; GetUser(int id) =&gt; ...</code></pre></div>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: `Results` returns `IResult` (untyped); `TypedResults` returns concrete types (e.g. `Ok&lt;T&gt;`, `Created&lt;T&gt;`), enabling compile-time return type verification and automatic OpenAPI response schema generation.
-- **Deeper answer**: `Results.Ok(data)` returns an object implementing `IResult`, forcing Swagger/OpenAPI generators to guess the response schema or require `[ProducesResponseType]` annotations. `TypedResults.Ok(data)` returns `Ok&lt;T&gt;`, which enables the endpoint to return `Results&lt;Ok&lt;T&gt;, NotFound&gt;` union types. Unit tests can assert directly on `result.Result.Value` without running an HTTP server.
-- **Practical example**:
-```csharp
-Results&lt;Ok&lt;UserDto&gt;, NotFound&gt; GetUser(int id) =&gt; ...
-```
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-3">
-          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q3</span>
               <span class="qa-title">How does `IEndpointFilter` differ from MVC Action Filters?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>IEndpointFilter</code> applies to individual endpoints or route groups (<code>MapGroup</code>), uses modern <code>ValueTask&lt;object?&gt;</code>, and works directly with <code>EndpointFilterInvocationContext</code> rather than <code>ActionExecutingContext</code>.</li>
+<li><strong>Deeper answer</strong>: MVC action filters are tied to the MVC middleware and controller pipeline. <code>IEndpointFilter</code> is part of core routing (<code>Microsoft.AspNetCore.Http</code>), meaning it executes closer to the endpoint without loading the MVC framework. It can be attached to route groups (<code>group.AddEndpointFilter&lt;T&gt;()</code>), applying uniformly to all child routes.</li>
+<li><strong>Practical example</strong>: Creating a global validation filter that intercepts all POST/PUT routes in a route group.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: `IEndpointFilter` applies to individual endpoints or route groups (`MapGroup`), uses modern `ValueTask&lt;object?&gt;`, and works directly with `EndpointFilterInvocationContext` rather than `ActionExecutingContext`.
-- **Deeper answer**: MVC action filters are tied to the MVC middleware and controller pipeline. `IEndpointFilter` is part of core routing (`Microsoft.AspNetCore.Http`), meaning it executes closer to the endpoint without loading the MVC framework. It can be attached to route groups (`group.AddEndpointFilter&lt;T&gt;()`), applying uniformly to all child routes.
-- **Practical example**: Creating a global validation filter that intercepts all POST/PUT routes in a route group.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-4">
-          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q4</span>
               <span class="qa-title">How does `MapGroup` improve code architecture in large Minimal API projects?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It allows organizing related endpoints into modular prefixes, sharing common middleware filters, authorization policies, and rate-limiting rules.</li>
+<li><strong>Deeper answer</strong>: In enterprise applications with hundreds of endpoints, putting everything in <code>Program.cs</code> creates unmaintainable monolithic files. <code>MapGroup</code> allows dividing routes into feature modules (e.g., <code>OrderEndpoints.Map(app.MapGroup(&quot;/api/orders&quot;))</code>), attaching authorization (<code>.RequireAuthorization(&quot;Admin&quot;)</code>) and tags (<code>.WithTags(&quot;Orders&quot;)</code>) once to the entire group.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">var group = app.MapGroup(&quot;/api/v1/orders&quot;).RequireAuthorization().AddEndpointFilter&lt;AuditFilter&gt;();</code></pre></div>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: It allows organizing related endpoints into modular prefixes, sharing common middleware filters, authorization policies, and rate-limiting rules.
-- **Deeper answer**: In enterprise applications with hundreds of endpoints, putting everything in `Program.cs` creates unmaintainable monolithic files. `MapGroup` allows dividing routes into feature modules (e.g., `OrderEndpoints.Map(app.MapGroup(&quot;/api/orders&quot;))`), attaching authorization (`.RequireAuthorization(&quot;Admin&quot;)`) and tags (`.WithTags(&quot;Orders&quot;)`) once to the entire group.
-- **Practical example**:
-```csharp
-var group = app.MapGroup(&quot;/api/v1/orders&quot;).RequireAuthorization().AddEndpointFilter&lt;AuditFilter&gt;();
-```
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-5">
-          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q5</span>
               <span class="qa-title">How do Minimal APIs support Native AOT (Ahead-Of-Time) compilation?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: By using the C# Roslyn <code>RequestDelegateGenerator</code> (RDG) source generator introduced in .NET 8 to generate parameter binding and routing code at compile time rather than using runtime reflection.</li>
+<li><strong>Deeper answer</strong>: Traditional MVC relies heavily on runtime reflection and dynamic code generation (<code>Emit</code>) for model binding and controller activation, which is incompatible with Native AOT's closed-world assumption. The RequestDelegateGenerator emits C# source code during compilation for every <code>MapGet</code>/<code>MapPost</code>, allowing instantaneous startup and zero-JIT memory footprints.</li>
+<li><strong>Practical example</strong>: Compiling an ASP.NET Core Minimal API into a self-contained single-file 15MB binary that boots in under 10 milliseconds.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: By using the C# Roslyn `RequestDelegateGenerator` (RDG) source generator introduced in .NET 8 to generate parameter binding and routing code at compile time rather than using runtime reflection.
-- **Deeper answer**: Traditional MVC relies heavily on runtime reflection and dynamic code generation (`Emit`) for model binding and controller activation, which is incompatible with Native AOT&#x27;s closed-world assumption. The RequestDelegateGenerator emits C# source code during compilation for every `MapGet`/`MapPost`, allowing instantaneous startup and zero-JIT memory footprints.
-- **Practical example**: Compiling an ASP.NET Core Minimal API into a self-contained single-file 15MB binary that boots in under 10 milliseconds.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-6">
-          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q6</span>
               <span class="qa-title">How does parameter binding work in Minimal APIs without `[FromBody]`, `[FromQuery]`, etc.?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Minimal APIs use convention-based heuristics: route parameters match route templates, services registered in DI are injected, complex types are bound from JSON body, and primitive types are bound from query strings.</li>
+<li><strong>Deeper answer</strong>: The binding order is:</li>
+</ul>
+<ol>
+<li>Route values matching template <code>{id}</code>.</li>
+<li>Services from DI container (or <code>[FromKeyedServices]</code>).</li>
+<li><code>HttpContext</code>, <code>HttpRequest</code>, <code>HttpResponse</code>, <code>ClaimsPrincipal</code>, <code>CancellationToken</code>.</li>
+<li>Special types (<code>IFormFile</code>, <code>IFormCollection</code>).</li>
+<li>Types implementing <code>TryParse</code> or <code>BindAsync</code> static methods.</li>
+<li>Complex record/class types bound from JSON request body.</li>
+</ol>
+<ul>
+<li><strong>Practical example</strong>: A parameter <code>int id</code> matching <code>/events/{id}</code> binds to route; <code>IEventService service</code> binds to DI; <code>CreateEventRequest req</code> binds to JSON body automatically.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Minimal APIs use convention-based heuristics: route parameters match route templates, services registered in DI are injected, complex types are bound from JSON body, and primitive types are bound from query strings.
-- **Deeper answer**: The binding order is:
-  1. Route values matching template `{id}`.
-  2. Services from DI container (or `[FromKeyedServices]`).
-  3. `HttpContext`, `HttpRequest`, `HttpResponse`, `ClaimsPrincipal`, `CancellationToken`.
-  4. Special types (`IFormFile`, `IFormCollection`).
-  5. Types implementing `TryParse` or `BindAsync` static methods.
-  6. Complex record/class types bound from JSON request body.
-- **Practical example**: A parameter `int id` matching `/events/{id}` binds to route; `IEventService service` binds to DI; `CreateEventRequest req` binds to JSON body automatically.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-7">
-          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q7</span>
               <span class="qa-title">What is the `BindAsync` and `TryParse` pattern in Minimal APIs?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
-          </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Custom parameter binding mechanisms where a type defines a public static `BindAsync` or `TryParse` method to parse itself from the HTTP context or route string.
-- **Deeper answer**: Instead of writing custom model binders in MVC, a record or class can implement `public static ValueTask&lt;T?&gt; BindAsync(HttpContext context)` to inspect headers, cookies, or queries, or `public static bool TryParse(string? value, out T result)`. This makes custom binding logic self-contained within the domain/DTO type.
-- **Practical example**:
-```csharp
-public record PagingParameters(int Page, int Size) {
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Custom parameter binding mechanisms where a type defines a public static <code>BindAsync</code> or <code>TryParse</code> method to parse itself from the HTTP context or route string.</li>
+<li><strong>Deeper answer</strong>: Instead of writing custom model binders in MVC, a record or class can implement <code>public static ValueTask&lt;T?&gt; BindAsync(HttpContext context)</code> to inspect headers, cookies, or queries, or <code>public static bool TryParse(string? value, out T result)</code>. This makes custom binding logic self-contained within the domain/DTO type.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public record PagingParameters(int Page, int Size) {
     public static ValueTask&lt;PagingParameters&gt; BindAsync(HttpContext context) { ... }
-}
-```
-
----</div>
+}</code></pre></div>
+<hr/>
           </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-8">
-          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q8</span>
               <span class="qa-title">When would you still choose MVC Controllers over Minimal APIs?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When maintaining legacy applications, when rendering server-side Razor views (<code>ViewResult</code>), or when utilizing complex legacy third-party MVC filter libraries.</li>
+<li><strong>Deeper answer</strong>: For pure REST/HTTP microservices in modern .NET, Minimal APIs are Microsoft's recommended default. Controllers are primarily necessary if you are building server-rendered UI (Razor Pages / MVC Views with <code>TagHelpers</code>) or if an existing enterprise codebase has extensive custom action filter hierarchies that would be costly to rewrite as <code>IEndpointFilter</code>.</li>
+<li><strong>Practical example</strong>: A hybrid application serving both HTML views and REST API endpoints.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: When maintaining legacy applications, when rendering server-side Razor views (`ViewResult`), or when utilizing complex legacy third-party MVC filter libraries.
-- **Deeper answer**: For pure REST/HTTP microservices in modern .NET, Minimal APIs are Microsoft&#x27;s recommended default. Controllers are primarily necessary if you are building server-rendered UI (Razor Pages / MVC Views with `TagHelpers`) or if an existing enterprise codebase has extensive custom action filter hierarchies that would be costly to rewrite as `IEndpointFilter`.
-- **Practical example**: A hybrid application serving both HTML views and REST API endpoints.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-9">
-          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q9</span>
               <span class="qa-title">How do you unit test Minimal API endpoint handlers in isolation?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
-          </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: By extracting the handler into a named method or static delegate returning `TypedResults`, or by using `WebApplicationFactory&lt;Program&gt;` for integration testing.
-- **Deeper answer**: Because `TypedResults.Ok(data)` returns a concrete `Ok&lt;T&gt;` type, you can unit-test the handler method directly without spinning up any test server: `var result = EventEndpoints.GetById(1001, mockService.Object); Assert.Equal(1001, result.Result.Value.Id);`.
-- **Practical example**:
-```csharp
-[Fact]
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: By extracting the handler into a named method or static delegate returning <code>TypedResults</code>, or by using <code>WebApplicationFactory&lt;Program&gt;</code> for integration testing.</li>
+<li><strong>Deeper answer</strong>: Because <code>TypedResults.Ok(data)</code> returns a concrete <code>Ok&lt;T&gt;</code> type, you can unit-test the handler method directly without spinning up any test server: <code>var result = EventEndpoints.GetById(1001, mockService.Object); Assert.Equal(1001, result.Result.Value.Id);</code>.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">[Fact]
 public void Handler_Returns_Ok_With_Value() {
     var result = (Ok&lt;EventResponse&gt;)MyHandler(1, mockService.Object);
     Assert.Equal(1, result.Value.Id);
-}
-```
-
----</div>
+}</code></pre></div>
+<hr/>
           </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-10">
-          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q10</span>
               <span class="qa-title">How does `EndpointMetadata` work in Minimal APIs?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Metadata provides information about the endpoint (authorization, OpenAPI specs, CORS, filters) attached to the route's <code>Endpoint</code> object.</li>
+<li><strong>Deeper answer</strong>: Methods like <code>.RequireAuthorization()</code>, <code>.WithTags()</code>, <code>.Produces&lt;T&gt;()</code>, and <code>.WithSummary()</code> append metadata objects to the endpoint's <code>EndpointBuilder.Metadata</code> collection. Downstream middleware (such as Authorization or OpenAPI generators) inspect this metadata to enforce rules or generate API documentation.</li>
+<li><strong>Practical example</strong>: <code>app.MapGet(&quot;/secure&quot;, ...).RequireAuthorization(&quot;AdminPolicy&quot;);</code> attaches an <code>AuthorizeData</code> instance to the endpoint's metadata collection.</li>
+</ul>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Metadata provides information about the endpoint (authorization, OpenAPI specs, CORS, filters) attached to the route&#x27;s `Endpoint` object.
-- **Deeper answer**: Methods like `.RequireAuthorization()`, `.WithTags()`, `.Produces&lt;T&gt;()`, and `.WithSummary()` append metadata objects to the endpoint&#x27;s `EndpointBuilder.Metadata` collection. Downstream middleware (such as Authorization or OpenAPI generators) inspect this metadata to enforce rules or generate API documentation.
-- **Practical example**: `app.MapGet(&quot;/secure&quot;, ...).RequireAuthorization(&quot;AdminPolicy&quot;);` attaches an `AuthorizeData` instance to the endpoint&#x27;s metadata collection.</div>
-          </div>
-        </div>
+        </details>
         
       </div>
     </div>
@@ -1164,45 +1436,152 @@ public class MinimalApiTests : IClassFixture&lt;WebApplicationFactory&lt;Program
                 
     </div>
 
-    <div class="footer-bar">
-      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
-    </div>
-  </div>
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 07 - Engineering Notes: Minimal APIs vs Controllers</h1>
+<h2>1. Minimal APIs vs Controllers Architectural Comparison</h2>
+<div class="table-container"><table><thead><tr>
+<th>Dimension</th>
+<th>Minimal APIs</th>
+<th>Traditional MVC Controllers</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Underlying Mechanism</strong></td>
+<td>Direct <code>RequestDelegate</code> mapped to endpoint</td>
+<td><code>ControllerActionInvoker</code>, Action Descriptors, Filter Pipelines</td>
+</tr>
+<tr>
+<td><strong>Startup Discovery</strong></td>
+<td>Expressive delegate mapping at startup</td>
+<td>Assembly scanning, reflection over all controller classes</td>
+</tr>
+<tr>
+<td><strong>Allocations per Request</strong></td>
+<td>Zero controller object allocations</td>
+<td>Instantiates new Controller class instance per request</td>
+</tr>
+<tr>
+<td><strong>Filter Model</strong></td>
+<td><code>IEndpointFilter</code></td>
+<td><code>IActionFilter</code>, <code>IResourceFilter</code>, <code>IResultFilter</code></td>
+</tr>
+<tr>
+<td><strong>Return Typing</strong></td>
+<td><code>TypedResults</code> (<code>Results&lt;Ok&lt;T&gt;, NotFound&gt;</code>)</td>
+<td><code>IActionResult</code> / <code>ActionResult&lt;T&gt;</code></td>
+</tr>
+<tr>
+<td><strong>OpenAPI / Swagger</strong></td>
+<td>Inferred automatically from <code>TypedResults</code></td>
+<td>Requires <code>[ProducesResponseType]</code> annotations</td>
+</tr>
+<tr>
+<td><strong>Native AOT Compatibility</strong></td>
+<td>Fully supported via RequestDelegateGenerator</td>
+<td>Limited (reflection in model binding and controllers)</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>2. The Power of <code>TypedResults</code></h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">// Returns Results&lt;Ok&lt;EventDto&gt;, NotFound&lt;ProblemDetails&gt;&gt;
+app.MapGet(&quot;/events/{id}&quot;, Results&lt;Ok&lt;EventDto&gt;, NotFound&lt;ProblemDetails&gt;&gt; (int id, IEventService service) =&gt;
+{
+    var evt = service.Find(id);
+    return evt != null
+        ? TypedResults.Ok(evt)
+        : TypedResults.NotFound(new ProblemDetails { Detail = &quot;Event not found&quot; });
+});</code></pre></div>
+<h3>Key Advantages:</h3>
+<ol>
+<li><strong>Unit Testability</strong>: The handler returns concrete types (<code>Ok&lt;EventDto&gt;</code>, <code>NotFound&lt;ProblemDetails&gt;</code>) whose <code>.Value</code> or <code>.StatusCode</code> can be tested directly without casting or mocking <code>HttpContext</code>.</li>
+<li><strong>OpenAPI Generation</strong>: Endpoint metadata generators automatically inspect the generic type arguments of <code>Results&lt;...&gt;</code> and generate complete OpenAPI 3.0 response schemas for <code>200</code> and <code>404</code> with correct schemas.</li>
+</ol>
+<hr/>
+<h2>3. Anatomy of <code>IEndpointFilter</code></h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public class MyEndpointFilter : IEndpointFilter
+{
+    public async ValueTask&lt;object?&gt; InvokeAsync(
+        EndpointFilterInvocationContext context,
+        EndpointFilterDelegate next)
+    {
+        // 1. Pre-execution inspection
+        var httpContext = context.HttpContext;
+        var arg0 = context.GetArgument&lt;MyDto&gt;(0);
 
-  <!-- Raw Content Payloads for Client-side Rendering -->
-  <script type="text/markdown" id="raw-readme"># Day 07 - ASP.NET Core Minimal APIs, Endpoint Routing, TypedResults &amp; Filters
+        // 2. Can short-circuit before handler runs!
+        if (arg0 == null) return TypedResults.BadRequest();
 
-## Objective
-Master .NET Minimal APIs, route groups (`MapGroup`), strongly typed results (`TypedResults`), cross-cutting validation and observability with `IEndpointFilter`, OpenAPI metadata enrichment, and contrast Minimal API internals against traditional MVC Controllers.
+        // 3. Invoke handler or next filter
+        var result = await next(context);
 
-## Original Learning Tasks
-1. Endpoint routing, IEndpointFilter, TypedResults, and validation
-2. DSA: Best Time to Buy and Sell Stock
+        // 4. Post-execution mutation
+        return result;
+    }
+}</code></pre></div>
+<hr/>
+<h2>4. DSA Takeaways</h2>
+<ul>
+<li><strong>Best Time to Buy and Sell Stock</strong>:</li>
+<li>Keep track of the minimum price observed so far (<code>minPrice = Math.Min(minPrice, price)</code>).</li>
+<li>Calculate potential profit on current day (<code>price - minPrice</code>).</li>
+<li>Update <code>maxProfit = Math.Max(maxProfit, potentialProfit)</code>.</li>
+<li>Single pass $O(n)$ time with $O(1)$ space.</li>
+</ul>
+        </div>
 
-## Practical Problem
-Traditional ASP.NET Core MVC Controllers incur significant overhead: reflection-based action discovery, heavy controller context allocations, model binding filters, and untyped `IActionResult` returns that obscure OpenAPI response schemas. In high-performance microservices, teams need lightweight routing with zero controller bloat, compile-time type safety via `TypedResults`, and composable endpoint filters.
-
-## What I Implemented
-1. **Event Minimal API**:
-   - `MapGroup(&quot;/api/events&quot;)`: Route prefixing and unified filter application.
-   - `GET /api/events`: Query string filtering (`?status=...`).
-   - `GET /api/events/{id}`: Route parameter binding.
-   - `POST /api/events`: JSON request body binding with automatic `201 Created` Location header.
-   - `PUT /api/events/{id}`: Update operation returning strongly-typed `Results&lt;Ok, NotFound, ProblemHttpResult&gt;`.
-   - `DELETE /api/events/{id}`: Returns `204 NoContent` or `404 NotFound`.
-2. **IEndpointFilter Implementations**:
-   - `ValidationFilter&lt;T&gt;`: Reusable filter intercepting incoming DTOs, validating constraints, and short-circuiting with RFC 7807 `ProblemDetails` on validation failure.
-   - `ExecutionTimingFilter`: Attaches custom `X-Endpoint-Time-Ms` response header measuring handler execution.
-3. **TypedResults Union Types**:
-   - Strongly-typed compile-time result unions (`Results&lt;Ok&lt;T&gt;, NotFound&lt;ProblemDetails&gt;, ProblemHttpResult&gt;`) that automatically populate Swagger/OpenAPI response schemas without manual `[ProducesResponseType]` attributes.
-4. **WebApplicationFactory Integration Tests**:
-   - End-to-end integration tests validating CRUD lifecycles, filter short-circuiting, and response headers.
-5. **DSA Solution**:
-   - `MaxProfit`: Single-pass running minimum price and maximum profit tracker in $O(n)$ time and $O(1)$ space.
-
-## Architecture
-```text
-                             HTTP Request (Kestrel)
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 07 - ASP.NET Core Minimal APIs, Endpoint Routing, TypedResults & Filters</h1>
+<h2>Objective</h2>
+<p>Master .NET Minimal APIs, route groups (<code>MapGroup</code>), strongly typed results (<code>TypedResults</code>), cross-cutting validation and observability with <code>IEndpointFilter</code>, OpenAPI metadata enrichment, and contrast Minimal API internals against traditional MVC Controllers.</p>
+<h2>Original Learning Tasks</h2>
+<ol>
+<li>Endpoint routing, IEndpointFilter, TypedResults, and validation</li>
+<li>DSA: Best Time to Buy and Sell Stock</li>
+</ol>
+<h2>Practical Problem</h2>
+<p>Traditional ASP.NET Core MVC Controllers incur significant overhead: reflection-based action discovery, heavy controller context allocations, model binding filters, and untyped <code>IActionResult</code> returns that obscure OpenAPI response schemas. In high-performance microservices, teams need lightweight routing with zero controller bloat, compile-time type safety via <code>TypedResults</code>, and composable endpoint filters.</p>
+<h2>What I Implemented</h2>
+<ol>
+<li><strong>Event Minimal API</strong>:</li>
+</ol>
+<ul>
+<li><code>MapGroup(&quot;/api/events&quot;)</code>: Route prefixing and unified filter application.</li>
+<li><code>GET /api/events</code>: Query string filtering (<code>?status=...</code>).</li>
+<li><code>GET /api/events/{id}</code>: Route parameter binding.</li>
+<li><code>POST /api/events</code>: JSON request body binding with automatic <code>201 Created</code> Location header.</li>
+<li><code>PUT /api/events/{id}</code>: Update operation returning strongly-typed <code>Results&lt;Ok, NotFound, ProblemHttpResult&gt;</code>.</li>
+<li><code>DELETE /api/events/{id}</code>: Returns <code>204 NoContent</code> or <code>404 NotFound</code>.</li>
+</ul>
+<ol>
+<li><strong>IEndpointFilter Implementations</strong>:</li>
+</ol>
+<ul>
+<li><code>ValidationFilter&lt;T&gt;</code>: Reusable filter intercepting incoming DTOs, validating constraints, and short-circuiting with RFC 7807 <code>ProblemDetails</code> on validation failure.</li>
+<li><code>ExecutionTimingFilter</code>: Attaches custom <code>X-Endpoint-Time-Ms</code> response header measuring handler execution.</li>
+</ul>
+<ol>
+<li><strong>TypedResults Union Types</strong>:</li>
+</ol>
+<ul>
+<li>Strongly-typed compile-time result unions (<code>Results&lt;Ok&lt;T&gt;, NotFound&lt;ProblemDetails&gt;, ProblemHttpResult&gt;</code>) that automatically populate Swagger/OpenAPI response schemas without manual <code>[ProducesResponseType]</code> attributes.</li>
+</ul>
+<ol>
+<li><strong>WebApplicationFactory Integration Tests</strong>:</li>
+</ol>
+<ul>
+<li>End-to-end integration tests validating CRUD lifecycles, filter short-circuiting, and response headers.</li>
+</ul>
+<ol>
+<li><strong>DSA Solution</strong>:</li>
+</ol>
+<ul>
+<li><code>MaxProfit</code>: Single-pass running minimum price and maximum profit tracker in $O(n)$ time and $O(1)$ space.</li>
+</ul>
+<h2>Architecture</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                             HTTP Request (Kestrel)
                                        │
                                        ▼
                              Endpoint Routing Match
@@ -1224,118 +1603,761 @@ Traditional ASP.NET Core MVC Controllers incur significant overhead: reflection-
                               IEventManager (Service)
                                        │
                                        ▼
-                       TypedResults (Strongly Typed IResult)
-```
+                       TypedResults (Strongly Typed IResult)</code></pre></div>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong><code>MapGroup</code></strong>: Enables modular endpoint organization, shared route prefixes, shared authorization policies, and shared endpoint filters across related route handlers.</li>
+<li><strong><code>TypedResults</code> vs <code>Results</code></strong>: <code>Results.Ok(...)</code> returns <code>IResult</code> (boxing return type and requiring reflection for Swagger). <code>TypedResults.Ok(...)</code> returns concrete <code>Ok&lt;T&gt;</code>, enabling compile-time return type checking and automatic OpenAPI schema extraction.</li>
+<li><strong><code>IEndpointFilter</code></strong>: Replaces MVC action filters in Minimal APIs. Can inspect handler arguments, short-circuit execution, and mutate responses before or after handler invocation.</li>
+<li><strong>Minimal APIs vs. Controllers</strong>: Minimal APIs compile directly to <code>RequestDelegate</code> invocation graphs at startup, bypassing controller activation, action descriptor lookups, and model binding reflection trees.</li>
+</ul>
+<h2>Testing</h2>
+<ul>
+<li>Automated integration test suite (<code>MinimalApiTests</code>, <code>DsaExercisesTests</code>) using <code>WebApplicationFactory&lt;Program&gt;</code>.</li>
+<li>Validates full CRUD lifecycles (Create -> Read -> Update -> Delete -> Verify 404).</li>
+<li>Confirms validation filter short-circuiting on negative prices with <code>400 Bad Request</code>.</li>
+<li>Confirms timing filter header presence (<code>X-Endpoint-Time-Ms</code>).</li>
+<li>Validates stock profit calculation across varied market patterns.</li>
+</ul>
+<h2>Performance Observations</h2>
+<ul>
+<li>Minimal APIs eliminate controller activation allocations (<code>ControllerBase</code> instantiation, action filter arrays).</li>
+<li><code>TypedResults</code> avoid boxing allocations associated with untyped <code>IActionResult</code>.</li>
+</ul>
+<h2>Production Relevance</h2>
+<ul>
+<li>Minimal APIs are the standard for high-performance .NET microservices, cloud-native serverless functions (AWS Lambda, Azure Functions), and containerized APIs where startup time, memory footprint, and RPS throughput are critical.</li>
+</ul>
+<h2>Common Mistakes</h2>
+<ol>
+<li>Using untyped <code>Results.Ok()</code> instead of <code>TypedResults.Ok()</code> in unit-testable APIs.</li>
+<li>Writing validation logic directly inside endpoint handler bodies rather than encapsulating it in reusable <code>IEndpointFilter</code> classes.</li>
+<li>Forgetting route parameter constraints (e.g. <code>{id:int}</code>), leading to routing ambiguity.</li>
+</ol>
+<h2>Senior Interview Questions</h2>
+<p>See <a href="file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day07-Minimal-APIs/interview-questions.md" target="_blank" rel="noopener noreferrer">interview-questions.md</a> for 10 in-depth architectural questions.</p>
+<h2>What I Practically Understood</h2>
+<ul>
+<li>How <code>IEndpointFilter</code> chains wrap endpoint delegate invocation.</li>
+<li>How <code>TypedResults</code> union types (<code>Results&lt;T1, T2, ...&gt;</code>) provide compile-time safety for multiple HTTP status codes.</li>
+<li>How <code>MapGroup</code> eliminates repetitive routing prefixes and middleware attachment.</li>
+</ul>
+<h2>What I Need to Read Later</h2>
+<ul>
+<li>Source-generated Minimal APIs (<code>Microsoft.AspNetCore.Http.RequestDelegateGenerator</code>) for Native AOT compilation.</li>
+<li>OpenApi document transformers and scalar API documentation in .NET 8 / 9.</li>
+</ul>
+<h2>Key Takeaways</h2>
+<p>Minimal APIs are not just syntactically cleaner; they represent an architectural shift in ASP.NET Core toward lean, delegate-based, allocation-reduced endpoint routing that natively supports Native AOT.</p>
+        </div>
 
-## Key Concepts
-- **`MapGroup`**: Enables modular endpoint organization, shared route prefixes, shared authorization policies, and shared endpoint filters across related route handlers.
-- **`TypedResults` vs `Results`**: `Results.Ok(...)` returns `IResult` (boxing return type and requiring reflection for Swagger). `TypedResults.Ok(...)` returns concrete `Ok&lt;T&gt;`, enabling compile-time return type checking and automatic OpenAPI schema extraction.
-- **`IEndpointFilter`**: Replaces MVC action filters in Minimal APIs. Can inspect handler arguments, short-circuit execution, and mutate responses before or after handler invocation.
-- **Minimal APIs vs. Controllers**: Minimal APIs compile directly to `RequestDelegate` invocation graphs at startup, bypassing controller activation, action descriptor lookups, and model binding reflection trees.
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What makes Minimal APIs more performant than MVC Controllers in ASP.NET Core?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Minimal APIs bypass the MVC action execution pipeline, eliminate per-request controller activations, and map directly to compiled request delegates.</li>
+<li><strong>Deeper answer</strong>: MVC controllers require reflection-based discovery, controller factory instantiations, action descriptor cache lookups, model state validation dictionaries, and filter pipeline allocations on every request. Minimal APIs use compiled lambda expressions or source-generated request delegates, drastically reducing memory allocations and instruction counts on the request hot path.</li>
+<li><strong>Practical example</strong>: A Minimal API endpoint can achieve $15–30\%$ higher throughput (requests per second) and lower memory footprint compared to the equivalent MVC controller action.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## Testing
-- Automated integration test suite (`MinimalApiTests`, `DsaExercisesTests`) using `WebApplicationFactory&lt;Program&gt;`.
-- Validates full CRUD lifecycles (Create -&gt; Read -&gt; Update -&gt; Delete -&gt; Verify 404).
-- Confirms validation filter short-circuiting on negative prices with `400 Bad Request`.
-- Confirms timing filter header presence (`X-Endpoint-Time-Ms`).
-- Validates stock profit calculation across varied market patterns.
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the difference between `Results` and `TypedResults` in Minimal APIs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>Results</code> returns <code>IResult</code> (untyped); <code>TypedResults</code> returns concrete types (e.g. <code>Ok&lt;T&gt;</code>, <code>Created&lt;T&gt;</code>), enabling compile-time return type verification and automatic OpenAPI response schema generation.</li>
+<li><strong>Deeper answer</strong>: <code>Results.Ok(data)</code> returns an object implementing <code>IResult</code>, forcing Swagger/OpenAPI generators to guess the response schema or require <code>[ProducesResponseType]</code> annotations. <code>TypedResults.Ok(data)</code> returns <code>Ok&lt;T&gt;</code>, which enables the endpoint to return <code>Results&lt;Ok&lt;T&gt;, NotFound&gt;</code> union types. Unit tests can assert directly on <code>result.Result.Value</code> without running an HTTP server.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">Results&lt;Ok&lt;UserDto&gt;, NotFound&gt; GetUser(int id) =&gt; ...</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
 
-## Performance Observations
-- Minimal APIs eliminate controller activation allocations (`ControllerBase` instantiation, action filter arrays).
-- `TypedResults` avoid boxing allocations associated with untyped `IActionResult`.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How does `IEndpointFilter` differ from MVC Action Filters?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>IEndpointFilter</code> applies to individual endpoints or route groups (<code>MapGroup</code>), uses modern <code>ValueTask&lt;object?&gt;</code>, and works directly with <code>EndpointFilterInvocationContext</code> rather than <code>ActionExecutingContext</code>.</li>
+<li><strong>Deeper answer</strong>: MVC action filters are tied to the MVC middleware and controller pipeline. <code>IEndpointFilter</code> is part of core routing (<code>Microsoft.AspNetCore.Http</code>), meaning it executes closer to the endpoint without loading the MVC framework. It can be attached to route groups (<code>group.AddEndpointFilter&lt;T&gt;()</code>), applying uniformly to all child routes.</li>
+<li><strong>Practical example</strong>: Creating a global validation filter that intercepts all POST/PUT routes in a route group.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## Production Relevance
-- Minimal APIs are the standard for high-performance .NET microservices, cloud-native serverless functions (AWS Lambda, Azure Functions), and containerized APIs where startup time, memory footprint, and RPS throughput are critical.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does `MapGroup` improve code architecture in large Minimal API projects?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It allows organizing related endpoints into modular prefixes, sharing common middleware filters, authorization policies, and rate-limiting rules.</li>
+<li><strong>Deeper answer</strong>: In enterprise applications with hundreds of endpoints, putting everything in <code>Program.cs</code> creates unmaintainable monolithic files. <code>MapGroup</code> allows dividing routes into feature modules (e.g., <code>OrderEndpoints.Map(app.MapGroup(&quot;/api/orders&quot;))</code>), attaching authorization (<code>.RequireAuthorization(&quot;Admin&quot;)</code>) and tags (<code>.WithTags(&quot;Orders&quot;)</code>) once to the entire group.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">var group = app.MapGroup(&quot;/api/v1/orders&quot;).RequireAuthorization().AddEndpointFilter&lt;AuditFilter&gt;();</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
 
-## Common Mistakes
-1. Using untyped `Results.Ok()` instead of `TypedResults.Ok()` in unit-testable APIs.
-2. Writing validation logic directly inside endpoint handler bodies rather than encapsulating it in reusable `IEndpointFilter` classes.
-3. Forgetting route parameter constraints (e.g. `{id:int}`), leading to routing ambiguity.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do Minimal APIs support Native AOT (Ahead-Of-Time) compilation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: By using the C# Roslyn <code>RequestDelegateGenerator</code> (RDG) source generator introduced in .NET 8 to generate parameter binding and routing code at compile time rather than using runtime reflection.</li>
+<li><strong>Deeper answer</strong>: Traditional MVC relies heavily on runtime reflection and dynamic code generation (<code>Emit</code>) for model binding and controller activation, which is incompatible with Native AOT's closed-world assumption. The RequestDelegateGenerator emits C# source code during compilation for every <code>MapGet</code>/<code>MapPost</code>, allowing instantaneous startup and zero-JIT memory footprints.</li>
+<li><strong>Practical example</strong>: Compiling an ASP.NET Core Minimal API into a self-contained single-file 15MB binary that boots in under 10 milliseconds.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## Senior Interview Questions
-See [interview-questions.md](file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day07-Minimal-APIs/interview-questions.md) for 10 in-depth architectural questions.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does parameter binding work in Minimal APIs without `[FromBody]`, `[FromQuery]`, etc.?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Minimal APIs use convention-based heuristics: route parameters match route templates, services registered in DI are injected, complex types are bound from JSON body, and primitive types are bound from query strings.</li>
+<li><strong>Deeper answer</strong>: The binding order is:</li>
+</ul>
+<ol>
+<li>Route values matching template <code>{id}</code>.</li>
+<li>Services from DI container (or <code>[FromKeyedServices]</code>).</li>
+<li><code>HttpContext</code>, <code>HttpRequest</code>, <code>HttpResponse</code>, <code>ClaimsPrincipal</code>, <code>CancellationToken</code>.</li>
+<li>Special types (<code>IFormFile</code>, <code>IFormCollection</code>).</li>
+<li>Types implementing <code>TryParse</code> or <code>BindAsync</code> static methods.</li>
+<li>Complex record/class types bound from JSON request body.</li>
+</ol>
+<ul>
+<li><strong>Practical example</strong>: A parameter <code>int id</code> matching <code>/events/{id}</code> binds to route; <code>IEventService service</code> binds to DI; <code>CreateEventRequest req</code> binds to JSON body automatically.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## What I Practically Understood
-- How `IEndpointFilter` chains wrap endpoint delegate invocation.
-- How `TypedResults` union types (`Results&lt;T1, T2, ...&gt;`) provide compile-time safety for multiple HTTP status codes.
-- How `MapGroup` eliminates repetitive routing prefixes and middleware attachment.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is the `BindAsync` and `TryParse` pattern in Minimal APIs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Custom parameter binding mechanisms where a type defines a public static <code>BindAsync</code> or <code>TryParse</code> method to parse itself from the HTTP context or route string.</li>
+<li><strong>Deeper answer</strong>: Instead of writing custom model binders in MVC, a record or class can implement <code>public static ValueTask&lt;T?&gt; BindAsync(HttpContext context)</code> to inspect headers, cookies, or queries, or <code>public static bool TryParse(string? value, out T result)</code>. This makes custom binding logic self-contained within the domain/DTO type.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public record PagingParameters(int Page, int Size) {
+    public static ValueTask&lt;PagingParameters&gt; BindAsync(HttpContext context) { ... }
+}</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
 
-## What I Need to Read Later
-- Source-generated Minimal APIs (`Microsoft.AspNetCore.Http.RequestDelegateGenerator`) for Native AOT compilation.
-- OpenApi document transformers and scalar API documentation in .NET 8 / 9.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">When would you still choose MVC Controllers over Minimal APIs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When maintaining legacy applications, when rendering server-side Razor views (<code>ViewResult</code>), or when utilizing complex legacy third-party MVC filter libraries.</li>
+<li><strong>Deeper answer</strong>: For pure REST/HTTP microservices in modern .NET, Minimal APIs are Microsoft's recommended default. Controllers are primarily necessary if you are building server-rendered UI (Razor Pages / MVC Views with <code>TagHelpers</code>) or if an existing enterprise codebase has extensive custom action filter hierarchies that would be costly to rewrite as <code>IEndpointFilter</code>.</li>
+<li><strong>Practical example</strong>: A hybrid application serving both HTML views and REST API endpoints.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## Key Takeaways
-Minimal APIs are not just syntactically cleaner; they represent an architectural shift in ASP.NET Core toward lean, delegate-based, allocation-reduced endpoint routing that natively supports Native AOT.
-</script>
-  <script type="text/markdown" id="raw-notes"># Day 07 - Engineering Notes: Minimal APIs vs Controllers
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How do you unit test Minimal API endpoint handlers in isolation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: By extracting the handler into a named method or static delegate returning <code>TypedResults</code>, or by using <code>WebApplicationFactory&lt;Program&gt;</code> for integration testing.</li>
+<li><strong>Deeper answer</strong>: Because <code>TypedResults.Ok(data)</code> returns a concrete <code>Ok&lt;T&gt;</code> type, you can unit-test the handler method directly without spinning up any test server: <code>var result = EventEndpoints.GetById(1001, mockService.Object); Assert.Equal(1001, result.Result.Value.Id);</code>.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">[Fact]
+public void Handler_Returns_Ok_With_Value() {
+    var result = (Ok&lt;EventResponse&gt;)MyHandler(1, mockService.Object);
+    Assert.Equal(1, result.Value.Id);
+}</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
 
-## 1. Minimal APIs vs Controllers Architectural Comparison
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does `EndpointMetadata` work in Minimal APIs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Metadata provides information about the endpoint (authorization, OpenAPI specs, CORS, filters) attached to the route's <code>Endpoint</code> object.</li>
+<li><strong>Deeper answer</strong>: Methods like <code>.RequireAuthorization()</code>, <code>.WithTags()</code>, <code>.Produces&lt;T&gt;()</code>, and <code>.WithSummary()</code> append metadata objects to the endpoint's <code>EndpointBuilder.Metadata</code> collection. Downstream middleware (such as Authorization or OpenAPI generators) inspect this metadata to enforce rules or generate API documentation.</li>
+<li><strong>Practical example</strong>: <code>app.MapGet(&quot;/secure&quot;, ...).RequireAuthorization(&quot;AdminPolicy&quot;);</code> attaches an <code>AuthorizeData</code> instance to the endpoint's metadata collection.</li>
+</ul>
+          </div>
+        </details>
+        
+        </div>
 
-| Dimension | Minimal APIs | Traditional MVC Controllers |
-|---|---|---|
-| **Underlying Mechanism** | Direct `RequestDelegate` mapped to endpoint | `ControllerActionInvoker`, Action Descriptors, Filter Pipelines |
-| **Startup Discovery** | Expressive delegate mapping at startup | Assembly scanning, reflection over all controller classes |
-| **Allocations per Request** | Zero controller object allocations | Instantiates new Controller class instance per request |
-| **Filter Model** | `IEndpointFilter` | `IActionFilter`, `IResourceFilter`, `IResultFilter` |
-| **Return Typing** | `TypedResults` (`Results&lt;Ok&lt;T&gt;, NotFound&gt;`) | `IActionResult` / `ActionResult&lt;T&gt;` |
-| **OpenAPI / Swagger** | Inferred automatically from `TypedResults` | Requires `[ProducesResponseType]` annotations |
-| **Native AOT Compatibility** | Fully supported via RequestDelegateGenerator | Limited (reflection in model binding and controllers) |
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day07.MinimalApi/DsaExercises.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd7-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d7-src-code-0" class="language-csharp">namespace Day07.MinimalApi;
 
----
-
-## 2. The Power of `TypedResults`
-
-```csharp
-// Returns Results&lt;Ok&lt;EventDto&gt;, NotFound&lt;ProblemDetails&gt;&gt;
-app.MapGet(&quot;/events/{id}&quot;, Results&lt;Ok&lt;EventDto&gt;, NotFound&lt;ProblemDetails&gt;&gt; (int id, IEventService service) =&gt;
+public static class DsaExercises
 {
-    var evt = service.Find(id);
-    return evt != null
-        ? TypedResults.Ok(evt)
-        : TypedResults.NotFound(new ProblemDetails { Detail = &quot;Event not found&quot; });
-});
-```
-
-### Key Advantages:
-1. **Unit Testability**: The handler returns concrete types (`Ok&lt;EventDto&gt;`, `NotFound&lt;ProblemDetails&gt;`) whose `.Value` or `.StatusCode` can be tested directly without casting or mocking `HttpContext`.
-2. **OpenAPI Generation**: Endpoint metadata generators automatically inspect the generic type arguments of `Results&lt;...&gt;` and generate complete OpenAPI 3.0 response schemas for `200` and `404` with correct schemas.
-
----
-
-## 3. Anatomy of `IEndpointFilter`
-
-```csharp
-public class MyEndpointFilter : IEndpointFilter
-{
-    public async ValueTask&lt;object?&gt; InvokeAsync(
-        EndpointFilterInvocationContext context,
-        EndpointFilterDelegate next)
+    /// &lt;summary&gt;
+    /// LeetCode 121 - Best Time to Buy and Sell Stock
+    /// You want to maximize your profit by choosing a single day to buy one stock and choosing
+    /// a different day in the future to sell that stock.
+    /// Time Complexity: O(n) single pass.
+    /// Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int MaxProfit(int[] prices)
     {
-        // 1. Pre-execution inspection
-        var httpContext = context.HttpContext;
-        var arg0 = context.GetArgument&lt;MyDto&gt;(0);
+        if (prices == null || prices.Length &lt; 2)
+            return 0;
 
-        // 2. Can short-circuit before handler runs!
-        if (arg0 == null) return TypedResults.BadRequest();
+        int minPrice = int.MaxValue;
+        int maxProfit = 0;
 
-        // 3. Invoke handler or next filter
+        for (int i = 0; i &lt; prices.Length; i++)
+        {
+            if (prices[i] &lt; minPrice)
+            {
+                minPrice = prices[i];
+            }
+            else
+            {
+                int currentProfit = prices[i] - minPrice;
+                if (currentProfit &gt; maxProfit)
+                {
+                    maxProfit = currentProfit;
+                }
+            }
+        }
+
+        return maxProfit;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day07.MinimalApi/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd7-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d7-src-code-1" class="language-csharp">using System.Collections.Concurrent;
+
+namespace Day07.MinimalApi;
+
+public record Event(int Id, string Name, string Venue, decimal Price, string Status);
+
+public record CreateEventRequest(string Name, string Venue, decimal Price, string Status)
+{
+    public (bool IsValid, string? ErrorMessage) Validate()
+    {
+        if (string.IsNullOrWhiteSpace(Name)) return (false, &quot;Name is required.&quot;);
+        if (string.IsNullOrWhiteSpace(Venue)) return (false, &quot;Venue is required.&quot;);
+        if (Price &lt;= 0) return (false, &quot;Price must be greater than zero.&quot;);
+        if (string.IsNullOrWhiteSpace(Status)) return (false, &quot;Status is required.&quot;);
+        return (true, null);
+    }
+}
+
+public record UpdateEventRequest(string Name, string Venue, decimal Price, string Status)
+{
+    public (bool IsValid, string? ErrorMessage) Validate()
+    {
+        if (string.IsNullOrWhiteSpace(Name)) return (false, &quot;Name is required.&quot;);
+        if (string.IsNullOrWhiteSpace(Venue)) return (false, &quot;Venue is required.&quot;);
+        if (Price &lt;= 0) return (false, &quot;Price must be greater than zero.&quot;);
+        if (string.IsNullOrWhiteSpace(Status)) return (false, &quot;Status is required.&quot;);
+        return (true, null);
+    }
+}
+
+public record EventResponse(int Id, string Name, string Venue, decimal Price, string Status);
+
+public interface IEventManager
+{
+    IEnumerable&lt;EventResponse&gt; GetAll(string? status = null);
+    EventResponse? GetById(int id);
+    EventResponse Create(CreateEventRequest request);
+    EventResponse? Update(int id, UpdateEventRequest request);
+    bool Delete(int id);
+}
+
+public class InMemoryEventManager : IEventManager
+{
+    private readonly ConcurrentDictionary&lt;int, Event&gt; _store = new();
+    private int _idSequence = 1000;
+
+    public InMemoryEventManager()
+    {
+        Create(new CreateEventRequest(&quot;Arsenal vs Chelsea&quot;, &quot;Emirates Stadium&quot;, 1500m, &quot;Available&quot;));
+        Create(new CreateEventRequest(&quot;Liverpool vs Man City&quot;, &quot;Anfield&quot;, 1800m, &quot;SoldOut&quot;));
+    }
+
+    public IEnumerable&lt;EventResponse&gt; GetAll(string? status = null)
+    {
+        var query = _store.Values.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(e =&gt; e.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return query.Select(e =&gt; new EventResponse(e.Id, e.Name, e.Venue, e.Price, e.Status));
+    }
+
+    public EventResponse? GetById(int id)
+    {
+        if (_store.TryGetValue(id, out var evt))
+        {
+            return new EventResponse(evt.Id, evt.Name, evt.Venue, evt.Price, evt.Status);
+        }
+        return null;
+    }
+
+    public EventResponse Create(CreateEventRequest request)
+    {
+        int id = Interlocked.Increment(ref _idSequence);
+        var evt = new Event(id, request.Name, request.Venue, request.Price, request.Status);
+        _store[id] = evt;
+        return new EventResponse(evt.Id, evt.Name, evt.Venue, evt.Price, evt.Status);
+    }
+
+    public EventResponse? Update(int id, UpdateEventRequest request)
+    {
+        if (!_store.ContainsKey(id)) return null;
+
+        var updated = new Event(id, request.Name, request.Venue, request.Price, request.Status);
+        _store[id] = updated;
+        return new EventResponse(updated.Id, updated.Name, updated.Venue, updated.Price, updated.Status);
+    }
+
+    public bool Delete(int id)
+    {
+        return _store.TryRemove(id, out _);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day07.MinimalApi/Program.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd7-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d7-src-code-2" class="language-csharp">using Day07.MinimalApi;
+using Day07.MinimalApi.Filters;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Register dependencies
+builder.Services.AddSingleton&lt;IEventManager, InMemoryEventManager&gt;();
+builder.Services.AddEndpointsApiExplorer();
+
+var app = builder.Build();
+
+// Endpoint Routing with MapGroup
+var eventsGroup = app.MapGroup(&quot;/api/events&quot;)
+    .AddEndpointFilter&lt;ExecutionTimingFilter&gt;();
+
+// GET /api/events?status={status}
+eventsGroup.MapGet(&quot;/&quot;, (string? status, IEventManager manager) =&gt;
+{
+    var list = manager.GetAll(status).ToList();
+    return TypedResults.Ok(list);
+})
+.WithName(&quot;GetAllEvents&quot;)
+.WithSummary(&quot;Retrieve all events with optional status filter&quot;);
+
+// GET /api/events/{id}
+eventsGroup.MapGet(&quot;/{id:int}&quot;, Results&lt;Ok&lt;EventResponse&gt;, NotFound&lt;ProblemDetails&gt;&gt; (int id, IEventManager manager) =&gt;
+{
+    var evt = manager.GetById(id);
+    if (evt == null)
+    {
+        return TypedResults.NotFound(new ProblemDetails
+        {
+            Status = StatusCodes.Status404NotFound,
+            Title = &quot;Event Not Found&quot;,
+            Detail = $&quot;Event with ID {id} does not exist.&quot;
+        });
+    }
+
+    return TypedResults.Ok(evt);
+})
+.WithName(&quot;GetEventById&quot;);
+
+// POST /api/events
+eventsGroup.MapPost(&quot;/&quot;, Results&lt;Created&lt;EventResponse&gt;, ProblemHttpResult&gt; (CreateEventRequest request, IEventManager manager) =&gt;
+{
+    var created = manager.Create(request);
+    return TypedResults.Created($&quot;/api/events/{created.Id}&quot;, created);
+})
+.AddEndpointFilter&lt;ValidationFilter&lt;CreateEventRequest&gt;&gt;()
+.WithName(&quot;CreateEvent&quot;);
+
+// PUT /api/events/{id}
+eventsGroup.MapPut(&quot;/{id:int}&quot;, Results&lt;Ok&lt;EventResponse&gt;, NotFound&lt;ProblemDetails&gt;, ProblemHttpResult&gt; (
+    int id, UpdateEventRequest request, IEventManager manager) =&gt;
+{
+    var updated = manager.Update(id, request);
+    if (updated == null)
+    {
+        return TypedResults.NotFound(new ProblemDetails
+        {
+            Status = StatusCodes.Status404NotFound,
+            Title = &quot;Event Not Found&quot;,
+            Detail = $&quot;Cannot update non-existent event {id}.&quot;
+        });
+    }
+
+    return TypedResults.Ok(updated);
+})
+.AddEndpointFilter&lt;ValidationFilter&lt;UpdateEventRequest&gt;&gt;()
+.WithName(&quot;UpdateEvent&quot;);
+
+// DELETE /api/events/{id}
+eventsGroup.MapDelete(&quot;/{id:int}&quot;, Results&lt;NoContent, NotFound&lt;ProblemDetails&gt;&gt; (int id, IEventManager manager) =&gt;
+{
+    bool deleted = manager.Delete(id);
+    if (!deleted)
+    {
+        return TypedResults.NotFound(new ProblemDetails
+        {
+            Status = StatusCodes.Status404NotFound,
+            Title = &quot;Event Not Found&quot;,
+            Detail = $&quot;Cannot delete non-existent event {id}.&quot;
+        });
+    }
+
+    return TypedResults.NoContent();
+})
+.WithName(&quot;DeleteEvent&quot;);
+
+app.Run();
+
+// Required for WebApplicationFactory&lt;Program&gt; in integration tests
+public partial class Program { }
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day07.MinimalApi/Filters/EndpointFilters.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd7-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d7-src-code-3" class="language-csharp">using System.Diagnostics;
+using Microsoft.AspNetCore.Http.HttpResults;
+
+namespace Day07.MinimalApi.Filters;
+
+/// &lt;summary&gt;
+/// Reusable IEndpointFilter for validating incoming DTOs.
+/// Short-circuits the pipeline with a 400 ProblemDetails before invoking the endpoint handler.
+/// &lt;/summary&gt;
+public class ValidationFilter&lt;T&gt; : IEndpointFilter
+{
+    public async ValueTask&lt;object?&gt; InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        var argument = context.Arguments.OfType&lt;T&gt;().FirstOrDefault();
+        if (argument == null)
+        {
+            return TypedResults.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: &quot;Invalid Request Payload&quot;,
+                detail: $&quot;Expected payload of type {typeof(T).Name} was not found.&quot;);
+        }
+
+        if (argument is CreateEventRequest createReq)
+        {
+            var (isValid, error) = createReq.Validate();
+            if (!isValid)
+            {
+                return TypedResults.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: &quot;Validation Failed&quot;,
+                    detail: error);
+            }
+        }
+        else if (argument is UpdateEventRequest updateReq)
+        {
+            var (isValid, error) = updateReq.Validate();
+            if (!isValid)
+            {
+                return TypedResults.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: &quot;Validation Failed&quot;,
+                    detail: error);
+            }
+        }
+
+        return await next(context);
+    }
+}
+
+/// &lt;summary&gt;
+/// IEndpointFilter demonstrating cross-cutting request timing at the endpoint level.
+/// &lt;/summary&gt;
+public class ExecutionTimingFilter : IEndpointFilter
+{
+    public async ValueTask&lt;object?&gt; InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        var sw = Stopwatch.StartNew();
+
         var result = await next(context);
 
-        // 4. Post-execution mutation
+        sw.Stop();
+        context.HttpContext.Response.Headers[&quot;X-Endpoint-Time-Ms&quot;] = sw.ElapsedMilliseconds.ToString();
+
         return result;
     }
 }
-```
+</code></pre>
+                </div>
+                
+        </div>
 
----
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day07.MinimalApi.Tests/DsaExercisesTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd7-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d7-tests-code-0" class="language-csharp">using Xunit;
+using Day07.MinimalApi;
 
-## 4. DSA Takeaways
-- **Best Time to Buy and Sell Stock**:
-  - Keep track of the minimum price observed so far (`minPrice = Math.Min(minPrice, price)`).
-  - Calculate potential profit on current day (`price - minPrice`).
-  - Update `maxProfit = Math.Max(maxProfit, potentialProfit)`.
-  - Single pass $O(n)$ time with $O(1)$ space.
-</script>
+namespace Day07.MinimalApi.Tests;
+
+public class DsaExercisesTests
+{
+    [Theory]
+    [InlineData(new[] { 7, 1, 5, 3, 6, 4 }, 5)] // Buy at 1, sell at 6 -&gt; profit 5
+    [InlineData(new[] { 7, 6, 4, 3, 1 }, 0)]    // Monotonically decreasing -&gt; profit 0
+    [InlineData(new[] { 2, 4, 1 }, 2)]          // Buy at 2, sell at 4 -&gt; profit 2
+    [InlineData(new[] { 1, 2 }, 1)]
+    public void MaxProfit_CalculatesMaximumProfit(int[] prices, int expected)
+    {
+        int result = DsaExercises.MaxProfit(prices);
+        Assert.Equal(expected, result);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day07.MinimalApi.Tests/MinimalApiTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd7-tests-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d7-tests-code-1" class="language-csharp">using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Xunit;
+
+namespace Day07.MinimalApi.Tests;
+
+public class MinimalApiTests : IClassFixture&lt;WebApplicationFactory&lt;Program&gt;&gt;
+{
+    private readonly WebApplicationFactory&lt;Program&gt; _factory;
+
+    public MinimalApiTests(WebApplicationFactory&lt;Program&gt; factory)
+    {
+        _factory = factory;
+    }
+
+    [Fact]
+    public async Task GetAllEvents_Returns200_AndIncludesEndpointTimingHeader()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync(&quot;/api/events&quot;);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.Contains(&quot;X-Endpoint-Time-Ms&quot;));
+
+        var events = await response.Content.ReadFromJsonAsync&lt;List&lt;EventResponse&gt;&gt;();
+        Assert.NotNull(events);
+        Assert.NotEmpty(events);
+    }
+
+    [Fact]
+    public async Task GetById_ReturnsNotFound_WhenIdDoesNotExist()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync(&quot;/api/events/99999&quot;);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        Assert.Equal(404, doc.RootElement.GetProperty(&quot;status&quot;).GetInt32());
+    }
+
+    [Fact]
+    public async Task Post_CreatesNewEvent_WhenValid()
+    {
+        var client = _factory.CreateClient();
+        var req = new CreateEventRequest(&quot;Tottenham vs Arsenal&quot;, &quot;Tottenham Stadium&quot;, 1750m, &quot;Available&quot;);
+
+        var response = await client.PostAsJsonAsync(&quot;/api/events&quot;, req);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotNull(response.Headers.Location);
+
+        var created = await response.Content.ReadFromJsonAsync&lt;EventResponse&gt;();
+        Assert.NotNull(created);
+        Assert.Equal(&quot;Tottenham vs Arsenal&quot;, created.Name);
+    }
+
+    [Fact]
+    public async Task Post_ReturnsBadRequest_WhenFilterDetectsInvalidPayload()
+    {
+        var client = _factory.CreateClient();
+        // Negative price violates validation filter!
+        var req = new CreateEventRequest(&quot;Invalid Match&quot;, &quot;Stadium&quot;, -50m, &quot;Available&quot;);
+
+        var response = await client.PostAsJsonAsync(&quot;/api/events&quot;, req);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        Assert.Equal(400, doc.RootElement.GetProperty(&quot;status&quot;).GetInt32());
+        Assert.Contains(&quot;Price must be greater than zero&quot;, doc.RootElement.GetProperty(&quot;detail&quot;).GetString());
+    }
+
+    [Fact]
+    public async Task FullCrudLifecycle_ExecutesSuccessfully()
+    {
+        var client = _factory.CreateClient();
+
+        // 1. Create
+        var createReq = new CreateEventRequest(&quot;CRUD Test&quot;, &quot;Venue X&quot;, 100m, &quot;Available&quot;);
+        var createRes = await client.PostAsJsonAsync(&quot;/api/events&quot;, createReq);
+        Assert.Equal(HttpStatusCode.Created, createRes.StatusCode);
+        var created = await createRes.Content.ReadFromJsonAsync&lt;EventResponse&gt;();
+        Assert.NotNull(created);
+
+        // 2. Read
+        var getRes = await client.GetAsync($&quot;/api/events/{created.Id}&quot;);
+        Assert.Equal(HttpStatusCode.OK, getRes.StatusCode);
+
+        // 3. Update
+        var updateReq = new UpdateEventRequest(&quot;CRUD Updated&quot;, &quot;Venue Y&quot;, 120m, &quot;SoldOut&quot;);
+        var updateRes = await client.PutAsJsonAsync($&quot;/api/events/{created.Id}&quot;, updateReq);
+        Assert.Equal(HttpStatusCode.OK, updateRes.StatusCode);
+        var updated = await updateRes.Content.ReadFromJsonAsync&lt;EventResponse&gt;();
+        Assert.NotNull(updated);
+        Assert.Equal(&quot;CRUD Updated&quot;, updated.Name);
+        Assert.Equal(&quot;SoldOut&quot;, updated.Status);
+
+        // 4. Delete
+        var delRes = await client.DeleteAsync($&quot;/api/events/{created.Id}&quot;);
+        Assert.Equal(HttpStatusCode.NoContent, delRes.StatusCode);
+
+        // 5. Verify 404
+        var verifyRes = await client.GetAsync($&quot;/api/events/{created.Id}&quot;);
+        Assert.Equal(HttpStatusCode.NotFound, verifyRes.StatusCode);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 07 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
 
   <script>
     // Tab switching
@@ -1350,16 +2372,10 @@ public class MyEndpointFilter : IEndpointFilter
       if (pane) pane.classList.add('active');
     }
 
-    // QA Accordion
-    function toggleQa(id) {
-      const el = document.getElementById(id);
-      if (el) el.classList.toggle('open');
-    }
-
+    // QA Accordion (using native details elements)
     function toggleAllQa(open) {
-      document.querySelectorAll('.qa-card').forEach(c => {
-        if (open) c.classList.add('open');
-        else c.classList.remove('open');
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
       });
     }
 
@@ -1378,23 +2394,7 @@ public class MyEndpointFilter : IEndpointFilter
       });
     }
 
-    // Render Markdown when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.marked) {
-        const rEl = document.getElementById('raw-readme');
-        if (rEl) {
-          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
-        }
-        const nEl = document.getElementById('raw-notes');
-        if (nEl) {
-          const nTarget = document.getElementById('notes-container');
-          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
-        }
-        // Render inner QA contents
-        document.querySelectorAll('.raw-qa-content').forEach(el => {
-          el.innerHTML = marked.parse(el.textContent);
-        });
-      }
       if (window.Prism) {
         Prism.highlightAll();
       }

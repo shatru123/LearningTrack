@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Day 04: Garbage Collection Laboratory &amp; Tuning | 100-Day .NET + AI Track</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
@@ -17,7 +16,7 @@
       --bg-card-hover: #1f2937;
       --bg-code: #0f172a;
       --border: #1e293b;
-      --border-accent: #3b82f6;
+      --border-accent: #38bdf8;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
@@ -25,6 +24,7 @@
       --accent-glow: rgba(56, 189, 248, 0.15);
       --success: #10b981;
       --warning: #f59e0b;
+      --purple: #c084fc;
     }
     * {
       box-sizing: border-box;
@@ -143,6 +143,24 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
     .diagram-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -167,10 +185,13 @@
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 24px;
       overflow-x: auto;
       padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
     }
     .tab-btn {
       background: transparent;
@@ -180,7 +201,7 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      border-bottom: 2px solid transparent;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -189,10 +210,13 @@
     }
     .tab-btn:hover {
       color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
     }
     .tab-btn.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .tab-pane {
       display: none;
@@ -213,70 +237,87 @@
       line-height: 1.7;
     }
     .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
     .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
-    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
     .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
-    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
     .markdown-content code {
-      background: rgba(56, 189, 248, 0.1);
+      background: rgba(56, 189, 248, 0.12);
       color: #38bdf8;
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 13px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
     .markdown-content pre {
       background: var(--bg-code);
-      padding: 16px;
-      border-radius: 8px;
+      padding: 18px;
       overflow-x: auto;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
     .markdown-content pre code {
       background: transparent;
       padding: 0;
-      color: inherit;
-      font-size: 13px;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
     }
     .markdown-content table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
+      font-size: 14px;
+      text-align: left;
     }
     .markdown-content th, .markdown-content td {
       padding: 10px 14px;
       border: 1px solid var(--border);
-      text-align: left;
     }
     .markdown-content th {
-      background: rgba(30, 41, 59, 0.8);
-      color: #fff;
+      background: #1e293b;
+      color: #f8fafc;
       font-weight: 600;
     }
     .markdown-content tr:nth-child(even) {
-      background: rgba(15, 23, 42, 0.4);
+      background: rgba(15, 23, 42, 0.5);
     }
     .markdown-content blockquote {
       border-left: 4px solid var(--accent);
-      padding: 8px 16px;
+      padding: 10px 18px;
       background: var(--accent-glow);
       border-radius: 0 8px 8px 0;
-      margin-bottom: 16px;
+      margin: 16px 0;
       color: #e2e8f0;
     }
-    /* QA Accordion Cards */
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
     .qa-controls {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
-    .qa-card {
+    details.qa-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -284,10 +325,10 @@
       overflow: hidden;
       transition: border-color 0.2s;
     }
-    .qa-card:hover {
+    details.qa-card:hover {
       border-color: var(--border-accent);
     }
-    .qa-header {
+    summary.qa-header {
       padding: 16px 20px;
       background: #1e293b;
       cursor: pointer;
@@ -295,6 +336,13 @@
       align-items: center;
       justify-content: space-between;
       user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
     }
     .qa-badge {
       background: #1e3a8a;
@@ -316,16 +364,13 @@
       color: var(--accent);
       transition: transform 0.2s;
     }
-    .qa-card.open .qa-toggle-icon {
+    details.qa-card[open] .qa-toggle-icon {
       transform: rotate(180deg);
     }
     .qa-body {
       padding: 24px;
-      border-top: 1px solid var(--border);
-      display: none;
-    }
-    .qa-card.open .qa-body {
-      display: block;
+      background: #111827;
+      line-height: 1.7;
     }
     /* Code Viewer Styles */
     .file-card {
@@ -365,19 +410,29 @@
     .copy-btn:hover {
       background: #475569;
     }
-    pre[class*="language-"] {
-      margin: 0 !important;
-      border-radius: 0 !important;
-      background: var(--bg-code) !important;
-      padding: 16px !important;
-      font-size: 13px !important;
-      line-height: 1.5 !important;
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .footer-bar {
       text-align: center;
       margin-top: 40px;
       color: var(--text-dim);
       font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
     }
   </style>
 </head>
@@ -389,7 +444,7 @@
         <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
         <span class="badge badge-day">Day 04</span>
         <span class="badge badge-category">Memory &amp; Performance</span>
-        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
       </div>
       <div class="nav-controls">
         <a href="../Day03-Async-Await/index.html" class="nav-btn">← Day 03</a>
@@ -418,11 +473,17 @@
     <div class="hero">
       <h1>Day 04: Garbage Collection Laboratory &amp; Tuning</h1>
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 2 Test Files</span>
+      </div>
     </div>
 
     <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
     <div class="diagram-card">
-      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
       
         <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
           <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
@@ -463,23 +524,189 @@
     </div>
 
     <div class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
-      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
       <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
     </div>
 
     <!-- Tab Panes -->
-    <div id="pane-readme" class="tab-pane active">
-      <div class="markdown-content" id="readme-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 04 - Engineering Notes: Garbage Collection Internals</h1>
+<h2>1. Generational Hypothesis</h2>
+<p>The .NET Garbage Collector is built upon the <strong>Weak Generational Hypothesis</strong>:</p>
+<ol>
+<li>Most newly allocated objects have short lifespans (locals, transient DTOs, string builders).</li>
+<li>The older an object is, the longer it is likely to remain in use (caches, configuration, singletons).</li>
+<li>Collecting a portion of the heap (Gen 0) is much faster than collecting the entire heap.</li>
+</ol>
+<h3>Heap Segment Sizes and Roles</h3>
+<ul>
+<li><strong>Gen 0</strong>: Fresh allocations. Very fast allocation via pointer bumping (<code>allocation context</code>).</li>
+<li><strong>Gen 1</strong>: Serves as a buffer. Objects that survive Gen 0 are promoted here.</li>
+<li><strong>Gen 2</strong>: Tenured long-lived objects. Surviving Gen 1 objects promote here. Full collections sweep Gen 0, 1, and 2.</li>
+<li><strong>LOH (Large Object Heap)</strong>: Objects $\ge 85,000$ bytes (or double arrays $\ge 1,000$ elements on 32-bit). Because copying large objects is expensive, LOH is swept rather than compacted by default.</li>
+<li><strong>POH (Pinned Object Heap)</strong>: Objects pinned for interop or I/O (<code>GC.AllocateArray&lt;T&gt;(length, pinned: true)</code>). Avoids fragmenting Gen 0/1/2.</li>
+</ul>
+<hr/>
+<h2>2. Server GC vs Workstation GC</h2>
+<div class="table-container"><table><thead><tr>
+<th>Feature</th>
+<th>Workstation GC</th>
+<th>Server GC</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Heap Count</strong></td>
+<td>1 logical heap</td>
+<td>1 heap per logical core (e.g. 16 heaps on 16 cores)</td>
+</tr>
+<tr>
+<td><strong>GC Threads</strong></td>
+<td>Runs on requesting thread or 1 background thread</td>
+<td>1 dedicated OS thread per core (<code>gc_thread</code>) running at highest priority</td>
+</tr>
+<tr>
+<td><strong>Throughput</strong></td>
+<td>Moderate</td>
+<td>Maximum (scales linearly with CPU cores)</td>
+</tr>
+<tr>
+<td><strong>Memory Overhead</strong></td>
+<td>Low footprint</td>
+<td>Higher baseline memory (multiple heap segments)</td>
+</tr>
+<tr>
+<td><strong>Target Workload</strong></td>
+<td>Desktop apps, CLI tools, small memory containers</td>
+<td>High-throughput web APIs, microservices, databases</td>
+</tr>
+</tbody></table></div>
+<h3>Enabling Server GC</h3>
+<p>In <code>.csproj</code>:</p>
+<div class="code-block-container"><pre class="language-xml"><code class="language-xml">&lt;PropertyGroup&gt;
+    &lt;ServerGarbageCollection&gt;true&lt;/ServerGarbageCollection&gt;
+&lt;/PropertyGroup&gt;</code></pre></div>
+<p>Or via <code>runtimeconfig.json</code>:</p>
+<div class="code-block-container"><pre class="language-json"><code class="language-json">{
+  &quot;runtimeOptions&quot;: {
+    &quot;configProperties&quot;: {
+      &quot;System.GC.Server&quot;: true
+    }
+  }
+}</code></pre></div>
+<hr/>
+<h2>3. Background GC vs Concurrent GC</h2>
+<ul>
+<li><strong>Non-concurrent GC</strong>: All application threads are frozen (Stop-The-World) for the entire duration of Gen 0, 1, and 2 sweeps.</li>
+<li><strong>Background GC</strong> (current default):</li>
+<li>Gen 2 collections run concurrently on dedicated background GC threads while application threads continue executing.</li>
+<li>While a background Gen 2 collection is in progress, the GC can interrupt it to perform fast ephemeral Gen 0 / Gen 1 collections on other threads!</li>
+<li>Dramatically reduces perceived p99 and p999 API pause times.</li>
+</ul>
+<hr/>
+<h2>4. DSA Takeaways</h2>
+<ul>
+<li><strong>Product of Array Except Self</strong>:</li>
+<li>Running prefix products forward store cumulative products of all elements before $i$.</li>
+<li>Running suffix products backward accumulate into the same array in-place.</li>
+<li>Achieves $O(n)$ time with $O(1)$ extra space without division.</li>
+</ul>
       </div>
     </div>
 
-    <div id="pane-notes" class="tab-pane">
-      <div class="markdown-content" id="notes-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 04 - .NET Garbage Collection Internals & Memory Laboratory</h1>
+<h2>Objective</h2>
+<p>Analyze .NET Garbage Collection generational architecture (Gen 0, Gen 1, Gen 2, Large Object Heap, Pinned Object Heap), contrast Server GC vs Workstation GC and Background GC, inspect <code>GCSettings</code>, and benchmark the latency and allocation impact of naive string manipulation against optimized memory buffers.</p>
+<h2>Original Learning Tasks</h2>
+<ol>
+<li>Analyze Server GC vs Workstation GC, Background GC, GCSettings</li>
+<li>DSA: Product of Array Except Self</li>
+</ol>
+<h2>Practical Problem</h2>
+<p>In high-throughput .NET microservices, allocation rates directly dictate garbage collection frequency. High volumes of short-lived allocations trigger frequent Gen 0/Gen 1 sweeps, while allocations exceeding 85,000 bytes land directly on the Large Object Heap (LOH), which requires expensive Gen 2 collections to clean up. In worst-case scenarios, uncompacted LOH leads to memory fragmentation, high pause times (Stop-The-World), and degraded p99 API latencies.</p>
+<h2>What I Implemented</h2>
+<ol>
+<li><strong>GcLaboratory</strong>:</li>
+</ol>
+<ul>
+<li>Runtime configuration inspector (<code>GCSettings.IsServerGC</code>, <code>GCSettings.LatencyMode</code>, <code>GC.MaxGeneration</code>).</li>
+<li>Generational promotion laboratory (<code>DemonstrateGenerationalPromotion</code>): verifies object progression from Gen 0 to Gen 1 and Gen 2 through surviving collections.</li>
+<li>Large Object Heap laboratory (<code>DemonstrateLohAllocation</code>): verifies that 85,000+ byte arrays bypass Gen 0/1 and land immediately in Gen 2 (LOH).</li>
+<li>Controlled allocation benchmark (<code>CompareAllocationImpact</code>): measures per-thread allocation deltas with <code>GC.GetAllocatedBytesForCurrentThread()</code> across naive string concatenation, pre-sized <code>StringBuilder</code>, and rented <code>ArrayPool</code> buffers.</li>
+</ul>
+<ol>
+<li><strong>DSA Solution</strong>:</li>
+</ol>
+<ul>
+<li><code>ProductExceptSelf</code>: Two-pass prefix/suffix product array solution in $O(n)$ time and $O(1)$ auxiliary space without using division.</li>
+</ul>
+<h2>Architecture</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                          Managed Heap Layout
+┌───────────────────────────────────────┬───────────────────────────────┐
+│           Ephemeral Segment           │       Large Object Heap       │
+├───────────────┬───────────────┬───────┼───────────────────────────────┤
+│     Gen 0     │     Gen 1     │ Gen 2 │              LOH              │
+│ (Short-lived) │ (Surviving G0)│(Long) │  (&gt;= 85,000 bytes / objects)  │
+└───────────────┴───────────────┴───────┴───────────────────────────────┘
+       ▲               ▲            ▲                   ▲
+   Allocations      Promoted     Promoted         Allocated Direct
+   (new byte[64])                                 (new byte[85000])</code></pre></div>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong>Generations (0, 1, 2)</strong>:</li>
+<li><strong>Gen 0</strong>: Ephemeral generation holding newly created objects. Fast, non-blocking sweeps.</li>
+<li><strong>Gen 1</strong>: Serves as a buffer between ephemeral and long-lived objects.</li>
+<li><strong>Gen 2</strong>: Long-lived objects (static singletons, caches, LOH). Collections here are "full GCs" and carry significant pause time overhead.</li>
+<li><strong>Large Object Heap (LOH)</strong>: Objects $\ge 85,000$ bytes. Not compacted by default (to avoid copying large memory blocks), leading to fragmentation unless configured with <code>GCSettings.LargeObjectHeapCompactionMode</code>.</li>
+<li><strong>Server GC vs Workstation GC</strong>:</li>
+<li><em>Workstation GC</em>: 1 managed heap, GC runs on the allocating thread (or a single background GC thread). Optimized for desktop UI responsiveness and low memory footprint.</li>
+<li><em>Server GC</em>: 1 heap and 1 dedicated GC thread per logical CPU core. Heaps operate in parallel, maximizing throughput for multi-core server workloads at the cost of higher base memory consumption.</li>
+<li><strong>Background GC</strong>: Runs concurrent Gen 2 collections in the background while allowing ephemeral (Gen 0/1) collections to occur concurrently, preventing long Stop-the-World pauses.</li>
+</ul>
+<h2>Testing</h2>
+<ul>
+<li>Automated xUnit test suite (<code>GcLaboratoryTests</code>, <code>DsaExercisesTests</code>).</li>
+<li>Verifies generational promotion through forced generation collections.</li>
+<li>Verifies LOH threshold ($85,000$ bytes landing in Gen 2).</li>
+<li>Validates order-of-magnitude allocation reductions between naive concatenation and pre-allocated buffers.</li>
+<li>Validates prefix/suffix product logic across positive, negative, and zero arrays.</li>
+</ul>
+<h2>Performance Observations</h2>
+<ul>
+<li>Naive string concatenation allocated over $30,000+$ bytes for 50 operations due to intermediate immutable string allocations ($O(N^2)$ byte churn).</li>
+<li>Pre-sized <code>StringBuilder</code> and <code>ArrayPool</code> reduced heap allocations by $>90\%$, eliminating ephemeral GC churn completely.</li>
+</ul>
+<h2>Production Relevance</h2>
+<ul>
+<li>Tuning GC mode in <code>runtimeconfig.json</code> (<code>ServerGarbageCollection: true</code>) is essential for containerized microservices in Kubernetes. However, setting inappropriate CPU limits can lead to CPU throttling if Server GC spins up threads for each host core instead of the assigned container quota.</li>
+</ul>
+<h2>Common Mistakes</h2>
+<ol>
+<li>Forcing <code>GC.Collect()</code> in production request pipelines, which suspends all execution threads and ruins throughput.</li>
+<li>Allocating short-lived byte arrays $\ge 85,000$ bytes (e.g. reading full file uploads into memory) instead of streaming with buffers $\le 81,920$ bytes.</li>
+<li>Not pre-sizing <code>StringBuilder</code> or <code>List&lt;T&gt;</code> when the capacity is known, triggering repeated heap buffer resizes.</li>
+<li>Ignoring container memory limits when running Server GC.</li>
+</ol>
+<h2>Senior Interview Questions</h2>
+<p>See <a href="file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day04-Garbage-Collection/interview-questions.md" target="_blank" rel="noopener noreferrer">interview-questions.md</a> for 10 in-depth architectural questions.</p>
+<h2>What I Practically Understood</h2>
+<ul>
+<li>How the generational hypothesis holds in practice: most objects die young in Gen 0.</li>
+<li>Why objects $\ge 85\text{KB}$ jump directly into Gen 2 and why streaming via <code>ArrayPool</code> buffers ($< 85\text{KB}$) protects the LOH.</li>
+<li>How to accurately measure allocation differences using <code>GC.GetAllocatedBytesForCurrentThread()</code>.</li>
+</ul>
+<h2>What I Need to Read Later</h2>
+<ul>
+<li>Pinned Object Heap (POH) behavior introduced in .NET 5+.</li>
+<li>CoreCLR DATAS (Dynamic Adaptation To Application Sizes) GC in .NET 8/9.</li>
+</ul>
+<h2>Key Takeaways</h2>
+<p>Garbage collection pause times are directly driven by allocation volume and object survival rates. Writing high-throughput .NET microservices requires designing allocation-conscious code that minimizes Gen 0 churn and avoids LOH allocations.</p>
       </div>
     </div>
 
@@ -493,191 +720,198 @@
       </div>
       <div id="interview-cards-container">
         
-        <div class="qa-card open" id="qa-card-1">
-          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+        <details class="qa-card" open>
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q1</span>
               <span class="qa-title">What is the Generational Hypothesis and how does .NET exploit it?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The hypothesis states that most objects die young. .NET exploits this by dividing the heap into Gen 0, Gen 1, and Gen 2, collecting young generations frequently and rapidly without scanning the whole heap.</li>
+<li><strong>Deeper answer</strong>: Gen 0 collections are extremely cheap because the GC assumes most objects are unreachable. It traces roots, copies the few surviving objects into Gen 1, and instantly resets the Gen 0 allocation pointer. Gen 2 is only collected when ephemeral collections fail to reclaim enough memory or when system memory is low.</li>
+<li><strong>Practical example</strong>: A local DTO created to handle an HTTP request dies within milliseconds and is collected in Gen 0 in microseconds.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: The hypothesis states that most objects die young. .NET exploits this by dividing the heap into Gen 0, Gen 1, and Gen 2, collecting young generations frequently and rapidly without scanning the whole heap.
-- **Deeper answer**: Gen 0 collections are extremely cheap because the GC assumes most objects are unreachable. It traces roots, copies the few surviving objects into Gen 1, and instantly resets the Gen 0 allocation pointer. Gen 2 is only collected when ephemeral collections fail to reclaim enough memory or when system memory is low.
-- **Practical example**: A local DTO created to handle an HTTP request dies within milliseconds and is collected in Gen 0 in microseconds.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card open" id="qa-card-2">
-          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+        <details class="qa-card" open>
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q2</span>
               <span class="qa-title">What is the difference between Server GC and Workstation GC in .NET?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Workstation GC uses 1 heap and minimal background threads; Server GC creates a dedicated heap and dedicated high-priority GC thread per CPU core.</li>
+<li><strong>Deeper answer</strong>: Workstation GC is tuned for desktop UI responsiveness and low memory footprint. Server GC partitions the heap by CPU core, allowing parallel allocation and parallel collection across cores to maximize server throughput. In containers with limited CPU/memory quotas, Server GC must be tuned carefully to avoid CPU throttling.</li>
+<li><strong>Practical example</strong>: On a 16-core machine, Server GC allocates 16 separate heaps, allowing 16 threads to allocate memory simultaneously without lock contention.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Workstation GC uses 1 heap and minimal background threads; Server GC creates a dedicated heap and dedicated high-priority GC thread per CPU core.
-- **Deeper answer**: Workstation GC is tuned for desktop UI responsiveness and low memory footprint. Server GC partitions the heap by CPU core, allowing parallel allocation and parallel collection across cores to maximize server throughput. In containers with limited CPU/memory quotas, Server GC must be tuned carefully to avoid CPU throttling.
-- **Practical example**: On a 16-core machine, Server GC allocates 16 separate heaps, allowing 16 threads to allocate memory simultaneously without lock contention.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-3">
-          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q3</span>
               <span class="qa-title">What is the Large Object Heap (LOH) threshold and why does it exist?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The threshold is 85,000 bytes. It exists because copying large memory blocks during GC compaction is prohibitively expensive.</li>
+<li><strong>Deeper answer</strong>: When objects $\ge 85,000$ bytes are allocated, copying them during Gen 0/1 sweeps would cause severe CPU cache and memory bus degradation. Therefore, LOH objects are allocated directly into Gen 2 and are swept (marked and freed) rather than compacted by default.</li>
+<li><strong>Practical example</strong>: Allocating <code>new byte[100_000]</code> goes directly to the LOH. Repeatedly allocating large transient arrays fragments the LOH and triggers full Gen 2 collections.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: The threshold is 85,000 bytes. It exists because copying large memory blocks during GC compaction is prohibitively expensive.
-- **Deeper answer**: When objects $\ge 85,000$ bytes are allocated, copying them during Gen 0/1 sweeps would cause severe CPU cache and memory bus degradation. Therefore, LOH objects are allocated directly into Gen 2 and are swept (marked and freed) rather than compacted by default.
-- **Practical example**: Allocating `new byte[100_000]` goes directly to the LOH. Repeatedly allocating large transient arrays fragments the LOH and triggers full Gen 2 collections.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-4">
-          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q4</span>
               <span class="qa-title">How does Background GC reduce latency compared to traditional Non-Concurrent GC?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Background GC performs Gen 2 sweeps on a dedicated background thread while user code continues executing, and permits ephemeral Gen 0/1 collections during the process.</li>
+<li><strong>Deeper answer</strong>: In older non-concurrent GC, a Gen 2 collection froze all threads for hundreds of milliseconds. In Background GC, only short pause phases occur (initial mark and final sweep). If the application allocates heavily during a background Gen 2, ephemeral foreground collections can run and finish without waiting for the background sweep to complete.</li>
+<li><strong>Practical example</strong>: Background GC keeps ASP.NET Core API p99 latencies within single-digit milliseconds during background memory reclamation.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Background GC performs Gen 2 sweeps on a dedicated background thread while user code continues executing, and permits ephemeral Gen 0/1 collections during the process.
-- **Deeper answer**: In older non-concurrent GC, a Gen 2 collection froze all threads for hundreds of milliseconds. In Background GC, only short pause phases occur (initial mark and final sweep). If the application allocates heavily during a background Gen 2, ephemeral foreground collections can run and finish without waiting for the background sweep to complete.
-- **Practical example**: Background GC keeps ASP.NET Core API p99 latencies within single-digit milliseconds during background memory reclamation.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-5">
-          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q5</span>
               <span class="qa-title">What is the Pinned Object Heap (POH) introduced in .NET 5?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A dedicated heap segment specifically for pinned objects to prevent heap fragmentation in Gen 0, 1, and 2.</li>
+<li><strong>Deeper answer</strong>: Pinning an object prevents the GC from moving it during compaction, creating "islands" that fragment ephemeral segments. The POH isolates pinned buffers (e.g. for socket reads or native interop) into their own heap segment so regular GC compaction in other generations is uninhibited.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">byte[] pinnedBuffer = GC.AllocateArray&lt;byte&gt;(4096, pinned: true);</code></pre></div>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: A dedicated heap segment specifically for pinned objects to prevent heap fragmentation in Gen 0, 1, and 2.
-- **Deeper answer**: Pinning an object prevents the GC from moving it during compaction, creating &quot;islands&quot; that fragment ephemeral segments. The POH isolates pinned buffers (e.g. for socket reads or native interop) into their own heap segment so regular GC compaction in other generations is uninhibited.
-- **Practical example**:
-```csharp
-byte[] pinnedBuffer = GC.AllocateArray&lt;byte&gt;(4096, pinned: true);
-```
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-6">
-          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q6</span>
               <span class="qa-title">Why is calling `GC.Collect()` considered an anti-pattern in production ASP.NET Core services?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It forces a full, blocking generation collection, suspends all threads, and disrupts the GC's self-tuning algorithms.</li>
+<li><strong>Deeper answer</strong>: The GC dynamically adjusts generation budgets based on allocation rates and survival patterns. Forcing a collection promotes short-lived objects that were about to die into Gen 1 or Gen 2 prematurely, increasing overall heap size and ensuring future collections are more expensive.</li>
+<li><strong>Practical example</strong>: Calling <code>GC.Collect()</code> inside an HTTP endpoint can turn a 2ms request into a 150ms latency spike for all concurrent users.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: It forces a full, blocking generation collection, suspends all threads, and disrupts the GC&#x27;s self-tuning algorithms.
-- **Deeper answer**: The GC dynamically adjusts generation budgets based on allocation rates and survival patterns. Forcing a collection promotes short-lived objects that were about to die into Gen 1 or Gen 2 prematurely, increasing overall heap size and ensuring future collections are more expensive.
-- **Practical example**: Calling `GC.Collect()` inside an HTTP endpoint can turn a 2ms request into a 150ms latency spike for all concurrent users.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-7">
-          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q7</span>
               <span class="qa-title">What are Card Tables and Write Barriers in the .NET GC?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Mechanisms used by the GC to track when a reference in an older generation is updated to point to an object in a younger generation.</li>
+<li><strong>Deeper answer</strong>: To collect Gen 0 without scanning all of Gen 1 and Gen 2 for incoming references, the JIT inserts a tiny write barrier instruction whenever a reference field is assigned. The write barrier marks a bit in a byte array called the "Card Table". During a Gen 0 collection, the GC only needs to scan the specific cards marked dirty.</li>
+<li><strong>Practical example</strong>: When an existing singleton <code>OrderService</code> assigns a newly created <code>Order</code> to a field, the JIT executes a write barrier marking the corresponding card dirty.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Mechanisms used by the GC to track when a reference in an older generation is updated to point to an object in a younger generation.
-- **Deeper answer**: To collect Gen 0 without scanning all of Gen 1 and Gen 2 for incoming references, the JIT inserts a tiny write barrier instruction whenever a reference field is assigned. The write barrier marks a bit in a byte array called the &quot;Card Table&quot;. During a Gen 0 collection, the GC only needs to scan the specific cards marked dirty.
-- **Practical example**: When an existing singleton `OrderService` assigns a newly created `Order` to a field, the JIT executes a write barrier marking the corresponding card dirty.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-8">
-          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q8</span>
               <span class="qa-title">How can you diagnose high GC pause times and allocation pressure in a live production environment?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Using <code>dotnet-counters</code>, <code>dotnet-trace</code>, and <code>dotnet-dump</code> to inspect <code>% Time in GC</code>, <code>Allocation Rate</code>, and generation collection counts.</li>
+<li><strong>Deeper answer</strong>: Monitor <code>System.Runtime</code> counters:</li>
+<li><code>% Time in GC</code>: Should ideally stay $< 5\%$; values $> 15\%$ indicate critical memory pressure.</li>
+<li><code>Gen 0 / Gen 1 / Gen 2 Collections / sec</code>: A high ratio of Gen 2 to Gen 0 indicates premature promotion or LOH abuse.</li>
+<li>Collect an EventPipe trace with <code>dotnet-trace</code> to inspect allocation call stacks.</li>
+<li><strong>Practical example</strong>: <code>dotnet-counters monitor --process-id &lt;PID&gt; --counters System.Runtime</code></li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Using `dotnet-counters`, `dotnet-trace`, and `dotnet-dump` to inspect `% Time in GC`, `Allocation Rate`, and generation collection counts.
-- **Deeper answer**: Monitor `System.Runtime` counters:
-  - `% Time in GC`: Should ideally stay $&lt; 5\%$; values $&gt; 15\%$ indicate critical memory pressure.
-  - `Gen 0 / Gen 1 / Gen 2 Collections / sec`: A high ratio of Gen 2 to Gen 0 indicates premature promotion or LOH abuse.
-  - Collect an EventPipe trace with `dotnet-trace` to inspect allocation call stacks.
-- **Practical example**: `dotnet-counters monitor --process-id &lt;PID&gt; --counters System.Runtime`
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-9">
-          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q9</span>
               <span class="qa-title">What is `GCSettings.LatencyMode` and when would you use `SustainedLowLatency`?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It controls how aggressively the GC collects memory to trade off throughput vs pause duration.</li>
+<li><strong>Deeper answer</strong>: In <code>SustainedLowLatency</code> mode, the GC disables full blocking Gen 2 collections as long as memory permits, performing only Background Gen 2 and ephemeral collections. It is used in financial trading systems or low-latency audio processing during critical execution windows.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;</code></pre></div>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: It controls how aggressively the GC collects memory to trade off throughput vs pause duration.
-- **Deeper answer**: In `SustainedLowLatency` mode, the GC disables full blocking Gen 2 collections as long as memory permits, performing only Background Gen 2 and ephemeral collections. It is used in financial trading systems or low-latency audio processing during critical execution windows.
-- **Practical example**:
-```csharp
-GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
-```
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-10">
-          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q10</span>
               <span class="qa-title">How does .NET 8 / 9 DATAS (Dynamic Adaptation To Application Sizes) GC alter Server GC behavior?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: DATAS dynamically adjusts heap size based on application demand, dramatically reducing memory usage in small or bursting workloads.</li>
+<li><strong>Deeper answer</strong>: Traditional Server GC aggressively retains large heap segments across all cores, which can consume hundreds of megabytes even for idle microservices. DATAS monitors application throughput and adapts the number of active heaps and segment sizes, making Server GC viable in memory-constrained Kubernetes pods.</li>
+<li><strong>Practical example</strong>: In <code>.csproj</code>: <code>&lt;GarbageCollectionAdaptationMode&gt;1&lt;/GarbageCollectionAdaptationMode&gt;</code>.</li>
+</ul>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: DATAS dynamically adjusts heap size based on application demand, dramatically reducing memory usage in small or bursting workloads.
-- **Deeper answer**: Traditional Server GC aggressively retains large heap segments across all cores, which can consume hundreds of megabytes even for idle microservices. DATAS monitors application throughput and adapts the number of active heaps and segment sizes, making Server GC viable in memory-constrained Kubernetes pods.
-- **Practical example**: In `.csproj`: `&lt;GarbageCollectionAdaptationMode&gt;1&lt;/GarbageCollectionAdaptationMode&gt;`.</div>
-          </div>
-        </div>
+        </details>
         
       </div>
     </div>
@@ -941,36 +1175,121 @@ public class GcLaboratoryTests
                 
     </div>
 
-    <div class="footer-bar">
-      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
-    </div>
-  </div>
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 04 - Engineering Notes: Garbage Collection Internals</h1>
+<h2>1. Generational Hypothesis</h2>
+<p>The .NET Garbage Collector is built upon the <strong>Weak Generational Hypothesis</strong>:</p>
+<ol>
+<li>Most newly allocated objects have short lifespans (locals, transient DTOs, string builders).</li>
+<li>The older an object is, the longer it is likely to remain in use (caches, configuration, singletons).</li>
+<li>Collecting a portion of the heap (Gen 0) is much faster than collecting the entire heap.</li>
+</ol>
+<h3>Heap Segment Sizes and Roles</h3>
+<ul>
+<li><strong>Gen 0</strong>: Fresh allocations. Very fast allocation via pointer bumping (<code>allocation context</code>).</li>
+<li><strong>Gen 1</strong>: Serves as a buffer. Objects that survive Gen 0 are promoted here.</li>
+<li><strong>Gen 2</strong>: Tenured long-lived objects. Surviving Gen 1 objects promote here. Full collections sweep Gen 0, 1, and 2.</li>
+<li><strong>LOH (Large Object Heap)</strong>: Objects $\ge 85,000$ bytes (or double arrays $\ge 1,000$ elements on 32-bit). Because copying large objects is expensive, LOH is swept rather than compacted by default.</li>
+<li><strong>POH (Pinned Object Heap)</strong>: Objects pinned for interop or I/O (<code>GC.AllocateArray&lt;T&gt;(length, pinned: true)</code>). Avoids fragmenting Gen 0/1/2.</li>
+</ul>
+<hr/>
+<h2>2. Server GC vs Workstation GC</h2>
+<div class="table-container"><table><thead><tr>
+<th>Feature</th>
+<th>Workstation GC</th>
+<th>Server GC</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Heap Count</strong></td>
+<td>1 logical heap</td>
+<td>1 heap per logical core (e.g. 16 heaps on 16 cores)</td>
+</tr>
+<tr>
+<td><strong>GC Threads</strong></td>
+<td>Runs on requesting thread or 1 background thread</td>
+<td>1 dedicated OS thread per core (<code>gc_thread</code>) running at highest priority</td>
+</tr>
+<tr>
+<td><strong>Throughput</strong></td>
+<td>Moderate</td>
+<td>Maximum (scales linearly with CPU cores)</td>
+</tr>
+<tr>
+<td><strong>Memory Overhead</strong></td>
+<td>Low footprint</td>
+<td>Higher baseline memory (multiple heap segments)</td>
+</tr>
+<tr>
+<td><strong>Target Workload</strong></td>
+<td>Desktop apps, CLI tools, small memory containers</td>
+<td>High-throughput web APIs, microservices, databases</td>
+</tr>
+</tbody></table></div>
+<h3>Enabling Server GC</h3>
+<p>In <code>.csproj</code>:</p>
+<div class="code-block-container"><pre class="language-xml"><code class="language-xml">&lt;PropertyGroup&gt;
+    &lt;ServerGarbageCollection&gt;true&lt;/ServerGarbageCollection&gt;
+&lt;/PropertyGroup&gt;</code></pre></div>
+<p>Or via <code>runtimeconfig.json</code>:</p>
+<div class="code-block-container"><pre class="language-json"><code class="language-json">{
+  &quot;runtimeOptions&quot;: {
+    &quot;configProperties&quot;: {
+      &quot;System.GC.Server&quot;: true
+    }
+  }
+}</code></pre></div>
+<hr/>
+<h2>3. Background GC vs Concurrent GC</h2>
+<ul>
+<li><strong>Non-concurrent GC</strong>: All application threads are frozen (Stop-The-World) for the entire duration of Gen 0, 1, and 2 sweeps.</li>
+<li><strong>Background GC</strong> (current default):</li>
+<li>Gen 2 collections run concurrently on dedicated background GC threads while application threads continue executing.</li>
+<li>While a background Gen 2 collection is in progress, the GC can interrupt it to perform fast ephemeral Gen 0 / Gen 1 collections on other threads!</li>
+<li>Dramatically reduces perceived p99 and p999 API pause times.</li>
+</ul>
+<hr/>
+<h2>4. DSA Takeaways</h2>
+<ul>
+<li><strong>Product of Array Except Self</strong>:</li>
+<li>Running prefix products forward store cumulative products of all elements before $i$.</li>
+<li>Running suffix products backward accumulate into the same array in-place.</li>
+<li>Achieves $O(n)$ time with $O(1)$ extra space without division.</li>
+</ul>
+        </div>
 
-  <!-- Raw Content Payloads for Client-side Rendering -->
-  <script type="text/markdown" id="raw-readme"># Day 04 - .NET Garbage Collection Internals &amp; Memory Laboratory
-
-## Objective
-Analyze .NET Garbage Collection generational architecture (Gen 0, Gen 1, Gen 2, Large Object Heap, Pinned Object Heap), contrast Server GC vs Workstation GC and Background GC, inspect `GCSettings`, and benchmark the latency and allocation impact of naive string manipulation against optimized memory buffers.
-
-## Original Learning Tasks
-1. Analyze Server GC vs Workstation GC, Background GC, GCSettings
-2. DSA: Product of Array Except Self
-
-## Practical Problem
-In high-throughput .NET microservices, allocation rates directly dictate garbage collection frequency. High volumes of short-lived allocations trigger frequent Gen 0/Gen 1 sweeps, while allocations exceeding 85,000 bytes land directly on the Large Object Heap (LOH), which requires expensive Gen 2 collections to clean up. In worst-case scenarios, uncompacted LOH leads to memory fragmentation, high pause times (Stop-The-World), and degraded p99 API latencies.
-
-## What I Implemented
-1. **GcLaboratory**:
-   - Runtime configuration inspector (`GCSettings.IsServerGC`, `GCSettings.LatencyMode`, `GC.MaxGeneration`).
-   - Generational promotion laboratory (`DemonstrateGenerationalPromotion`): verifies object progression from Gen 0 to Gen 1 and Gen 2 through surviving collections.
-   - Large Object Heap laboratory (`DemonstrateLohAllocation`): verifies that 85,000+ byte arrays bypass Gen 0/1 and land immediately in Gen 2 (LOH).
-   - Controlled allocation benchmark (`CompareAllocationImpact`): measures per-thread allocation deltas with `GC.GetAllocatedBytesForCurrentThread()` across naive string concatenation, pre-sized `StringBuilder`, and rented `ArrayPool` buffers.
-2. **DSA Solution**:
-   - `ProductExceptSelf`: Two-pass prefix/suffix product array solution in $O(n)$ time and $O(1)$ auxiliary space without using division.
-
-## Architecture
-```text
-                          Managed Heap Layout
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 04 - .NET Garbage Collection Internals & Memory Laboratory</h1>
+<h2>Objective</h2>
+<p>Analyze .NET Garbage Collection generational architecture (Gen 0, Gen 1, Gen 2, Large Object Heap, Pinned Object Heap), contrast Server GC vs Workstation GC and Background GC, inspect <code>GCSettings</code>, and benchmark the latency and allocation impact of naive string manipulation against optimized memory buffers.</p>
+<h2>Original Learning Tasks</h2>
+<ol>
+<li>Analyze Server GC vs Workstation GC, Background GC, GCSettings</li>
+<li>DSA: Product of Array Except Self</li>
+</ol>
+<h2>Practical Problem</h2>
+<p>In high-throughput .NET microservices, allocation rates directly dictate garbage collection frequency. High volumes of short-lived allocations trigger frequent Gen 0/Gen 1 sweeps, while allocations exceeding 85,000 bytes land directly on the Large Object Heap (LOH), which requires expensive Gen 2 collections to clean up. In worst-case scenarios, uncompacted LOH leads to memory fragmentation, high pause times (Stop-The-World), and degraded p99 API latencies.</p>
+<h2>What I Implemented</h2>
+<ol>
+<li><strong>GcLaboratory</strong>:</li>
+</ol>
+<ul>
+<li>Runtime configuration inspector (<code>GCSettings.IsServerGC</code>, <code>GCSettings.LatencyMode</code>, <code>GC.MaxGeneration</code>).</li>
+<li>Generational promotion laboratory (<code>DemonstrateGenerationalPromotion</code>): verifies object progression from Gen 0 to Gen 1 and Gen 2 through surviving collections.</li>
+<li>Large Object Heap laboratory (<code>DemonstrateLohAllocation</code>): verifies that 85,000+ byte arrays bypass Gen 0/1 and land immediately in Gen 2 (LOH).</li>
+<li>Controlled allocation benchmark (<code>CompareAllocationImpact</code>): measures per-thread allocation deltas with <code>GC.GetAllocatedBytesForCurrentThread()</code> across naive string concatenation, pre-sized <code>StringBuilder</code>, and rented <code>ArrayPool</code> buffers.</li>
+</ul>
+<ol>
+<li><strong>DSA Solution</strong>:</li>
+</ol>
+<ul>
+<li><code>ProductExceptSelf</code>: Two-pass prefix/suffix product array solution in $O(n)$ time and $O(1)$ auxiliary space without using division.</li>
+</ul>
+<h2>Architecture</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                          Managed Heap Layout
 ┌───────────────────────────────────────┬───────────────────────────────┐
 │           Ephemeral Segment           │       Large Object Heap       │
 ├───────────────┬───────────────┬───────┼───────────────────────────────┤
@@ -979,119 +1298,531 @@ In high-throughput .NET microservices, allocation rates directly dictate garbage
 └───────────────┴───────────────┴───────┴───────────────────────────────┘
        ▲               ▲            ▲                   ▲
    Allocations      Promoted     Promoted         Allocated Direct
-   (new byte[64])                                 (new byte[85000])
-```
+   (new byte[64])                                 (new byte[85000])</code></pre></div>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong>Generations (0, 1, 2)</strong>:</li>
+<li><strong>Gen 0</strong>: Ephemeral generation holding newly created objects. Fast, non-blocking sweeps.</li>
+<li><strong>Gen 1</strong>: Serves as a buffer between ephemeral and long-lived objects.</li>
+<li><strong>Gen 2</strong>: Long-lived objects (static singletons, caches, LOH). Collections here are "full GCs" and carry significant pause time overhead.</li>
+<li><strong>Large Object Heap (LOH)</strong>: Objects $\ge 85,000$ bytes. Not compacted by default (to avoid copying large memory blocks), leading to fragmentation unless configured with <code>GCSettings.LargeObjectHeapCompactionMode</code>.</li>
+<li><strong>Server GC vs Workstation GC</strong>:</li>
+<li><em>Workstation GC</em>: 1 managed heap, GC runs on the allocating thread (or a single background GC thread). Optimized for desktop UI responsiveness and low memory footprint.</li>
+<li><em>Server GC</em>: 1 heap and 1 dedicated GC thread per logical CPU core. Heaps operate in parallel, maximizing throughput for multi-core server workloads at the cost of higher base memory consumption.</li>
+<li><strong>Background GC</strong>: Runs concurrent Gen 2 collections in the background while allowing ephemeral (Gen 0/1) collections to occur concurrently, preventing long Stop-the-World pauses.</li>
+</ul>
+<h2>Testing</h2>
+<ul>
+<li>Automated xUnit test suite (<code>GcLaboratoryTests</code>, <code>DsaExercisesTests</code>).</li>
+<li>Verifies generational promotion through forced generation collections.</li>
+<li>Verifies LOH threshold ($85,000$ bytes landing in Gen 2).</li>
+<li>Validates order-of-magnitude allocation reductions between naive concatenation and pre-allocated buffers.</li>
+<li>Validates prefix/suffix product logic across positive, negative, and zero arrays.</li>
+</ul>
+<h2>Performance Observations</h2>
+<ul>
+<li>Naive string concatenation allocated over $30,000+$ bytes for 50 operations due to intermediate immutable string allocations ($O(N^2)$ byte churn).</li>
+<li>Pre-sized <code>StringBuilder</code> and <code>ArrayPool</code> reduced heap allocations by $>90\%$, eliminating ephemeral GC churn completely.</li>
+</ul>
+<h2>Production Relevance</h2>
+<ul>
+<li>Tuning GC mode in <code>runtimeconfig.json</code> (<code>ServerGarbageCollection: true</code>) is essential for containerized microservices in Kubernetes. However, setting inappropriate CPU limits can lead to CPU throttling if Server GC spins up threads for each host core instead of the assigned container quota.</li>
+</ul>
+<h2>Common Mistakes</h2>
+<ol>
+<li>Forcing <code>GC.Collect()</code> in production request pipelines, which suspends all execution threads and ruins throughput.</li>
+<li>Allocating short-lived byte arrays $\ge 85,000$ bytes (e.g. reading full file uploads into memory) instead of streaming with buffers $\le 81,920$ bytes.</li>
+<li>Not pre-sizing <code>StringBuilder</code> or <code>List&lt;T&gt;</code> when the capacity is known, triggering repeated heap buffer resizes.</li>
+<li>Ignoring container memory limits when running Server GC.</li>
+</ol>
+<h2>Senior Interview Questions</h2>
+<p>See <a href="file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day04-Garbage-Collection/interview-questions.md" target="_blank" rel="noopener noreferrer">interview-questions.md</a> for 10 in-depth architectural questions.</p>
+<h2>What I Practically Understood</h2>
+<ul>
+<li>How the generational hypothesis holds in practice: most objects die young in Gen 0.</li>
+<li>Why objects $\ge 85\text{KB}$ jump directly into Gen 2 and why streaming via <code>ArrayPool</code> buffers ($< 85\text{KB}$) protects the LOH.</li>
+<li>How to accurately measure allocation differences using <code>GC.GetAllocatedBytesForCurrentThread()</code>.</li>
+</ul>
+<h2>What I Need to Read Later</h2>
+<ul>
+<li>Pinned Object Heap (POH) behavior introduced in .NET 5+.</li>
+<li>CoreCLR DATAS (Dynamic Adaptation To Application Sizes) GC in .NET 8/9.</li>
+</ul>
+<h2>Key Takeaways</h2>
+<p>Garbage collection pause times are directly driven by allocation volume and object survival rates. Writing high-throughput .NET microservices requires designing allocation-conscious code that minimizes Gen 0 churn and avoids LOH allocations.</p>
+        </div>
 
-## Key Concepts
-- **Generations (0, 1, 2)**:
-  - **Gen 0**: Ephemeral generation holding newly created objects. Fast, non-blocking sweeps.
-  - **Gen 1**: Serves as a buffer between ephemeral and long-lived objects.
-  - **Gen 2**: Long-lived objects (static singletons, caches, LOH). Collections here are &quot;full GCs&quot; and carry significant pause time overhead.
-- **Large Object Heap (LOH)**: Objects $\ge 85,000$ bytes. Not compacted by default (to avoid copying large memory blocks), leading to fragmentation unless configured with `GCSettings.LargeObjectHeapCompactionMode`.
-- **Server GC vs Workstation GC**:
-  - *Workstation GC*: 1 managed heap, GC runs on the allocating thread (or a single background GC thread). Optimized for desktop UI responsiveness and low memory footprint.
-  - *Server GC*: 1 heap and 1 dedicated GC thread per logical CPU core. Heaps operate in parallel, maximizing throughput for multi-core server workloads at the cost of higher base memory consumption.
-- **Background GC**: Runs concurrent Gen 2 collections in the background while allowing ephemeral (Gen 0/1) collections to occur concurrently, preventing long Stop-the-World pauses.
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the Generational Hypothesis and how does .NET exploit it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The hypothesis states that most objects die young. .NET exploits this by dividing the heap into Gen 0, Gen 1, and Gen 2, collecting young generations frequently and rapidly without scanning the whole heap.</li>
+<li><strong>Deeper answer</strong>: Gen 0 collections are extremely cheap because the GC assumes most objects are unreachable. It traces roots, copies the few surviving objects into Gen 1, and instantly resets the Gen 0 allocation pointer. Gen 2 is only collected when ephemeral collections fail to reclaim enough memory or when system memory is low.</li>
+<li><strong>Practical example</strong>: A local DTO created to handle an HTTP request dies within milliseconds and is collected in Gen 0 in microseconds.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## Testing
-- Automated xUnit test suite (`GcLaboratoryTests`, `DsaExercisesTests`).
-- Verifies generational promotion through forced generation collections.
-- Verifies LOH threshold ($85,000$ bytes landing in Gen 2).
-- Validates order-of-magnitude allocation reductions between naive concatenation and pre-allocated buffers.
-- Validates prefix/suffix product logic across positive, negative, and zero arrays.
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the difference between Server GC and Workstation GC in .NET?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Workstation GC uses 1 heap and minimal background threads; Server GC creates a dedicated heap and dedicated high-priority GC thread per CPU core.</li>
+<li><strong>Deeper answer</strong>: Workstation GC is tuned for desktop UI responsiveness and low memory footprint. Server GC partitions the heap by CPU core, allowing parallel allocation and parallel collection across cores to maximize server throughput. In containers with limited CPU/memory quotas, Server GC must be tuned carefully to avoid CPU throttling.</li>
+<li><strong>Practical example</strong>: On a 16-core machine, Server GC allocates 16 separate heaps, allowing 16 threads to allocate memory simultaneously without lock contention.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## Performance Observations
-- Naive string concatenation allocated over $30,000+$ bytes for 50 operations due to intermediate immutable string allocations ($O(N^2)$ byte churn).
-- Pre-sized `StringBuilder` and `ArrayPool` reduced heap allocations by $&gt;90\%$, eliminating ephemeral GC churn completely.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the Large Object Heap (LOH) threshold and why does it exist?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The threshold is 85,000 bytes. It exists because copying large memory blocks during GC compaction is prohibitively expensive.</li>
+<li><strong>Deeper answer</strong>: When objects $\ge 85,000$ bytes are allocated, copying them during Gen 0/1 sweeps would cause severe CPU cache and memory bus degradation. Therefore, LOH objects are allocated directly into Gen 2 and are swept (marked and freed) rather than compacted by default.</li>
+<li><strong>Practical example</strong>: Allocating <code>new byte[100_000]</code> goes directly to the LOH. Repeatedly allocating large transient arrays fragments the LOH and triggers full Gen 2 collections.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## Production Relevance
-- Tuning GC mode in `runtimeconfig.json` (`ServerGarbageCollection: true`) is essential for containerized microservices in Kubernetes. However, setting inappropriate CPU limits can lead to CPU throttling if Server GC spins up threads for each host core instead of the assigned container quota.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does Background GC reduce latency compared to traditional Non-Concurrent GC?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Background GC performs Gen 2 sweeps on a dedicated background thread while user code continues executing, and permits ephemeral Gen 0/1 collections during the process.</li>
+<li><strong>Deeper answer</strong>: In older non-concurrent GC, a Gen 2 collection froze all threads for hundreds of milliseconds. In Background GC, only short pause phases occur (initial mark and final sweep). If the application allocates heavily during a background Gen 2, ephemeral foreground collections can run and finish without waiting for the background sweep to complete.</li>
+<li><strong>Practical example</strong>: Background GC keeps ASP.NET Core API p99 latencies within single-digit milliseconds during background memory reclamation.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## Common Mistakes
-1. Forcing `GC.Collect()` in production request pipelines, which suspends all execution threads and ruins throughput.
-2. Allocating short-lived byte arrays $\ge 85,000$ bytes (e.g. reading full file uploads into memory) instead of streaming with buffers $\le 81,920$ bytes.
-3. Not pre-sizing `StringBuilder` or `List&lt;T&gt;` when the capacity is known, triggering repeated heap buffer resizes.
-4. Ignoring container memory limits when running Server GC.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is the Pinned Object Heap (POH) introduced in .NET 5?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A dedicated heap segment specifically for pinned objects to prevent heap fragmentation in Gen 0, 1, and 2.</li>
+<li><strong>Deeper answer</strong>: Pinning an object prevents the GC from moving it during compaction, creating "islands" that fragment ephemeral segments. The POH isolates pinned buffers (e.g. for socket reads or native interop) into their own heap segment so regular GC compaction in other generations is uninhibited.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">byte[] pinnedBuffer = GC.AllocateArray&lt;byte&gt;(4096, pinned: true);</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
 
-## Senior Interview Questions
-See [interview-questions.md](file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day04-Garbage-Collection/interview-questions.md) for 10 in-depth architectural questions.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">Why is calling `GC.Collect()` considered an anti-pattern in production ASP.NET Core services?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It forces a full, blocking generation collection, suspends all threads, and disrupts the GC's self-tuning algorithms.</li>
+<li><strong>Deeper answer</strong>: The GC dynamically adjusts generation budgets based on allocation rates and survival patterns. Forcing a collection promotes short-lived objects that were about to die into Gen 1 or Gen 2 prematurely, increasing overall heap size and ensuring future collections are more expensive.</li>
+<li><strong>Practical example</strong>: Calling <code>GC.Collect()</code> inside an HTTP endpoint can turn a 2ms request into a 150ms latency spike for all concurrent users.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## What I Practically Understood
-- How the generational hypothesis holds in practice: most objects die young in Gen 0.
-- Why objects $\ge 85\text{KB}$ jump directly into Gen 2 and why streaming via `ArrayPool` buffers ($&lt; 85\text{KB}$) protects the LOH.
-- How to accurately measure allocation differences using `GC.GetAllocatedBytesForCurrentThread()`.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What are Card Tables and Write Barriers in the .NET GC?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Mechanisms used by the GC to track when a reference in an older generation is updated to point to an object in a younger generation.</li>
+<li><strong>Deeper answer</strong>: To collect Gen 0 without scanning all of Gen 1 and Gen 2 for incoming references, the JIT inserts a tiny write barrier instruction whenever a reference field is assigned. The write barrier marks a bit in a byte array called the "Card Table". During a Gen 0 collection, the GC only needs to scan the specific cards marked dirty.</li>
+<li><strong>Practical example</strong>: When an existing singleton <code>OrderService</code> assigns a newly created <code>Order</code> to a field, the JIT executes a write barrier marking the corresponding card dirty.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## What I Need to Read Later
-- Pinned Object Heap (POH) behavior introduced in .NET 5+.
-- CoreCLR DATAS (Dynamic Adaptation To Application Sizes) GC in .NET 8/9.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How can you diagnose high GC pause times and allocation pressure in a live production environment?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Using <code>dotnet-counters</code>, <code>dotnet-trace</code>, and <code>dotnet-dump</code> to inspect <code>% Time in GC</code>, <code>Allocation Rate</code>, and generation collection counts.</li>
+<li><strong>Deeper answer</strong>: Monitor <code>System.Runtime</code> counters:</li>
+<li><code>% Time in GC</code>: Should ideally stay $< 5\%$; values $> 15\%$ indicate critical memory pressure.</li>
+<li><code>Gen 0 / Gen 1 / Gen 2 Collections / sec</code>: A high ratio of Gen 2 to Gen 0 indicates premature promotion or LOH abuse.</li>
+<li>Collect an EventPipe trace with <code>dotnet-trace</code> to inspect allocation call stacks.</li>
+<li><strong>Practical example</strong>: <code>dotnet-counters monitor --process-id &lt;PID&gt; --counters System.Runtime</code></li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## Key Takeaways
-Garbage collection pause times are directly driven by allocation volume and object survival rates. Writing high-throughput .NET microservices requires designing allocation-conscious code that minimizes Gen 0 churn and avoids LOH allocations.
-</script>
-  <script type="text/markdown" id="raw-notes"># Day 04 - Engineering Notes: Garbage Collection Internals
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">What is `GCSettings.LatencyMode` and when would you use `SustainedLowLatency`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It controls how aggressively the GC collects memory to trade off throughput vs pause duration.</li>
+<li><strong>Deeper answer</strong>: In <code>SustainedLowLatency</code> mode, the GC disables full blocking Gen 2 collections as long as memory permits, performing only Background Gen 2 and ephemeral collections. It is used in financial trading systems or low-latency audio processing during critical execution windows.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
 
-## 1. Generational Hypothesis
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does .NET 8 / 9 DATAS (Dynamic Adaptation To Application Sizes) GC alter Server GC behavior?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: DATAS dynamically adjusts heap size based on application demand, dramatically reducing memory usage in small or bursting workloads.</li>
+<li><strong>Deeper answer</strong>: Traditional Server GC aggressively retains large heap segments across all cores, which can consume hundreds of megabytes even for idle microservices. DATAS monitors application throughput and adapts the number of active heaps and segment sizes, making Server GC viable in memory-constrained Kubernetes pods.</li>
+<li><strong>Practical example</strong>: In <code>.csproj</code>: <code>&lt;GarbageCollectionAdaptationMode&gt;1&lt;/GarbageCollectionAdaptationMode&gt;</code>.</li>
+</ul>
+          </div>
+        </details>
+        
+        </div>
 
-The .NET Garbage Collector is built upon the **Weak Generational Hypothesis**:
-1. Most newly allocated objects have short lifespans (locals, transient DTOs, string builders).
-2. The older an object is, the longer it is likely to remain in use (caches, configuration, singletons).
-3. Collecting a portion of the heap (Gen 0) is much faster than collecting the entire heap.
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day04.GarbageCollection/DsaExercises.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd4-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d4-src-code-0" class="language-csharp">namespace Day04.GarbageCollection;
 
-### Heap Segment Sizes and Roles
-- **Gen 0**: Fresh allocations. Very fast allocation via pointer bumping (`allocation context`).
-- **Gen 1**: Serves as a buffer. Objects that survive Gen 0 are promoted here.
-- **Gen 2**: Tenured long-lived objects. Surviving Gen 1 objects promote here. Full collections sweep Gen 0, 1, and 2.
-- **LOH (Large Object Heap)**: Objects $\ge 85,000$ bytes (or double arrays $\ge 1,000$ elements on 32-bit). Because copying large objects is expensive, LOH is swept rather than compacted by default.
-- **POH (Pinned Object Heap)**: Objects pinned for interop or I/O (`GC.AllocateArray&lt;T&gt;(length, pinned: true)`). Avoids fragmenting Gen 0/1/2.
-
----
-
-## 2. Server GC vs Workstation GC
-
-| Feature | Workstation GC | Server GC |
-|---|---|---|
-| **Heap Count** | 1 logical heap | 1 heap per logical core (e.g. 16 heaps on 16 cores) |
-| **GC Threads** | Runs on requesting thread or 1 background thread | 1 dedicated OS thread per core (`gc_thread`) running at highest priority |
-| **Throughput** | Moderate | Maximum (scales linearly with CPU cores) |
-| **Memory Overhead** | Low footprint | Higher baseline memory (multiple heap segments) |
-| **Target Workload** | Desktop apps, CLI tools, small memory containers | High-throughput web APIs, microservices, databases |
-
-### Enabling Server GC
-In `.csproj`:
-```xml
-&lt;PropertyGroup&gt;
-    &lt;ServerGarbageCollection&gt;true&lt;/ServerGarbageCollection&gt;
-&lt;/PropertyGroup&gt;
-```
-Or via `runtimeconfig.json`:
-```json
+public static class DsaExercises
 {
-  &quot;runtimeOptions&quot;: {
-    &quot;configProperties&quot;: {
-      &quot;System.GC.Server&quot;: true
+    /// &lt;summary&gt;
+    /// LeetCode 238 - Product of Array Except Self
+    /// Given an integer array nums, return an array answer such that answer[i] is equal to
+    /// the product of all the elements of nums except nums[i].
+    /// Must run in O(n) time and without using the division operation.
+    /// Auxiliary space: O(1) beyond the output array.
+    /// &lt;/summary&gt;
+    public static int[] ProductExceptSelf(int[] nums)
+    {
+        if (nums == null || nums.Length == 0)
+            return Array.Empty&lt;int&gt;();
+
+        int n = nums.Length;
+        int[] result = new int[n];
+
+        // Step 1: Compute prefix products directly in result array
+        result[0] = 1;
+        for (int i = 1; i &lt; n; i++)
+        {
+            result[i] = result[i - 1] * nums[i - 1];
+        }
+
+        // Step 2: Multiply by running suffix product from the right
+        int suffix = 1;
+        for (int i = n - 1; i &gt;= 0; i--)
+        {
+            result[i] *= suffix;
+            suffix *= nums[i];
+        }
+
+        return result;
     }
-  }
 }
-```
+</code></pre>
+                </div>
+                
 
----
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day04.GarbageCollection/GcLaboratory.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd4-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d4-src-code-1" class="language-csharp">using System.Buffers;
+using System.Runtime;
+using System.Text;
 
-## 3. Background GC vs Concurrent GC
+namespace Day04.GarbageCollection;
 
-- **Non-concurrent GC**: All application threads are frozen (Stop-The-World) for the entire duration of Gen 0, 1, and 2 sweeps.
-- **Background GC** (current default):
-  - Gen 2 collections run concurrently on dedicated background GC threads while application threads continue executing.
-  - While a background Gen 2 collection is in progress, the GC can interrupt it to perform fast ephemeral Gen 0 / Gen 1 collections on other threads!
-  - Dramatically reduces perceived p99 and p999 API pause times.
+public record GcRuntimeInfo(
+    bool IsServerGc,
+    GCLatencyMode LatencyMode,
+    int MaxGeneration,
+    long TotalMemoryBytes);
 
----
+public record AllocationBenchmarkResult(
+    long NaiveConcatBytes,
+    long StringBuilderBytes,
+    long OptimizedBytes);
 
-## 4. DSA Takeaways
-- **Product of Array Except Self**:
-  - Running prefix products forward store cumulative products of all elements before $i$.
-  - Running suffix products backward accumulate into the same array in-place.
-  - Achieves $O(n)$ time with $O(1)$ extra space without division.
-</script>
+public class GcLaboratory
+{
+    public static GcRuntimeInfo GetRuntimeInfo()
+    {
+        return new GcRuntimeInfo(
+            GCSettings.IsServerGC,
+            GCSettings.LatencyMode,
+            GC.MaxGeneration,
+            GC.GetTotalMemory(forceFullCollection: false));
+    }
+
+    /// &lt;summary&gt;
+    /// Demonstrates generational promotion:
+    /// Gen 0 (ephemeral short-lived) -&gt; Gen 1 (buffer/intermediate) -&gt; Gen 2 (long-lived tenured).
+    /// &lt;/summary&gt;
+    public static (int InitialGen, int AfterGen0Collect, int AfterGen1Collect) DemonstrateGenerationalPromotion()
+    {
+        // Allocate a small object in Gen 0
+        object liveObject = new byte[64];
+        int initialGen = GC.GetGeneration(liveObject);
+
+        // Force Gen 0 collection; surviving objects promote to Gen 1
+        GC.Collect(0, GCCollectionMode.Forced, blocking: true);
+        int afterGen0 = GC.GetGeneration(liveObject);
+
+        // Force Gen 1 collection; surviving objects promote to Gen 2
+        GC.Collect(1, GCCollectionMode.Forced, blocking: true);
+        int afterGen1 = GC.GetGeneration(liveObject);
+
+        return (initialGen, afterGen0, afterGen1);
+    }
+
+    /// &lt;summary&gt;
+    /// Demonstrates the Large Object Heap (LOH) threshold.
+    /// Objects &gt;= 85,000 bytes bypass Gen 0/1 and are allocated directly in Gen 2 (LOH).
+    /// &lt;/summary&gt;
+    public static (int SmallObjectGen, int LargeObjectGen) DemonstrateLohAllocation()
+    {
+        // 1KB object (&lt; 85,000 bytes) -&gt; goes to Gen 0
+        byte[] smallObj = new byte[1024];
+        int smallGen = GC.GetGeneration(smallObj);
+
+        // 85,000+ byte object -&gt; goes directly to Large Object Heap (Gen 2)
+        byte[] largeObj = new byte[85000];
+        int largeGen = GC.GetGeneration(largeObj);
+
+        return (smallGen, largeGen);
+    }
+
+    /// &lt;summary&gt;
+    /// Compares allocation profiles:
+    /// 1. Naive string concatenation: creates O(N^2) allocations.
+    /// 2. StringBuilder: pre-sized buffer amortizes allocations.
+    /// 3. ArrayPool / string.Create: zero intermediate heap allocations.
+    /// &lt;/summary&gt;
+    public static AllocationBenchmarkResult CompareAllocationImpact(int iterations = 100)
+    {
+        const string token = &quot;TicketEvent&quot;;
+
+        // 1. Naive string concatenation
+        long start1 = GC.GetAllocatedBytesForCurrentThread();
+        string concatResult = string.Empty;
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            concatResult += token;
+        }
+        long naiveBytes = GC.GetAllocatedBytesForCurrentThread() - start1;
+
+        // 2. Pre-sized StringBuilder
+        long start2 = GC.GetAllocatedBytesForCurrentThread();
+        StringBuilder sb = new(token.Length * iterations);
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            sb.Append(token);
+        }
+        string sbResult = sb.ToString();
+        long sbBytes = GC.GetAllocatedBytesForCurrentThread() - start2;
+
+        // 3. Optimized with ArrayPool
+        long start3 = GC.GetAllocatedBytesForCurrentThread();
+        int totalLength = token.Length * iterations;
+        char[] rented = ArrayPool&lt;char&gt;.Shared.Rent(totalLength);
+        try
+        {
+            Span&lt;char&gt; targetSpan = rented.AsSpan(0, totalLength);
+            for (int i = 0; i &lt; iterations; i++)
+            {
+                token.AsSpan().CopyTo(targetSpan.Slice(i * token.Length));
+            }
+            string optResult = new string(targetSpan);
+        }
+        finally
+        {
+            ArrayPool&lt;char&gt;.Shared.Return(rented);
+        }
+        long optBytes = GC.GetAllocatedBytesForCurrentThread() - start3;
+
+        return new AllocationBenchmarkResult(naiveBytes, sbBytes, optBytes);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day04.GarbageCollection.Tests/DsaExercisesTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd4-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d4-tests-code-0" class="language-csharp">using Xunit;
+using Day04.GarbageCollection;
+
+namespace Day04.GarbageCollection.Tests;
+
+public class DsaExercisesTests
+{
+    [Theory]
+    [InlineData(new[] { 1, 2, 3, 4 }, new[] { 24, 12, 8, 6 })]
+    [InlineData(new[] { -1, 1, 0, -3, 3 }, new[] { 0, 0, 9, 0, 0 })]
+    [InlineData(new[] { 2, 3 }, new[] { 3, 2 })]
+    public void ProductExceptSelf_ComputesCorrectProducts(int[] nums, int[] expected)
+    {
+        int[] result = DsaExercises.ProductExceptSelf(nums);
+        Assert.Equal(expected, result);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day04.GarbageCollection.Tests/GcLaboratoryTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd4-tests-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d4-tests-code-1" class="language-csharp">using Xunit;
+using Day04.GarbageCollection;
+
+namespace Day04.GarbageCollection.Tests;
+
+public class GcLaboratoryTests
+{
+    [Fact]
+    public void GetRuntimeInfo_ReturnsValidConfiguration()
+    {
+        var info = GcLaboratory.GetRuntimeInfo();
+        Assert.NotNull(info);
+        Assert.True(info.MaxGeneration &gt;= 2);
+        Assert.True(info.TotalMemoryBytes &gt; 0);
+    }
+
+    [Fact]
+    public void GenerationalPromotion_PromotesFromGen0ThroughGen2()
+    {
+        var (initial, afterGen0, afterGen1) = GcLaboratory.DemonstrateGenerationalPromotion();
+
+        Assert.Equal(0, initial);
+        Assert.True(afterGen0 &gt;= 1, $&quot;Expected &gt;= 1, but got {afterGen0}&quot;);
+        Assert.True(afterGen1 &gt;= 2, $&quot;Expected 2, but got {afterGen1}&quot;);
+    }
+
+    [Fact]
+    public void LohAllocation_AllocatesDirectlyInGen2()
+    {
+        var (smallGen, largeGen) = GcLaboratory.DemonstrateLohAllocation();
+
+        Assert.Equal(0, smallGen);
+        Assert.Equal(2, largeGen);
+    }
+
+    [Fact]
+    public void CompareAllocationImpact_OptimizedGeneratesDramaticallyFewerBytes()
+    {
+        var result = GcLaboratory.CompareAllocationImpact(iterations: 50);
+
+        Assert.True(result.NaiveConcatBytes &gt; result.StringBuilderBytes,
+            $&quot;Naive ({result.NaiveConcatBytes}) should exceed StringBuilder ({result.StringBuilderBytes})&quot;);
+        Assert.True(result.NaiveConcatBytes &gt; result.OptimizedBytes,
+            $&quot;Naive ({result.NaiveConcatBytes}) should exceed Optimized ({result.OptimizedBytes})&quot;);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 04 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
 
   <script>
     // Tab switching
@@ -1106,16 +1837,10 @@ Or via `runtimeconfig.json`:
       if (pane) pane.classList.add('active');
     }
 
-    // QA Accordion
-    function toggleQa(id) {
-      const el = document.getElementById(id);
-      if (el) el.classList.toggle('open');
-    }
-
+    // QA Accordion (using native details elements)
     function toggleAllQa(open) {
-      document.querySelectorAll('.qa-card').forEach(c => {
-        if (open) c.classList.add('open');
-        else c.classList.remove('open');
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
       });
     }
 
@@ -1134,23 +1859,7 @@ Or via `runtimeconfig.json`:
       });
     }
 
-    // Render Markdown when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.marked) {
-        const rEl = document.getElementById('raw-readme');
-        if (rEl) {
-          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
-        }
-        const nEl = document.getElementById('raw-notes');
-        if (nEl) {
-          const nTarget = document.getElementById('notes-container');
-          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
-        }
-        // Render inner QA contents
-        document.querySelectorAll('.raw-qa-content').forEach(el => {
-          el.innerHTML = marked.parse(el.textContent);
-        });
-      }
       if (window.Prism) {
         Prism.highlightAll();
       }

@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Day 11: EF Core Change Tracking Mechanics &amp; Optimization | 100-Day .NET + AI Track</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
@@ -17,7 +16,7 @@
       --bg-card-hover: #1f2937;
       --bg-code: #0f172a;
       --border: #1e293b;
-      --border-accent: #3b82f6;
+      --border-accent: #38bdf8;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
@@ -25,6 +24,7 @@
       --accent-glow: rgba(56, 189, 248, 0.15);
       --success: #10b981;
       --warning: #f59e0b;
+      --purple: #c084fc;
     }
     * {
       box-sizing: border-box;
@@ -143,6 +143,24 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
     .diagram-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -167,10 +185,13 @@
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 24px;
       overflow-x: auto;
       padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
     }
     .tab-btn {
       background: transparent;
@@ -180,7 +201,7 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      border-bottom: 2px solid transparent;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -189,10 +210,13 @@
     }
     .tab-btn:hover {
       color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
     }
     .tab-btn.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .tab-pane {
       display: none;
@@ -213,70 +237,87 @@
       line-height: 1.7;
     }
     .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
     .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
-    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
     .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
-    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
     .markdown-content code {
-      background: rgba(56, 189, 248, 0.1);
+      background: rgba(56, 189, 248, 0.12);
       color: #38bdf8;
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 13px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
     .markdown-content pre {
       background: var(--bg-code);
-      padding: 16px;
-      border-radius: 8px;
+      padding: 18px;
       overflow-x: auto;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
     .markdown-content pre code {
       background: transparent;
       padding: 0;
-      color: inherit;
-      font-size: 13px;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
     }
     .markdown-content table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
+      font-size: 14px;
+      text-align: left;
     }
     .markdown-content th, .markdown-content td {
       padding: 10px 14px;
       border: 1px solid var(--border);
-      text-align: left;
     }
     .markdown-content th {
-      background: rgba(30, 41, 59, 0.8);
-      color: #fff;
+      background: #1e293b;
+      color: #f8fafc;
       font-weight: 600;
     }
     .markdown-content tr:nth-child(even) {
-      background: rgba(15, 23, 42, 0.4);
+      background: rgba(15, 23, 42, 0.5);
     }
     .markdown-content blockquote {
       border-left: 4px solid var(--accent);
-      padding: 8px 16px;
+      padding: 10px 18px;
       background: var(--accent-glow);
       border-radius: 0 8px 8px 0;
-      margin-bottom: 16px;
+      margin: 16px 0;
       color: #e2e8f0;
     }
-    /* QA Accordion Cards */
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
     .qa-controls {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
-    .qa-card {
+    details.qa-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -284,10 +325,10 @@
       overflow: hidden;
       transition: border-color 0.2s;
     }
-    .qa-card:hover {
+    details.qa-card:hover {
       border-color: var(--border-accent);
     }
-    .qa-header {
+    summary.qa-header {
       padding: 16px 20px;
       background: #1e293b;
       cursor: pointer;
@@ -295,6 +336,13 @@
       align-items: center;
       justify-content: space-between;
       user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
     }
     .qa-badge {
       background: #1e3a8a;
@@ -316,16 +364,13 @@
       color: var(--accent);
       transition: transform 0.2s;
     }
-    .qa-card.open .qa-toggle-icon {
+    details.qa-card[open] .qa-toggle-icon {
       transform: rotate(180deg);
     }
     .qa-body {
       padding: 24px;
-      border-top: 1px solid var(--border);
-      display: none;
-    }
-    .qa-card.open .qa-body {
-      display: block;
+      background: #111827;
+      line-height: 1.7;
     }
     /* Code Viewer Styles */
     .file-card {
@@ -365,19 +410,29 @@
     .copy-btn:hover {
       background: #475569;
     }
-    pre[class*="language-"] {
-      margin: 0 !important;
-      border-radius: 0 !important;
-      background: var(--bg-code) !important;
-      padding: 16px !important;
-      font-size: 13px !important;
-      line-height: 1.5 !important;
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .footer-bar {
       text-align: center;
       margin-top: 40px;
       color: var(--text-dim);
       font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
     }
   </style>
 </head>
@@ -389,7 +444,7 @@
         <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
         <span class="badge badge-day">Day 11</span>
         <span class="badge badge-category">EF Core &amp; ORM</span>
-        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
       </div>
       <div class="nav-controls">
         <a href="../Day10-Transactions-ACID/index.html" class="nav-btn">← Day 10</a>
@@ -418,11 +473,17 @@
     <div class="hero">
       <h1>Day 11: EF Core Change Tracking Mechanics &amp; Optimization</h1>
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 4 Source & 1 Test Files</span>
+      </div>
     </div>
 
     <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
     <div class="diagram-card">
-      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
       
         <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
           <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
@@ -448,23 +509,159 @@
     </div>
 
     <div class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
-      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
       <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (4 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
     </div>
 
     <!-- Tab Panes -->
-    <div id="pane-readme" class="tab-pane active">
-      <div class="markdown-content" id="readme-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 11 - Engineering Notes: EF Core Change Tracking Mechanics</h1>
+<h2>1. Entity State Lifecycle Transitions</h2>
+<p>Entity Framework Core tracks entity instances through <code>EntityEntry&lt;T&gt;.State</code>:</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">               ┌───────────┐
+               │ Detached  │ ◄────── (After SaveChanges on Deleted)
+               └─────┬─────┘
+                     │
+         DbContext.Add(entity)
+                     │
+                     ▼
+               ┌───────────┐
+               │   Added   │
+               └─────┬─────┘
+                     │
+          SaveChanges (INSERT)
+                     │
+                     ▼
+               ┌───────────┐
+      ┌──────► │ Unchanged │ ◄────── (SaveChanges on Modified)
+      │        └─────┬─────┘
+      │              │
+      │       Mutate property (DetectChanges)
+      │              │
+      │              ▼
+      │        ┌───────────┐
+      └─────── │ Modified  │
+               └─────┬─────┘
+                     │
+        DbContext.Remove(entity)
+                     │
+                     ▼
+               ┌───────────┐
+               │  Deleted  │
+               └─────┬─────┘
+                     │
+          SaveChanges (DELETE)
+                     │
+                     ▼
+               ┌───────────┐
+               │ Detached  │
+               └───────────┘</code></pre></div>
+<hr/>
+<h2>2. Snapshot vs. Notification Tracking</h2>
+<h3>Snapshot Tracking (Default POCO)</h3>
+<ul>
+<li>When EF Core queries an entity, it takes an internal snapshot clone of all scalar and navigation properties.</li>
+<li>When <code>DetectChanges()</code> is invoked (automatically before <code>SaveChanges()</code>, <code>Add()</code>, <code>Remove()</code>, etc.):</li>
+<li>It iterates over every tracked entity in the <code>ChangeTracker</code>.</li>
+<li>It performs an $O(N \times P)$ property-by-property equality comparison against the snapshot.</li>
+<li><strong>Overhead</strong>: Allocates 2x memory per entity (live object + snapshot clone) and consumes high CPU during bulk operations with thousands of entities.</li>
+</ul>
+<h3>Notification Tracking (<code>INotifyPropertyChanged</code>, <code>INotifyPropertyChanging</code>)</h3>
+<ul>
+<li>The entity itself raises <code>PropertyChanging</code> (capturing original value) and <code>PropertyChanged</code> (notifying EF Core immediately upon mutation).</li>
+<li>Configured via:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  modelBuilder.Entity&lt;Customer&gt;()
+      .HasChangeTrackingStrategy(ChangeTrackingStrategy.ChangingAndChangedNotificationsWithOriginalValues);</code></pre></div>
+<ul>
+<li><strong>Performance</strong>: Eliminates the need for full snapshot comparisons during <code>DetectChanges()</code>. EF Core marks properties dirty instantly when setters are called.</li>
+</ul>
+<hr/>
+<h2>3. <code>AsNoTracking()</code> vs <code>AsNoTrackingWithIdentityResolution()</code></h2>
+<h3>The Referential Duplication Problem</h3>
+<p>Consider an Order query loading its parent Customer:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">var orders = await context.Orders
+    .AsNoTracking()
+    .Include(o =&gt; o.Customer)
+    .ToListAsync();</code></pre></div>
+<p>If 100 orders belong to the same Customer (ID = 1):</p>
+<ul>
+<li>With <code>AsNoTracking()</code>: EF Core instantiates <strong>100 distinct Customer objects</strong> on the heap!</li>
+<li><code>ReferenceEquals(orders[0].Customer, orders[1].Customer)</code> is <strong>FALSE</strong>.</li>
+<li>Result: Memory bloat and referential inconsistency in memory.</li>
+</ul>
+<h3>The Identity Resolution Solution</h3>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">var orders = await context.Orders
+    .AsNoTrackingWithIdentityResolution()
+    .Include(o =&gt; o.Customer)
+    .ToListAsync();</code></pre></div>
+<ul>
+<li>EF Core maintains a temporary, query-scoped dictionary to resolve primary keys.</li>
+<li>All 100 orders reference the <strong>exact same Customer instance</strong> in memory.</li>
+<li><code>ReferenceEquals(orders[0].Customer, orders[1].Customer)</code> is <strong>TRUE</strong>.</li>
+<li>Entities remain untracked (no snapshot copies, no change detection overhead).</li>
+</ul>
       </div>
     </div>
 
-    <div id="pane-notes" class="tab-pane">
-      <div class="markdown-content" id="notes-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 11: EF Core Change Tracking & Stack Problems</h1>
+<h2>Overview</h2>
+<p>This module explores internal Entity Framework Core change tracking mechanics, comparing snapshot tracking against notification tracking, analyzing performance implications of <code>AsNoTracking()</code> vs <code>AsNoTrackingWithIdentityResolution()</code>, and solving foundational stack algorithmic problems.</p>
+<hr/>
+<h2>1. EF Core Change Tracking Mechanics</h2>
+<h3>Entity Lifecycle States</h3>
+<p>EF Core tracks entity instances using <code>EntityEntry.State</code>:</p>
+<ol>
+<li><strong>Detached</strong>: The entity is not tracked by the context.</li>
+<li><strong>Added</strong>: The entity is tracked and scheduled for an <code>INSERT</code> upon <code>SaveChanges()</code>.</li>
+<li><strong>Unchanged</strong>: The entity is tracked and has no pending modifications.</li>
+<li><strong>Modified</strong>: One or more properties have changed and an <code>UPDATE</code> will be generated.</li>
+<li><strong>Deleted</strong>: The entity is tracked and scheduled for a <code>DELETE</code> upon <code>SaveChanges()</code>.</li>
+</ol>
+<h3>Snapshot vs. Notification Tracking</h3>
+<ul>
+<li><strong>Snapshot Tracking (Default POCO)</strong>:</li>
+<li>EF Core takes a snapshot clone of property values when an entity is queried or attached.</li>
+<li>Calling <code>ChangeTracker.DetectChanges()</code> performs an $O(N \times P)$ field-by-field comparison between current values and snapshot values.</li>
+<li>Can incur CPU and memory overhead with thousands of entities.</li>
+<li><strong>Notification Tracking (<code>INotifyPropertyChanged</code>, <code>INotifyPropertyChanging</code>)</strong>:</li>
+<li>The entity immediately notifies the DbContext whenever a property is mutated.</li>
+<li>Eliminates the need for full snapshot comparison scans during <code>DetectChanges()</code>.</li>
+</ul>
+<h3><code>AsNoTracking()</code> vs <code>AsNoTrackingWithIdentityResolution()</code></h3>
+<ul>
+<li><strong><code>AsNoTracking()</code></strong>:</li>
+<li>No entities are added to the <code>ChangeTracker</code>.</li>
+<li>Fast for read-only queries.</li>
+<li><strong>Caveat</strong>: When querying relationships (e.g., Orders with Customer), duplicate parent instances are created across child entities (referential inequality <code>!ReferenceEquals(o1.Customer, o2.Customer)</code>), leading to memory duplication.</li>
+<li><strong><code>AsNoTrackingWithIdentityResolution()</code></strong>:</li>
+<li>Does NOT track entities for changes (remains read-only).</li>
+<li>Uses a lightweight, query-scoped identity map to guarantee that identical primary keys resolve to the exact same object reference (<code>ReferenceEquals(o1.Customer, o2.Customer) == true</code>).</li>
+</ul>
+<hr/>
+<h2>2. LeetCode Stack Solvers</h2>
+<h3>LeetCode #150: Evaluate Reverse Polish Notation (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Evaluate postfix arithmetic expressions using operators <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>.</li>
+<li><strong>Approach</strong>: Push operands onto a stack. When an operator is encountered, pop the right operand followed by the left operand, evaluate, and push the result back. Integer division truncates toward zero.</li>
+<li><strong>Complexity</strong>: Time: $O(n)$, Space: $O(n)$.</li>
+</ul>
+<h3>LeetCode #739: Daily Temperatures (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Given daily temperatures, find how many days to wait for a warmer temperature.</li>
+<li><strong>Approach</strong>: Monotonic decreasing stack holding indices. When current temperature is higher than the index at <code>stack.Peek()</code>, resolve the wait days as <code>i - prevIndex</code>.</li>
+<li><strong>Complexity</strong>: Time: $O(n)$, Space: $O(n)$.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day11.EfCoreTracking.Tests/Day11.EfCoreTracking.Tests.csproj</code></pre></div>
       </div>
     </div>
 
@@ -478,122 +675,126 @@
       </div>
       <div id="interview-cards-container">
         
-        <div class="qa-card open" id="qa-card-1">
-          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+        <details class="qa-card" open>
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q1</span>
               <span class="qa-title">How does EF Core&#x27;s default snapshot change tracking work internally?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: EF Core creates a clone of the entity's property values when it is queried or attached. During <code>DetectChanges()</code>, it performs a field-by-field equality comparison between current values and the snapshot clone to determine what changed.</li>
+<li><strong>Deeper answer</strong>: The snapshot is stored in the internal <code>StateManager</code>. When <code>ChangeTracker.DetectChanges()</code> is called, EF Core loops through all tracked entries. For each property, it invokes value comparers (e.g. <code>ValueComparer&lt;T&gt;</code>) to check for equality. If a difference is found, the property's <code>IsModified</code> flag is set to <code>true</code>, and the entity's state transitions to <code>Modified</code>.</li>
+<li><strong>Performance consideration</strong>: For large graphs (e.g., 5,000+ entities), <code>DetectChanges()</code> causes high CPU spikes.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: EF Core creates a clone of the entity&#x27;s property values when it is queried or attached. During `DetectChanges()`, it performs a field-by-field equality comparison between current values and the snapshot clone to determine what changed.
-- **Deeper answer**: The snapshot is stored in the internal `StateManager`. When `ChangeTracker.DetectChanges()` is called, EF Core loops through all tracked entries. For each property, it invokes value comparers (e.g. `ValueComparer&lt;T&gt;`) to check for equality. If a difference is found, the property&#x27;s `IsModified` flag is set to `true`, and the entity&#x27;s state transitions to `Modified`.
-- **Performance consideration**: For large graphs (e.g., 5,000+ entities), `DetectChanges()` causes high CPU spikes.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card open" id="qa-card-2">
-          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+        <details class="qa-card" open>
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q2</span>
               <span class="qa-title">What is the exact difference between `AsNoTracking()` and `AsNoTrackingWithIdentityResolution()`?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>AsNoTracking()</code> creates duplicate heap objects for duplicate parent entities across relationship joins; <code>AsNoTrackingWithIdentityResolution()</code> maintains a query-scoped identity map so that all matching child rows point to the exact same parent object instance, while still avoiding change tracking.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li>In <code>AsNoTracking()</code>, EF Core streams rows from <code>DbDataReader</code> and materializes fresh objects for each row without checking if that entity ID was already seen.</li>
+<li>In <code>AsNoTrackingWithIdentityResolution()</code>, an ephemeral dictionary checks primary keys during materialization. This guarantees referential equality (<code>ReferenceEquals(o1.Customer, o2.Customer) == true</code>), cuts memory consumption on joined collections, and avoids adding entities to the long-lived <code>ChangeTracker</code>.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: `AsNoTracking()` creates duplicate heap objects for duplicate parent entities across relationship joins; `AsNoTrackingWithIdentityResolution()` maintains a query-scoped identity map so that all matching child rows point to the exact same parent object instance, while still avoiding change tracking.
-- **Deeper answer**: 
-  - In `AsNoTracking()`, EF Core streams rows from `DbDataReader` and materializes fresh objects for each row without checking if that entity ID was already seen.
-  - In `AsNoTrackingWithIdentityResolution()`, an ephemeral dictionary checks primary keys during materialization. This guarantees referential equality (`ReferenceEquals(o1.Customer, o2.Customer) == true`), cuts memory consumption on joined collections, and avoids adding entities to the long-lived `ChangeTracker`.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-3">
-          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q3</span>
               <span class="qa-title">When should you disable `ChangeTracker.AutoDetectChangesEnabled`?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
-          </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: During bulk inserts, updates, or iterations over thousands of entities in memory to avoid $O(N^2)$ quadratic slowdowns.
-- **Deeper answer**: By default, methods like `Add()`, `Attach()`, `Remove()`, and `Find()` trigger `DetectChanges()`. If you add 10,000 entities in a loop, `DetectChanges()` runs 10,000 times, scanning an increasingly large tracked graph ($O(N^2)$).
-- **Remediation**:
-```csharp
-context.ChangeTracker.AutoDetectChangesEnabled = false;
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: During bulk inserts, updates, or iterations over thousands of entities in memory to avoid $O(N^2)$ quadratic slowdowns.</li>
+<li><strong>Deeper answer</strong>: By default, methods like <code>Add()</code>, <code>Attach()</code>, <code>Remove()</code>, and <code>Find()</code> trigger <code>DetectChanges()</code>. If you add 10,000 entities in a loop, <code>DetectChanges()</code> runs 10,000 times, scanning an increasingly large tracked graph ($O(N^2)$).</li>
+<li><strong>Remediation</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">context.ChangeTracker.AutoDetectChangesEnabled = false;
 try {
     foreach (var item in largeBatch) context.Items.Add(item);
     context.ChangeTracker.DetectChanges(); // Run once at the end
     await context.SaveChangesAsync();
 } finally {
     context.ChangeTracker.AutoDetectChangesEnabled = true;
-}
-```
-
----</div>
+}</code></pre></div>
+<hr/>
           </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-4">
-          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q4</span>
               <span class="qa-title">What is the difference between `Attach()`, `Update()`, and setting `EntityEntry.State = EntityState.Modified`?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>Attach()</code> marks the entity <code>Unchanged</code>; <code>Update()</code> marks every property of the entity and its reachable graph as <code>Modified</code>; setting <code>State = Modified</code> marks only scalar properties as modified.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><code>context.Attach(entity)</code>: Tracks the entity without generating an <code>UPDATE</code> unless properties are subsequently modified.</li>
+<li><code>context.Update(entity)</code>: Unconditionally sets <code>IsModified = true</code> on <strong>all properties</strong>, resulting in an <code>UPDATE</code> statement that overwrites every column in the table, even unmodified ones.</li>
+<li>Setting specific property: <code>context.Entry(entity).Property(e =&gt; e.Status).IsModified = true;</code> generates an optimal <code>UPDATE table SET status = @val WHERE id = @id</code> affecting only the target column.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: `Attach()` marks the entity `Unchanged`; `Update()` marks every property of the entity and its reachable graph as `Modified`; setting `State = Modified` marks only scalar properties as modified.
-- **Deeper answer**:
-  - `context.Attach(entity)`: Tracks the entity without generating an `UPDATE` unless properties are subsequently modified.
-  - `context.Update(entity)`: Unconditionally sets `IsModified = true` on **all properties**, resulting in an `UPDATE` statement that overwrites every column in the table, even unmodified ones.
-  - Setting specific property: `context.Entry(entity).Property(e =&gt; e.Status).IsModified = true;` generates an optimal `UPDATE table SET status = @val WHERE id = @id` affecting only the target column.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-5">
-          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q5</span>
               <span class="qa-title">How does Notification Tracking improve performance compared to Snapshot Tracking?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Entities implement <code>INotifyPropertyChanged</code> and <code>INotifyPropertyChanging</code>, notifying EF Core directly when property setters are invoked. This eliminates the CPU cost of scanning snapshots during <code>DetectChanges()</code>.</li>
+<li><strong>Deeper answer</strong>: When configured with <code>ChangeTrackingStrategy.ChangingAndChangedNotificationsWithOriginalValues</code>, EF Core does not store full property snapshot clones. Instead, when a property setter fires <code>PropertyChanging</code>, EF Core records the original value; when <code>PropertyChanged</code> fires, it immediately marks the property as modified. In enterprise applications processing large batches, this provides near-zero change detection overhead.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Entities implement `INotifyPropertyChanged` and `INotifyPropertyChanging`, notifying EF Core directly when property setters are invoked. This eliminates the CPU cost of scanning snapshots during `DetectChanges()`.
-- **Deeper answer**: When configured with `ChangeTrackingStrategy.ChangingAndChangedNotificationsWithOriginalValues`, EF Core does not store full property snapshot clones. Instead, when a property setter fires `PropertyChanging`, EF Core records the original value; when `PropertyChanged` fires, it immediately marks the property as modified. In enterprise applications processing large batches, this provides near-zero change detection overhead.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-6">
-          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q6</span>
               <span class="qa-title">What causes a `DbUpdateConcurrencyException`, and how do you resolve it?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
-          </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: An optimistic concurrency token (such as a `rowversion` column or `[ConcurrencyCheck]` attribute) was modified in the database between when the entity was read and when `SaveChangesAsync()` was called.
-- **Deeper answer**: EF Core generates an update with a concurrency clause: `UPDATE products SET price = @p WHERE id = @id AND row_version = @expectedVersion`. When 0 rows are updated, EF Core throws `DbUpdateConcurrencyException`.
-- **Resolution Strategy**:
-```csharp
-try {
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: An optimistic concurrency token (such as a <code>rowversion</code> column or <code>[ConcurrencyCheck]</code> attribute) was modified in the database between when the entity was read and when <code>SaveChangesAsync()</code> was called.</li>
+<li><strong>Deeper answer</strong>: EF Core generates an update with a concurrency clause: <code>UPDATE products SET price = @p WHERE id = @id AND row_version = @expectedVersion</code>. When 0 rows are updated, EF Core throws <code>DbUpdateConcurrencyException</code>.</li>
+<li><strong>Resolution Strategy</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">try {
     await context.SaveChangesAsync();
 } catch (DbUpdateConcurrencyException ex) {
     var entry = ex.Entries.Single();
@@ -601,80 +802,83 @@ try {
     // Resolve via ClientWins, DatabaseWins, or Custom Merge
     entry.OriginalValues.SetValues(databaseValues);
     await context.SaveChangesAsync();
-}
-```
-
----</div>
+}</code></pre></div>
+<hr/>
           </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-7">
-          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q7</span>
               <span class="qa-title">Can EF Core track two distinct object instances with the same primary key in the same `DbContext`?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: No. EF Core enforces identity uniqueness per <code>DbContext</code> instance and will throw an <code>InvalidOperationException</code>.</li>
+<li><strong>Deeper answer</strong>: The <code>ChangeTracker</code> relies on a primary key dictionary to guarantee that an identity maps to exactly one in-memory instance. If entity <code>A</code> with <code>Id = 5</code> is already tracked, attempting to <code>Attach</code> or query entity <code>B</code> with <code>Id = 5</code> throws: <em>"The instance of entity type 'Customer' cannot be tracked because another instance with the same key value for {'Id'} is already being tracked."</em></li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: No. EF Core enforces identity uniqueness per `DbContext` instance and will throw an `InvalidOperationException`.
-- **Deeper answer**: The `ChangeTracker` relies on a primary key dictionary to guarantee that an identity maps to exactly one in-memory instance. If entity `A` with `Id = 5` is already tracked, attempting to `Attach` or query entity `B` with `Id = 5` throws: *&quot;The instance of entity type &#x27;Customer&#x27; cannot be tracked because another instance with the same key value for {&#x27;Id&#x27;} is already being tracked.&quot;*
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-8">
-          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q8</span>
               <span class="qa-title">What is the purpose of `DbContext.ChangeTracker.Clear()` introduced in EF Core 5.0?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Clears all tracked entities from the <code>DbContext</code>, resetting the <code>ChangeTracker</code> to an empty state without needing to instantiate a new <code>DbContext</code>.</li>
+<li><strong>Deeper answer</strong>: In long-lived <code>DbContext</code> instances or background processing loops (e.g. batch jobs), entities accumulate in memory, degrading query performance and risking stale data lookups. Calling <code>context.ChangeTracker.Clear()</code> detaches all entities at once in $O(1)$ operations, freeing memory and preventing memory leaks.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Clears all tracked entities from the `DbContext`, resetting the `ChangeTracker` to an empty state without needing to instantiate a new `DbContext`.
-- **Deeper answer**: In long-lived `DbContext` instances or background processing loops (e.g. batch jobs), entities accumulate in memory, degrading query performance and risking stale data lookups. Calling `context.ChangeTracker.Clear()` detaches all entities at once in $O(1)$ operations, freeing memory and preventing memory leaks.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-9">
-          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q9</span>
               <span class="qa-title">How do Shadow Properties and Backing Fields interact with Change Tracking?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Shadow properties are properties defined in the EF Core model that do not exist as C# properties in the class. Backing fields allow EF Core to read and write fields directly, bypassing property getters/setters.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li>Shadow properties (e.g. <code>LastModifiedUtc</code>) are stored in EF Core's internal state buffer and tracked like regular properties.</li>
+<li>Backing fields (<code>_price</code>) can be configured via <code>.UsePropertyAccessMode(PropertyAccessMode.Field)</code>. When loading from database, EF Core writes directly to the private field, preventing domain logic or validation triggers inside property setters from executing during query materialization.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Shadow properties are properties defined in the EF Core model that do not exist as C# properties in the class. Backing fields allow EF Core to read and write fields directly, bypassing property getters/setters.
-- **Deeper answer**:
-  - Shadow properties (e.g. `LastModifiedUtc`) are stored in EF Core&#x27;s internal state buffer and tracked like regular properties.
-  - Backing fields (`_price`) can be configured via `.UsePropertyAccessMode(PropertyAccessMode.Field)`. When loading from database, EF Core writes directly to the private field, preventing domain logic or validation triggers inside property setters from executing during query materialization.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-10">
-          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q10</span>
               <span class="qa-title">Why should you avoid using a single `DbContext` instance concurrently across multiple threads?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>DbContext</code> is not thread-safe. Concurrent access causes corrupted <code>ChangeTracker</code> state, invalid database connection commands, and <code>InvalidOperationException</code>.</li>
+<li><strong>Deeper answer</strong>: ADO.NET connections and EF Core's <code>StateManager</code> maintain mutable internal state buffers. If Thread A calls <code>SaveChangesAsync()</code> while Thread B calls <code>context.Users.ToListAsync()</code>, both threads attempt to write to the same underlying socket and update <code>EntityEntry</code> dictionaries concurrently, leading to crashes, data corruption, and connection pool exhaustion.</li>
+</ul>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: `DbContext` is not thread-safe. Concurrent access causes corrupted `ChangeTracker` state, invalid database connection commands, and `InvalidOperationException`.
-- **Deeper answer**: ADO.NET connections and EF Core&#x27;s `StateManager` maintain mutable internal state buffers. If Thread A calls `SaveChangesAsync()` while Thread B calls `context.Users.ToListAsync()`, both threads attempt to write to the same underlying socket and update `EntityEntry` dictionaries concurrently, leading to crashes, data corruption, and connection pool exhaustion.</div>
-          </div>
-        </div>
+        </details>
         
       </div>
     </div>
@@ -1282,76 +1486,14 @@ public class Day11Tests
                 
     </div>
 
-    <div class="footer-bar">
-      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
-    </div>
-  </div>
-
-  <!-- Raw Content Payloads for Client-side Rendering -->
-  <script type="text/markdown" id="raw-readme"># Day 11: EF Core Change Tracking &amp; Stack Problems
-
-## Overview
-This module explores internal Entity Framework Core change tracking mechanics, comparing snapshot tracking against notification tracking, analyzing performance implications of `AsNoTracking()` vs `AsNoTrackingWithIdentityResolution()`, and solving foundational stack algorithmic problems.
-
----
-
-## 1. EF Core Change Tracking Mechanics
-
-### Entity Lifecycle States
-EF Core tracks entity instances using `EntityEntry.State`:
-1. **Detached**: The entity is not tracked by the context.
-2. **Added**: The entity is tracked and scheduled for an `INSERT` upon `SaveChanges()`.
-3. **Unchanged**: The entity is tracked and has no pending modifications.
-4. **Modified**: One or more properties have changed and an `UPDATE` will be generated.
-5. **Deleted**: The entity is tracked and scheduled for a `DELETE` upon `SaveChanges()`.
-
-### Snapshot vs. Notification Tracking
-- **Snapshot Tracking (Default POCO)**:
-  - EF Core takes a snapshot clone of property values when an entity is queried or attached.
-  - Calling `ChangeTracker.DetectChanges()` performs an $O(N \times P)$ field-by-field comparison between current values and snapshot values.
-  - Can incur CPU and memory overhead with thousands of entities.
-- **Notification Tracking (`INotifyPropertyChanged`, `INotifyPropertyChanging`)**:
-  - The entity immediately notifies the DbContext whenever a property is mutated.
-  - Eliminates the need for full snapshot comparison scans during `DetectChanges()`.
-
-### `AsNoTracking()` vs `AsNoTrackingWithIdentityResolution()`
-- **`AsNoTracking()`**:
-  - No entities are added to the `ChangeTracker`.
-  - Fast for read-only queries.
-  - **Caveat**: When querying relationships (e.g., Orders with Customer), duplicate parent instances are created across child entities (referential inequality `!ReferenceEquals(o1.Customer, o2.Customer)`), leading to memory duplication.
-- **`AsNoTrackingWithIdentityResolution()`**:
-  - Does NOT track entities for changes (remains read-only).
-  - Uses a lightweight, query-scoped identity map to guarantee that identical primary keys resolve to the exact same object reference (`ReferenceEquals(o1.Customer, o2.Customer) == true`).
-
----
-
-## 2. LeetCode Stack Solvers
-
-### LeetCode #150: Evaluate Reverse Polish Notation (Medium)
-- **Problem**: Evaluate postfix arithmetic expressions using operators `+`, `-`, `*`, `/`.
-- **Approach**: Push operands onto a stack. When an operator is encountered, pop the right operand followed by the left operand, evaluate, and push the result back. Integer division truncates toward zero.
-- **Complexity**: Time: $O(n)$, Space: $O(n)$.
-
-### LeetCode #739: Daily Temperatures (Medium)
-- **Problem**: Given daily temperatures, find how many days to wait for a warmer temperature.
-- **Approach**: Monotonic decreasing stack holding indices. When current temperature is higher than the index at `stack.Peek()`, resolve the wait days as `i - prevIndex`.
-- **Complexity**: Time: $O(n)$, Space: $O(n)$.
-
----
-
-## Running Tests
-```bash
-dotnet test tests/Day11.EfCoreTracking.Tests/Day11.EfCoreTracking.Tests.csproj
-```
-</script>
-  <script type="text/markdown" id="raw-notes"># Day 11 - Engineering Notes: EF Core Change Tracking Mechanics
-
-## 1. Entity State Lifecycle Transitions
-
-Entity Framework Core tracks entity instances through `EntityEntry&lt;T&gt;.State`:
-
-```
-               ┌───────────┐
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 11 - Engineering Notes: EF Core Change Tracking Mechanics</h1>
+<h2>1. Entity State Lifecycle Transitions</h2>
+<p>Entity Framework Core tracks entity instances through <code>EntityEntry&lt;T&gt;.State</code>:</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">               ┌───────────┐
                │ Detached  │ ◄────── (After SaveChanges on Deleted)
                └─────┬─────┘
                      │
@@ -1388,58 +1530,936 @@ Entity Framework Core tracks entity instances through `EntityEntry&lt;T&gt;.Stat
                      ▼
                ┌───────────┐
                │ Detached  │
-               └───────────┘
-```
-
----
-
-## 2. Snapshot vs. Notification Tracking
-
-### Snapshot Tracking (Default POCO)
-- When EF Core queries an entity, it takes an internal snapshot clone of all scalar and navigation properties.
-- When `DetectChanges()` is invoked (automatically before `SaveChanges()`, `Add()`, `Remove()`, etc.):
-  - It iterates over every tracked entity in the `ChangeTracker`.
-  - It performs an $O(N \times P)$ property-by-property equality comparison against the snapshot.
-- **Overhead**: Allocates 2x memory per entity (live object + snapshot clone) and consumes high CPU during bulk operations with thousands of entities.
-
-### Notification Tracking (`INotifyPropertyChanged`, `INotifyPropertyChanging`)
-- The entity itself raises `PropertyChanging` (capturing original value) and `PropertyChanged` (notifying EF Core immediately upon mutation).
-- Configured via:
-  ```csharp
-  modelBuilder.Entity&lt;Customer&gt;()
-      .HasChangeTrackingStrategy(ChangeTrackingStrategy.ChangingAndChangedNotificationsWithOriginalValues);
-  ```
-- **Performance**: Eliminates the need for full snapshot comparisons during `DetectChanges()`. EF Core marks properties dirty instantly when setters are called.
-
----
-
-## 3. `AsNoTracking()` vs `AsNoTrackingWithIdentityResolution()`
-
-### The Referential Duplication Problem
-Consider an Order query loading its parent Customer:
-```csharp
-var orders = await context.Orders
+               └───────────┘</code></pre></div>
+<hr/>
+<h2>2. Snapshot vs. Notification Tracking</h2>
+<h3>Snapshot Tracking (Default POCO)</h3>
+<ul>
+<li>When EF Core queries an entity, it takes an internal snapshot clone of all scalar and navigation properties.</li>
+<li>When <code>DetectChanges()</code> is invoked (automatically before <code>SaveChanges()</code>, <code>Add()</code>, <code>Remove()</code>, etc.):</li>
+<li>It iterates over every tracked entity in the <code>ChangeTracker</code>.</li>
+<li>It performs an $O(N \times P)$ property-by-property equality comparison against the snapshot.</li>
+<li><strong>Overhead</strong>: Allocates 2x memory per entity (live object + snapshot clone) and consumes high CPU during bulk operations with thousands of entities.</li>
+</ul>
+<h3>Notification Tracking (<code>INotifyPropertyChanged</code>, <code>INotifyPropertyChanging</code>)</h3>
+<ul>
+<li>The entity itself raises <code>PropertyChanging</code> (capturing original value) and <code>PropertyChanged</code> (notifying EF Core immediately upon mutation).</li>
+<li>Configured via:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  modelBuilder.Entity&lt;Customer&gt;()
+      .HasChangeTrackingStrategy(ChangeTrackingStrategy.ChangingAndChangedNotificationsWithOriginalValues);</code></pre></div>
+<ul>
+<li><strong>Performance</strong>: Eliminates the need for full snapshot comparisons during <code>DetectChanges()</code>. EF Core marks properties dirty instantly when setters are called.</li>
+</ul>
+<hr/>
+<h2>3. <code>AsNoTracking()</code> vs <code>AsNoTrackingWithIdentityResolution()</code></h2>
+<h3>The Referential Duplication Problem</h3>
+<p>Consider an Order query loading its parent Customer:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">var orders = await context.Orders
     .AsNoTracking()
     .Include(o =&gt; o.Customer)
-    .ToListAsync();
-```
-If 100 orders belong to the same Customer (ID = 1):
-- With `AsNoTracking()`: EF Core instantiates **100 distinct Customer objects** on the heap!
-- `ReferenceEquals(orders[0].Customer, orders[1].Customer)` is **FALSE**.
-- Result: Memory bloat and referential inconsistency in memory.
-
-### The Identity Resolution Solution
-```csharp
-var orders = await context.Orders
+    .ToListAsync();</code></pre></div>
+<p>If 100 orders belong to the same Customer (ID = 1):</p>
+<ul>
+<li>With <code>AsNoTracking()</code>: EF Core instantiates <strong>100 distinct Customer objects</strong> on the heap!</li>
+<li><code>ReferenceEquals(orders[0].Customer, orders[1].Customer)</code> is <strong>FALSE</strong>.</li>
+<li>Result: Memory bloat and referential inconsistency in memory.</li>
+</ul>
+<h3>The Identity Resolution Solution</h3>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">var orders = await context.Orders
     .AsNoTrackingWithIdentityResolution()
     .Include(o =&gt; o.Customer)
-    .ToListAsync();
-```
-- EF Core maintains a temporary, query-scoped dictionary to resolve primary keys.
-- All 100 orders reference the **exact same Customer instance** in memory.
-- `ReferenceEquals(orders[0].Customer, orders[1].Customer)` is **TRUE**.
-- Entities remain untracked (no snapshot copies, no change detection overhead).
-</script>
+    .ToListAsync();</code></pre></div>
+<ul>
+<li>EF Core maintains a temporary, query-scoped dictionary to resolve primary keys.</li>
+<li>All 100 orders reference the <strong>exact same Customer instance</strong> in memory.</li>
+<li><code>ReferenceEquals(orders[0].Customer, orders[1].Customer)</code> is <strong>TRUE</strong>.</li>
+<li>Entities remain untracked (no snapshot copies, no change detection overhead).</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 11: EF Core Change Tracking & Stack Problems</h1>
+<h2>Overview</h2>
+<p>This module explores internal Entity Framework Core change tracking mechanics, comparing snapshot tracking against notification tracking, analyzing performance implications of <code>AsNoTracking()</code> vs <code>AsNoTrackingWithIdentityResolution()</code>, and solving foundational stack algorithmic problems.</p>
+<hr/>
+<h2>1. EF Core Change Tracking Mechanics</h2>
+<h3>Entity Lifecycle States</h3>
+<p>EF Core tracks entity instances using <code>EntityEntry.State</code>:</p>
+<ol>
+<li><strong>Detached</strong>: The entity is not tracked by the context.</li>
+<li><strong>Added</strong>: The entity is tracked and scheduled for an <code>INSERT</code> upon <code>SaveChanges()</code>.</li>
+<li><strong>Unchanged</strong>: The entity is tracked and has no pending modifications.</li>
+<li><strong>Modified</strong>: One or more properties have changed and an <code>UPDATE</code> will be generated.</li>
+<li><strong>Deleted</strong>: The entity is tracked and scheduled for a <code>DELETE</code> upon <code>SaveChanges()</code>.</li>
+</ol>
+<h3>Snapshot vs. Notification Tracking</h3>
+<ul>
+<li><strong>Snapshot Tracking (Default POCO)</strong>:</li>
+<li>EF Core takes a snapshot clone of property values when an entity is queried or attached.</li>
+<li>Calling <code>ChangeTracker.DetectChanges()</code> performs an $O(N \times P)$ field-by-field comparison between current values and snapshot values.</li>
+<li>Can incur CPU and memory overhead with thousands of entities.</li>
+<li><strong>Notification Tracking (<code>INotifyPropertyChanged</code>, <code>INotifyPropertyChanging</code>)</strong>:</li>
+<li>The entity immediately notifies the DbContext whenever a property is mutated.</li>
+<li>Eliminates the need for full snapshot comparison scans during <code>DetectChanges()</code>.</li>
+</ul>
+<h3><code>AsNoTracking()</code> vs <code>AsNoTrackingWithIdentityResolution()</code></h3>
+<ul>
+<li><strong><code>AsNoTracking()</code></strong>:</li>
+<li>No entities are added to the <code>ChangeTracker</code>.</li>
+<li>Fast for read-only queries.</li>
+<li><strong>Caveat</strong>: When querying relationships (e.g., Orders with Customer), duplicate parent instances are created across child entities (referential inequality <code>!ReferenceEquals(o1.Customer, o2.Customer)</code>), leading to memory duplication.</li>
+<li><strong><code>AsNoTrackingWithIdentityResolution()</code></strong>:</li>
+<li>Does NOT track entities for changes (remains read-only).</li>
+<li>Uses a lightweight, query-scoped identity map to guarantee that identical primary keys resolve to the exact same object reference (<code>ReferenceEquals(o1.Customer, o2.Customer) == true</code>).</li>
+</ul>
+<hr/>
+<h2>2. LeetCode Stack Solvers</h2>
+<h3>LeetCode #150: Evaluate Reverse Polish Notation (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Evaluate postfix arithmetic expressions using operators <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>.</li>
+<li><strong>Approach</strong>: Push operands onto a stack. When an operator is encountered, pop the right operand followed by the left operand, evaluate, and push the result back. Integer division truncates toward zero.</li>
+<li><strong>Complexity</strong>: Time: $O(n)$, Space: $O(n)$.</li>
+</ul>
+<h3>LeetCode #739: Daily Temperatures (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Given daily temperatures, find how many days to wait for a warmer temperature.</li>
+<li><strong>Approach</strong>: Monotonic decreasing stack holding indices. When current temperature is higher than the index at <code>stack.Peek()</code>, resolve the wait days as <code>i - prevIndex</code>.</li>
+<li><strong>Complexity</strong>: Time: $O(n)$, Space: $O(n)$.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day11.EfCoreTracking.Tests/Day11.EfCoreTracking.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How does EF Core&#x27;s default snapshot change tracking work internally?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: EF Core creates a clone of the entity's property values when it is queried or attached. During <code>DetectChanges()</code>, it performs a field-by-field equality comparison between current values and the snapshot clone to determine what changed.</li>
+<li><strong>Deeper answer</strong>: The snapshot is stored in the internal <code>StateManager</code>. When <code>ChangeTracker.DetectChanges()</code> is called, EF Core loops through all tracked entries. For each property, it invokes value comparers (e.g. <code>ValueComparer&lt;T&gt;</code>) to check for equality. If a difference is found, the property's <code>IsModified</code> flag is set to <code>true</code>, and the entity's state transitions to <code>Modified</code>.</li>
+<li><strong>Performance consideration</strong>: For large graphs (e.g., 5,000+ entities), <code>DetectChanges()</code> causes high CPU spikes.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the exact difference between `AsNoTracking()` and `AsNoTrackingWithIdentityResolution()`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>AsNoTracking()</code> creates duplicate heap objects for duplicate parent entities across relationship joins; <code>AsNoTrackingWithIdentityResolution()</code> maintains a query-scoped identity map so that all matching child rows point to the exact same parent object instance, while still avoiding change tracking.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li>In <code>AsNoTracking()</code>, EF Core streams rows from <code>DbDataReader</code> and materializes fresh objects for each row without checking if that entity ID was already seen.</li>
+<li>In <code>AsNoTrackingWithIdentityResolution()</code>, an ephemeral dictionary checks primary keys during materialization. This guarantees referential equality (<code>ReferenceEquals(o1.Customer, o2.Customer) == true</code>), cuts memory consumption on joined collections, and avoids adding entities to the long-lived <code>ChangeTracker</code>.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">When should you disable `ChangeTracker.AutoDetectChangesEnabled`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: During bulk inserts, updates, or iterations over thousands of entities in memory to avoid $O(N^2)$ quadratic slowdowns.</li>
+<li><strong>Deeper answer</strong>: By default, methods like <code>Add()</code>, <code>Attach()</code>, <code>Remove()</code>, and <code>Find()</code> trigger <code>DetectChanges()</code>. If you add 10,000 entities in a loop, <code>DetectChanges()</code> runs 10,000 times, scanning an increasingly large tracked graph ($O(N^2)$).</li>
+<li><strong>Remediation</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">context.ChangeTracker.AutoDetectChangesEnabled = false;
+try {
+    foreach (var item in largeBatch) context.Items.Add(item);
+    context.ChangeTracker.DetectChanges(); // Run once at the end
+    await context.SaveChangesAsync();
+} finally {
+    context.ChangeTracker.AutoDetectChangesEnabled = true;
+}</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is the difference between `Attach()`, `Update()`, and setting `EntityEntry.State = EntityState.Modified`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>Attach()</code> marks the entity <code>Unchanged</code>; <code>Update()</code> marks every property of the entity and its reachable graph as <code>Modified</code>; setting <code>State = Modified</code> marks only scalar properties as modified.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><code>context.Attach(entity)</code>: Tracks the entity without generating an <code>UPDATE</code> unless properties are subsequently modified.</li>
+<li><code>context.Update(entity)</code>: Unconditionally sets <code>IsModified = true</code> on <strong>all properties</strong>, resulting in an <code>UPDATE</code> statement that overwrites every column in the table, even unmodified ones.</li>
+<li>Setting specific property: <code>context.Entry(entity).Property(e =&gt; e.Status).IsModified = true;</code> generates an optimal <code>UPDATE table SET status = @val WHERE id = @id</code> affecting only the target column.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How does Notification Tracking improve performance compared to Snapshot Tracking?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Entities implement <code>INotifyPropertyChanged</code> and <code>INotifyPropertyChanging</code>, notifying EF Core directly when property setters are invoked. This eliminates the CPU cost of scanning snapshots during <code>DetectChanges()</code>.</li>
+<li><strong>Deeper answer</strong>: When configured with <code>ChangeTrackingStrategy.ChangingAndChangedNotificationsWithOriginalValues</code>, EF Core does not store full property snapshot clones. Instead, when a property setter fires <code>PropertyChanging</code>, EF Core records the original value; when <code>PropertyChanged</code> fires, it immediately marks the property as modified. In enterprise applications processing large batches, this provides near-zero change detection overhead.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What causes a `DbUpdateConcurrencyException`, and how do you resolve it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: An optimistic concurrency token (such as a <code>rowversion</code> column or <code>[ConcurrencyCheck]</code> attribute) was modified in the database between when the entity was read and when <code>SaveChangesAsync()</code> was called.</li>
+<li><strong>Deeper answer</strong>: EF Core generates an update with a concurrency clause: <code>UPDATE products SET price = @p WHERE id = @id AND row_version = @expectedVersion</code>. When 0 rows are updated, EF Core throws <code>DbUpdateConcurrencyException</code>.</li>
+<li><strong>Resolution Strategy</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">try {
+    await context.SaveChangesAsync();
+} catch (DbUpdateConcurrencyException ex) {
+    var entry = ex.Entries.Single();
+    var databaseValues = await entry.GetDatabaseValuesAsync();
+    // Resolve via ClientWins, DatabaseWins, or Custom Merge
+    entry.OriginalValues.SetValues(databaseValues);
+    await context.SaveChangesAsync();
+}</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Can EF Core track two distinct object instances with the same primary key in the same `DbContext`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: No. EF Core enforces identity uniqueness per <code>DbContext</code> instance and will throw an <code>InvalidOperationException</code>.</li>
+<li><strong>Deeper answer</strong>: The <code>ChangeTracker</code> relies on a primary key dictionary to guarantee that an identity maps to exactly one in-memory instance. If entity <code>A</code> with <code>Id = 5</code> is already tracked, attempting to <code>Attach</code> or query entity <code>B</code> with <code>Id = 5</code> throws: <em>"The instance of entity type 'Customer' cannot be tracked because another instance with the same key value for {'Id'} is already being tracked."</em></li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the purpose of `DbContext.ChangeTracker.Clear()` introduced in EF Core 5.0?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Clears all tracked entities from the <code>DbContext</code>, resetting the <code>ChangeTracker</code> to an empty state without needing to instantiate a new <code>DbContext</code>.</li>
+<li><strong>Deeper answer</strong>: In long-lived <code>DbContext</code> instances or background processing loops (e.g. batch jobs), entities accumulate in memory, degrading query performance and risking stale data lookups. Calling <code>context.ChangeTracker.Clear()</code> detaches all entities at once in $O(1)$ operations, freeing memory and preventing memory leaks.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How do Shadow Properties and Backing Fields interact with Change Tracking?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Shadow properties are properties defined in the EF Core model that do not exist as C# properties in the class. Backing fields allow EF Core to read and write fields directly, bypassing property getters/setters.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li>Shadow properties (e.g. <code>LastModifiedUtc</code>) are stored in EF Core's internal state buffer and tracked like regular properties.</li>
+<li>Backing fields (<code>_price</code>) can be configured via <code>.UsePropertyAccessMode(PropertyAccessMode.Field)</code>. When loading from database, EF Core writes directly to the private field, preventing domain logic or validation triggers inside property setters from executing during query materialization.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">Why should you avoid using a single `DbContext` instance concurrently across multiple threads?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>DbContext</code> is not thread-safe. Concurrent access causes corrupted <code>ChangeTracker</code> state, invalid database connection commands, and <code>InvalidOperationException</code>.</li>
+<li><strong>Deeper answer</strong>: ADO.NET connections and EF Core's <code>StateManager</code> maintain mutable internal state buffers. If Thread A calls <code>SaveChangesAsync()</code> while Thread B calls <code>context.Users.ToListAsync()</code>, both threads attempt to write to the same underlying socket and update <code>EntityEntry</code> dictionaries concurrently, leading to crashes, data corruption, and connection pool exhaustion.</li>
+</ul>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day11.EfCoreTracking/ChangeTrackingService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd11-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d11-src-code-0" class="language-csharp">using Microsoft.EntityFrameworkCore;
+
+namespace Day11.EfCoreTracking;
+
+public record StateTransitionStep(string Action, EntityState State);
+
+public record IdentityResolutionResult(
+    int OrderCount,
+    bool NoTrackingReferencesAreEqual,
+    int NoTrackingDistinctCustomerInstances,
+    bool WithIdentityResolutionReferencesAreEqual,
+    int WithIdentityResolutionDistinctCustomerInstances);
+
+public record DetectChangesResult(
+    bool IsModifiedBeforeDetectChanges,
+    bool IsModifiedAfterDetectChanges,
+    string OriginalValue,
+    string CurrentValue);
+
+public class ChangeTrackingService
+{
+    /// &lt;summary&gt;
+    /// Demonstrates the full lifecycle state transitions of an entity:
+    /// Detached -&gt; Added -&gt; Unchanged (post-save) -&gt; Modified -&gt; Deleted -&gt; Detached (post-save).
+    /// &lt;/summary&gt;
+    public async Task&lt;List&lt;StateTransitionStep&gt;&gt; DemonstrateStateTransitionsAsync(
+        TrackingDbContext db,
+        string customerName,
+        string customerEmail)
+    {
+        var steps = new List&lt;StateTransitionStep&gt;();
+
+        var customer = new Customer { Name = customerName, Email = customerEmail };
+        steps.Add(new StateTransitionStep(&quot;Instantiation&quot;, db.Entry(customer).State)); // Detached
+
+        db.Customers.Add(customer);
+        steps.Add(new StateTransitionStep(&quot;Add&quot;, db.Entry(customer).State)); // Added
+
+        await db.SaveChangesAsync();
+        steps.Add(new StateTransitionStep(&quot;SaveChanges (Insert)&quot;, db.Entry(customer).State)); // Unchanged
+
+        customer.Name = $&quot;{customerName} (Updated)&quot;;
+        steps.Add(new StateTransitionStep(&quot;Property Mutation&quot;, db.Entry(customer).State)); // Modified
+
+        await db.SaveChangesAsync();
+        steps.Add(new StateTransitionStep(&quot;SaveChanges (Update)&quot;, db.Entry(customer).State)); // Unchanged
+
+        db.Customers.Remove(customer);
+        steps.Add(new StateTransitionStep(&quot;Remove&quot;, db.Entry(customer).State)); // Deleted
+
+        await db.SaveChangesAsync();
+        steps.Add(new StateTransitionStep(&quot;SaveChanges (Delete)&quot;, db.Entry(customer).State)); // Detached
+
+        return steps;
+    }
+
+    /// &lt;summary&gt;
+    /// Compares AsNoTracking() vs AsNoTrackingWithIdentityResolution().
+    /// AsNoTracking creates duplicate heap instances for duplicate parent entities across a relationship graph.
+    /// AsNoTrackingWithIdentityResolution maintains an ephemeral query-level identity map to ensure single instances.
+    /// &lt;/summary&gt;
+    public async Task&lt;IdentityResolutionResult&gt; CompareIdentityResolutionAsync(
+        TrackingDbContext db,
+        int customerId)
+    {
+        // 1. AsNoTracking()
+        var noTrackingOrders = await db.Orders
+            .AsNoTracking()
+            .Include(o =&gt; o.Customer)
+            .Where(o =&gt; o.CustomerId == customerId)
+            .ToListAsync();
+
+        var noTrackingRefsEqual = noTrackingOrders.Count &gt;= 2 &amp;&amp;
+            ReferenceEquals(noTrackingOrders[0].Customer, noTrackingOrders[1].Customer);
+
+        var noTrackingDistinctInstances = noTrackingOrders
+            .Select(o =&gt; o.Customer)
+            .Where(c =&gt; c != null)
+            .Distinct(new ReferenceEqualityComparer&lt;Customer?&gt;())
+            .Count();
+
+        // 2. AsNoTrackingWithIdentityResolution()
+        var withIdentOrders = await db.Orders
+            .AsNoTrackingWithIdentityResolution()
+            .Include(o =&gt; o.Customer)
+            .Where(o =&gt; o.CustomerId == customerId)
+            .ToListAsync();
+
+        var withIdentRefsEqual = withIdentOrders.Count &gt;= 2 &amp;&amp;
+            ReferenceEquals(withIdentOrders[0].Customer, withIdentOrders[1].Customer);
+
+        var withIdentDistinctInstances = withIdentOrders
+            .Select(o =&gt; o.Customer)
+            .Where(c =&gt; c != null)
+            .Distinct(new ReferenceEqualityComparer&lt;Customer?&gt;())
+            .Count();
+
+        return new IdentityResolutionResult(
+            OrderCount: noTrackingOrders.Count,
+            NoTrackingReferencesAreEqual: noTrackingRefsEqual,
+            NoTrackingDistinctCustomerInstances: noTrackingDistinctInstances,
+            WithIdentityResolutionReferencesAreEqual: withIdentRefsEqual,
+            WithIdentityResolutionDistinctCustomerInstances: withIdentDistinctInstances);
+    }
+
+    /// &lt;summary&gt;
+    /// Demonstrates snapshot change tracking and DetectChanges() behavior when AutoDetectChangesEnabled is false.
+    /// &lt;/summary&gt;
+    public DetectChangesResult InspectDetectChanges(
+        TrackingDbContext db,
+        Customer customer,
+        string updatedName)
+    {
+        var originalValue = customer.Name;
+        db.ChangeTracker.AutoDetectChangesEnabled = false;
+
+        try
+        {
+            customer.Name = updatedName;
+
+            var propEntry = db.Entry(customer).Property(c =&gt; c.Name);
+            bool isModifiedBefore = propEntry.IsModified;
+
+            db.ChangeTracker.DetectChanges();
+            bool isModifiedAfter = propEntry.IsModified;
+
+            return new DetectChangesResult(
+                IsModifiedBeforeDetectChanges: isModifiedBefore,
+                IsModifiedAfterDetectChanges: isModifiedAfter,
+                OriginalValue: originalValue,
+                CurrentValue: customer.Name);
+        }
+        finally
+        {
+            db.ChangeTracker.AutoDetectChangesEnabled = true;
+        }
+    }
+}
+
+public class ReferenceEqualityComparer&lt;T&gt; : IEqualityComparer&lt;T&gt; where T : class?
+{
+    public bool Equals(T? x, T? y) =&gt; ReferenceEquals(x, y);
+    public int GetHashCode(T? obj) =&gt; obj == null ? 0 : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day11.EfCoreTracking/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd11-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d11-src-code-1" class="language-csharp">using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
+namespace Day11.EfCoreTracking;
+
+public class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public List&lt;Order&gt; Orders { get; set; } = new();
+}
+
+public class Order
+{
+    public int Id { get; set; }
+    public decimal TotalAmount { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public int CustomerId { get; set; }
+    public Customer? Customer { get; set; }
+}
+
+/// &lt;summary&gt;
+/// Demonstrates notification-based change tracking via INotifyPropertyChanged and INotifyPropertyChanging.
+/// EF Core can track changes immediately when properties are set without requiring snapshot comparisons during DetectChanges().
+/// &lt;/summary&gt;
+public class NotificationCustomer : INotifyPropertyChanged, INotifyPropertyChanging
+{
+    private int _id;
+    private string _name = string.Empty;
+    private string _email = string.Empty;
+
+    public int Id
+    {
+        get =&gt; _id;
+        set
+        {
+            if (_id != value)
+            {
+                OnPropertyChanging();
+                _id = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string Name
+    {
+        get =&gt; _name;
+        set
+        {
+            if (_name != value)
+            {
+                OnPropertyChanging();
+                _name = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string Email
+    {
+        get =&gt; _email;
+        set
+        {
+            if (_email != value)
+            {
+                OnPropertyChanging();
+                _email = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public event PropertyChangingEventHandler? PropertyChanging;
+
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        =&gt; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    protected void OnPropertyChanging([CallerMemberName] string? propertyName = null)
+        =&gt; PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day11.EfCoreTracking/MonotonicStackSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd11-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d11-src-code-2" class="language-csharp">namespace Day11.EfCoreTracking;
+
+public static class MonotonicStackSolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #150: Evaluate Reverse Polish Notation.
+    /// Evaluates arithmetic expressions written in Postfix notation using a Stack.
+    /// Division truncates toward zero. Time Complexity: O(n), Space Complexity: O(n).
+    /// &lt;/summary&gt;
+    public static int EvalRpn(string[] tokens)
+    {
+        ArgumentNullException.ThrowIfNull(tokens);
+        if (tokens.Length == 0)
+        {
+            throw new ArgumentException(&quot;Tokens array cannot be empty.&quot;, nameof(tokens));
+        }
+
+        var stack = new Stack&lt;int&gt;();
+
+        foreach (var token in tokens)
+        {
+            switch (token)
+            {
+                case &quot;+&quot;:
+                    stack.Push(stack.Pop() + stack.Pop());
+                    break;
+                case &quot;-&quot;:
+                {
+                    int b = stack.Pop();
+                    int a = stack.Pop();
+                    stack.Push(a - b);
+                    break;
+                }
+                case &quot;*&quot;:
+                    stack.Push(stack.Pop() * stack.Pop());
+                    break;
+                case &quot;/&quot;:
+                {
+                    int b = stack.Pop();
+                    int a = stack.Pop();
+                    if (b == 0)
+                    {
+                        throw new DivideByZeroException(&quot;Division by zero in RPN evaluation.&quot;);
+                    }
+                    // C# integer division truncates toward zero
+                    stack.Push(a / b);
+                    break;
+                }
+                default:
+                    if (int.TryParse(token, out int number))
+                    {
+                        stack.Push(number);
+                    }
+                    else
+                    {
+                        throw new ArgumentException($&quot;Invalid token: &#x27;{token}&#x27;&quot;, nameof(tokens));
+                    }
+                    break;
+            }
+        }
+
+        if (stack.Count != 1)
+        {
+            throw new ArgumentException(&quot;Invalid RPN expression format.&quot;);
+        }
+
+        return stack.Pop();
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #739: Daily Temperatures.
+    /// Finds the number of days until a warmer temperature using a monotonic decreasing stack of indices.
+    /// Time Complexity: O(n), Space Complexity: O(n).
+    /// &lt;/summary&gt;
+    public static int[] DailyTemperatures(int[] temperatures)
+    {
+        ArgumentNullException.ThrowIfNull(temperatures);
+        int n = temperatures.Length;
+        var answer = new int[n];
+        var stack = new Stack&lt;int&gt;(); // Stores indices of daily temperatures in strictly non-increasing order
+
+        for (int i = 0; i &lt; n; i++)
+        {
+            while (stack.Count &gt; 0 &amp;&amp; temperatures[i] &gt; temperatures[stack.Peek()])
+            {
+                int prevIndex = stack.Pop();
+                answer[prevIndex] = i - prevIndex;
+            }
+
+            stack.Push(i);
+        }
+
+        return answer;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day11.EfCoreTracking/TrackingDbContext.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd11-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d11-src-code-3" class="language-csharp">using Microsoft.EntityFrameworkCore;
+
+namespace Day11.EfCoreTracking;
+
+public class TrackingDbContext : DbContext
+{
+    public DbSet&lt;Customer&gt; Customers =&gt; Set&lt;Customer&gt;();
+    public DbSet&lt;Order&gt; Orders =&gt; Set&lt;Order&gt;();
+    public DbSet&lt;NotificationCustomer&gt; NotificationCustomers =&gt; Set&lt;NotificationCustomer&gt;();
+
+    public TrackingDbContext(DbContextOptions&lt;TrackingDbContext&gt; options)
+        : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity&lt;Customer&gt;(entity =&gt;
+        {
+            entity.HasKey(c =&gt; c.Id);
+            entity.Property(c =&gt; c.Name).IsRequired().HasMaxLength(100);
+            entity.Property(c =&gt; c.Email).IsRequired().HasMaxLength(150);
+
+            entity.HasMany(c =&gt; c.Orders)
+                .WithOne(o =&gt; o.Customer)
+                .HasForeignKey(o =&gt; o.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity&lt;Order&gt;(entity =&gt;
+        {
+            entity.HasKey(o =&gt; o.Id);
+            entity.Property(o =&gt; o.TotalAmount).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity&lt;NotificationCustomer&gt;(entity =&gt;
+        {
+            entity.HasKey(nc =&gt; nc.Id);
+            entity.Property(nc =&gt; nc.Name).IsRequired().HasMaxLength(100);
+            entity.Property(nc =&gt; nc.Email).IsRequired().HasMaxLength(150);
+
+            // Configure entity to use notification-based change tracking instead of snapshot tracking
+            entity.HasChangeTrackingStrategy(ChangeTrackingStrategy.ChangingAndChangedNotificationsWithOriginalValues);
+        });
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day11.EfCoreTracking.Tests/Day11Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd11-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d11-tests-code-0" class="language-csharp">using FluentAssertions;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Xunit;
+
+namespace Day11.EfCoreTracking.Tests;
+
+public class Day11Tests
+{
+    private static TrackingDbContext CreateInMemoryContext(out SqliteConnection connection)
+    {
+        connection = new SqliteConnection(&quot;DataSource=:memory:&quot;);
+        connection.Open();
+
+        var options = new DbContextOptionsBuilder&lt;TrackingDbContext&gt;()
+            .UseSqlite(connection)
+            .Options;
+
+        var context = new TrackingDbContext(options);
+        context.Database.EnsureCreated();
+        return context;
+    }
+
+    [Fact]
+    public async Task DemonstrateStateTransitions_ShouldFollowExpectedLifecycle()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext(out var connection);
+        using (connection)
+        {
+            var service = new ChangeTrackingService();
+
+            // Act
+            var steps = await service.DemonstrateStateTransitionsAsync(
+                context, &quot;Alice Smith&quot;, &quot;alice@example.com&quot;);
+
+            // Assert
+            steps.Should().HaveCount(7);
+            steps[0].Should().Be(new StateTransitionStep(&quot;Instantiation&quot;, EntityState.Detached));
+            steps[1].Should().Be(new StateTransitionStep(&quot;Add&quot;, EntityState.Added));
+            steps[2].Should().Be(new StateTransitionStep(&quot;SaveChanges (Insert)&quot;, EntityState.Unchanged));
+            steps[3].Should().Be(new StateTransitionStep(&quot;Property Mutation&quot;, EntityState.Modified));
+            steps[4].Should().Be(new StateTransitionStep(&quot;SaveChanges (Update)&quot;, EntityState.Unchanged));
+            steps[5].Should().Be(new StateTransitionStep(&quot;Remove&quot;, EntityState.Deleted));
+            steps[6].Should().Be(new StateTransitionStep(&quot;SaveChanges (Delete)&quot;, EntityState.Detached));
+        }
+    }
+
+    [Fact]
+    public async Task CompareIdentityResolution_ShouldDemonstrateInstanceReuseDifference()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext(out var connection);
+        using (connection)
+        {
+            var customer = new Customer { Name = &quot;Enterprise Corp&quot;, Email = &quot;ops@enterprise.com&quot; };
+            context.Customers.Add(customer);
+            await context.SaveChangesAsync();
+
+            context.Orders.AddRange(
+                new Order { CustomerId = customer.Id, TotalAmount = 150.00m },
+                new Order { CustomerId = customer.Id, TotalAmount = 350.50m },
+                new Order { CustomerId = customer.Id, TotalAmount = 99.99m });
+            await context.SaveChangesAsync();
+
+            var service = new ChangeTrackingService();
+
+            // Act
+            var result = await service.CompareIdentityResolutionAsync(context, customer.Id);
+
+            // Assert
+            result.OrderCount.Should().Be(3);
+
+            // AsNoTracking: multiple copies of the same parent entity created on the heap
+            result.NoTrackingReferencesAreEqual.Should().BeFalse();
+            result.NoTrackingDistinctCustomerInstances.Should().Be(3);
+
+            // AsNoTrackingWithIdentityResolution: single shared instance reused across all child rows
+            result.WithIdentityResolutionReferencesAreEqual.Should().BeTrue();
+            result.WithIdentityResolutionDistinctCustomerInstances.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDetectChanges_ShouldDetectMutationsOnlyWhenInvoked()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext(out var connection);
+        using (connection)
+        {
+            var customer = new Customer { Name = &quot;Original Name&quot;, Email = &quot;test@example.com&quot; };
+            context.Customers.Add(customer);
+            await context.SaveChangesAsync();
+
+            var service = new ChangeTrackingService();
+
+            // Act
+            var result = service.InspectDetectChanges(context, customer, &quot;Updated Name&quot;);
+
+            // Assert
+            result.OriginalValue.Should().Be(&quot;Original Name&quot;);
+            result.CurrentValue.Should().Be(&quot;Updated Name&quot;);
+            result.IsModifiedBeforeDetectChanges.Should().BeFalse();
+            result.IsModifiedAfterDetectChanges.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task NotificationCustomer_ShouldTrackChangesDirectlyWithoutSnapshotScan()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext(out var connection);
+        using (connection)
+        {
+            var notifCustomer = new NotificationCustomer { Name = &quot;Notification Bob&quot;, Email = &quot;bob@example.com&quot; };
+            context.NotificationCustomers.Add(notifCustomer);
+            await context.SaveChangesAsync();
+
+            context.Entry(notifCustomer).State.Should().Be(EntityState.Unchanged);
+
+            // Act: mutate property directly while AutoDetectChangesEnabled is false
+            context.ChangeTracker.AutoDetectChangesEnabled = false;
+            notifCustomer.Name = &quot;Notification Bob 2.0&quot;;
+
+            // Assert: Notification-based entity informs EF Core directly via INotifyPropertyChanged
+            context.Entry(notifCustomer).State.Should().Be(EntityState.Modified);
+            context.Entry(notifCustomer).Property(x =&gt; x.Name).IsModified.Should().BeTrue();
+        }
+    }
+
+    [Theory]
+    [InlineData(new[] { &quot;2&quot;, &quot;1&quot;, &quot;+&quot;, &quot;3&quot;, &quot;*&quot; }, 9)]
+    [InlineData(new[] { &quot;4&quot;, &quot;13&quot;, &quot;5&quot;, &quot;/&quot;, &quot;+&quot; }, 6)]
+    [InlineData(new[] { &quot;10&quot;, &quot;6&quot;, &quot;9&quot;, &quot;3&quot;, &quot;+&quot;, &quot;-11&quot;, &quot;*&quot;, &quot;/&quot;, &quot;*&quot;, &quot;17&quot;, &quot;+&quot;, &quot;5&quot;, &quot;+&quot; }, 22)]
+    public void EvalRpn_ShouldEvaluateCorrectly(string[] tokens, int expected)
+    {
+        // Act
+        var result = MonotonicStackSolvers.EvalRpn(tokens);
+
+        // Assert
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void EvalRpn_DivisionByZero_ShouldThrowException()
+    {
+        // Arrange
+        var tokens = new[] { &quot;4&quot;, &quot;0&quot;, &quot;/&quot; };
+
+        // Act &amp; Assert
+        FluentActions.Invoking(() =&gt; MonotonicStackSolvers.EvalRpn(tokens))
+            .Should().Throw&lt;DivideByZeroException&gt;();
+    }
+
+    [Theory]
+    [InlineData(
+        new[] { 73, 74, 75, 71, 69, 72, 76, 73 },
+        new[] { 1, 1, 4, 2, 1, 1, 0, 0 })]
+    [InlineData(
+        new[] { 30, 40, 50, 60 },
+        new[] { 1, 1, 1, 0 })]
+    [InlineData(
+        new[] { 30, 60, 90 },
+        new[] { 1, 1, 0 })]
+    [InlineData(
+        new[] { 90, 80, 70 },
+        new[] { 0, 0, 0 })]
+    [InlineData(
+        new[] { 50 },
+        new[] { 0 })]
+    [InlineData(
+        new[] { 70, 70, 70 },
+        new[] { 0, 0, 0 })]
+    public void DailyTemperatures_ShouldComputeWaitDaysAccurately(int[] temps, int[] expected)
+    {
+        // Act
+        var result = MonotonicStackSolvers.DailyTemperatures(temps);
+
+        // Assert
+        result.Should().Equal(expected);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 11 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
 
   <script>
     // Tab switching
@@ -1454,16 +2474,10 @@ var orders = await context.Orders
       if (pane) pane.classList.add('active');
     }
 
-    // QA Accordion
-    function toggleQa(id) {
-      const el = document.getElementById(id);
-      if (el) el.classList.toggle('open');
-    }
-
+    // QA Accordion (using native details elements)
     function toggleAllQa(open) {
-      document.querySelectorAll('.qa-card').forEach(c => {
-        if (open) c.classList.add('open');
-        else c.classList.remove('open');
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
       });
     }
 
@@ -1482,23 +2496,7 @@ var orders = await context.Orders
       });
     }
 
-    // Render Markdown when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.marked) {
-        const rEl = document.getElementById('raw-readme');
-        if (rEl) {
-          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
-        }
-        const nEl = document.getElementById('raw-notes');
-        if (nEl) {
-          const nTarget = document.getElementById('notes-container');
-          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
-        }
-        // Render inner QA contents
-        document.querySelectorAll('.raw-qa-content').forEach(el => {
-          el.innerHTML = marked.parse(el.textContent);
-        });
-      }
       if (window.Prism) {
         Prism.highlightAll();
       }

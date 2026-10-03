@@ -21,6 +21,7 @@ DAYS_INFO = [
 ]
 
 from diagram_helpers import get_day_svg
+from md_to_html import render_markdown
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -29,7 +30,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Day {day_num:02d}: {day_title} | 100-Day .NET + AI Track</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
@@ -41,7 +41,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       --bg-card-hover: #1f2937;
       --bg-code: #0f172a;
       --border: #1e293b;
-      --border-accent: #3b82f6;
+      --border-accent: #38bdf8;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
@@ -49,6 +49,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       --accent-glow: rgba(56, 189, 248, 0.15);
       --success: #10b981;
       --warning: #f59e0b;
+      --purple: #c084fc;
     }}
     * {{
       box-sizing: border-box;
@@ -167,6 +168,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       color: var(--text-muted);
       font-size: 15px;
     }}
+    .quick-highlight {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }}
+    .highlight-pill {{
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }}
     .diagram-card {{
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -191,10 +210,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .tabs-nav {{
       display: flex;
       border-bottom: 1px solid var(--border);
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 24px;
       overflow-x: auto;
       padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
     }}
     .tab-btn {{
       background: transparent;
@@ -204,7 +226,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      border-bottom: 2px solid transparent;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -213,10 +235,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     }}
     .tab-btn:hover {{
       color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
     }}
     .tab-btn.active {{
-      color: var(--accent);
-      border-bottom-color: var(--accent);
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }}
     .tab-pane {{
       display: none;
@@ -237,70 +262,87 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       line-height: 1.7;
     }}
     .markdown-content h1 {{ font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }}
-    .markdown-content h2 {{ font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }}
+    .markdown-content h2 {{ font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }}
     .markdown-content h3 {{ font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }}
-    .markdown-content p {{ margin-bottom: 16px; color: #cbd5e1; }}
+    .markdown-content p {{ margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }}
     .markdown-content ul, .markdown-content ol {{ margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }}
-    .markdown-content li {{ margin-bottom: 6px; }}
+    .markdown-content li {{ margin-bottom: 6px; font-size: 14.5px; }}
     .markdown-content code {{
-      background: rgba(56, 189, 248, 0.1);
+      background: rgba(56, 189, 248, 0.12);
       color: #38bdf8;
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 13px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }}
+    .code-block-container {{
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }}
     .markdown-content pre {{
       background: var(--bg-code);
-      padding: 16px;
-      border-radius: 8px;
+      padding: 18px;
       overflow-x: auto;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }}
     .markdown-content pre code {{
       background: transparent;
       padding: 0;
-      color: inherit;
-      font-size: 13px;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }}
+    .table-container {{
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
     }}
     .markdown-content table {{
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
+      font-size: 14px;
+      text-align: left;
     }}
     .markdown-content th, .markdown-content td {{
       padding: 10px 14px;
       border: 1px solid var(--border);
-      text-align: left;
     }}
     .markdown-content th {{
-      background: rgba(30, 41, 59, 0.8);
-      color: #fff;
+      background: #1e293b;
+      color: #f8fafc;
       font-weight: 600;
     }}
     .markdown-content tr:nth-child(even) {{
-      background: rgba(15, 23, 42, 0.4);
+      background: rgba(15, 23, 42, 0.5);
     }}
     .markdown-content blockquote {{
       border-left: 4px solid var(--accent);
-      padding: 8px 16px;
+      padding: 10px 18px;
       background: var(--accent-glow);
       border-radius: 0 8px 8px 0;
-      margin-bottom: 16px;
+      margin: 16px 0;
       color: #e2e8f0;
     }}
-    /* QA Accordion Cards */
+    .markdown-content hr {{
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }}
+    /* QA Native Details Styles */
     .qa-controls {{
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
     }}
-    .qa-card {{
+    details.qa-card {{
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -308,10 +350,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       overflow: hidden;
       transition: border-color 0.2s;
     }}
-    .qa-card:hover {{
+    details.qa-card:hover {{
       border-color: var(--border-accent);
     }}
-    .qa-header {{
+    summary.qa-header {{
       padding: 16px 20px;
       background: #1e293b;
       cursor: pointer;
@@ -319,6 +361,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       align-items: center;
       justify-content: space-between;
       user-select: none;
+      list-style: none;
+    }}
+    summary.qa-header::-webkit-details-marker {{
+      display: none;
+    }}
+    details.qa-card[open] summary.qa-header {{
+      border-bottom: 1px solid var(--border);
     }}
     .qa-badge {{
       background: #1e3a8a;
@@ -340,16 +389,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       color: var(--accent);
       transition: transform 0.2s;
     }}
-    .qa-card.open .qa-toggle-icon {{
+    details.qa-card[open] .qa-toggle-icon {{
       transform: rotate(180deg);
     }}
     .qa-body {{
       padding: 24px;
-      border-top: 1px solid var(--border);
-      display: none;
-    }}
-    .qa-card.open .qa-body {{
-      display: block;
+      background: #111827;
+      line-height: 1.7;
     }}
     /* Code Viewer Styles */
     .file-card {{
@@ -389,19 +435,29 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .copy-btn:hover {{
       background: #475569;
     }}
-    pre[class*="language-"] {{
-      margin: 0 !important;
-      border-radius: 0 !important;
-      background: var(--bg-code) !important;
-      padding: 16px !important;
-      font-size: 13px !important;
-      line-height: 1.5 !important;
+    .section-divider-title {{
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }}
     .footer-bar {{
       text-align: center;
       margin-top: 40px;
       color: var(--text-dim);
       font-size: 13px;
+    }}
+    noscript .tab-pane {{
+      display: block !important;
+      margin-bottom: 40px;
+    }}
+    noscript .tabs-nav {{
+      display: none !important;
     }}
   </style>
 </head>
@@ -413,7 +469,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
         <span class="badge badge-day">Day {day_num:02d}</span>
         <span class="badge badge-category">{day_category}</span>
-        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
       </div>
       <div class="nav-controls">
         {prev_link}
@@ -429,32 +485,39 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="hero">
       <h1>Day {day_num:02d}: {day_title}</h1>
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 {source_files_count} Source & {test_files_count} Test Files</span>
+      </div>
     </div>
 
     <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
     <div class="diagram-card">
-      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
       {day_svg}
     </div>
 
     <div class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
-      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
       <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source ({source_files_count} files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests ({test_files_count} files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
     </div>
 
     <!-- Tab Panes -->
-    <div id="pane-readme" class="tab-pane active">
-      <div class="markdown-content" id="readme-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        {rendered_notes_html}
       </div>
     </div>
 
-    <div id="pane-notes" class="tab-pane">
-      <div class="markdown-content" id="notes-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        {rendered_readme_html}
       </div>
     </div>
 
@@ -479,14 +542,45 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       {test_files_html}
     </div>
 
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          {rendered_notes_html}
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          {rendered_readme_html}
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          {qa_cards_html}
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          {source_files_html}
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          {test_files_html}
+        </div>
+      </div>
+    </div>
+
     <div class="footer-bar">
-      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
+      100-Day .NET + AI Engineering Track • Day {day_num:02d} Complete Reference Guide
     </div>
   </div>
 
-  <!-- Raw Content Payloads for Client-side Rendering -->
-  <script type="text/markdown" id="raw-readme">{raw_readme}</script>
-  <script type="text/markdown" id="raw-notes">{raw_notes}</script>
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
 
   <script>
     // Tab switching
@@ -501,16 +595,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       if (pane) pane.classList.add('active');
     }}
 
-    // QA Accordion
-    function toggleQa(id) {{
-      const el = document.getElementById(id);
-      if (el) el.classList.toggle('open');
-    }}
-
+    // QA Accordion (using native details elements)
     function toggleAllQa(open) {{
-      document.querySelectorAll('.qa-card').forEach(c => {{
-        if (open) c.classList.add('open');
-        else c.classList.remove('open');
+      document.querySelectorAll('details.qa-card').forEach(d => {{
+        d.open = open;
       }});
     }}
 
@@ -529,23 +617,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       }});
     }}
 
-    // Render Markdown when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {{
-      if (window.marked) {{
-        const rEl = document.getElementById('raw-readme');
-        if (rEl) {{
-          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
-        }}
-        const nEl = document.getElementById('raw-notes');
-        if (nEl) {{
-          const nTarget = document.getElementById('notes-container');
-          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
-        }}
-        // Render inner QA contents
-        document.querySelectorAll('.raw-qa-content').forEach(el => {{
-          el.innerHTML = marked.parse(el.textContent);
-        }});
-      }}
       if (window.Prism) {{
         Prism.highlightAll();
       }}
@@ -560,52 +632,55 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>100-Day .NET + AI Engineering Track | Knowledge Hub</title>
+  <title>100-Day .NET + AI Engineering Track - Knowledge Hub</title>
   <style>
     :root {
       --bg-body: #0b0f19;
       --bg-card: #111827;
       --bg-card-hover: #1f2937;
       --border: #1e293b;
-      --border-accent: #3b82f6;
+      --border-accent: #38bdf8;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
       --success: #10b981;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg-body);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background-color: var(--bg-body);
       color: var(--text-main);
-      padding: 32px 24px 80px;
       line-height: 1.6;
+      padding-bottom: 60px;
     }
-    .container { max-width: 1300px; margin: 0 auto; }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
     header {
-      text-align: center;
       margin-bottom: 40px;
+      text-align: center;
     }
     h1 {
       font-size: 32px;
       font-weight: 800;
       color: #fff;
       margin-bottom: 12px;
-      background: linear-gradient(135deg, #38bdf8, #818cf8);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
     }
     p.lead {
       color: var(--text-muted);
       font-size: 16px;
       max-width: 800px;
-      margin: 0 auto 20px;
+      margin: 0 auto 24px;
     }
     .stats-bar {
       display: flex;
       justify-content: center;
-      gap: 16px;
       flex-wrap: wrap;
+      gap: 16px;
       margin-bottom: 36px;
     }
     .stat-pill {
@@ -615,13 +690,13 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
       border-radius: 9999px;
       font-size: 13px;
       font-weight: 600;
-      color: var(--text-main);
+      color: var(--text-muted);
     }
     .stat-pill span { color: var(--accent); }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 24px;
     }
     .day-card {
       background: var(--bg-card);
@@ -676,6 +751,19 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
       margin-bottom: 18px;
       flex-grow: 1;
     }
+    .notes-feature-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: #38bdf8;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+    }
     .card-footer {
       display: flex;
       justify-content: space-between;
@@ -700,6 +788,7 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
       <p class="lead">Interactive Knowledge Hub containing all 13 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
       <div class="stats-bar">
         <div class="stat-pill">Completed: <span>13 / 100 Days</span></div>
+        <div class="stat-pill">Deep Notes: <span>13 Architectural Guides</span></div>
         <div class="stat-pill">Interview Q&amp;A: <span>130 Senior Scenarios &amp; Answers</span></div>
         <div class="stat-pill">Test Suite: <span>149 / 149 Passed (100%)</span></div>
         <div class="stat-pill">Platform: <span>.NET 8 / C# 12</span></div>
@@ -728,31 +817,31 @@ def format_interview_qa(interview_md):
     matches = pattern.findall(interview_md)
     
     if not matches:
-        return f'<div class="markdown-content">{html.escape(interview_md)}</div>'
+        return f'<div class="markdown-content">{render_markdown(interview_md)}</div>'
     
     qa_cards = []
     for q_num, q_body in matches:
         lines = q_body.strip().split("\n")
         q_title = lines[0].strip()
         body_content = "\n".join(lines[1:]).strip()
-        card_id = f"qa-card-{q_num}"
+        rendered_body = render_markdown(body_content)
         
-        # Make first 2 open by default for quick view
-        is_open_class = "open" if int(q_num) <= 2 else ""
+        # Make first 2 open by default for immediate preview
+        is_open = "open" if int(q_num) <= 2 else ""
         
         qa_cards.append(f"""
-        <div class="qa-card {is_open_class}" id="{card_id}">
-          <div class="qa-header" onclick="toggleQa('{card_id}')">
+        <details class="qa-card" {is_open}>
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q{q_num}</span>
               <span class="qa-title">{html.escape(q_title)}</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            {rendered_body}
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">{html.escape(body_content)}</div>
-          </div>
-        </div>
+        </details>
         """)
     
     return "\n".join(qa_cards)
@@ -794,7 +883,7 @@ def generate_file_cards(base_dir, sub_dir, prefix):
 
 def build_days_html():
     root_dir = os.path.abspath(".")
-    print(f"Generating full HTML files with 3D SVGs & Interview Q&A for Days 1 to {len(DAYS_INFO)}...")
+    print(f"Generating full pre-rendered HTML files for Days 1 to {len(DAYS_INFO)}...")
 
     select_options = ""
     for d in DAYS_INFO:
@@ -828,6 +917,9 @@ def build_days_html():
         notes_content = read_file_safely(os.path.join(abs_day_dir, "notes.md"))
         interview_content = read_file_safely(os.path.join(abs_day_dir, "interview-questions.md"))
 
+        # Pre-render Markdown to HTML at build time
+        rendered_readme = render_markdown(readme_content)
+        rendered_notes = render_markdown(notes_content)
         qa_cards_html = format_interview_qa(interview_content)
         day_svg = get_day_svg(day_num)
 
@@ -847,20 +939,23 @@ def build_days_html():
             day_svg=day_svg,
             source_files_count=source_count,
             test_files_count=test_count,
+            rendered_notes_html=rendered_notes,
+            rendered_readme_html=rendered_readme,
             qa_cards_html=qa_cards_html,
             source_files_html=source_files_html,
-            test_files_html=test_files_html,
-            raw_readme=html.escape(readme_content),
-            raw_notes=html.escape(notes_content)
+            test_files_html=test_files_html
         )
 
         out_path = os.path.join(abs_day_dir, "index.html")
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(day_html)
-        print(f"  ✓ Generated: {day_dir}/index.html ({source_count} src, {test_count} tests, 10 Q&As, SVG diagram)")
+        print(f"  ✓ Generated: {day_dir}/index.html (Notes: {len(rendered_notes)} chars, {source_count} src, {test_count} tests, 10 Q&As)")
 
         summary_preview = ""
-        if readme_content:
+        if notes_content:
+            lines = [l.strip() for l in notes_content.splitlines() if l.strip() and not l.startswith("#")]
+            summary_preview = " ".join(lines[:2])[:140] + "..." if lines else ""
+        elif readme_content:
             lines = [l.strip() for l in readme_content.splitlines() if l.strip() and not l.startswith("#")]
             summary_preview = " ".join(lines[:2])[:140] + "..." if lines else ""
 
@@ -872,11 +967,12 @@ def build_days_html():
               <span class="category-badge">{day_category}</span>
             </div>
             <h2 class="card-title">{day_title}</h2>
+            <div class="notes-feature-tag">📝 Deep Notes Included</div>
             <p class="card-desc">{html.escape(summary_preview)}</p>
           </div>
           <div class="card-footer">
-            <span>🖼️ 3D Diagram • 💡 10 Q&As • {source_count + test_count} C# Files</span>
-            <span class="view-btn">Explore Day {day_num:02d} →</span>
+            <span>🖼️ 3D Model • 📝 Notes • 💡 10 Q&As</span>
+            <span class="view-btn">Deep Dive →</span>
           </div>
         </a>
         """

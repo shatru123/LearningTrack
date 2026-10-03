@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Day 09: SQL Execution Plans &amp; Index Tuning | 100-Day .NET + AI Track</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
@@ -17,7 +16,7 @@
       --bg-card-hover: #1f2937;
       --bg-code: #0f172a;
       --border: #1e293b;
-      --border-accent: #3b82f6;
+      --border-accent: #38bdf8;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
@@ -25,6 +24,7 @@
       --accent-glow: rgba(56, 189, 248, 0.15);
       --success: #10b981;
       --warning: #f59e0b;
+      --purple: #c084fc;
     }
     * {
       box-sizing: border-box;
@@ -143,6 +143,24 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
     .diagram-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -167,10 +185,13 @@
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 24px;
       overflow-x: auto;
       padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
     }
     .tab-btn {
       background: transparent;
@@ -180,7 +201,7 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      border-bottom: 2px solid transparent;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -189,10 +210,13 @@
     }
     .tab-btn:hover {
       color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
     }
     .tab-btn.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .tab-pane {
       display: none;
@@ -213,70 +237,87 @@
       line-height: 1.7;
     }
     .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
     .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
-    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
     .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
-    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
     .markdown-content code {
-      background: rgba(56, 189, 248, 0.1);
+      background: rgba(56, 189, 248, 0.12);
       color: #38bdf8;
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 13px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
     .markdown-content pre {
       background: var(--bg-code);
-      padding: 16px;
-      border-radius: 8px;
+      padding: 18px;
       overflow-x: auto;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
     .markdown-content pre code {
       background: transparent;
       padding: 0;
-      color: inherit;
-      font-size: 13px;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
     }
     .markdown-content table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
+      font-size: 14px;
+      text-align: left;
     }
     .markdown-content th, .markdown-content td {
       padding: 10px 14px;
       border: 1px solid var(--border);
-      text-align: left;
     }
     .markdown-content th {
-      background: rgba(30, 41, 59, 0.8);
-      color: #fff;
+      background: #1e293b;
+      color: #f8fafc;
       font-weight: 600;
     }
     .markdown-content tr:nth-child(even) {
-      background: rgba(15, 23, 42, 0.4);
+      background: rgba(15, 23, 42, 0.5);
     }
     .markdown-content blockquote {
       border-left: 4px solid var(--accent);
-      padding: 8px 16px;
+      padding: 10px 18px;
       background: var(--accent-glow);
       border-radius: 0 8px 8px 0;
-      margin-bottom: 16px;
+      margin: 16px 0;
       color: #e2e8f0;
     }
-    /* QA Accordion Cards */
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
     .qa-controls {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
-    .qa-card {
+    details.qa-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -284,10 +325,10 @@
       overflow: hidden;
       transition: border-color 0.2s;
     }
-    .qa-card:hover {
+    details.qa-card:hover {
       border-color: var(--border-accent);
     }
-    .qa-header {
+    summary.qa-header {
       padding: 16px 20px;
       background: #1e293b;
       cursor: pointer;
@@ -295,6 +336,13 @@
       align-items: center;
       justify-content: space-between;
       user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
     }
     .qa-badge {
       background: #1e3a8a;
@@ -316,16 +364,13 @@
       color: var(--accent);
       transition: transform 0.2s;
     }
-    .qa-card.open .qa-toggle-icon {
+    details.qa-card[open] .qa-toggle-icon {
       transform: rotate(180deg);
     }
     .qa-body {
       padding: 24px;
-      border-top: 1px solid var(--border);
-      display: none;
-    }
-    .qa-card.open .qa-body {
-      display: block;
+      background: #111827;
+      line-height: 1.7;
     }
     /* Code Viewer Styles */
     .file-card {
@@ -365,19 +410,29 @@
     .copy-btn:hover {
       background: #475569;
     }
-    pre[class*="language-"] {
-      margin: 0 !important;
-      border-radius: 0 !important;
-      background: var(--bg-code) !important;
-      padding: 16px !important;
-      font-size: 13px !important;
-      line-height: 1.5 !important;
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .footer-bar {
       text-align: center;
       margin-top: 40px;
       color: var(--text-dim);
       font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
     }
   </style>
 </head>
@@ -389,7 +444,7 @@
         <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
         <span class="badge badge-day">Day 09</span>
         <span class="badge badge-category">SQL &amp; Relational DB</span>
-        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
       </div>
       <div class="nav-controls">
         <a href="../Day08-SQL-Indexes/index.html" class="nav-btn">← Day 08</a>
@@ -418,11 +473,17 @@
     <div class="hero">
       <h1>Day 09: SQL Execution Plans &amp; Index Tuning</h1>
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
     </div>
 
     <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
     <div class="diagram-card">
-      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
       
         <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
           <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
@@ -453,23 +514,171 @@
     </div>
 
     <div class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
-      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
       <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
     </div>
 
     <!-- Tab Panes -->
-    <div id="pane-readme" class="tab-pane active">
-      <div class="markdown-content" id="readme-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 09 - Engineering Notes: SQL Execution Plans & Index Tuning</h1>
+<h2>1. Anatomy of PostgreSQL <code>EXPLAIN (ANALYZE, BUFFERS)</code></h2>
+<p>When running an execution plan in PostgreSQL, <code>EXPLAIN</code> produces a query tree of execution nodes. Adding <code>(ANALYZE, BUFFERS)</code> forces execution and reports actual run-time metrics alongside optimizer estimates:</p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">EXPLAIN (ANALYZE, BUFFERS, VERBOSE, SETTINGS)
+SELECT c.name, o.total_amount
+FROM customers c
+JOIN orders o ON c.id = o.customer_id
+WHERE o.created_at &gt;= &#x27;2026-01-01&#x27;;</code></pre></div>
+<h3>Core Execution Node Types</h3>
+<div class="table-container"><table><thead><tr>
+<th>Node Type</th>
+<th>Algorithm</th>
+<th>Best Suited For</th>
+<th>Red Flags / Bottlenecks</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Seq Scan</strong></td>
+<td>Linear scan across every heap block</td>
+<td>Small tables, queries returning > 15-20% of table</td>
+<td>Large tables with highly selective filters</td>
+</tr>
+<tr>
+<td><strong>Index Scan</strong></td>
+<td>Traverses B-Tree, fetches matching <code>ctid</code> heap tuples immediately</td>
+<td>High selectivity, retrieving small row counts with clustered or non-covering queries</td>
+<td>Random I/O disk thrashing when returning many rows</td>
+</tr>
+<tr>
+<td><strong>Index Only Scan</strong></td>
+<td>Fetches all requested columns from B-Tree leaf pages without visiting heap</td>
+<td>Queries covered by index columns + <code>INCLUDE</code> clause</td>
+<td>High heap fetches if visibility map dirty (vacuum lag)</td>
+</tr>
+<tr>
+<td><strong>Bitmap Index + Heap Scan</strong></td>
+<td>Phase 1: Builds bitmap of matching heap pages from B-Tree. Phase 2: Sequential-ish scan of heap pages</td>
+<td>Medium selectivity (5-15% of table), multiple OR/AND index combinations (<code>BitmapAnd</code>, <code>BitmapOr</code>)</td>
+<td>Lossy bitmap conversion if <code>work_mem</code> exhausted</td>
+</tr>
+<tr>
+<td><strong>Nested Loop</strong></td>
+<td>Outer loop drives inner lookup</td>
+<td>Very small outer set with indexed inner lookup</td>
+<td>Outer set unexpectedly large -> $O(N \times M)$ explosion</td>
+</tr>
+<tr>
+<td><strong>Hash Join</strong></td>
+<td>Builds in-memory hash table on inner relation, probes with outer relation</td>
+<td>Medium-to-large unindexed sets with equality joins</td>
+<td>Hash table exceeding <code>work_mem</code>, spilling into multiple disk batches</td>
+</tr>
+<tr>
+<td><strong>Merge Join</strong></td>
+<td>Simultaneously steps through two pre-sorted inputs</td>
+<td>Large tables pre-sorted by join keys (via B-Tree)</td>
+<td>Requiring explicit <code>Sort</code> node on disk</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>2. Cost Models and Estimation Formulas</h2>
+<p>PostgreSQL cost estimation is based on disk page I/O and CPU operation units:</p>
+<ul>
+<li><code>seq_page_cost = 1.0</code> (baseline reference cost)</li>
+<li><code>random_page_cost = 4.0</code> (traditional spinning disk) or <code>1.1 - 1.5</code> (modern NVMe SSDs)</li>
+<li><code>cpu_tuple_cost = 0.01</code> (cost to process one row)</li>
+<li><code>cpu_index_tuple_cost = 0.005</code> (cost to inspect an index entry)</li>
+<li><code>cpu_operator_cost = 0.0025</code> (cost of evaluating a WHERE condition operator)</li>
+</ul>
+<h3>Startup Cost vs. Total Cost: <code>(cost=0.00..452.30)</code></h3>
+<ul>
+<li><strong>Startup Cost (<code>0.00</code>)</strong>: Time to fetch the very first row.</li>
+<li><code>Seq Scan</code> has startup cost <code>0.00</code> (can read first row immediately).</li>
+<li><code>Sort</code> or <code>Hash</code> has high startup cost (must read and hash all inner rows before emitting row 1).</li>
+<li><strong>Total Cost (<code>452.30</code>)</strong>: Estimated total effort to process all matching rows.</li>
+</ul>
+<hr/>
+<h2>3. Buffer Cache Metrics & Disk Spills</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Buffers: shared hit=452 read=12 dirtied=3 written=0</code></pre></div>
+<ul>
+<li><strong><code>shared hit</code></strong>: Blocks retrieved directly from PostgreSQL <code>shared_buffers</code> cache (sub-microsecond memory access).</li>
+<li><strong><code>shared read</code></strong>: Blocks fetched from OS filesystem cache or physical NVMe/SSD disk.</li>
+<li><strong>Cache Hit Ratio</strong>:</li>
+</ul>
+<p>$$\text{Hit Ratio} = \frac{\text{shared hit}}{\text{shared hit} + \text{shared read}}$$</p>
+<p>A production OLTP system should maintain a buffer cache hit ratio $> 99\%$.</p>
+<h3>Disk Spills and <code>work_mem</code></h3>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Sort Method: external merge  Disk: 4280kB</code></pre></div>
+<p>When <code>Sort</code> or <code>Hash</code> operations exceed <code>work_mem</code>, PostgreSQL falls back to temporary disk files:</p>
+<ul>
+<li>Drastically increases query latency (CPU-bound query becomes I/O-bound).</li>
+<li>Remedy: Increase <code>work_mem</code> per-session or tune <code>maintenance_work_mem</code>.</li>
+</ul>
+<hr/>
+<h2>4. Cardinality Estimation Skews</h2>
+<ul>
+<li><code>rows=10 (actual rows=125000)</code>:</li>
+<li>When estimated rows diverge significantly from actual rows ($> 5\times$), the optimizer chooses incorrect join algorithms (e.g. choosing a <code>Nested Loop</code> thinking there are 10 rows, leading to 125,000 index lookups).</li>
+<li>Cause: Outdated statistics, correlated columns, or missing extended statistics (<code>CREATE STATISTICS</code>).</li>
+<li>Fix: Run <code>ANALYZE tablename;</code> or increase <code>default_statistics_target</code>.</li>
+</ul>
       </div>
     </div>
 
-    <div id="pane-notes" class="tab-pane">
-      <div class="markdown-content" id="notes-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 09: SQL Execution Plans & Index Tuning</h1>
+<h2>Overview</h2>
+<p>Day 09 focuses on relational database query execution plan internals in PostgreSQL (<code>EXPLAIN (ANALYZE, BUFFERS)</code>), identifying execution node topologies, cost models, buffer pool behavior, and solving the sliding window algorithm challenge LeetCode #424.</p>
+<hr/>
+<h2>1. PostgreSQL Execution Plan Architecture</h2>
+<p>When PostgreSQL parses and optimizes a query, the cost-based optimizer generates a tree of execution plan nodes.</p>
+<h3>Common Scan Nodes:</h3>
+<ul>
+<li><strong>Seq Scan (Sequential Scan)</strong>: Scans every 8KB disk page of the relation sequentially. Optimal for small tables or when retrieving a large percentage of rows (>15–20%).</li>
+<li><strong>Index Scan</strong>: Traverses the B-Tree index structure to locate leaf node index tuples containing Heap Tuple Pointers (<code>ctid</code>), then fetches the actual row from the heap page.</li>
+<li><strong>Index Only Scan</strong>: Traverses the B-Tree index and reads required columns directly from index leaf pages. Verifies visibility using the PostgreSQL <strong>Visibility Map</strong>; avoids reading heap pages entirely if the page is marked all-visible.</li>
+<li><strong>Bitmap Index Scan & Bitmap Heap Scan</strong>: Used when multiple index rows match or when combining multiple indexes via bitmap AND/OR. The index scan builds an in-memory TID bitmap of physical heap blocks; the bitmap heap scan then visits heap blocks in physical sequential disk order, minimizing random I/O.</li>
+</ul>
+<h3>Common Join Nodes:</h3>
+<ul>
+<li><strong>Nested Loop</strong>: Iterates through outer rows and probes inner index for each row. Optimal for small outer result sets.</li>
+<li><strong>Hash Join</strong>: Builds an in-memory hash table of the inner relation and probes it with outer tuples. If the hash table exceeds <code>work_mem</code>, it spills into temporary files on disk (catastrophic performance drop).</li>
+<li><strong>Merge Join</strong>: Merges two already-sorted inputs in $O(N + M)$ time.</li>
+</ul>
+<hr/>
+<h2>2. Reading <code>EXPLAIN (ANALYZE, BUFFERS)</code></h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Hash Join  (cost=3.25..35.40 rows=100 width=72) (actual time=0.042..0.890 rows=100 loops=1)
+  Hash Cond: (orders.customer_id = customers.id)
+  Buffers: shared hit=182 read=4 temp read=2 written=2</code></pre></div>
+<h3>Metrics Explained:</h3>
+<ul>
+<li><code>cost=3.25..35.40</code>:</li>
+<li><code>3.25</code>: Startup cost (estimated I/O + CPU effort before first row is emitted).</li>
+<li><code>35.40</code>: Total cost to emit all rows.</li>
+<li><code>actual time=0.042..0.890</code>: Wall-clock time in milliseconds (startup..total).</li>
+<li><code>rows=100 loops=1</code>: Actual rows emitted across loops.</li>
+<li><code>Buffers: shared hit=182 read=4</code>:</li>
+<li><code>shared hit</code>: 182 blocks (182 × 8KB = 1.45 MB) found in PostgreSQL <code>shared_buffers</code> cache (no disk I/O).</li>
+<li><code>shared read</code>: 4 blocks read from operating system cache or disk storage.</li>
+<li><code>temp read/written</code>: Temporary files written to disk because <code>work_mem</code> was exceeded.</li>
+</ul>
+<hr/>
+<h2>3. DSA Challenge: Longest Repeating Character Replacement (LeetCode #424)</h2>
+<ul>
+<li><strong>Problem</strong>: Given a string $s$ and integer $k$, choose at most $k$ characters and replace them with any other uppercase English letter. Return the length of the longest substring containing identical letters.</li>
+<li><strong>Optimal Approach</strong>: Sliding Window with frequency table.</li>
+<li><strong>Invariants</strong>:</li>
+<li>In window $[L, R]$, window length is $R - L + 1$.</li>
+<li>Replacement count is $(R - L + 1) - \text{maxFreq}$.</li>
+<li>If replacements $> k$, shift $L$ forward and decrement character frequency.</li>
+<li><strong>Complexity</strong>:</li>
+<li><strong>Time</strong>: $O(N)$ single pass over string.</li>
+<li><strong>Space</strong>: $O(1)$ auxiliary memory (26 English letters).</li>
+</ul>
       </div>
     </div>
 
@@ -483,211 +692,220 @@
       </div>
       <div id="interview-cards-container">
         
-        <div class="qa-card open" id="qa-card-1">
-          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+        <details class="qa-card" open>
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q1</span>
               <span class="qa-title">What is the difference between `EXPLAIN` and `EXPLAIN ANALYZE` in PostgreSQL?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
-          </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: `EXPLAIN` estimates costs and row counts without executing the query; `EXPLAIN ANALYZE` actually executes the query, outputting real elapsed execution times, actual row counts, and buffer metrics.
-- **Deeper answer**: `EXPLAIN` uses catalog statistics (`pg_statistic`) and cost formulas to generate the planned tree. Running `EXPLAIN ANALYZE` triggers real execution, including side effects (e.g. running an `UPDATE` or `DELETE` inside `EXPLAIN ANALYZE` will modify actual data unless wrapped in a rolled-back transaction).
-- **Practical example**:
-```sql
-BEGIN;
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>EXPLAIN</code> estimates costs and row counts without executing the query; <code>EXPLAIN ANALYZE</code> actually executes the query, outputting real elapsed execution times, actual row counts, and buffer metrics.</li>
+<li><strong>Deeper answer</strong>: <code>EXPLAIN</code> uses catalog statistics (<code>pg_statistic</code>) and cost formulas to generate the planned tree. Running <code>EXPLAIN ANALYZE</code> triggers real execution, including side effects (e.g. running an <code>UPDATE</code> or <code>DELETE</code> inside <code>EXPLAIN ANALYZE</code> will modify actual data unless wrapped in a rolled-back transaction).</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">BEGIN;
 EXPLAIN (ANALYZE, BUFFERS) DELETE FROM orders WHERE status = &#x27;Archived&#x27;;
-ROLLBACK; -- Prevents permanent deletion during query plan profiling
-```
-
----</div>
+ROLLBACK; -- Prevents permanent deletion during query plan profiling</code></pre></div>
+<hr/>
           </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card open" id="qa-card-2">
-          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+        <details class="qa-card" open>
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q2</span>
               <span class="qa-title">What causes an Index Scan to be chosen over a Seq Scan, and when might the optimizer deliberately ignore an index?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The optimizer selects an Index Scan when the filter is selective (returning a small fraction of total table rows). It deliberately ignores an index when the query retrieves a large percentage of rows (e.g., > 15-20%), because sequential I/O is faster than random page lookups.</li>
+<li><strong>Deeper answer</strong>: In an unclustered B-Tree index scan, each matched index leaf entry contains a <code>ctid</code> (page, offset) pointing to a physical heap block. If 25% of rows match, almost every 8KB table page will need to be visited. Reading pages randomly via index lookups is significantly more expensive than streaming the table sequentially block-by-block (<code>seq_page_cost = 1.0</code> vs <code>random_page_cost = 4.0</code>).</li>
+<li><strong>Practical tip</strong>: If an index is ignored on a selective query, verify table statistics with <code>ANALYZE tablename</code> or check if a function call prevents index usage (e.g. <code>WHERE LOWER(email) = &#x27;...&#x27;</code> without an expression index).</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: The optimizer selects an Index Scan when the filter is selective (returning a small fraction of total table rows). It deliberately ignores an index when the query retrieves a large percentage of rows (e.g., &gt; 15-20%), because sequential I/O is faster than random page lookups.
-- **Deeper answer**: In an unclustered B-Tree index scan, each matched index leaf entry contains a `ctid` (page, offset) pointing to a physical heap block. If 25% of rows match, almost every 8KB table page will need to be visited. Reading pages randomly via index lookups is significantly more expensive than streaming the table sequentially block-by-block (`seq_page_cost = 1.0` vs `random_page_cost = 4.0`).
-- **Practical tip**: If an index is ignored on a selective query, verify table statistics with `ANALYZE tablename` or check if a function call prevents index usage (e.g. `WHERE LOWER(email) = &#x27;...&#x27;` without an expression index).
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-3">
-          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q3</span>
               <span class="qa-title">What is the difference between an Index Scan, an Index Only Scan, and a Bitmap Index Scan?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>:</li>
+<li><code>Index Scan</code>: Traverses B-tree and visits the heap table for each row immediately.</li>
+<li><code>Index Only Scan</code>: Reads all data directly from index leaf pages without visiting the heap (requires clean visibility map).</li>
+<li><code>Bitmap Index Scan</code>: Collects matching heap block IDs into an in-memory bitmap, then visits heap pages sequentially.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li>In <code>Bitmap Index Scan</code>, individual row order is lost, but random I/O is converted into sequential I/O. It also allows combining multiple indexes with bitwise <code>BitmapAnd</code> and <code>BitmapOr</code>.</li>
+<li>In <code>Index Only Scan</code>, PostgreSQL must check the page's visibility map bit. If tuples on that page were recently modified and not yet frozen by vacuuming, it must still perform a heap fetch (<code>Heap Fetches: N</code>).</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: 
-  - `Index Scan`: Traverses B-tree and visits the heap table for each row immediately.
-  - `Index Only Scan`: Reads all data directly from index leaf pages without visiting the heap (requires clean visibility map).
-  - `Bitmap Index Scan`: Collects matching heap block IDs into an in-memory bitmap, then visits heap pages sequentially.
-- **Deeper answer**: 
-  - In `Bitmap Index Scan`, individual row order is lost, but random I/O is converted into sequential I/O. It also allows combining multiple indexes with bitwise `BitmapAnd` and `BitmapOr`.
-  - In `Index Only Scan`, PostgreSQL must check the page&#x27;s visibility map bit. If tuples on that page were recently modified and not yet frozen by vacuuming, it must still perform a heap fetch (`Heap Fetches: N`).
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-4">
-          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q4</span>
               <span class="qa-title">What does &quot;Sort Method: external merge Disk&quot; mean in an execution plan, and how do you remediate it?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The query's sorting or hashing operation exceeded the available in-memory <code>work_mem</code> buffer, forcing PostgreSQL to spill intermediate data onto disk temporary files.</li>
+<li><strong>Deeper answer</strong>: Disk spills degrade performance by an order of magnitude due to disk write and read latency. Remediate by:</li>
+</ul>
+<ol>
+<li>Tuning <code>work_mem</code> specifically for the query session: <code>SET LOCAL work_mem = &#x27;64MB&#x27;;</code>.</li>
+<li>Adding a composite index matching the <code>ORDER BY</code> clause so sorting is pre-computed by the B-Tree leaf order.</li>
+<li>Eliminating unnecessary columns from the <code>SELECT</code> list to reduce row width.</li>
+</ol>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: The query&#x27;s sorting or hashing operation exceeded the available in-memory `work_mem` buffer, forcing PostgreSQL to spill intermediate data onto disk temporary files.
-- **Deeper answer**: Disk spills degrade performance by an order of magnitude due to disk write and read latency. Remediate by:
-  1. Tuning `work_mem` specifically for the query session: `SET LOCAL work_mem = &#x27;64MB&#x27;;`.
-  2. Adding a composite index matching the `ORDER BY` clause so sorting is pre-computed by the B-Tree leaf order.
-  3. Eliminating unnecessary columns from the `SELECT` list to reduce row width.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-5">
-          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q5</span>
               <span class="qa-title">What is a cardinality estimation skew, and why is it dangerous in complex join queries?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A mismatch between the optimizer's estimated row count and actual runtime row count (<code>rows=1 (actual rows=50000)</code>).</li>
+<li><strong>Deeper answer</strong>: The query optimizer makes critical decisions based on estimated cardinality:</li>
+<li>If it estimates 1 row, it will select a <code>Nested Loop Join</code>. If the actual rows are 50,000, it performs 50,000 separate index probes ($O(N \times M)$), locking CPU and thrashing the cache.</li>
+<li>If it estimated 50,000 rows correctly, it would have chosen a <code>Hash Join</code> or <code>Merge Join</code> ($O(N + M)$).</li>
+<li><strong>Remediation</strong>: Run <code>ANALYZE</code>, increase <code>default_statistics_target</code> (from 100 to 500 or 1000), or create multi-column extended statistics:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">CREATE STATISTICS stat_orders_cust_status ON customer_id, status FROM orders;
+ANALYZE orders;</code></pre></div>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: A mismatch between the optimizer&#x27;s estimated row count and actual runtime row count (`rows=1 (actual rows=50000)`).
-- **Deeper answer**: The query optimizer makes critical decisions based on estimated cardinality:
-  - If it estimates 1 row, it will select a `Nested Loop Join`. If the actual rows are 50,000, it performs 50,000 separate index probes ($O(N \times M)$), locking CPU and thrashing the cache.
-  - If it estimated 50,000 rows correctly, it would have chosen a `Hash Join` or `Merge Join` ($O(N + M)$).
-- **Remediation**: Run `ANALYZE`, increase `default_statistics_target` (from 100 to 500 or 1000), or create multi-column extended statistics:
-```sql
-CREATE STATISTICS stat_orders_cust_status ON customer_id, status FROM orders;
-ANALYZE orders;
-```
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-6">
-          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q6</span>
               <span class="qa-title">How do covering indexes with the `INCLUDE` clause improve query performance?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: They allow <code>Index Only Scans</code> by storing non-key payload columns directly in the leaf pages without bloating the B-Tree root/internal navigation nodes.</li>
+<li><strong>Deeper answer</strong>: In standard composite indexes (<code>CREATE INDEX ON orders (customer_id, total_amount)</code>), both columns participate in B-Tree ordering. In covering indexes (<code>CREATE INDEX ON orders (customer_id) INCLUDE (total_amount)</code>), only <code>customer_id</code> is sorted; <code>total_amount</code> is appended only to the leaf level. This keeps index search trees shallow, lowers index maintenance costs on insert, and avoids all heap lookups for queries filtering on <code>customer_id</code> and returning <code>total_amount</code>.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: They allow `Index Only Scans` by storing non-key payload columns directly in the leaf pages without bloating the B-Tree root/internal navigation nodes.
-- **Deeper answer**: In standard composite indexes (`CREATE INDEX ON orders (customer_id, total_amount)`), both columns participate in B-Tree ordering. In covering indexes (`CREATE INDEX ON orders (customer_id) INCLUDE (total_amount)`), only `customer_id` is sorted; `total_amount` is appended only to the leaf level. This keeps index search trees shallow, lowers index maintenance costs on insert, and avoids all heap lookups for queries filtering on `customer_id` and returning `total_amount`.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-7">
-          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q7</span>
               <span class="qa-title">What is the significance of `shared hit` vs `shared read` in `EXPLAIN (BUFFERS)`?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>shared hit</code> represents 8KB database pages served from RAM (<code>shared_buffers</code>), while <code>shared read</code> represents pages fetched from disk/OS filesystem cache.</li>
+<li><strong>Deeper answer</strong>: An ideal OLTP query should have a near 100% buffer hit ratio (<code>shared read = 0</code>). If a query consistently has high <code>shared read</code>, it indicates cold cache, missing indexes, sequential scanning of large tables, or <code>shared_buffers</code> undersizing.</li>
+<li><strong>Formula</strong>:</li>
+</ul>
+<p>$$\text{Buffer Hit Ratio} = \frac{\text{shared hit}}{\text{shared hit} + \text{shared read}} \times 100\%$$</p>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: `shared hit` represents 8KB database pages served from RAM (`shared_buffers`), while `shared read` represents pages fetched from disk/OS filesystem cache.
-- **Deeper answer**: An ideal OLTP query should have a near 100% buffer hit ratio (`shared read = 0`). If a query consistently has high `shared read`, it indicates cold cache, missing indexes, sequential scanning of large tables, or `shared_buffers` undersizing.
-- **Formula**:
-$$\text{Buffer Hit Ratio} = \frac{\text{shared hit}}{\text{shared hit} + \text{shared read}} \times 100\%$$
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-8">
-          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q8</span>
               <span class="qa-title">Why can adding an index sometimes slow down an application?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Every index imposes write amplification on <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code> operations, increases database storage footprint, and consumes memory in <code>shared_buffers</code>.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<ol>
+<li>On every <code>INSERT</code>, every table index must be updated and may trigger 8KB page splits.</li>
+<li>On <code>UPDATE</code>, if an indexed column changes, it prevents HOT (Heap-Only Tuples) optimization, forcing new index entries across all indexes on the table.</li>
+<li>Indexes compete with table data for buffer cache space. Unused or redundant indexes cause cache pollution.</li>
+</ol>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Every index imposes write amplification on `INSERT`, `UPDATE`, and `DELETE` operations, increases database storage footprint, and consumes memory in `shared_buffers`.
-- **Deeper answer**:
-  1. On every `INSERT`, every table index must be updated and may trigger 8KB page splits.
-  2. On `UPDATE`, if an indexed column changes, it prevents HOT (Heap-Only Tuples) optimization, forcing new index entries across all indexes on the table.
-  3. Indexes compete with table data for buffer cache space. Unused or redundant indexes cause cache pollution.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-9">
-          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q9</span>
               <span class="qa-title">How does parameter sniffing or prepared statement caching affect query plans in .NET applications?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A generic plan generated for the first executed parameter values may be suboptimal for subsequent parameters with different data distributions.</li>
+<li><strong>Deeper answer</strong>: In Npgsql and Dapper, prepared statements use custom plans for the first 5 executions, after which PostgreSQL evaluates whether to switch to a generic plan. If parameter 1 matches 2 rows (favoring an Index Scan) but parameter 2 matches 1,000,000 rows (favoring a Seq Scan), reusing the cached plan results in severe performance degradation.</li>
+<li><strong>Remediation</strong>: In Npgsql, use <code>NpgsqlCommand.DesignTimeVisible = false</code> or adjust <code>PrepareThreshold</code> to prevent inappropriate plan sharing.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: A generic plan generated for the first executed parameter values may be suboptimal for subsequent parameters with different data distributions.
-- **Deeper answer**: In Npgsql and Dapper, prepared statements use custom plans for the first 5 executions, after which PostgreSQL evaluates whether to switch to a generic plan. If parameter 1 matches 2 rows (favoring an Index Scan) but parameter 2 matches 1,000,000 rows (favoring a Seq Scan), reusing the cached plan results in severe performance degradation.
-- **Remediation**: In Npgsql, use `NpgsqlCommand.DesignTimeVisible = false` or adjust `PrepareThreshold` to prevent inappropriate plan sharing.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-10">
-          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q10</span>
               <span class="qa-title">How do you identify missing indexes in PostgreSQL production environments?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
-          </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Inspect `pg_stat_user_tables` for tables with high `seq_scan` relative to `idx_scan`, and analyze slow query logs via `pg_stat_statements`.
-- **Deeper answer**:
-```sql
-SELECT 
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Inspect <code>pg_stat_user_tables</code> for tables with high <code>seq_scan</code> relative to <code>idx_scan</code>, and analyze slow query logs via <code>pg_stat_statements</code>.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">SELECT 
     schemaname, relname, 
     seq_scan, idx_scan, 
     ROUND(100.0 * idx_scan / NULLIF(seq_scan + idx_scan, 0), 2) AS idx_scan_percent
 FROM pg_stat_user_tables
 WHERE (seq_scan + idx_scan) &gt; 1000
 ORDER BY seq_scan DESC
-LIMIT 10;
-```
-Tables where `idx_scan_percent` is low indicate high sequential scanning and prime candidates for targeted index analysis using `EXPLAIN (ANALYZE, BUFFERS)`.</div>
+LIMIT 10;</code></pre></div>
+<p>Tables where <code>idx_scan_percent</code> is low indicate high sequential scanning and prime candidates for targeted index analysis using <code>EXPLAIN (ANALYZE, BUFFERS)</code>.</p>
           </div>
-        </div>
+        </details>
         
       </div>
     </div>
@@ -1140,141 +1358,847 @@ public class CharacterReplacementSolverTests
                 
     </div>
 
-    <div class="footer-bar">
-      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
-    </div>
-  </div>
-
-  <!-- Raw Content Payloads for Client-side Rendering -->
-  <script type="text/markdown" id="raw-readme"># Day 09: SQL Execution Plans &amp; Index Tuning
-
-## Overview
-Day 09 focuses on relational database query execution plan internals in PostgreSQL (`EXPLAIN (ANALYZE, BUFFERS)`), identifying execution node topologies, cost models, buffer pool behavior, and solving the sliding window algorithm challenge LeetCode #424.
-
----
-
-## 1. PostgreSQL Execution Plan Architecture
-
-When PostgreSQL parses and optimizes a query, the cost-based optimizer generates a tree of execution plan nodes.
-
-### Common Scan Nodes:
-- **Seq Scan (Sequential Scan)**: Scans every 8KB disk page of the relation sequentially. Optimal for small tables or when retrieving a large percentage of rows (&gt;15–20%).
-- **Index Scan**: Traverses the B-Tree index structure to locate leaf node index tuples containing Heap Tuple Pointers (`ctid`), then fetches the actual row from the heap page.
-- **Index Only Scan**: Traverses the B-Tree index and reads required columns directly from index leaf pages. Verifies visibility using the PostgreSQL **Visibility Map**; avoids reading heap pages entirely if the page is marked all-visible.
-- **Bitmap Index Scan &amp; Bitmap Heap Scan**: Used when multiple index rows match or when combining multiple indexes via bitmap AND/OR. The index scan builds an in-memory TID bitmap of physical heap blocks; the bitmap heap scan then visits heap blocks in physical sequential disk order, minimizing random I/O.
-
-### Common Join Nodes:
-- **Nested Loop**: Iterates through outer rows and probes inner index for each row. Optimal for small outer result sets.
-- **Hash Join**: Builds an in-memory hash table of the inner relation and probes it with outer tuples. If the hash table exceeds `work_mem`, it spills into temporary files on disk (catastrophic performance drop).
-- **Merge Join**: Merges two already-sorted inputs in $O(N + M)$ time.
-
----
-
-## 2. Reading `EXPLAIN (ANALYZE, BUFFERS)`
-
-```text
-Hash Join  (cost=3.25..35.40 rows=100 width=72) (actual time=0.042..0.890 rows=100 loops=1)
-  Hash Cond: (orders.customer_id = customers.id)
-  Buffers: shared hit=182 read=4 temp read=2 written=2
-```
-
-### Metrics Explained:
-- `cost=3.25..35.40`:
-  - `3.25`: Startup cost (estimated I/O + CPU effort before first row is emitted).
-  - `35.40`: Total cost to emit all rows.
-- `actual time=0.042..0.890`: Wall-clock time in milliseconds (startup..total).
-- `rows=100 loops=1`: Actual rows emitted across loops.
-- `Buffers: shared hit=182 read=4`:
-  - `shared hit`: 182 blocks (182 × 8KB = 1.45 MB) found in PostgreSQL `shared_buffers` cache (no disk I/O).
-  - `shared read`: 4 blocks read from operating system cache or disk storage.
-  - `temp read/written`: Temporary files written to disk because `work_mem` was exceeded.
-
----
-
-## 3. DSA Challenge: Longest Repeating Character Replacement (LeetCode #424)
-
-- **Problem**: Given a string $s$ and integer $k$, choose at most $k$ characters and replace them with any other uppercase English letter. Return the length of the longest substring containing identical letters.
-- **Optimal Approach**: Sliding Window with frequency table.
-- **Invariants**:
-  - In window $[L, R]$, window length is $R - L + 1$.
-  - Replacement count is $(R - L + 1) - \text{maxFreq}$.
-  - If replacements $&gt; k$, shift $L$ forward and decrement character frequency.
-- **Complexity**:
-  - **Time**: $O(N)$ single pass over string.
-  - **Space**: $O(1)$ auxiliary memory (26 English letters).
-</script>
-  <script type="text/markdown" id="raw-notes"># Day 09 - Engineering Notes: SQL Execution Plans &amp; Index Tuning
-
-## 1. Anatomy of PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)`
-
-When running an execution plan in PostgreSQL, `EXPLAIN` produces a query tree of execution nodes. Adding `(ANALYZE, BUFFERS)` forces execution and reports actual run-time metrics alongside optimizer estimates:
-
-```sql
-EXPLAIN (ANALYZE, BUFFERS, VERBOSE, SETTINGS)
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 09 - Engineering Notes: SQL Execution Plans & Index Tuning</h1>
+<h2>1. Anatomy of PostgreSQL <code>EXPLAIN (ANALYZE, BUFFERS)</code></h2>
+<p>When running an execution plan in PostgreSQL, <code>EXPLAIN</code> produces a query tree of execution nodes. Adding <code>(ANALYZE, BUFFERS)</code> forces execution and reports actual run-time metrics alongside optimizer estimates:</p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">EXPLAIN (ANALYZE, BUFFERS, VERBOSE, SETTINGS)
 SELECT c.name, o.total_amount
 FROM customers c
 JOIN orders o ON c.id = o.customer_id
-WHERE o.created_at &gt;= &#x27;2026-01-01&#x27;;
-```
+WHERE o.created_at &gt;= &#x27;2026-01-01&#x27;;</code></pre></div>
+<h3>Core Execution Node Types</h3>
+<div class="table-container"><table><thead><tr>
+<th>Node Type</th>
+<th>Algorithm</th>
+<th>Best Suited For</th>
+<th>Red Flags / Bottlenecks</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Seq Scan</strong></td>
+<td>Linear scan across every heap block</td>
+<td>Small tables, queries returning > 15-20% of table</td>
+<td>Large tables with highly selective filters</td>
+</tr>
+<tr>
+<td><strong>Index Scan</strong></td>
+<td>Traverses B-Tree, fetches matching <code>ctid</code> heap tuples immediately</td>
+<td>High selectivity, retrieving small row counts with clustered or non-covering queries</td>
+<td>Random I/O disk thrashing when returning many rows</td>
+</tr>
+<tr>
+<td><strong>Index Only Scan</strong></td>
+<td>Fetches all requested columns from B-Tree leaf pages without visiting heap</td>
+<td>Queries covered by index columns + <code>INCLUDE</code> clause</td>
+<td>High heap fetches if visibility map dirty (vacuum lag)</td>
+</tr>
+<tr>
+<td><strong>Bitmap Index + Heap Scan</strong></td>
+<td>Phase 1: Builds bitmap of matching heap pages from B-Tree. Phase 2: Sequential-ish scan of heap pages</td>
+<td>Medium selectivity (5-15% of table), multiple OR/AND index combinations (<code>BitmapAnd</code>, <code>BitmapOr</code>)</td>
+<td>Lossy bitmap conversion if <code>work_mem</code> exhausted</td>
+</tr>
+<tr>
+<td><strong>Nested Loop</strong></td>
+<td>Outer loop drives inner lookup</td>
+<td>Very small outer set with indexed inner lookup</td>
+<td>Outer set unexpectedly large -> $O(N \times M)$ explosion</td>
+</tr>
+<tr>
+<td><strong>Hash Join</strong></td>
+<td>Builds in-memory hash table on inner relation, probes with outer relation</td>
+<td>Medium-to-large unindexed sets with equality joins</td>
+<td>Hash table exceeding <code>work_mem</code>, spilling into multiple disk batches</td>
+</tr>
+<tr>
+<td><strong>Merge Join</strong></td>
+<td>Simultaneously steps through two pre-sorted inputs</td>
+<td>Large tables pre-sorted by join keys (via B-Tree)</td>
+<td>Requiring explicit <code>Sort</code> node on disk</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>2. Cost Models and Estimation Formulas</h2>
+<p>PostgreSQL cost estimation is based on disk page I/O and CPU operation units:</p>
+<ul>
+<li><code>seq_page_cost = 1.0</code> (baseline reference cost)</li>
+<li><code>random_page_cost = 4.0</code> (traditional spinning disk) or <code>1.1 - 1.5</code> (modern NVMe SSDs)</li>
+<li><code>cpu_tuple_cost = 0.01</code> (cost to process one row)</li>
+<li><code>cpu_index_tuple_cost = 0.005</code> (cost to inspect an index entry)</li>
+<li><code>cpu_operator_cost = 0.0025</code> (cost of evaluating a WHERE condition operator)</li>
+</ul>
+<h3>Startup Cost vs. Total Cost: <code>(cost=0.00..452.30)</code></h3>
+<ul>
+<li><strong>Startup Cost (<code>0.00</code>)</strong>: Time to fetch the very first row.</li>
+<li><code>Seq Scan</code> has startup cost <code>0.00</code> (can read first row immediately).</li>
+<li><code>Sort</code> or <code>Hash</code> has high startup cost (must read and hash all inner rows before emitting row 1).</li>
+<li><strong>Total Cost (<code>452.30</code>)</strong>: Estimated total effort to process all matching rows.</li>
+</ul>
+<hr/>
+<h2>3. Buffer Cache Metrics & Disk Spills</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Buffers: shared hit=452 read=12 dirtied=3 written=0</code></pre></div>
+<ul>
+<li><strong><code>shared hit</code></strong>: Blocks retrieved directly from PostgreSQL <code>shared_buffers</code> cache (sub-microsecond memory access).</li>
+<li><strong><code>shared read</code></strong>: Blocks fetched from OS filesystem cache or physical NVMe/SSD disk.</li>
+<li><strong>Cache Hit Ratio</strong>:</li>
+</ul>
+<p>$$\text{Hit Ratio} = \frac{\text{shared hit}}{\text{shared hit} + \text{shared read}}$$</p>
+<p>A production OLTP system should maintain a buffer cache hit ratio $> 99\%$.</p>
+<h3>Disk Spills and <code>work_mem</code></h3>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Sort Method: external merge  Disk: 4280kB</code></pre></div>
+<p>When <code>Sort</code> or <code>Hash</code> operations exceed <code>work_mem</code>, PostgreSQL falls back to temporary disk files:</p>
+<ul>
+<li>Drastically increases query latency (CPU-bound query becomes I/O-bound).</li>
+<li>Remedy: Increase <code>work_mem</code> per-session or tune <code>maintenance_work_mem</code>.</li>
+</ul>
+<hr/>
+<h2>4. Cardinality Estimation Skews</h2>
+<ul>
+<li><code>rows=10 (actual rows=125000)</code>:</li>
+<li>When estimated rows diverge significantly from actual rows ($> 5\times$), the optimizer chooses incorrect join algorithms (e.g. choosing a <code>Nested Loop</code> thinking there are 10 rows, leading to 125,000 index lookups).</li>
+<li>Cause: Outdated statistics, correlated columns, or missing extended statistics (<code>CREATE STATISTICS</code>).</li>
+<li>Fix: Run <code>ANALYZE tablename;</code> or increase <code>default_statistics_target</code>.</li>
+</ul>
+        </div>
 
-### Core Execution Node Types
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 09: SQL Execution Plans & Index Tuning</h1>
+<h2>Overview</h2>
+<p>Day 09 focuses on relational database query execution plan internals in PostgreSQL (<code>EXPLAIN (ANALYZE, BUFFERS)</code>), identifying execution node topologies, cost models, buffer pool behavior, and solving the sliding window algorithm challenge LeetCode #424.</p>
+<hr/>
+<h2>1. PostgreSQL Execution Plan Architecture</h2>
+<p>When PostgreSQL parses and optimizes a query, the cost-based optimizer generates a tree of execution plan nodes.</p>
+<h3>Common Scan Nodes:</h3>
+<ul>
+<li><strong>Seq Scan (Sequential Scan)</strong>: Scans every 8KB disk page of the relation sequentially. Optimal for small tables or when retrieving a large percentage of rows (>15–20%).</li>
+<li><strong>Index Scan</strong>: Traverses the B-Tree index structure to locate leaf node index tuples containing Heap Tuple Pointers (<code>ctid</code>), then fetches the actual row from the heap page.</li>
+<li><strong>Index Only Scan</strong>: Traverses the B-Tree index and reads required columns directly from index leaf pages. Verifies visibility using the PostgreSQL <strong>Visibility Map</strong>; avoids reading heap pages entirely if the page is marked all-visible.</li>
+<li><strong>Bitmap Index Scan & Bitmap Heap Scan</strong>: Used when multiple index rows match or when combining multiple indexes via bitmap AND/OR. The index scan builds an in-memory TID bitmap of physical heap blocks; the bitmap heap scan then visits heap blocks in physical sequential disk order, minimizing random I/O.</li>
+</ul>
+<h3>Common Join Nodes:</h3>
+<ul>
+<li><strong>Nested Loop</strong>: Iterates through outer rows and probes inner index for each row. Optimal for small outer result sets.</li>
+<li><strong>Hash Join</strong>: Builds an in-memory hash table of the inner relation and probes it with outer tuples. If the hash table exceeds <code>work_mem</code>, it spills into temporary files on disk (catastrophic performance drop).</li>
+<li><strong>Merge Join</strong>: Merges two already-sorted inputs in $O(N + M)$ time.</li>
+</ul>
+<hr/>
+<h2>2. Reading <code>EXPLAIN (ANALYZE, BUFFERS)</code></h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Hash Join  (cost=3.25..35.40 rows=100 width=72) (actual time=0.042..0.890 rows=100 loops=1)
+  Hash Cond: (orders.customer_id = customers.id)
+  Buffers: shared hit=182 read=4 temp read=2 written=2</code></pre></div>
+<h3>Metrics Explained:</h3>
+<ul>
+<li><code>cost=3.25..35.40</code>:</li>
+<li><code>3.25</code>: Startup cost (estimated I/O + CPU effort before first row is emitted).</li>
+<li><code>35.40</code>: Total cost to emit all rows.</li>
+<li><code>actual time=0.042..0.890</code>: Wall-clock time in milliseconds (startup..total).</li>
+<li><code>rows=100 loops=1</code>: Actual rows emitted across loops.</li>
+<li><code>Buffers: shared hit=182 read=4</code>:</li>
+<li><code>shared hit</code>: 182 blocks (182 × 8KB = 1.45 MB) found in PostgreSQL <code>shared_buffers</code> cache (no disk I/O).</li>
+<li><code>shared read</code>: 4 blocks read from operating system cache or disk storage.</li>
+<li><code>temp read/written</code>: Temporary files written to disk because <code>work_mem</code> was exceeded.</li>
+</ul>
+<hr/>
+<h2>3. DSA Challenge: Longest Repeating Character Replacement (LeetCode #424)</h2>
+<ul>
+<li><strong>Problem</strong>: Given a string $s$ and integer $k$, choose at most $k$ characters and replace them with any other uppercase English letter. Return the length of the longest substring containing identical letters.</li>
+<li><strong>Optimal Approach</strong>: Sliding Window with frequency table.</li>
+<li><strong>Invariants</strong>:</li>
+<li>In window $[L, R]$, window length is $R - L + 1$.</li>
+<li>Replacement count is $(R - L + 1) - \text{maxFreq}$.</li>
+<li>If replacements $> k$, shift $L$ forward and decrement character frequency.</li>
+<li><strong>Complexity</strong>:</li>
+<li><strong>Time</strong>: $O(N)$ single pass over string.</li>
+<li><strong>Space</strong>: $O(1)$ auxiliary memory (26 English letters).</li>
+</ul>
+        </div>
 
-| Node Type | Algorithm | Best Suited For | Red Flags / Bottlenecks |
-|---|---|---|---|
-| **Seq Scan** | Linear scan across every heap block | Small tables, queries returning &gt; 15-20% of table | Large tables with highly selective filters |
-| **Index Scan** | Traverses B-Tree, fetches matching `ctid` heap tuples immediately | High selectivity, retrieving small row counts with clustered or non-covering queries | Random I/O disk thrashing when returning many rows |
-| **Index Only Scan** | Fetches all requested columns from B-Tree leaf pages without visiting heap | Queries covered by index columns + `INCLUDE` clause | High heap fetches if visibility map dirty (vacuum lag) |
-| **Bitmap Index + Heap Scan** | Phase 1: Builds bitmap of matching heap pages from B-Tree. Phase 2: Sequential-ish scan of heap pages | Medium selectivity (5-15% of table), multiple OR/AND index combinations (`BitmapAnd`, `BitmapOr`) | Lossy bitmap conversion if `work_mem` exhausted |
-| **Nested Loop** | Outer loop drives inner lookup | Very small outer set with indexed inner lookup | Outer set unexpectedly large -&gt; $O(N \times M)$ explosion |
-| **Hash Join** | Builds in-memory hash table on inner relation, probes with outer relation | Medium-to-large unindexed sets with equality joins | Hash table exceeding `work_mem`, spilling into multiple disk batches |
-| **Merge Join** | Simultaneously steps through two pre-sorted inputs | Large tables pre-sorted by join keys (via B-Tree) | Requiring explicit `Sort` node on disk |
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the difference between `EXPLAIN` and `EXPLAIN ANALYZE` in PostgreSQL?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>EXPLAIN</code> estimates costs and row counts without executing the query; <code>EXPLAIN ANALYZE</code> actually executes the query, outputting real elapsed execution times, actual row counts, and buffer metrics.</li>
+<li><strong>Deeper answer</strong>: <code>EXPLAIN</code> uses catalog statistics (<code>pg_statistic</code>) and cost formulas to generate the planned tree. Running <code>EXPLAIN ANALYZE</code> triggers real execution, including side effects (e.g. running an <code>UPDATE</code> or <code>DELETE</code> inside <code>EXPLAIN ANALYZE</code> will modify actual data unless wrapped in a rolled-back transaction).</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">BEGIN;
+EXPLAIN (ANALYZE, BUFFERS) DELETE FROM orders WHERE status = &#x27;Archived&#x27;;
+ROLLBACK; -- Prevents permanent deletion during query plan profiling</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
 
----
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What causes an Index Scan to be chosen over a Seq Scan, and when might the optimizer deliberately ignore an index?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The optimizer selects an Index Scan when the filter is selective (returning a small fraction of total table rows). It deliberately ignores an index when the query retrieves a large percentage of rows (e.g., > 15-20%), because sequential I/O is faster than random page lookups.</li>
+<li><strong>Deeper answer</strong>: In an unclustered B-Tree index scan, each matched index leaf entry contains a <code>ctid</code> (page, offset) pointing to a physical heap block. If 25% of rows match, almost every 8KB table page will need to be visited. Reading pages randomly via index lookups is significantly more expensive than streaming the table sequentially block-by-block (<code>seq_page_cost = 1.0</code> vs <code>random_page_cost = 4.0</code>).</li>
+<li><strong>Practical tip</strong>: If an index is ignored on a selective query, verify table statistics with <code>ANALYZE tablename</code> or check if a function call prevents index usage (e.g. <code>WHERE LOWER(email) = &#x27;...&#x27;</code> without an expression index).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## 2. Cost Models and Estimation Formulas
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the difference between an Index Scan, an Index Only Scan, and a Bitmap Index Scan?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>:</li>
+<li><code>Index Scan</code>: Traverses B-tree and visits the heap table for each row immediately.</li>
+<li><code>Index Only Scan</code>: Reads all data directly from index leaf pages without visiting the heap (requires clean visibility map).</li>
+<li><code>Bitmap Index Scan</code>: Collects matching heap block IDs into an in-memory bitmap, then visits heap pages sequentially.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li>In <code>Bitmap Index Scan</code>, individual row order is lost, but random I/O is converted into sequential I/O. It also allows combining multiple indexes with bitwise <code>BitmapAnd</code> and <code>BitmapOr</code>.</li>
+<li>In <code>Index Only Scan</code>, PostgreSQL must check the page's visibility map bit. If tuples on that page were recently modified and not yet frozen by vacuuming, it must still perform a heap fetch (<code>Heap Fetches: N</code>).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-PostgreSQL cost estimation is based on disk page I/O and CPU operation units:
-- `seq_page_cost = 1.0` (baseline reference cost)
-- `random_page_cost = 4.0` (traditional spinning disk) or `1.1 - 1.5` (modern NVMe SSDs)
-- `cpu_tuple_cost = 0.01` (cost to process one row)
-- `cpu_index_tuple_cost = 0.005` (cost to inspect an index entry)
-- `cpu_operator_cost = 0.0025` (cost of evaluating a WHERE condition operator)
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What does &quot;Sort Method: external merge Disk&quot; mean in an execution plan, and how do you remediate it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The query's sorting or hashing operation exceeded the available in-memory <code>work_mem</code> buffer, forcing PostgreSQL to spill intermediate data onto disk temporary files.</li>
+<li><strong>Deeper answer</strong>: Disk spills degrade performance by an order of magnitude due to disk write and read latency. Remediate by:</li>
+</ul>
+<ol>
+<li>Tuning <code>work_mem</code> specifically for the query session: <code>SET LOCAL work_mem = &#x27;64MB&#x27;;</code>.</li>
+<li>Adding a composite index matching the <code>ORDER BY</code> clause so sorting is pre-computed by the B-Tree leaf order.</li>
+<li>Eliminating unnecessary columns from the <code>SELECT</code> list to reduce row width.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
 
-### Startup Cost vs. Total Cost: `(cost=0.00..452.30)`
-- **Startup Cost (`0.00`)**: Time to fetch the very first row.
-  - `Seq Scan` has startup cost `0.00` (can read first row immediately).
-  - `Sort` or `Hash` has high startup cost (must read and hash all inner rows before emitting row 1).
-- **Total Cost (`452.30`)**: Estimated total effort to process all matching rows.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is a cardinality estimation skew, and why is it dangerous in complex join queries?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A mismatch between the optimizer's estimated row count and actual runtime row count (<code>rows=1 (actual rows=50000)</code>).</li>
+<li><strong>Deeper answer</strong>: The query optimizer makes critical decisions based on estimated cardinality:</li>
+<li>If it estimates 1 row, it will select a <code>Nested Loop Join</code>. If the actual rows are 50,000, it performs 50,000 separate index probes ($O(N \times M)$), locking CPU and thrashing the cache.</li>
+<li>If it estimated 50,000 rows correctly, it would have chosen a <code>Hash Join</code> or <code>Merge Join</code> ($O(N + M)$).</li>
+<li><strong>Remediation</strong>: Run <code>ANALYZE</code>, increase <code>default_statistics_target</code> (from 100 to 500 or 1000), or create multi-column extended statistics:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">CREATE STATISTICS stat_orders_cust_status ON customer_id, status FROM orders;
+ANALYZE orders;</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
 
----
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do covering indexes with the `INCLUDE` clause improve query performance?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: They allow <code>Index Only Scans</code> by storing non-key payload columns directly in the leaf pages without bloating the B-Tree root/internal navigation nodes.</li>
+<li><strong>Deeper answer</strong>: In standard composite indexes (<code>CREATE INDEX ON orders (customer_id, total_amount)</code>), both columns participate in B-Tree ordering. In covering indexes (<code>CREATE INDEX ON orders (customer_id) INCLUDE (total_amount)</code>), only <code>customer_id</code> is sorted; <code>total_amount</code> is appended only to the leaf level. This keeps index search trees shallow, lowers index maintenance costs on insert, and avoids all heap lookups for queries filtering on <code>customer_id</code> and returning <code>total_amount</code>.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## 3. Buffer Cache Metrics &amp; Disk Spills
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is the significance of `shared hit` vs `shared read` in `EXPLAIN (BUFFERS)`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>shared hit</code> represents 8KB database pages served from RAM (<code>shared_buffers</code>), while <code>shared read</code> represents pages fetched from disk/OS filesystem cache.</li>
+<li><strong>Deeper answer</strong>: An ideal OLTP query should have a near 100% buffer hit ratio (<code>shared read = 0</code>). If a query consistently has high <code>shared read</code>, it indicates cold cache, missing indexes, sequential scanning of large tables, or <code>shared_buffers</code> undersizing.</li>
+<li><strong>Formula</strong>:</li>
+</ul>
+<p>$$\text{Buffer Hit Ratio} = \frac{\text{shared hit}}{\text{shared hit} + \text{shared read}} \times 100\%$$</p>
+<hr/>
+          </div>
+        </details>
+        
 
-```
-Buffers: shared hit=452 read=12 dirtied=3 written=0
-```
-- **`shared hit`**: Blocks retrieved directly from PostgreSQL `shared_buffers` cache (sub-microsecond memory access).
-- **`shared read`**: Blocks fetched from OS filesystem cache or physical NVMe/SSD disk.
-- **Cache Hit Ratio**:
-  $$\text{Hit Ratio} = \frac{\text{shared hit}}{\text{shared hit} + \text{shared read}}$$
-  A production OLTP system should maintain a buffer cache hit ratio $&gt; 99\%$.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">Why can adding an index sometimes slow down an application?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Every index imposes write amplification on <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code> operations, increases database storage footprint, and consumes memory in <code>shared_buffers</code>.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<ol>
+<li>On every <code>INSERT</code>, every table index must be updated and may trigger 8KB page splits.</li>
+<li>On <code>UPDATE</code>, if an indexed column changes, it prevents HOT (Heap-Only Tuples) optimization, forcing new index entries across all indexes on the table.</li>
+<li>Indexes compete with table data for buffer cache space. Unused or redundant indexes cause cache pollution.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
 
-### Disk Spills and `work_mem`
-```
-Sort Method: external merge  Disk: 4280kB
-```
-When `Sort` or `Hash` operations exceed `work_mem`, PostgreSQL falls back to temporary disk files:
-- Drastically increases query latency (CPU-bound query becomes I/O-bound).
-- Remedy: Increase `work_mem` per-session or tune `maintenance_work_mem`.
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How does parameter sniffing or prepared statement caching affect query plans in .NET applications?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A generic plan generated for the first executed parameter values may be suboptimal for subsequent parameters with different data distributions.</li>
+<li><strong>Deeper answer</strong>: In Npgsql and Dapper, prepared statements use custom plans for the first 5 executions, after which PostgreSQL evaluates whether to switch to a generic plan. If parameter 1 matches 2 rows (favoring an Index Scan) but parameter 2 matches 1,000,000 rows (favoring a Seq Scan), reusing the cached plan results in severe performance degradation.</li>
+<li><strong>Remediation</strong>: In Npgsql, use <code>NpgsqlCommand.DesignTimeVisible = false</code> or adjust <code>PrepareThreshold</code> to prevent inappropriate plan sharing.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
----
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you identify missing indexes in PostgreSQL production environments?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Inspect <code>pg_stat_user_tables</code> for tables with high <code>seq_scan</code> relative to <code>idx_scan</code>, and analyze slow query logs via <code>pg_stat_statements</code>.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">SELECT 
+    schemaname, relname, 
+    seq_scan, idx_scan, 
+    ROUND(100.0 * idx_scan / NULLIF(seq_scan + idx_scan, 0), 2) AS idx_scan_percent
+FROM pg_stat_user_tables
+WHERE (seq_scan + idx_scan) &gt; 1000
+ORDER BY seq_scan DESC
+LIMIT 10;</code></pre></div>
+<p>Tables where <code>idx_scan_percent</code> is low indicate high sequential scanning and prime candidates for targeted index analysis using <code>EXPLAIN (ANALYZE, BUFFERS)</code>.</p>
+          </div>
+        </details>
+        
+        </div>
 
-## 4. Cardinality Estimation Skews
-- `rows=10 (actual rows=125000)`:
-  - When estimated rows diverge significantly from actual rows ($&gt; 5\times$), the optimizer chooses incorrect join algorithms (e.g. choosing a `Nested Loop` thinking there are 10 rows, leading to 125,000 index lookups).
-  - Cause: Outdated statistics, correlated columns, or missing extended statistics (`CREATE STATISTICS`).
-  - Fix: Run `ANALYZE tablename;` or increase `default_statistics_target`.
-</script>
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day09.SqlExecutionPlans/CharacterReplacementSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd9-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d9-src-code-0" class="language-csharp">namespace Day09.SqlExecutionPlans;
+
+public static class CharacterReplacementSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #424: Longest Repeating Character Replacement
+    /// Finds the length of the longest substring containing the same letter you can get after performing at most k operations.
+    /// Time Complexity: O(N) single-pass sliding window
+    /// Space Complexity: O(1) fixed 26-element frequency table
+    /// &lt;/summary&gt;
+    public static int CharacterReplacement(string s, int k)
+    {
+        if (string.IsNullOrEmpty(s)) return 0;
+        if (s.Length &lt;= k) return s.Length;
+
+        Span&lt;int&gt; charCounts = stackalloc int[26];
+        int left = 0;
+        int maxFreq = 0;
+        int maxLen = 0;
+
+        for (int right = 0; right &lt; s.Length; right++)
+        {
+            int index = s[right] - &#x27;A&#x27;;
+            charCounts[index]++;
+            if (charCounts[index] &gt; maxFreq)
+            {
+                maxFreq = charCounts[index];
+            }
+
+            // Window length = (right - left + 1)
+            // Number of characters needing replacement = window length - maxFreq
+            while ((right - left + 1) - maxFreq &gt; k)
+            {
+                charCounts[s[left] - &#x27;A&#x27;]--;
+                left++;
+                // Note: maxFreq does not need to be decremented because a smaller maxFreq
+                // will never produce a larger valid window length than what we&#x27;ve already seen.
+            }
+
+            int currentWindow = right - left + 1;
+            if (currentWindow &gt; maxLen)
+            {
+                maxLen = currentWindow;
+            }
+        }
+
+        return maxLen;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day09.SqlExecutionPlans/ExecutionPlanAnalyzer.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd9-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d9-src-code-1" class="language-csharp">using System.Text.RegularExpressions;
+
+namespace Day09.SqlExecutionPlans;
+
+public enum PlanNodeType
+{
+    SeqScan,
+    IndexScan,
+    IndexOnlyScan,
+    BitmapIndexScan,
+    BitmapHeapScan,
+    NestedLoop,
+    HashJoin,
+    MergeJoin,
+    Sort,
+    Materialize,
+    Unknown
+}
+
+public sealed record PlanBuffers(
+    long SharedHit = 0,
+    long SharedRead = 0,
+    long SharedWritten = 0,
+    long TempRead = 0,
+    long TempWritten = 0)
+{
+    public long TotalSharedBlocks =&gt; SharedHit + SharedRead;
+    public double CacheHitRatioPercent =&gt;
+        TotalSharedBlocks == 0 ? 100.0 : Math.Round((double)SharedHit / TotalSharedBlocks * 100.0, 2);
+    public long TotalDiskBytesRead =&gt; SharedRead * 8192; // 8KB PostgreSQL pages
+}
+
+public sealed record PlanCost(
+    double StartupCost,
+    double TotalCost,
+    long EstimatedRows,
+    int RowWidth);
+
+public sealed record ExecutionMetrics(
+    double ActualStartupTimeMs,
+    double ActualTotalTimeMs,
+    long ActualRows,
+    int Loops);
+
+public sealed class ExecutionPlanNode
+{
+    public required PlanNodeType NodeType { get; init; }
+    public string? RelationName { get; init; }
+    public string? IndexName { get; init; }
+    public string? FilterCondition { get; init; }
+    public string? IndexCondition { get; init; }
+    public required PlanCost Cost { get; init; }
+    public ExecutionMetrics? Metrics { get; init; }
+    public PlanBuffers Buffers { get; init; } = new();
+    public List&lt;ExecutionPlanNode&gt; Children { get; init; } = [];
+
+    public double EstimationSkewRatio =&gt;
+        Cost.EstimatedRows == 0 || Metrics == null ? 1.0 :
+        Math.Round((double)Metrics.ActualRows / Cost.EstimatedRows, 2);
+
+    public bool HasWorkMemSpill =&gt; Buffers.TempRead &gt; 0 || Buffers.TempWritten &gt; 0;
+}
+
+public sealed record PlanDiagnostic(
+    string Severity, // &quot;Critical&quot;, &quot;Warning&quot;, &quot;Info&quot;
+    string Category,
+    string Message,
+    string Recommendation);
+
+public static class ExecutionPlanAnalyzer
+{
+    public static List&lt;PlanDiagnostic&gt; Analyze(ExecutionPlanNode rootNode)
+    {
+        var diagnostics = new List&lt;PlanDiagnostic&gt;();
+        AnalyzeNodeRecursive(rootNode, diagnostics);
+        return diagnostics;
+    }
+
+    private static void AnalyzeNodeRecursive(ExecutionPlanNode node, List&lt;PlanDiagnostic&gt; diagnostics)
+    {
+        // 1. Check for unindexed Sequential Scan on substantial row sets
+        if (node.NodeType == PlanNodeType.SeqScan &amp;&amp; (node.Metrics?.ActualRows ?? node.Cost.EstimatedRows) &gt; 1000)
+        {
+            diagnostics.Add(new PlanDiagnostic(
+                Severity: &quot;Warning&quot;,
+                Category: &quot;IndexOptimization&quot;,
+                Message: $&quot;Sequential Scan on table &#x27;{node.RelationName ?? &quot;unknown&quot;}&#x27; processed {node.Metrics?.ActualRows ?? node.Cost.EstimatedRows:N0} rows.&quot;,
+                Recommendation: $&quot;Consider creating a B-Tree index on the columns evaluated in filter: &#x27;{node.FilterCondition ?? &quot;WHERE condition&quot;}&#x27; to avoid full table scans.&quot;));
+        }
+
+        // 2. Check for Hash Join / Sort WorkMem spill to temporary disk files
+        if (node.HasWorkMemSpill)
+        {
+            diagnostics.Add(new PlanDiagnostic(
+                Severity: &quot;Critical&quot;,
+                Category: &quot;MemoryConfiguration&quot;,
+                Message: $&quot;Node &#x27;{node.NodeType}&#x27; spilled to disk: {node.Buffers.TempRead} blocks read, {node.Buffers.TempWritten} blocks written.&quot;,
+                Recommendation: &quot;Increase &#x27;work_mem&#x27; for this session or query to allow in-memory hash table / sorting and eliminate disk I/O.&quot;));
+        }
+
+        // 3. Check for low buffer cache hit ratio
+        if (node.Buffers.TotalSharedBlocks &gt; 100 &amp;&amp; node.Buffers.CacheHitRatioPercent &lt; 85.0)
+        {
+            diagnostics.Add(new PlanDiagnostic(
+                Severity: &quot;Warning&quot;,
+                Category: &quot;BufferCache&quot;,
+                Message: $&quot;Low buffer cache hit ratio ({node.Buffers.CacheHitRatioPercent}%) on &#x27;{node.RelationName ?? node.NodeType.ToString()}&#x27;. {node.Buffers.SharedRead} blocks read from disk.&quot;,
+                Recommendation: &quot;Evaluate &#x27;shared_buffers&#x27; allocation or inspect if cold queries / unindexed lookups are causing excessive physical storage reads.&quot;));
+        }
+
+        // 4. Check for severe cardinality estimation skew (&gt;10x or &lt;0.1x)
+        if (node.Metrics != null &amp;&amp; (node.EstimationSkewRatio &gt; 10.0 || node.EstimationSkewRatio &lt; 0.1))
+        {
+            diagnostics.Add(new PlanDiagnostic(
+                Severity: &quot;Warning&quot;,
+                Category: &quot;StaleStatistics&quot;,
+                Message: $&quot;Significant estimation skew on &#x27;{node.NodeType}&#x27;: Planner estimated {node.Cost.EstimatedRows} rows but actual count was {node.Metrics.ActualRows} (Skew: {node.EstimationSkewRatio}x).&quot;,
+                Recommendation: $&quot;Run &#x27;ANALYZE {node.RelationName ?? &quot;&quot;}&#x27; to refresh table statistics and rebuild the pg_statistic histogram.&quot;));
+        }
+
+        // 5. Index Scan vs Index Only Scan distinction
+        if (node.NodeType == PlanNodeType.IndexScan &amp;&amp; node.Buffers.SharedHit &gt; 500 &amp;&amp; node.Buffers.SharedRead == 0)
+        {
+            diagnostics.Add(new PlanDiagnostic(
+                Severity: &quot;Info&quot;,
+                Category: &quot;CoveringIndex&quot;,
+                Message: $&quot;Index Scan on &#x27;{node.IndexName}&#x27; required table heap lookups.&quot;,
+                Recommendation: &quot;Consider including required projection columns in an &#x27;INCLUDE (...)&#x27; clause to convert this into an Index Only Scan.&quot;));
+        }
+
+        foreach (var child in node.Children)
+        {
+            AnalyzeNodeRecursive(child, diagnostics);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Parses a standard PostgreSQL EXPLAIN (ANALYZE, BUFFERS) text line block into structured ExecutionPlanNode.
+    /// &lt;/summary&gt;
+    public static ExecutionPlanNode ParsePlanNode(string planLine, string? bufferLine = null)
+    {
+        // Example: &quot;Seq Scan on users  (cost=0.00..1834.00 rows=100000 width=72) (actual time=0.012..14.230 rows=100000 loops=1)&quot;
+        var nodeType = DetectNodeType(planLine);
+        var relation = ExtractRegex(planLine, @&quot;on (\w+)&quot;);
+        var index = ExtractRegex(planLine, @&quot;using (\w+)&quot;);
+
+        var costMatch = Regex.Match(planLine, @&quot;cost=([\d\.]+)\.\.([\d\.]+)\s+rows=(\d+)\s+width=(\d+)&quot;);
+        double startupCost = costMatch.Success ? double.Parse(costMatch.Groups[1].Value) : 0.0;
+        double totalCost = costMatch.Success ? double.Parse(costMatch.Groups[2].Value) : 0.0;
+        long estRows = costMatch.Success ? long.Parse(costMatch.Groups[3].Value) : 0;
+        int width = costMatch.Success ? int.Parse(costMatch.Groups[4].Value) : 0;
+
+        var actualMatch = Regex.Match(planLine, @&quot;actual time=([\d\.]+)\.\.([\d\.]+)\s+rows=(\d+)\s+loops=(\d+)&quot;);
+        ExecutionMetrics? metrics = null;
+        if (actualMatch.Success)
+        {
+            metrics = new ExecutionMetrics(
+                ActualStartupTimeMs: double.Parse(actualMatch.Groups[1].Value),
+                ActualTotalTimeMs: double.Parse(actualMatch.Groups[2].Value),
+                ActualRows: long.Parse(actualMatch.Groups[3].Value),
+                Loops: int.Parse(actualMatch.Groups[4].Value));
+        }
+
+        var buffers = new PlanBuffers();
+        if (!string.IsNullOrWhiteSpace(bufferLine))
+        {
+            // Example: &quot;Buffers: shared hit=421 read=12 written=3 temp read=5 written=5&quot;
+            long hit = ParseBufferVal(bufferLine, @&quot;shared hit=(\d+)&quot;);
+            long read = ParseBufferVal(bufferLine, @&quot;read=(\d+)&quot;);
+            long written = ParseBufferVal(bufferLine, @&quot;written=(\d+)&quot;);
+            long tempRead = ParseBufferVal(bufferLine, @&quot;temp read=(\d+)&quot;);
+            long tempWritten = ParseBufferVal(bufferLine, @&quot;temp.*written=(\d+)&quot;);
+            buffers = new PlanBuffers(hit, read, written, tempRead, tempWritten);
+        }
+
+        return new ExecutionPlanNode
+        {
+            NodeType = nodeType,
+            RelationName = relation,
+            IndexName = index,
+            Cost = new PlanCost(startupCost, totalCost, estRows, width),
+            Metrics = metrics,
+            Buffers = buffers
+        };
+    }
+
+    private static PlanNodeType DetectNodeType(string line)
+    {
+        if (line.Contains(&quot;Index Only Scan&quot;)) return PlanNodeType.IndexOnlyScan;
+        if (line.Contains(&quot;Bitmap Index Scan&quot;)) return PlanNodeType.BitmapIndexScan;
+        if (line.Contains(&quot;Bitmap Heap Scan&quot;)) return PlanNodeType.BitmapHeapScan;
+        if (line.Contains(&quot;Index Scan&quot;)) return PlanNodeType.IndexScan;
+        if (line.Contains(&quot;Seq Scan&quot;)) return PlanNodeType.SeqScan;
+        if (line.Contains(&quot;Nested Loop&quot;)) return PlanNodeType.NestedLoop;
+        if (line.Contains(&quot;Hash Join&quot;)) return PlanNodeType.HashJoin;
+        if (line.Contains(&quot;Merge Join&quot;)) return PlanNodeType.MergeJoin;
+        if (line.Contains(&quot;Sort&quot;)) return PlanNodeType.Sort;
+        if (line.Contains(&quot;Materialize&quot;)) return PlanNodeType.Materialize;
+        return PlanNodeType.Unknown;
+    }
+
+    private static string? ExtractRegex(string input, string pattern)
+    {
+        var match = Regex.Match(input, pattern);
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
+    private static long ParseBufferVal(string input, string pattern)
+    {
+        var match = Regex.Match(input, pattern);
+        return match.Success ? long.Parse(match.Groups[1].Value) : 0;
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day09.SqlExecutionPlans.Tests/Day09Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd9-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d9-tests-code-0" class="language-csharp">using FluentAssertions;
+using Xunit;
+
+namespace Day09.SqlExecutionPlans.Tests;
+
+public class ExecutionPlanAnalyzerTests
+{
+    [Fact]
+    public void ParsePlanNode_ShouldExtractCosts_AndMetrics_AndBuffers()
+    {
+        // Arrange
+        const string planLine = &quot;Seq Scan on orders  (cost=0.00..3285.00 rows=150000 width=64) (actual time=0.015..18.520 rows=150000 loops=1)&quot;;
+        const string bufferLine = &quot;Buffers: shared hit=2800 read=485 written=0&quot;;
+
+        // Act
+        var node = ExecutionPlanAnalyzer.ParsePlanNode(planLine, bufferLine);
+
+        // Assert
+        node.NodeType.Should().Be(PlanNodeType.SeqScan);
+        node.RelationName.Should().Be(&quot;orders&quot;);
+        node.Cost.StartupCost.Should().Be(0.00);
+        node.Cost.TotalCost.Should().Be(3285.00);
+        node.Cost.EstimatedRows.Should().Be(150000);
+        node.Cost.RowWidth.Should().Be(64);
+        node.Metrics.Should().NotBeNull();
+        node.Metrics!.ActualRows.Should().Be(150000);
+        node.Metrics.ActualTotalTimeMs.Should().Be(18.520);
+        node.Buffers.SharedHit.Should().Be(2800);
+        node.Buffers.SharedRead.Should().Be(485);
+        node.Buffers.TotalSharedBlocks.Should().Be(3285);
+        node.Buffers.CacheHitRatioPercent.Should().BeApproximately(85.24, 0.05);
+        node.Buffers.TotalDiskBytesRead.Should().Be(485 * 8192);
+    }
+
+    [Fact]
+    public void Analyze_ShouldFlagWarning_WhenLargeSequentialScanDetected()
+    {
+        // Arrange
+        var root = new ExecutionPlanNode
+        {
+            NodeType = PlanNodeType.SeqScan,
+            RelationName = &quot;customers&quot;,
+            FilterCondition = &quot;(country = &#x27;US&#x27;::text)&quot;,
+            Cost = new PlanCost(0.0, 1500.0, 50000, 32),
+            Metrics = new ExecutionMetrics(0.02, 12.5, 50000, 1)
+        };
+
+        // Act
+        var diagnostics = ExecutionPlanAnalyzer.Analyze(root);
+
+        // Assert
+        diagnostics.Should().ContainSingle(d =&gt;
+            d.Category == &quot;IndexOptimization&quot; &amp;&amp;
+            d.Severity == &quot;Warning&quot; &amp;&amp;
+            d.Message.Contains(&quot;Sequential Scan on table &#x27;customers&#x27;&quot;) &amp;&amp;
+            d.Recommendation.Contains(&quot;country = &#x27;US&#x27;::text&quot;));
+    }
+
+    [Fact]
+    public void Analyze_ShouldFlagCritical_WhenWorkMemSpillsToDisk()
+    {
+        // Arrange
+        var root = new ExecutionPlanNode
+        {
+            NodeType = PlanNodeType.HashJoin,
+            Cost = new PlanCost(100.0, 5000.0, 20000, 48),
+            Buffers = new PlanBuffers(SharedHit: 1000, SharedRead: 200, TempRead: 120, TempWritten: 120)
+        };
+
+        // Act
+        var diagnostics = ExecutionPlanAnalyzer.Analyze(root);
+
+        // Assert
+        diagnostics.Should().ContainSingle(d =&gt;
+            d.Category == &quot;MemoryConfiguration&quot; &amp;&amp;
+            d.Severity == &quot;Critical&quot; &amp;&amp;
+            d.Message.Contains(&quot;spilled to disk&quot;) &amp;&amp;
+            d.Recommendation.Contains(&quot;work_mem&quot;));
+    }
+
+    [Fact]
+    public void Analyze_ShouldFlagWarning_WhenCardinalityEstimationIsSeverelySkewed()
+    {
+        // Arrange: Planner estimated 100 rows, but actual was 10,000 rows (100x skew)
+        var root = new ExecutionPlanNode
+        {
+            NodeType = PlanNodeType.IndexScan,
+            RelationName = &quot;transactions&quot;,
+            IndexName = &quot;idx_transactions_status&quot;,
+            Cost = new PlanCost(0.42, 25.0, 100, 16),
+            Metrics = new ExecutionMetrics(0.01, 8.4, 10000, 1)
+        };
+
+        // Act
+        var diagnostics = ExecutionPlanAnalyzer.Analyze(root);
+
+        // Assert
+        diagnostics.Should().Contain(d =&gt;
+            d.Category == &quot;StaleStatistics&quot; &amp;&amp;
+            d.Severity == &quot;Warning&quot; &amp;&amp;
+            d.Recommendation.Contains(&quot;ANALYZE transactions&quot;));
+    }
+
+    [Fact]
+    public void Analyze_ShouldSuggestCoveringIndex_ForIndexScanWithHighHeapFetches()
+    {
+        // Arrange
+        var root = new ExecutionPlanNode
+        {
+            NodeType = PlanNodeType.IndexScan,
+            RelationName = &quot;products&quot;,
+            IndexName = &quot;idx_products_sku&quot;,
+            Cost = new PlanCost(0.28, 8.5, 800, 24),
+            Buffers = new PlanBuffers(SharedHit: 800, SharedRead: 0)
+        };
+
+        // Act
+        var diagnostics = ExecutionPlanAnalyzer.Analyze(root);
+
+        // Assert
+        diagnostics.Should().Contain(d =&gt;
+            d.Category == &quot;CoveringIndex&quot; &amp;&amp;
+            d.Severity == &quot;Info&quot; &amp;&amp;
+            d.Recommendation.Contains(&quot;INCLUDE&quot;));
+    }
+}
+
+public class CharacterReplacementSolverTests
+{
+    [Theory]
+    [InlineData(&quot;ABAB&quot;, 2, 4)]
+    [InlineData(&quot;AABABBA&quot;, 1, 4)]
+    [InlineData(&quot;AAAA&quot;, 2, 4)]
+    [InlineData(&quot;A&quot;, 0, 1)]
+    [InlineData(&quot;ABACD&quot;, 2, 4)]
+    [InlineData(&quot;ABBB&quot;, 0, 3)]
+    [InlineData(&quot;ABCDE&quot;, 5, 5)]
+    [InlineData(&quot;BAAAB&quot;, 2, 5)]
+    public void CharacterReplacement_ShouldReturnMaxWindowLength(string s, int k, int expected)
+    {
+        // Act
+        int result = CharacterReplacementSolver.CharacterReplacement(s, k);
+
+        // Assert
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void CharacterReplacement_EmptyString_ShouldReturnZero()
+    {
+        CharacterReplacementSolver.CharacterReplacement(&quot;&quot;, 2).Should().Be(0);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 09 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
 
   <script>
     // Tab switching
@@ -1289,16 +2213,10 @@ When `Sort` or `Hash` operations exceed `work_mem`, PostgreSQL falls back to tem
       if (pane) pane.classList.add('active');
     }
 
-    // QA Accordion
-    function toggleQa(id) {
-      const el = document.getElementById(id);
-      if (el) el.classList.toggle('open');
-    }
-
+    // QA Accordion (using native details elements)
     function toggleAllQa(open) {
-      document.querySelectorAll('.qa-card').forEach(c => {
-        if (open) c.classList.add('open');
-        else c.classList.remove('open');
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
       });
     }
 
@@ -1317,23 +2235,7 @@ When `Sort` or `Hash` operations exceed `work_mem`, PostgreSQL falls back to tem
       });
     }
 
-    // Render Markdown when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.marked) {
-        const rEl = document.getElementById('raw-readme');
-        if (rEl) {
-          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
-        }
-        const nEl = document.getElementById('raw-notes');
-        if (nEl) {
-          const nTarget = document.getElementById('notes-container');
-          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
-        }
-        // Render inner QA contents
-        document.querySelectorAll('.raw-qa-content').forEach(el => {
-          el.innerHTML = marked.parse(el.textContent);
-        });
-      }
       if (window.Prism) {
         Prism.highlightAll();
       }

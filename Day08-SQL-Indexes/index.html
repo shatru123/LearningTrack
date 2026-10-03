@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Day 08: PostgreSQL B-Tree Indexing &amp; 8KB Page Layout | 100-Day .NET + AI Track</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
@@ -17,7 +16,7 @@
       --bg-card-hover: #1f2937;
       --bg-code: #0f172a;
       --border: #1e293b;
-      --border-accent: #3b82f6;
+      --border-accent: #38bdf8;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
@@ -25,6 +24,7 @@
       --accent-glow: rgba(56, 189, 248, 0.15);
       --success: #10b981;
       --warning: #f59e0b;
+      --purple: #c084fc;
     }
     * {
       box-sizing: border-box;
@@ -143,6 +143,24 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
     .diagram-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -167,10 +185,13 @@
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 24px;
       overflow-x: auto;
       padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
     }
     .tab-btn {
       background: transparent;
@@ -180,7 +201,7 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      border-bottom: 2px solid transparent;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -189,10 +210,13 @@
     }
     .tab-btn:hover {
       color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
     }
     .tab-btn.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .tab-pane {
       display: none;
@@ -213,70 +237,87 @@
       line-height: 1.7;
     }
     .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 24px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
     .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
-    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
     .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
-    .markdown-content li { margin-bottom: 6px; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
     .markdown-content code {
-      background: rgba(56, 189, 248, 0.1);
+      background: rgba(56, 189, 248, 0.12);
       color: #38bdf8;
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 13px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
     .markdown-content pre {
       background: var(--bg-code);
-      padding: 16px;
-      border-radius: 8px;
+      padding: 18px;
       overflow-x: auto;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
     .markdown-content pre code {
       background: transparent;
       padding: 0;
-      color: inherit;
-      font-size: 13px;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
     }
     .markdown-content table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
+      font-size: 14px;
+      text-align: left;
     }
     .markdown-content th, .markdown-content td {
       padding: 10px 14px;
       border: 1px solid var(--border);
-      text-align: left;
     }
     .markdown-content th {
-      background: rgba(30, 41, 59, 0.8);
-      color: #fff;
+      background: #1e293b;
+      color: #f8fafc;
       font-weight: 600;
     }
     .markdown-content tr:nth-child(even) {
-      background: rgba(15, 23, 42, 0.4);
+      background: rgba(15, 23, 42, 0.5);
     }
     .markdown-content blockquote {
       border-left: 4px solid var(--accent);
-      padding: 8px 16px;
+      padding: 10px 18px;
       background: var(--accent-glow);
       border-radius: 0 8px 8px 0;
-      margin-bottom: 16px;
+      margin: 16px 0;
       color: #e2e8f0;
     }
-    /* QA Accordion Cards */
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
     .qa-controls {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
-    .qa-card {
+    details.qa-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -284,10 +325,10 @@
       overflow: hidden;
       transition: border-color 0.2s;
     }
-    .qa-card:hover {
+    details.qa-card:hover {
       border-color: var(--border-accent);
     }
-    .qa-header {
+    summary.qa-header {
       padding: 16px 20px;
       background: #1e293b;
       cursor: pointer;
@@ -295,6 +336,13 @@
       align-items: center;
       justify-content: space-between;
       user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
     }
     .qa-badge {
       background: #1e3a8a;
@@ -316,16 +364,13 @@
       color: var(--accent);
       transition: transform 0.2s;
     }
-    .qa-card.open .qa-toggle-icon {
+    details.qa-card[open] .qa-toggle-icon {
       transform: rotate(180deg);
     }
     .qa-body {
       padding: 24px;
-      border-top: 1px solid var(--border);
-      display: none;
-    }
-    .qa-card.open .qa-body {
-      display: block;
+      background: #111827;
+      line-height: 1.7;
     }
     /* Code Viewer Styles */
     .file-card {
@@ -365,19 +410,29 @@
     .copy-btn:hover {
       background: #475569;
     }
-    pre[class*="language-"] {
-      margin: 0 !important;
-      border-radius: 0 !important;
-      background: var(--bg-code) !important;
-      padding: 16px !important;
-      font-size: 13px !important;
-      line-height: 1.5 !important;
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .footer-bar {
       text-align: center;
       margin-top: 40px;
       color: var(--text-dim);
       font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
     }
   </style>
 </head>
@@ -389,7 +444,7 @@
         <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
         <span class="badge badge-day">Day 08</span>
         <span class="badge badge-category">SQL &amp; Relational DB</span>
-        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Engineering Track</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
       </div>
       <div class="nav-controls">
         <a href="../Day07-Minimal-APIs/index.html" class="nav-btn">← Day 07</a>
@@ -418,11 +473,17 @@
     <div class="hero">
       <h1>Day 08: PostgreSQL B-Tree Indexing &amp; 8KB Page Layout</h1>
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 3 Source & 2 Test Files</span>
+      </div>
     </div>
 
     <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
     <div class="diagram-card">
-      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
       
         <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
           <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
@@ -449,23 +510,234 @@
     </div>
 
     <div class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
-      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
       <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
     </div>
 
     <!-- Tab Panes -->
-    <div id="pane-readme" class="tab-pane active">
-      <div class="markdown-content" id="readme-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 08 - Engineering Notes: SQL B-Tree Indexes & Page Internals</h1>
+<h2>1. Physical Layout of an 8KB PostgreSQL B-Tree Page</h2>
+<p>Every PostgreSQL table and index page is exactly <strong>8192 bytes</strong> (8 KB):</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+--------------------------------------------------------------------+
+| PageHeaderData (24 bytes)                                          |
+| pd_lsn (8B), pd_checksum (2B), pd_flags (2B), pd_lower (2B),      |
+| pd_upper (2B), pd_special (2B), pd_pagesize_version (2B)          |
++--------------------------------------------------------------------+
+| ItemIdData Array (Linp pointers, 4 bytes each)                     |
+| lp_off (15 bits), lp_flags (2 bits), lp_len (15 bits)              |
+| [Linp 1] -&gt; offset to Item 1                                       |
+| [Linp 2] -&gt; offset to Item 2   (Grows downward)                    |
++--------------------------------------------------------------------+
+|                          &lt; FREE SPACE &gt;                            |
++--------------------------------------------------------------------+
+| Index Tuple Data (Grows upward)                                    |
+| [Item 2: Key value + ctid (Block 45, Offset 1)]                    |
+| [Item 1: Key value + ctid (Block 12, Offset 3)]                    |
++--------------------------------------------------------------------+
+| BTPageOpaqueData (Special Space at page end, 16 bytes)            |
+| btpo_prev (left sibling), btpo_next (right sibling),               |
+| btpo_level (0 = leaf), btpo_flags (BTP_LEAF, BTP_ROOT, etc.)      |
++--------------------------------------------------------------------+</code></pre></div>
+<hr/>
+<h2>2. PostgreSQL vs SQL Server Index Architecture</h2>
+<div class="table-container"><table><thead><tr>
+<th>Feature</th>
+<th>PostgreSQL</th>
+<th>SQL Server</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Base Table Structure</strong></td>
+<td>Always a Heap (unordered rows referenced by <code>ctid</code>)</td>
+<td>Heap OR Clustered Index (data stored in index leaf pages)</td>
+</tr>
+<tr>
+<td><strong>Non-Clustered Leaf</strong></td>
+<td>Stores <code>ctid</code> (physical block + offset pointer)</td>
+<td>Stores Clustering Key (if clustered) or RID (if heap)</td>
+</tr>
+<tr>
+<td><strong>Secondary Lookup Overhead</strong></td>
+<td>Index Scan fetches table heap page via <code>ctid</code></td>
+<td>"Key Lookup" traverses clustered index from root to leaf</td>
+</tr>
+<tr>
+<td><strong>Covering Indexes</strong></td>
+<td><code>CREATE INDEX ... INCLUDE (...)</code> avoids heap fetches</td>
+<td><code>CREATE INDEX ... INCLUDE (...)</code> avoids Key Lookups</td>
+</tr>
+<tr>
+<td><strong>Update Mechanism</strong></td>
+<td>HOT (Heap-Only Tuples) if unindexed columns change</td>
+<td>In-place update if row length unchanged</td>
+</tr>
+<tr>
+<td><strong>Page Size</strong></td>
+<td>8 KB (8192 bytes)</td>
+<td>8 KB (8192 bytes)</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>3. The 4 Query Plan Scan Types</h2>
+<ol>
+<li><strong>Sequential Scan (<code>Seq Scan</code>)</strong>:</li>
+</ol>
+<ul>
+<li>Reads every 8KB heap page from disk.</li>
+<li>Selected when table is small or selectivity is low (query returns $>10–20\%$ of table).</li>
+</ul>
+<ol>
+<li><strong>Index Scan</strong>:</li>
+</ol>
+<ul>
+<li>Traverses B-tree from root to leaf, retrieves matching <code>ctid</code>, and immediately reads corresponding table heap page.</li>
+<li>Best for high selectivity (few rows returned).</li>
+</ul>
+<ol>
+<li><strong>Bitmap Index Scan + Bitmap Heap Scan</strong>:</li>
+</ol>
+<ul>
+<li>B-tree scan populates an in-memory bitmap of qualifying page numbers.</li>
+<li>Bitmap Heap Scan visits each heap page only once in physical disk order, converting random I/O into sequential I/O.</li>
+</ul>
+<ol>
+<li><strong>Index-Only Scan</strong>:</li>
+</ol>
+<ul>
+<li>All requested columns exist in the index (via key columns or <code>INCLUDE</code>).</li>
+<li>If Visibility Map confirms all tuples on the page are visible, <strong>zero heap pages are read</strong> (<code>Heap Fetches: 0</code>).</li>
+</ul>
+<hr/>
+<h2>4. DSA Takeaways</h2>
+<ul>
+<li><strong>Longest Substring Without Repeating Characters</strong>:</li>
+<li>Sliding window $[windowStart, i]$.</li>
+<li>An integer array of size 256 stores the 1-based index where each character was last seen.</li>
+<li>When character $c$ is repeated, $windowStart = \max(windowStart, lastSeen[c])$.</li>
+<li>Single pass $O(n)$ time with $O(1)$ space.</li>
+</ul>
       </div>
     </div>
 
-    <div id="pane-notes" class="tab-pane">
-      <div class="markdown-content" id="notes-container">
-        <!-- Rendered by Marked.js -->
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 08 - PostgreSQL & SQL Server B-Tree Index Architecture, Page Layout & Query Optimization</h1>
+<h2>Objective</h2>
+<p>Analyze B-Tree index physical layout and page structures in PostgreSQL and SQL Server, inspect index metadata using PostgreSQL's <code>pageinspect</code> extension, compare execution plans with <code>EXPLAIN (ANALYZE, BUFFERS)</code> across 4 distinct indexing scenarios, and implement data access using Dapper.</p>
+<h2>Original Learning Tasks</h2>
+<ol>
+<li>Inspect PostgreSQL / SQL Server B-Tree page structure</li>
+<li>DSA: Longest Substring Without Repeating Characters</li>
+</ol>
+<h2>Practical Problem</h2>
+<p>Database queries that perform Sequential Scans across millions of rows cause severe disk I/O bottlenecks, buffer cache eviction, and high query latency in production. Furthermore, blindly adding indexes can degrade write throughput, cause index bloat, and fail to be utilized if queries violate the leftmost prefix rule, wrap indexed columns in scalar functions, or use leading wildcards (<code>LIKE &#x27;%...&#x27;</code>).</p>
+<h2>What I Implemented</h2>
+<ol>
+<li><strong>Realistic Ticketing Schema & High-Volume Seeding</strong>:</li>
+</ol>
+<ul>
+<li><code>Venues</code>, <code>Events</code>, <code>Customers</code>, <code>Orders</code>, and <code>Tickets</code> with realistic constraints and foreign keys.</li>
+<li>High volume data generation script (<code>generate_series</code>) generating $150,000+$ rows for meaningful query plans.</li>
+</ul>
+<ol>
+<li><strong>Safe Read-Only B-Tree Inspection (<code>pageinspect</code>)</strong>:</li>
+</ol>
+<ul>
+<li>Inspecting Meta Page (<code>bt_metap</code>): root block, tree height/depth, fast root, and engine version.</li>
+<li>Inspecting Page Statistics (<code>bt_page_stats</code>): live items, dead items, free space, and page types (leaf, internal, root).</li>
+<li>Inspecting Page Items (<code>bt_page_items</code>): item offsets, <code>ctid</code> (heap tuple pointers <code>(block, offset)</code>), and indexed data keys.</li>
+</ul>
+<ol>
+<li><strong>EXPLAIN ANALYZE 4 Critical Scenarios</strong>:</li>
+</ol>
+<ul>
+<li><strong>Case 1: No Useful Index</strong>: Sequential Scan with high shared buffer hits and filter overhead.</li>
+<li><strong>Case 2: Single-Column B-Tree Index</strong>: Bitmap Index Scan and Index Scan.</li>
+<li><strong>Case 3: Composite Covering Index with INCLUDE</strong>: Index-Only Scan with <strong>zero heap fetches</strong>.</li>
+<li><strong>Case 4: Poorly Designed Indexes</strong>: Function wrapping columns (<code>UPPER(Email)</code>), leading wildcards, and leftmost prefix violations.</li>
+</ul>
+<ol>
+<li><strong>C# Dapper Data Access Repository</strong>:</li>
+</ol>
+<ul>
+<li><code>DapperEventTicketRepository</code>: High-performance parameterized queries utilizing Dapper micro-ORM.</li>
+<li>In-memory testing suite validating query mapping, sorting, and joins.</li>
+</ul>
+<ol>
+<li><strong>DSA Solution</strong>:</li>
+</ol>
+<ul>
+<li><code>LengthOfLongestSubstring</code>: Sliding window tracking character last-seen positions in $O(n)$ time and $O(1)$ auxiliary space.</li>
+</ul>
+<h2>Architecture</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                     8KB B-Tree Index Page (PostgreSQL)
+┌────────────────────────────────────────────────────────────────────────┐
+│ PageHeaderData (24 bytes: pd_lsn, pd_checksum, pd_lower, pd_upper)     │
+├────────────────────────────────────────────────────────────────────────┤
+│ ItemIdData Array (Linp Pointers: 4 bytes each)                         │
+│ [Linp 1] [Linp 2] [Linp 3] ... ───► grows downwards                    │
+├────────────────────────────────────────────────────────────────────────┤
+│ Free Space (available for new index entries before page split)        │
+├────────────────────────────────────────────────────────────────────────┤
+│ Index Tuple Data (Key value + ctid pointing to heap row) ◄── grows up  │
+├────────────────────────────────────────────────────────────────────────┤
+│ BTPageOpaqueData (Special Space, 16 bytes: btpo_prev, btpo_next, level)│
+└────────────────────────────────────────────────────────────────────────┘
+
+Traversal:
+Query: EventId = 42
+  Root Page ──► Downlink Keys ──► Leaf Page (Block X) ──► ctid (Page 12, Item 4) ──► Heap Table Row</code></pre></div>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong>B-Tree Structure</strong>: Balanced search tree where all leaf pages reside at the exact same depth. Internal nodes store downlinks and routing keys; leaf nodes store indexed column values and heap tuple identifiers (<code>ctid</code> in Postgres, RID or Clustered Key in SQL Server).</li>
+<li><strong>8KB Page Architecture</strong>: Both PostgreSQL and SQL Server store data in 8192-byte pages. Understanding page capacity ($N = \frac{\text{PageSize} - \text{Headers}}{\text{KeySize} + \text{PointerSize}}$) reveals how wide index keys cause shallow fan-out and deeper trees.</li>
+<li><strong>Index-Only Scan</strong>: When an index covers all columns requested by a query (e.g. via <code>INCLUDE</code>), PostgreSQL reads solely from the index pages and avoids accessing table heap pages entirely.</li>
+<li><strong>HOT (Heap-Only Tuples)</strong>: In PostgreSQL, if an updated row fits on the same page and no indexed columns were modified, PostgreSQL avoids creating new B-tree index entries, dramatically reducing write overhead and index bloat.</li>
+<li><strong>SQL Server Contrast</strong>: In SQL Server, a table can be a Clustered Index (leaf level IS the data pages) or a Heap. Non-clustered indexes point to the Clustering Key (or RID if heap), resulting in "Key Lookups" unless covered.</li>
+</ul>
+<h2>Testing</h2>
+<ul>
+<li>Automated test suite (<code>SqlIndexesTests</code>, <code>DsaExercisesTests</code>).</li>
+<li>Verifies Dapper mapping and query execution for joined details, filtered ticket ordering, and customer orders.</li>
+<li>Validates B-Tree page capacity calculation and tuple packing formulas.</li>
+<li>Validates longest substring sliding window algorithm across edge cases.</li>
+</ul>
+<h2>Performance Observations</h2>
+<ul>
+<li>An Index-Only Scan using composite keys with <code>INCLUDE</code> reduced buffer hits from $>1000$ pages to only $3$ pages.</li>
+<li>Wrapping a column in a scalar function (<code>UPPER(col)</code>) causes the query planner to reject standard B-tree indexes, forcing a sequential table scan unless an expression index is created.</li>
+</ul>
+<h2>Production Relevance</h2>
+<ul>
+<li>Poor indexing is the leading cause of database CPU exhaustion and query timeouts in high-scale systems. Proper use of covering indexes (<code>INCLUDE</code>), avoiding leading wildcards, and understanding selectivity are essential for senior backend engineers.</li>
+</ul>
+<h2>Common Mistakes</h2>
+<ol>
+<li>Indexing low-cardinality columns (e.g., <code>IsActive</code> boolean) with standard B-trees where sequential scans are faster.</li>
+<li>Creating redundant indexes (e.g., indexing <code>(A)</code> when <code>(A, B)</code> already exists).</li>
+<li>Over-indexing write-heavy tables, which multiplies write amplification and WAL generation.</li>
+<li>Using <code>SELECT *</code> in queries, which prevents the query engine from performing Index-Only Scans.</li>
+</ol>
+<h2>Senior Interview Questions</h2>
+<p>See <a href="file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day08-SQL-Indexes/interview-questions.md" target="_blank" rel="noopener noreferrer">interview-questions.md</a> for 10 in-depth architectural questions.</p>
+<h2>What I Practically Understood</h2>
+<ul>
+<li>The internal anatomy of an 8KB B-tree page (<code>PageHeaderData</code>, <code>ItemIdData</code>, <code>BTPageOpaqueData</code>).</li>
+<li>How to safely inspect production index health using PostgreSQL's <code>pageinspect</code> extension without locking tables.</li>
+<li>The difference between <code>Index Scan</code>, <code>Bitmap Index Scan</code>, and <code>Index-Only Scan</code> in execution plans.</li>
+</ul>
+<h2>What I Need to Read Later</h2>
+<ul>
+<li>PostgreSQL GiST, GIN, and BRIN indexes for geometric, full-text, and timeseries data.</li>
+<li>SQL Server Columnstore indexes and batch-mode processing on rowstores.</li>
+</ul>
+<h2>Key Takeaways</h2>
+<p>Indexes are not magic flags; they are physical B-Tree data structures residing on 8KB disk pages. Designing high-performance database access requires aligning query predicates with leftmost prefix rules, utilizing covering indexes to eliminate heap fetches, and monitoring index bloat.</p>
       </div>
     </div>
 
@@ -479,192 +751,199 @@
       </div>
       <div id="interview-cards-container">
         
-        <div class="qa-card open" id="qa-card-1">
-          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+        <details class="qa-card" open>
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q1</span>
               <span class="qa-title">How does a B-Tree index work under the hood in relational databases?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A B-Tree is a self-balancing search tree where each node corresponds to a fixed-size disk page (8KB) storing sorted keys and child pointers, guaranteeing $O(\log N)$ search, insertion, and deletion.</li>
+<li><strong>Deeper answer</strong>: Starting from the Root page, the database binary-searches the page's keys to identify the downlink pointer to the next level down. It traverses down through internal pages until reaching a Leaf page. In the leaf page, each entry stores the indexed column value and a row locator (<code>ctid</code> in Postgres, Clustering Key or RID in SQL Server) to locate the actual row.</li>
+<li><strong>Practical example</strong>: A 3-level B-tree with a fan-out of 400 keys per 8KB page can index $400^3 = 64,000,000$ rows with only 3 disk page reads!</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: A B-Tree is a self-balancing search tree where each node corresponds to a fixed-size disk page (8KB) storing sorted keys and child pointers, guaranteeing $O(\log N)$ search, insertion, and deletion.
-- **Deeper answer**: Starting from the Root page, the database binary-searches the page&#x27;s keys to identify the downlink pointer to the next level down. It traverses down through internal pages until reaching a Leaf page. In the leaf page, each entry stores the indexed column value and a row locator (`ctid` in Postgres, Clustering Key or RID in SQL Server) to locate the actual row.
-- **Practical example**: A 3-level B-tree with a fan-out of 400 keys per 8KB page can index $400^3 = 64,000,000$ rows with only 3 disk page reads!
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card open" id="qa-card-2">
-          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+        <details class="qa-card" open>
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q2</span>
               <span class="qa-title">What is the difference between an Index Scan, a Bitmap Index Scan, and an Index-Only Scan?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: An Index Scan reads heap pages one row at a time via index pointers. A Bitmap Index Scan collects qualifying page IDs in a bitmap and visits heap pages sequentially. An Index-Only Scan answers the query directly from the index without reading heap pages at all.</li>
+<li><strong>Deeper answer</strong>: When selectivity is high (returning 1–5 rows), direct Index Scan is fastest. When a query returns hundreds of rows scattered across pages, Index Scan causes random I/O thrashing; Bitmap Index Scan sorts the heap page addresses first so disk blocks are read sequentially. An Index-Only Scan bypasses heap reads entirely if the index covers all requested columns and the Visibility Map confirms no pending MVCC transactions.</li>
+<li><strong>Practical example</strong>: <code>SELECT CustomerId, Status FROM Orders WHERE CustomerId = 5</code> performs an Index-Only Scan if an index on <code>(CustomerId, Status)</code> exists.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: An Index Scan reads heap pages one row at a time via index pointers. A Bitmap Index Scan collects qualifying page IDs in a bitmap and visits heap pages sequentially. An Index-Only Scan answers the query directly from the index without reading heap pages at all.
-- **Deeper answer**: When selectivity is high (returning 1–5 rows), direct Index Scan is fastest. When a query returns hundreds of rows scattered across pages, Index Scan causes random I/O thrashing; Bitmap Index Scan sorts the heap page addresses first so disk blocks are read sequentially. An Index-Only Scan bypasses heap reads entirely if the index covers all requested columns and the Visibility Map confirms no pending MVCC transactions.
-- **Practical example**: `SELECT CustomerId, Status FROM Orders WHERE CustomerId = 5` performs an Index-Only Scan if an index on `(CustomerId, Status)` exists.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-3">
-          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q3</span>
               <span class="qa-title">What is the purpose of the `INCLUDE` clause in a composite index?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It appends non-key payload columns to the leaf pages of the B-tree without storing them in intermediate nodes or sorting by them.</li>
+<li><strong>Deeper answer</strong>: Adding columns to the index key increases index tree width, reduces node fan-out, and limits max key size. Columns in <code>INCLUDE</code> are stored only at the leaf level, allowing queries to achieve Index-Only Scans (avoiding heap fetches or SQL Server key lookups) while keeping internal tree levels narrow and fast.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">CREATE INDEX idx_orders_customer ON Orders (CustomerId) INCLUDE (TotalAmount, OrderDate);</code></pre></div>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: It appends non-key payload columns to the leaf pages of the B-tree without storing them in intermediate nodes or sorting by them.
-- **Deeper answer**: Adding columns to the index key increases index tree width, reduces node fan-out, and limits max key size. Columns in `INCLUDE` are stored only at the leaf level, allowing queries to achieve Index-Only Scans (avoiding heap fetches or SQL Server key lookups) while keeping internal tree levels narrow and fast.
-- **Practical example**:
-```sql
-CREATE INDEX idx_orders_customer ON Orders (CustomerId) INCLUDE (TotalAmount, OrderDate);
-```
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-4">
-          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q4</span>
               <span class="qa-title">What is the Leftmost Prefix Rule in composite B-Tree indexes?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A composite index on columns <code>(A, B, C)</code> can only be used for index seek operations if the query filters on <code>(A)</code>, <code>(A, B)</code>, or <code>(A, B, C)</code>.</li>
+<li><strong>Deeper answer</strong>: Because B-Tree keys are sorted lexicographically starting with column <code>A</code>, the database cannot perform a binary search on column <code>B</code> or <code>C</code> alone without knowing the value of <code>A</code>. A query filtering only on <code>WHERE B = 10</code> cannot use an index seek on <code>(A, B, C)</code> and must fallback to a full index scan or sequential table scan.</li>
+<li><strong>Practical example</strong>: An index on <code>(VenueId, Status)</code> accelerates <code>WHERE VenueId = 1 AND Status = &#x27;Open&#x27;</code> and <code>WHERE VenueId = 1</code>, but does NOT accelerate <code>WHERE Status = &#x27;Open&#x27;</code>.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: A composite index on columns `(A, B, C)` can only be used for index seek operations if the query filters on `(A)`, `(A, B)`, or `(A, B, C)`.
-- **Deeper answer**: Because B-Tree keys are sorted lexicographically starting with column `A`, the database cannot perform a binary search on column `B` or `C` alone without knowing the value of `A`. A query filtering only on `WHERE B = 10` cannot use an index seek on `(A, B, C)` and must fallback to a full index scan or sequential table scan.
-- **Practical example**: An index on `(VenueId, Status)` accelerates `WHERE VenueId = 1 AND Status = &#x27;Open&#x27;` and `WHERE VenueId = 1`, but does NOT accelerate `WHERE Status = &#x27;Open&#x27;`.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-5">
-          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q5</span>
               <span class="qa-title">How do scalar functions on indexed columns defeat B-Tree index traversal?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Wrapping an indexed column in a function (e.g. <code>WHERE UPPER(Email) = ...</code>) prevents the engine from using the index because the index stores raw values, not the computed output.</li>
+<li><strong>Deeper answer</strong>: The B-Tree contains values ordered by <code>Email</code>. The query engine does not evaluate functions in reverse to search the tree. To optimize such queries, you must create a Functional/Expression Index on the computed result.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">CREATE INDEX idx_customers_upper_email ON Customers (UPPER(Email));</code></pre></div>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Wrapping an indexed column in a function (e.g. `WHERE UPPER(Email) = ...`) prevents the engine from using the index because the index stores raw values, not the computed output.
-- **Deeper answer**: The B-Tree contains values ordered by `Email`. The query engine does not evaluate functions in reverse to search the tree. To optimize such queries, you must create a Functional/Expression Index on the computed result.
-- **Practical example**:
-```sql
-CREATE INDEX idx_customers_upper_email ON Customers (UPPER(Email));
-```
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-6">
-          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q6</span>
               <span class="qa-title">What is Heap-Only Tuples (HOT) optimization in PostgreSQL?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: An optimization that avoids updating B-Tree indexes when a row is updated, provided the update fits on the same 8KB data page and no indexed columns were modified.</li>
+<li><strong>Deeper answer</strong>: In standard MVCC updates, a new row version is written and every index on the table must insert a new pointer to the new <code>ctid</code>. With HOT, the old row tuple points directly to the new row tuple inside the same page via a chain pointer. The index continues pointing to the original root tuple, eliminating index write amplification and index bloat.</li>
+<li><strong>Practical example</strong>: Frequently updating a non-indexed <code>LastLoginAt</code> timestamp benefits from HOT and does not touch any table indexes.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: An optimization that avoids updating B-Tree indexes when a row is updated, provided the update fits on the same 8KB data page and no indexed columns were modified.
-- **Deeper answer**: In standard MVCC updates, a new row version is written and every index on the table must insert a new pointer to the new `ctid`. With HOT, the old row tuple points directly to the new row tuple inside the same page via a chain pointer. The index continues pointing to the original root tuple, eliminating index write amplification and index bloat.
-- **Practical example**: Frequently updating a non-indexed `LastLoginAt` timestamp benefits from HOT and does not touch any table indexes.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-7">
-          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q7</span>
               <span class="qa-title">What causes B-Tree Page Splits and why are they harmful to write performance?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A page split occurs when an insert or update requires writing to an 8KB index leaf page that has no free space remaining.</li>
+<li><strong>Deeper answer</strong>: When an 8KB page is full, the engine must allocate a new 8KB page, copy approximately half the keys to the new page, update linked list pointers (<code>btpo_prev</code>, <code>btpo_next</code>), and insert a new routing key into the parent node (which may cascade page splits up to the root). This creates heavy disk I/O, WAL logging, and index fragmentation.</li>
+<li><strong>Practical example</strong>: Using random UUIDs (<code>Guid.NewGuid()</code>) as primary keys causes random insertions across all leaf pages, triggering continuous page splits compared to sequential IDs.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: A page split occurs when an insert or update requires writing to an 8KB index leaf page that has no free space remaining.
-- **Deeper answer**: When an 8KB page is full, the engine must allocate a new 8KB page, copy approximately half the keys to the new page, update linked list pointers (`btpo_prev`, `btpo_next`), and insert a new routing key into the parent node (which may cascade page splits up to the root). This creates heavy disk I/O, WAL logging, and index fragmentation.
-- **Practical example**: Using random UUIDs (`Guid.NewGuid()`) as primary keys causes random insertions across all leaf pages, triggering continuous page splits compared to sequential IDs.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-8">
-          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q8</span>
               <span class="qa-title">What is Index Selectivity and how does the Query Optimizer use it?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Selectivity is the ratio of rows satisfying a query predicate to the total number of rows in the table ($\text{Selectivity} = \frac{\text{Matching Rows}}{\text{Total Rows}}$).</li>
+<li><strong>Deeper answer</strong>: If a condition matches $< 1–5\%$ of the table (high selectivity), the optimizer chooses an Index Scan. If the condition matches $> 15–20\%$ of the table (low selectivity, like <code>WHERE IsDeleted = false</code>), reading the index plus random heap seeks costs more I/O than simply streaming the entire table sequentially.</li>
+<li><strong>Practical example</strong>: An index on a boolean column with 50/50 distribution will almost never be used by the optimizer for an index seek.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: Selectivity is the ratio of rows satisfying a query predicate to the total number of rows in the table ($\text{Selectivity} = \frac{\text{Matching Rows}}{\text{Total Rows}}$).
-- **Deeper answer**: If a condition matches $&lt; 1–5\%$ of the table (high selectivity), the optimizer chooses an Index Scan. If the condition matches $&gt; 15–20\%$ of the table (low selectivity, like `WHERE IsDeleted = false`), reading the index plus random heap seeks costs more I/O than simply streaming the entire table sequentially.
-- **Practical example**: An index on a boolean column with 50/50 distribution will almost never be used by the optimizer for an index seek.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-9">
-          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q9</span>
               <span class="qa-title">How does SQL Server Clustered Index differ from PostgreSQL Heap tables?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: In SQL Server, a clustered index table stores the actual data rows directly in the leaf pages of the B-tree. In PostgreSQL, all tables are heaps, and all indexes are secondary non-clustered indexes.</li>
+<li><strong>Deeper answer</strong>: Because SQL Server clustered index leaf pages ARE the data rows, querying by the clustered key (typically PK) requires no secondary lookup. However, secondary non-clustered indexes in SQL Server store the clustering key value at their leaf nodes, requiring a "Key Lookup" back into the clustered tree for non-covered columns.</li>
+<li><strong>Practical example</strong>: Changing a wide clustered key in SQL Server inflates the size of <em>every</em> non-clustered index on that table.</li>
+</ul>
+<hr/>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: In SQL Server, a clustered index table stores the actual data rows directly in the leaf pages of the B-tree. In PostgreSQL, all tables are heaps, and all indexes are secondary non-clustered indexes.
-- **Deeper answer**: Because SQL Server clustered index leaf pages ARE the data rows, querying by the clustered key (typically PK) requires no secondary lookup. However, secondary non-clustered indexes in SQL Server store the clustering key value at their leaf nodes, requiring a &quot;Key Lookup&quot; back into the clustered tree for non-covered columns.
-- **Practical example**: Changing a wide clustered key in SQL Server inflates the size of *every* non-clustered index on that table.
-
----</div>
-          </div>
-        </div>
+        </details>
         
 
-        <div class="qa-card " id="qa-card-10">
-          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+        <details class="qa-card" >
+          <summary class="qa-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="qa-badge">Q10</span>
               <span class="qa-title">How do you safely detect index bloat and unused indexes in production PostgreSQL?</span>
             </div>
             <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: By querying <code>pg_stat_user_indexes</code> for usage counts (<code>idx_scan = 0</code>) and using <code>pgstattuple</code> or <code>pageinspect</code> to measure dead tuples and free space.</li>
+<li><strong>Deeper answer</strong>: Querying:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">SELECT relname, idx_scan FROM pg_stat_user_indexes WHERE idx_scan = 0;</code></pre></div>
+<p>identifies indexes that are never used by queries but still incur write overhead on every INSERT/UPDATE. For bloat, <code>pgstattuple</code> or <code>REINDEX CONCURRENTLY</code> can rebuild fragmented B-tree pages without locking table reads or writes.</p>
+<ul>
+<li><strong>Practical example</strong>: Dropping 5 unused indexes on a high-throughput table can instantly cut write I/O and replication lag in half.</li>
+</ul>
           </div>
-          <div class="qa-body">
-            <div class="raw-qa-content">- **Short answer**: By querying `pg_stat_user_indexes` for usage counts (`idx_scan = 0`) and using `pgstattuple` or `pageinspect` to measure dead tuples and free space.
-- **Deeper answer**: Querying:
-```sql
-SELECT relname, idx_scan FROM pg_stat_user_indexes WHERE idx_scan = 0;
-```
-identifies indexes that are never used by queries but still incur write overhead on every INSERT/UPDATE. For bloat, `pgstattuple` or `REINDEX CONCURRENTLY` can rebuild fragmented B-tree pages without locking table reads or writes.
-- **Practical example**: Dropping 5 unused indexes on a high-throughput table can instantly cut write I/O and replication lag in half.</div>
-          </div>
-        </div>
+        </details>
         
       </div>
     </div>
@@ -1044,112 +1323,14 @@ public class SqlIndexesTests : IDisposable
                 
     </div>
 
-    <div class="footer-bar">
-      <p>100-Day .NET + AI Engineering Track • Authoritative Curriculum: <a href="https://learning-ttf6.onrender.com/" target="_blank">LearningOS</a> • Code Repository: <a href="https://github.com/shatru123/LearningTrack" target="_blank">GitHub</a></p>
-    </div>
-  </div>
-
-  <!-- Raw Content Payloads for Client-side Rendering -->
-  <script type="text/markdown" id="raw-readme"># Day 08 - PostgreSQL &amp; SQL Server B-Tree Index Architecture, Page Layout &amp; Query Optimization
-
-## Objective
-Analyze B-Tree index physical layout and page structures in PostgreSQL and SQL Server, inspect index metadata using PostgreSQL&#x27;s `pageinspect` extension, compare execution plans with `EXPLAIN (ANALYZE, BUFFERS)` across 4 distinct indexing scenarios, and implement data access using Dapper.
-
-## Original Learning Tasks
-1. Inspect PostgreSQL / SQL Server B-Tree page structure
-2. DSA: Longest Substring Without Repeating Characters
-
-## Practical Problem
-Database queries that perform Sequential Scans across millions of rows cause severe disk I/O bottlenecks, buffer cache eviction, and high query latency in production. Furthermore, blindly adding indexes can degrade write throughput, cause index bloat, and fail to be utilized if queries violate the leftmost prefix rule, wrap indexed columns in scalar functions, or use leading wildcards (`LIKE &#x27;%...&#x27;`).
-
-## What I Implemented
-1. **Realistic Ticketing Schema &amp; High-Volume Seeding**:
-   - `Venues`, `Events`, `Customers`, `Orders`, and `Tickets` with realistic constraints and foreign keys.
-   - High volume data generation script (`generate_series`) generating $150,000+$ rows for meaningful query plans.
-2. **Safe Read-Only B-Tree Inspection (`pageinspect`)**:
-   - Inspecting Meta Page (`bt_metap`): root block, tree height/depth, fast root, and engine version.
-   - Inspecting Page Statistics (`bt_page_stats`): live items, dead items, free space, and page types (leaf, internal, root).
-   - Inspecting Page Items (`bt_page_items`): item offsets, `ctid` (heap tuple pointers `(block, offset)`), and indexed data keys.
-3. **EXPLAIN ANALYZE 4 Critical Scenarios**:
-   - **Case 1: No Useful Index**: Sequential Scan with high shared buffer hits and filter overhead.
-   - **Case 2: Single-Column B-Tree Index**: Bitmap Index Scan and Index Scan.
-   - **Case 3: Composite Covering Index with INCLUDE**: Index-Only Scan with **zero heap fetches**.
-   - **Case 4: Poorly Designed Indexes**: Function wrapping columns (`UPPER(Email)`), leading wildcards, and leftmost prefix violations.
-4. **C# Dapper Data Access Repository**:
-   - `DapperEventTicketRepository`: High-performance parameterized queries utilizing Dapper micro-ORM.
-   - In-memory testing suite validating query mapping, sorting, and joins.
-5. **DSA Solution**:
-   - `LengthOfLongestSubstring`: Sliding window tracking character last-seen positions in $O(n)$ time and $O(1)$ auxiliary space.
-
-## Architecture
-```text
-                     8KB B-Tree Index Page (PostgreSQL)
-┌────────────────────────────────────────────────────────────────────────┐
-│ PageHeaderData (24 bytes: pd_lsn, pd_checksum, pd_lower, pd_upper)     │
-├────────────────────────────────────────────────────────────────────────┤
-│ ItemIdData Array (Linp Pointers: 4 bytes each)                         │
-│ [Linp 1] [Linp 2] [Linp 3] ... ───► grows downwards                    │
-├────────────────────────────────────────────────────────────────────────┤
-│ Free Space (available for new index entries before page split)        │
-├────────────────────────────────────────────────────────────────────────┤
-│ Index Tuple Data (Key value + ctid pointing to heap row) ◄── grows up  │
-├────────────────────────────────────────────────────────────────────────┤
-│ BTPageOpaqueData (Special Space, 16 bytes: btpo_prev, btpo_next, level)│
-└────────────────────────────────────────────────────────────────────────┘
-
-Traversal:
-Query: EventId = 42
-  Root Page ──► Downlink Keys ──► Leaf Page (Block X) ──► ctid (Page 12, Item 4) ──► Heap Table Row
-```
-
-## Key Concepts
-- **B-Tree Structure**: Balanced search tree where all leaf pages reside at the exact same depth. Internal nodes store downlinks and routing keys; leaf nodes store indexed column values and heap tuple identifiers (`ctid` in Postgres, RID or Clustered Key in SQL Server).
-- **8KB Page Architecture**: Both PostgreSQL and SQL Server store data in 8192-byte pages. Understanding page capacity ($N = \frac{\text{PageSize} - \text{Headers}}{\text{KeySize} + \text{PointerSize}}$) reveals how wide index keys cause shallow fan-out and deeper trees.
-- **Index-Only Scan**: When an index covers all columns requested by a query (e.g. via `INCLUDE`), PostgreSQL reads solely from the index pages and avoids accessing table heap pages entirely.
-- **HOT (Heap-Only Tuples)**: In PostgreSQL, if an updated row fits on the same page and no indexed columns were modified, PostgreSQL avoids creating new B-tree index entries, dramatically reducing write overhead and index bloat.
-- **SQL Server Contrast**: In SQL Server, a table can be a Clustered Index (leaf level IS the data pages) or a Heap. Non-clustered indexes point to the Clustering Key (or RID if heap), resulting in &quot;Key Lookups&quot; unless covered.
-
-## Testing
-- Automated test suite (`SqlIndexesTests`, `DsaExercisesTests`).
-- Verifies Dapper mapping and query execution for joined details, filtered ticket ordering, and customer orders.
-- Validates B-Tree page capacity calculation and tuple packing formulas.
-- Validates longest substring sliding window algorithm across edge cases.
-
-## Performance Observations
-- An Index-Only Scan using composite keys with `INCLUDE` reduced buffer hits from $&gt;1000$ pages to only $3$ pages.
-- Wrapping a column in a scalar function (`UPPER(col)`) causes the query planner to reject standard B-tree indexes, forcing a sequential table scan unless an expression index is created.
-
-## Production Relevance
-- Poor indexing is the leading cause of database CPU exhaustion and query timeouts in high-scale systems. Proper use of covering indexes (`INCLUDE`), avoiding leading wildcards, and understanding selectivity are essential for senior backend engineers.
-
-## Common Mistakes
-1. Indexing low-cardinality columns (e.g., `IsActive` boolean) with standard B-trees where sequential scans are faster.
-2. Creating redundant indexes (e.g., indexing `(A)` when `(A, B)` already exists).
-3. Over-indexing write-heavy tables, which multiplies write amplification and WAL generation.
-4. Using `SELECT *` in queries, which prevents the query engine from performing Index-Only Scans.
-
-## Senior Interview Questions
-See [interview-questions.md](file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day08-SQL-Indexes/interview-questions.md) for 10 in-depth architectural questions.
-
-## What I Practically Understood
-- The internal anatomy of an 8KB B-tree page (`PageHeaderData`, `ItemIdData`, `BTPageOpaqueData`).
-- How to safely inspect production index health using PostgreSQL&#x27;s `pageinspect` extension without locking tables.
-- The difference between `Index Scan`, `Bitmap Index Scan`, and `Index-Only Scan` in execution plans.
-
-## What I Need to Read Later
-- PostgreSQL GiST, GIN, and BRIN indexes for geometric, full-text, and timeseries data.
-- SQL Server Columnstore indexes and batch-mode processing on rowstores.
-
-## Key Takeaways
-Indexes are not magic flags; they are physical B-Tree data structures residing on 8KB disk pages. Designing high-performance database access requires aligning query predicates with leftmost prefix rules, utilizing covering indexes to eliminate heap fetches, and monitoring index bloat.
-</script>
-  <script type="text/markdown" id="raw-notes"># Day 08 - Engineering Notes: SQL B-Tree Indexes &amp; Page Internals
-
-## 1. Physical Layout of an 8KB PostgreSQL B-Tree Page
-
-Every PostgreSQL table and index page is exactly **8192 bytes** (8 KB):
-```text
-+--------------------------------------------------------------------+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 08 - Engineering Notes: SQL B-Tree Indexes & Page Internals</h1>
+<h2>1. Physical Layout of an 8KB PostgreSQL B-Tree Page</h2>
+<p>Every PostgreSQL table and index page is exactly <strong>8192 bytes</strong> (8 KB):</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+--------------------------------------------------------------------+
 | PageHeaderData (24 bytes)                                          |
 | pd_lsn (8B), pd_checksum (2B), pd_flags (2B), pd_lower (2B),      |
 | pd_upper (2B), pd_special (2B), pd_pagesize_version (2B)          |
@@ -1168,48 +1349,790 @@ Every PostgreSQL table and index page is exactly **8192 bytes** (8 KB):
 | BTPageOpaqueData (Special Space at page end, 16 bytes)            |
 | btpo_prev (left sibling), btpo_next (right sibling),               |
 | btpo_level (0 = leaf), btpo_flags (BTP_LEAF, BTP_ROOT, etc.)      |
-+--------------------------------------------------------------------+
-```
++--------------------------------------------------------------------+</code></pre></div>
+<hr/>
+<h2>2. PostgreSQL vs SQL Server Index Architecture</h2>
+<div class="table-container"><table><thead><tr>
+<th>Feature</th>
+<th>PostgreSQL</th>
+<th>SQL Server</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Base Table Structure</strong></td>
+<td>Always a Heap (unordered rows referenced by <code>ctid</code>)</td>
+<td>Heap OR Clustered Index (data stored in index leaf pages)</td>
+</tr>
+<tr>
+<td><strong>Non-Clustered Leaf</strong></td>
+<td>Stores <code>ctid</code> (physical block + offset pointer)</td>
+<td>Stores Clustering Key (if clustered) or RID (if heap)</td>
+</tr>
+<tr>
+<td><strong>Secondary Lookup Overhead</strong></td>
+<td>Index Scan fetches table heap page via <code>ctid</code></td>
+<td>"Key Lookup" traverses clustered index from root to leaf</td>
+</tr>
+<tr>
+<td><strong>Covering Indexes</strong></td>
+<td><code>CREATE INDEX ... INCLUDE (...)</code> avoids heap fetches</td>
+<td><code>CREATE INDEX ... INCLUDE (...)</code> avoids Key Lookups</td>
+</tr>
+<tr>
+<td><strong>Update Mechanism</strong></td>
+<td>HOT (Heap-Only Tuples) if unindexed columns change</td>
+<td>In-place update if row length unchanged</td>
+</tr>
+<tr>
+<td><strong>Page Size</strong></td>
+<td>8 KB (8192 bytes)</td>
+<td>8 KB (8192 bytes)</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>3. The 4 Query Plan Scan Types</h2>
+<ol>
+<li><strong>Sequential Scan (<code>Seq Scan</code>)</strong>:</li>
+</ol>
+<ul>
+<li>Reads every 8KB heap page from disk.</li>
+<li>Selected when table is small or selectivity is low (query returns $>10–20\%$ of table).</li>
+</ul>
+<ol>
+<li><strong>Index Scan</strong>:</li>
+</ol>
+<ul>
+<li>Traverses B-tree from root to leaf, retrieves matching <code>ctid</code>, and immediately reads corresponding table heap page.</li>
+<li>Best for high selectivity (few rows returned).</li>
+</ul>
+<ol>
+<li><strong>Bitmap Index Scan + Bitmap Heap Scan</strong>:</li>
+</ol>
+<ul>
+<li>B-tree scan populates an in-memory bitmap of qualifying page numbers.</li>
+<li>Bitmap Heap Scan visits each heap page only once in physical disk order, converting random I/O into sequential I/O.</li>
+</ul>
+<ol>
+<li><strong>Index-Only Scan</strong>:</li>
+</ol>
+<ul>
+<li>All requested columns exist in the index (via key columns or <code>INCLUDE</code>).</li>
+<li>If Visibility Map confirms all tuples on the page are visible, <strong>zero heap pages are read</strong> (<code>Heap Fetches: 0</code>).</li>
+</ul>
+<hr/>
+<h2>4. DSA Takeaways</h2>
+<ul>
+<li><strong>Longest Substring Without Repeating Characters</strong>:</li>
+<li>Sliding window $[windowStart, i]$.</li>
+<li>An integer array of size 256 stores the 1-based index where each character was last seen.</li>
+<li>When character $c$ is repeated, $windowStart = \max(windowStart, lastSeen[c])$.</li>
+<li>Single pass $O(n)$ time with $O(1)$ space.</li>
+</ul>
+        </div>
 
----
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 08 - PostgreSQL & SQL Server B-Tree Index Architecture, Page Layout & Query Optimization</h1>
+<h2>Objective</h2>
+<p>Analyze B-Tree index physical layout and page structures in PostgreSQL and SQL Server, inspect index metadata using PostgreSQL's <code>pageinspect</code> extension, compare execution plans with <code>EXPLAIN (ANALYZE, BUFFERS)</code> across 4 distinct indexing scenarios, and implement data access using Dapper.</p>
+<h2>Original Learning Tasks</h2>
+<ol>
+<li>Inspect PostgreSQL / SQL Server B-Tree page structure</li>
+<li>DSA: Longest Substring Without Repeating Characters</li>
+</ol>
+<h2>Practical Problem</h2>
+<p>Database queries that perform Sequential Scans across millions of rows cause severe disk I/O bottlenecks, buffer cache eviction, and high query latency in production. Furthermore, blindly adding indexes can degrade write throughput, cause index bloat, and fail to be utilized if queries violate the leftmost prefix rule, wrap indexed columns in scalar functions, or use leading wildcards (<code>LIKE &#x27;%...&#x27;</code>).</p>
+<h2>What I Implemented</h2>
+<ol>
+<li><strong>Realistic Ticketing Schema & High-Volume Seeding</strong>:</li>
+</ol>
+<ul>
+<li><code>Venues</code>, <code>Events</code>, <code>Customers</code>, <code>Orders</code>, and <code>Tickets</code> with realistic constraints and foreign keys.</li>
+<li>High volume data generation script (<code>generate_series</code>) generating $150,000+$ rows for meaningful query plans.</li>
+</ul>
+<ol>
+<li><strong>Safe Read-Only B-Tree Inspection (<code>pageinspect</code>)</strong>:</li>
+</ol>
+<ul>
+<li>Inspecting Meta Page (<code>bt_metap</code>): root block, tree height/depth, fast root, and engine version.</li>
+<li>Inspecting Page Statistics (<code>bt_page_stats</code>): live items, dead items, free space, and page types (leaf, internal, root).</li>
+<li>Inspecting Page Items (<code>bt_page_items</code>): item offsets, <code>ctid</code> (heap tuple pointers <code>(block, offset)</code>), and indexed data keys.</li>
+</ul>
+<ol>
+<li><strong>EXPLAIN ANALYZE 4 Critical Scenarios</strong>:</li>
+</ol>
+<ul>
+<li><strong>Case 1: No Useful Index</strong>: Sequential Scan with high shared buffer hits and filter overhead.</li>
+<li><strong>Case 2: Single-Column B-Tree Index</strong>: Bitmap Index Scan and Index Scan.</li>
+<li><strong>Case 3: Composite Covering Index with INCLUDE</strong>: Index-Only Scan with <strong>zero heap fetches</strong>.</li>
+<li><strong>Case 4: Poorly Designed Indexes</strong>: Function wrapping columns (<code>UPPER(Email)</code>), leading wildcards, and leftmost prefix violations.</li>
+</ul>
+<ol>
+<li><strong>C# Dapper Data Access Repository</strong>:</li>
+</ol>
+<ul>
+<li><code>DapperEventTicketRepository</code>: High-performance parameterized queries utilizing Dapper micro-ORM.</li>
+<li>In-memory testing suite validating query mapping, sorting, and joins.</li>
+</ul>
+<ol>
+<li><strong>DSA Solution</strong>:</li>
+</ol>
+<ul>
+<li><code>LengthOfLongestSubstring</code>: Sliding window tracking character last-seen positions in $O(n)$ time and $O(1)$ auxiliary space.</li>
+</ul>
+<h2>Architecture</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                     8KB B-Tree Index Page (PostgreSQL)
+┌────────────────────────────────────────────────────────────────────────┐
+│ PageHeaderData (24 bytes: pd_lsn, pd_checksum, pd_lower, pd_upper)     │
+├────────────────────────────────────────────────────────────────────────┤
+│ ItemIdData Array (Linp Pointers: 4 bytes each)                         │
+│ [Linp 1] [Linp 2] [Linp 3] ... ───► grows downwards                    │
+├────────────────────────────────────────────────────────────────────────┤
+│ Free Space (available for new index entries before page split)        │
+├────────────────────────────────────────────────────────────────────────┤
+│ Index Tuple Data (Key value + ctid pointing to heap row) ◄── grows up  │
+├────────────────────────────────────────────────────────────────────────┤
+│ BTPageOpaqueData (Special Space, 16 bytes: btpo_prev, btpo_next, level)│
+└────────────────────────────────────────────────────────────────────────┘
 
-## 2. PostgreSQL vs SQL Server Index Architecture
+Traversal:
+Query: EventId = 42
+  Root Page ──► Downlink Keys ──► Leaf Page (Block X) ──► ctid (Page 12, Item 4) ──► Heap Table Row</code></pre></div>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong>B-Tree Structure</strong>: Balanced search tree where all leaf pages reside at the exact same depth. Internal nodes store downlinks and routing keys; leaf nodes store indexed column values and heap tuple identifiers (<code>ctid</code> in Postgres, RID or Clustered Key in SQL Server).</li>
+<li><strong>8KB Page Architecture</strong>: Both PostgreSQL and SQL Server store data in 8192-byte pages. Understanding page capacity ($N = \frac{\text{PageSize} - \text{Headers}}{\text{KeySize} + \text{PointerSize}}$) reveals how wide index keys cause shallow fan-out and deeper trees.</li>
+<li><strong>Index-Only Scan</strong>: When an index covers all columns requested by a query (e.g. via <code>INCLUDE</code>), PostgreSQL reads solely from the index pages and avoids accessing table heap pages entirely.</li>
+<li><strong>HOT (Heap-Only Tuples)</strong>: In PostgreSQL, if an updated row fits on the same page and no indexed columns were modified, PostgreSQL avoids creating new B-tree index entries, dramatically reducing write overhead and index bloat.</li>
+<li><strong>SQL Server Contrast</strong>: In SQL Server, a table can be a Clustered Index (leaf level IS the data pages) or a Heap. Non-clustered indexes point to the Clustering Key (or RID if heap), resulting in "Key Lookups" unless covered.</li>
+</ul>
+<h2>Testing</h2>
+<ul>
+<li>Automated test suite (<code>SqlIndexesTests</code>, <code>DsaExercisesTests</code>).</li>
+<li>Verifies Dapper mapping and query execution for joined details, filtered ticket ordering, and customer orders.</li>
+<li>Validates B-Tree page capacity calculation and tuple packing formulas.</li>
+<li>Validates longest substring sliding window algorithm across edge cases.</li>
+</ul>
+<h2>Performance Observations</h2>
+<ul>
+<li>An Index-Only Scan using composite keys with <code>INCLUDE</code> reduced buffer hits from $>1000$ pages to only $3$ pages.</li>
+<li>Wrapping a column in a scalar function (<code>UPPER(col)</code>) causes the query planner to reject standard B-tree indexes, forcing a sequential table scan unless an expression index is created.</li>
+</ul>
+<h2>Production Relevance</h2>
+<ul>
+<li>Poor indexing is the leading cause of database CPU exhaustion and query timeouts in high-scale systems. Proper use of covering indexes (<code>INCLUDE</code>), avoiding leading wildcards, and understanding selectivity are essential for senior backend engineers.</li>
+</ul>
+<h2>Common Mistakes</h2>
+<ol>
+<li>Indexing low-cardinality columns (e.g., <code>IsActive</code> boolean) with standard B-trees where sequential scans are faster.</li>
+<li>Creating redundant indexes (e.g., indexing <code>(A)</code> when <code>(A, B)</code> already exists).</li>
+<li>Over-indexing write-heavy tables, which multiplies write amplification and WAL generation.</li>
+<li>Using <code>SELECT *</code> in queries, which prevents the query engine from performing Index-Only Scans.</li>
+</ol>
+<h2>Senior Interview Questions</h2>
+<p>See <a href="file:///Users/shatrughnaambhore/Shatru/Learning/Projects/LearningTrack/Day08-SQL-Indexes/interview-questions.md" target="_blank" rel="noopener noreferrer">interview-questions.md</a> for 10 in-depth architectural questions.</p>
+<h2>What I Practically Understood</h2>
+<ul>
+<li>The internal anatomy of an 8KB B-tree page (<code>PageHeaderData</code>, <code>ItemIdData</code>, <code>BTPageOpaqueData</code>).</li>
+<li>How to safely inspect production index health using PostgreSQL's <code>pageinspect</code> extension without locking tables.</li>
+<li>The difference between <code>Index Scan</code>, <code>Bitmap Index Scan</code>, and <code>Index-Only Scan</code> in execution plans.</li>
+</ul>
+<h2>What I Need to Read Later</h2>
+<ul>
+<li>PostgreSQL GiST, GIN, and BRIN indexes for geometric, full-text, and timeseries data.</li>
+<li>SQL Server Columnstore indexes and batch-mode processing on rowstores.</li>
+</ul>
+<h2>Key Takeaways</h2>
+<p>Indexes are not magic flags; they are physical B-Tree data structures residing on 8KB disk pages. Designing high-performance database access requires aligning query predicates with leftmost prefix rules, utilizing covering indexes to eliminate heap fetches, and monitoring index bloat.</p>
+        </div>
 
-| Feature | PostgreSQL | SQL Server |
-|---|---|---|
-| **Base Table Structure** | Always a Heap (unordered rows referenced by `ctid`) | Heap OR Clustered Index (data stored in index leaf pages) |
-| **Non-Clustered Leaf** | Stores `ctid` (physical block + offset pointer) | Stores Clustering Key (if clustered) or RID (if heap) |
-| **Secondary Lookup Overhead** | Index Scan fetches table heap page via `ctid` | &quot;Key Lookup&quot; traverses clustered index from root to leaf |
-| **Covering Indexes** | `CREATE INDEX ... INCLUDE (...)` avoids heap fetches | `CREATE INDEX ... INCLUDE (...)` avoids Key Lookups |
-| **Update Mechanism** | HOT (Heap-Only Tuples) if unindexed columns change | In-place update if row length unchanged |
-| **Page Size** | 8 KB (8192 bytes) | 8 KB (8192 bytes) |
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How does a B-Tree index work under the hood in relational databases?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A B-Tree is a self-balancing search tree where each node corresponds to a fixed-size disk page (8KB) storing sorted keys and child pointers, guaranteeing $O(\log N)$ search, insertion, and deletion.</li>
+<li><strong>Deeper answer</strong>: Starting from the Root page, the database binary-searches the page's keys to identify the downlink pointer to the next level down. It traverses down through internal pages until reaching a Leaf page. In the leaf page, each entry stores the indexed column value and a row locator (<code>ctid</code> in Postgres, Clustering Key or RID in SQL Server) to locate the actual row.</li>
+<li><strong>Practical example</strong>: A 3-level B-tree with a fan-out of 400 keys per 8KB page can index $400^3 = 64,000,000$ rows with only 3 disk page reads!</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
----
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the difference between an Index Scan, a Bitmap Index Scan, and an Index-Only Scan?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: An Index Scan reads heap pages one row at a time via index pointers. A Bitmap Index Scan collects qualifying page IDs in a bitmap and visits heap pages sequentially. An Index-Only Scan answers the query directly from the index without reading heap pages at all.</li>
+<li><strong>Deeper answer</strong>: When selectivity is high (returning 1–5 rows), direct Index Scan is fastest. When a query returns hundreds of rows scattered across pages, Index Scan causes random I/O thrashing; Bitmap Index Scan sorts the heap page addresses first so disk blocks are read sequentially. An Index-Only Scan bypasses heap reads entirely if the index covers all requested columns and the Visibility Map confirms no pending MVCC transactions.</li>
+<li><strong>Practical example</strong>: <code>SELECT CustomerId, Status FROM Orders WHERE CustomerId = 5</code> performs an Index-Only Scan if an index on <code>(CustomerId, Status)</code> exists.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
-## 3. The 4 Query Plan Scan Types
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the purpose of the `INCLUDE` clause in a composite index?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It appends non-key payload columns to the leaf pages of the B-tree without storing them in intermediate nodes or sorting by them.</li>
+<li><strong>Deeper answer</strong>: Adding columns to the index key increases index tree width, reduces node fan-out, and limits max key size. Columns in <code>INCLUDE</code> are stored only at the leaf level, allowing queries to achieve Index-Only Scans (avoiding heap fetches or SQL Server key lookups) while keeping internal tree levels narrow and fast.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">CREATE INDEX idx_orders_customer ON Orders (CustomerId) INCLUDE (TotalAmount, OrderDate);</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
 
-1. **Sequential Scan (`Seq Scan`)**:
-   - Reads every 8KB heap page from disk.
-   - Selected when table is small or selectivity is low (query returns $&gt;10–20\%$ of table).
-2. **Index Scan**:
-   - Traverses B-tree from root to leaf, retrieves matching `ctid`, and immediately reads corresponding table heap page.
-   - Best for high selectivity (few rows returned).
-3. **Bitmap Index Scan + Bitmap Heap Scan**:
-   - B-tree scan populates an in-memory bitmap of qualifying page numbers.
-   - Bitmap Heap Scan visits each heap page only once in physical disk order, converting random I/O into sequential I/O.
-4. **Index-Only Scan**:
-   - All requested columns exist in the index (via key columns or `INCLUDE`).
-   - If Visibility Map confirms all tuples on the page are visible, **zero heap pages are read** (`Heap Fetches: 0`).
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is the Leftmost Prefix Rule in composite B-Tree indexes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A composite index on columns <code>(A, B, C)</code> can only be used for index seek operations if the query filters on <code>(A)</code>, <code>(A, B)</code>, or <code>(A, B, C)</code>.</li>
+<li><strong>Deeper answer</strong>: Because B-Tree keys are sorted lexicographically starting with column <code>A</code>, the database cannot perform a binary search on column <code>B</code> or <code>C</code> alone without knowing the value of <code>A</code>. A query filtering only on <code>WHERE B = 10</code> cannot use an index seek on <code>(A, B, C)</code> and must fallback to a full index scan or sequential table scan.</li>
+<li><strong>Practical example</strong>: An index on <code>(VenueId, Status)</code> accelerates <code>WHERE VenueId = 1 AND Status = &#x27;Open&#x27;</code> and <code>WHERE VenueId = 1</code>, but does NOT accelerate <code>WHERE Status = &#x27;Open&#x27;</code>.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
 
----
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do scalar functions on indexed columns defeat B-Tree index traversal?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Wrapping an indexed column in a function (e.g. <code>WHERE UPPER(Email) = ...</code>) prevents the engine from using the index because the index stores raw values, not the computed output.</li>
+<li><strong>Deeper answer</strong>: The B-Tree contains values ordered by <code>Email</code>. The query engine does not evaluate functions in reverse to search the tree. To optimize such queries, you must create a Functional/Expression Index on the computed result.</li>
+<li><strong>Practical example</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">CREATE INDEX idx_customers_upper_email ON Customers (UPPER(Email));</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
 
-## 4. DSA Takeaways
-- **Longest Substring Without Repeating Characters**:
-  - Sliding window $[windowStart, i]$.
-  - An integer array of size 256 stores the 1-based index where each character was last seen.
-  - When character $c$ is repeated, $windowStart = \max(windowStart, lastSeen[c])$.
-  - Single pass $O(n)$ time with $O(1)$ space.
-</script>
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What is Heap-Only Tuples (HOT) optimization in PostgreSQL?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: An optimization that avoids updating B-Tree indexes when a row is updated, provided the update fits on the same 8KB data page and no indexed columns were modified.</li>
+<li><strong>Deeper answer</strong>: In standard MVCC updates, a new row version is written and every index on the table must insert a new pointer to the new <code>ctid</code>. With HOT, the old row tuple points directly to the new row tuple inside the same page via a chain pointer. The index continues pointing to the original root tuple, eliminating index write amplification and index bloat.</li>
+<li><strong>Practical example</strong>: Frequently updating a non-indexed <code>LastLoginAt</code> timestamp benefits from HOT and does not touch any table indexes.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What causes B-Tree Page Splits and why are they harmful to write performance?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A page split occurs when an insert or update requires writing to an 8KB index leaf page that has no free space remaining.</li>
+<li><strong>Deeper answer</strong>: When an 8KB page is full, the engine must allocate a new 8KB page, copy approximately half the keys to the new page, update linked list pointers (<code>btpo_prev</code>, <code>btpo_next</code>), and insert a new routing key into the parent node (which may cascade page splits up to the root). This creates heavy disk I/O, WAL logging, and index fragmentation.</li>
+<li><strong>Practical example</strong>: Using random UUIDs (<code>Guid.NewGuid()</code>) as primary keys causes random insertions across all leaf pages, triggering continuous page splits compared to sequential IDs.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is Index Selectivity and how does the Query Optimizer use it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Selectivity is the ratio of rows satisfying a query predicate to the total number of rows in the table ($\text{Selectivity} = \frac{\text{Matching Rows}}{\text{Total Rows}}$).</li>
+<li><strong>Deeper answer</strong>: If a condition matches $< 1–5\%$ of the table (high selectivity), the optimizer chooses an Index Scan. If the condition matches $> 15–20\%$ of the table (low selectivity, like <code>WHERE IsDeleted = false</code>), reading the index plus random heap seeks costs more I/O than simply streaming the entire table sequentially.</li>
+<li><strong>Practical example</strong>: An index on a boolean column with 50/50 distribution will almost never be used by the optimizer for an index seek.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How does SQL Server Clustered Index differ from PostgreSQL Heap tables?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: In SQL Server, a clustered index table stores the actual data rows directly in the leaf pages of the B-tree. In PostgreSQL, all tables are heaps, and all indexes are secondary non-clustered indexes.</li>
+<li><strong>Deeper answer</strong>: Because SQL Server clustered index leaf pages ARE the data rows, querying by the clustered key (typically PK) requires no secondary lookup. However, secondary non-clustered indexes in SQL Server store the clustering key value at their leaf nodes, requiring a "Key Lookup" back into the clustered tree for non-covered columns.</li>
+<li><strong>Practical example</strong>: Changing a wide clustered key in SQL Server inflates the size of <em>every</em> non-clustered index on that table.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you safely detect index bloat and unused indexes in production PostgreSQL?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: By querying <code>pg_stat_user_indexes</code> for usage counts (<code>idx_scan = 0</code>) and using <code>pgstattuple</code> or <code>pageinspect</code> to measure dead tuples and free space.</li>
+<li><strong>Deeper answer</strong>: Querying:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">SELECT relname, idx_scan FROM pg_stat_user_indexes WHERE idx_scan = 0;</code></pre></div>
+<p>identifies indexes that are never used by queries but still incur write overhead on every INSERT/UPDATE. For bloat, <code>pgstattuple</code> or <code>REINDEX CONCURRENTLY</code> can rebuild fragmented B-tree pages without locking table reads or writes.</p>
+<ul>
+<li><strong>Practical example</strong>: Dropping 5 unused indexes on a high-throughput table can instantly cut write I/O and replication lag in half.</li>
+</ul>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day08.SqlIndexes/BTreeStructuralAnalyzer.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd8-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d8-src-code-0" class="language-csharp">namespace Day08.SqlIndexes;
+
+/// &lt;summary&gt;
+/// Architectural model of a PostgreSQL 8KB B-Tree Index Page.
+/// Explains the exact layout of internal and leaf index pages on disk.
+/// &lt;/summary&gt;
+public record BTreePageLayout(
+    int PageSizeBytes,
+    int PageHeaderSizeBytes,
+    int LinpPointerSizeBytes,
+    int MaxTuplesPerPage,
+    string PageType,
+    string Description);
+
+public static class BTreeStructuralAnalyzer
+{
+    public const int StandardPageSize = 8192;     // 8 KB
+    public const int PageHeaderSize = 24;          // PageHeaderData (pd_lsn, pd_checksum, pd_flags, pd_lower, pd_upper, pd_special)
+    public const int LinpPointerSize = 4;          // ItemIdData (lp_off, lp_flags, lp_len)
+    public const int SpecialSpaceSize = 16;        // BTPageOpaqueData (btpo_prev, btpo_next, btpo_level, btpo_flags)
+
+    public static BTreePageLayout AnalyzePageCapacity(int averageIndexKeySizeBytes)
+    {
+        int availableSpace = StandardPageSize - PageHeaderSize - SpecialSpaceSize;
+        int bytesPerItem = LinpPointerSize + averageIndexKeySizeBytes;
+        int maxTuples = availableSpace / bytesPerItem;
+
+        return new BTreePageLayout(
+            StandardPageSize,
+            PageHeaderSize,
+            LinpPointerSize,
+            maxTuples,
+            &quot;Leaf / Internal B-Tree Page&quot;,
+            $&quot;An 8KB page accommodates ~{maxTuples} index keys averaging {averageIndexKeySizeBytes} bytes before requiring a B-Tree page split.&quot;);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day08.SqlIndexes/DsaExercises.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd8-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d8-src-code-1" class="language-csharp">namespace Day08.SqlIndexes;
+
+public static class DsaExercises
+{
+    /// &lt;summary&gt;
+    /// LeetCode 3 - Longest Substring Without Repeating Characters
+    /// Given a string s, find the length of the longest substring without repeating characters.
+    /// Time Complexity: O(n) using an optimal sliding window.
+    /// Space Complexity: O(min(m, n)) where m is charset size (using fixed 256 array for ASCII).
+    /// &lt;/summary&gt;
+    public static int LengthOfLongestSubstring(string s)
+    {
+        if (string.IsNullOrEmpty(s))
+            return 0;
+
+        // Stores 1-based index of last seen position of each character
+        Span&lt;int&gt; lastSeen = stackalloc int[256];
+        lastSeen.Clear();
+
+        int maxLength = 0;
+        int windowStart = 0;
+
+        for (int i = 0; i &lt; s.Length; i++)
+        {
+            char c = s[i];
+            int charCode = (int)c;
+
+            if (charCode &lt; 256 &amp;&amp; lastSeen[charCode] &gt; 0)
+            {
+                // Move window start to the right of the previous occurrence
+                windowStart = Math.Max(windowStart, lastSeen[charCode]);
+            }
+
+            int currentLength = i - windowStart + 1;
+            if (currentLength &gt; maxLength)
+            {
+                maxLength = currentLength;
+            }
+
+            if (charCode &lt; 256)
+            {
+                lastSeen[charCode] = i + 1; // 1-based index
+            }
+        }
+
+        return maxLength;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day08.SqlIndexes/EventRepository.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd8-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d8-src-code-2" class="language-csharp">using System.Data;
+using Dapper;
+
+namespace Day08.SqlIndexes;
+
+public class EventDetails
+{
+    public int EventId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public DateTime EventDate { get; set; }
+    public decimal BasePrice { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string VenueName { get; set; } = string.Empty;
+    public int Capacity { get; set; }
+}
+
+public class TicketSummary
+{
+    public long TicketId { get; set; }
+    public int EventId { get; set; }
+    public string SeatNumber { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public string Status { get; set; } = string.Empty;
+}
+
+public class CustomerOrderSummary
+{
+    public int OrderId { get; set; }
+    public int CustomerId { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime OrderDate { get; set; }
+}
+
+public interface IEventTicketRepository
+{
+    Task&lt;EventDetails?&gt; GetEventDetailsAsync(int eventId);
+    Task&lt;IEnumerable&lt;TicketSummary&gt;&gt; GetAvailableTicketsAsync(int eventId);
+    Task&lt;IEnumerable&lt;CustomerOrderSummary&gt;&gt; GetCustomerOrdersByStatusAsync(int customerId, string status);
+}
+
+/// &lt;summary&gt;
+/// High-performance data access repository utilizing Dapper micro-ORM.
+/// Parameterized queries prevent SQL injection and leverage prepared statements / B-tree index seeks.
+/// &lt;/summary&gt;
+public class DapperEventTicketRepository : IEventTicketRepository
+{
+    private readonly IDbConnection _connection;
+
+    public DapperEventTicketRepository(IDbConnection connection)
+    {
+        _connection = connection;
+    }
+
+    public async Task&lt;EventDetails?&gt; GetEventDetailsAsync(int eventId)
+    {
+        const string sql = @&quot;
+            SELECT 
+                e.EventId, e.Name, e.Category, e.EventDate, e.BasePrice, e.Status,
+                v.Name AS VenueName, v.Capacity
+            FROM Events e
+            INNER JOIN Venues v ON e.VenueId = v.VenueId
+            WHERE e.EventId = @EventId;&quot;;
+
+        return await _connection.QuerySingleOrDefaultAsync&lt;EventDetails&gt;(sql, new { EventId = eventId });
+    }
+
+    public async Task&lt;IEnumerable&lt;TicketSummary&gt;&gt; GetAvailableTicketsAsync(int eventId)
+    {
+        // Leverages composite index on Tickets (EventId, Status)
+        const string sql = @&quot;
+            SELECT TicketId, EventId, SeatNumber, Price, Status
+            FROM Tickets
+            WHERE EventId = @EventId AND Status = &#x27;Available&#x27;
+            ORDER BY Price ASC;&quot;;
+
+        return await _connection.QueryAsync&lt;TicketSummary&gt;(sql, new { EventId = eventId });
+    }
+
+    public async Task&lt;IEnumerable&lt;CustomerOrderSummary&gt;&gt; GetCustomerOrdersByStatusAsync(int customerId, string status)
+    {
+        // Leverages covering index on Orders (CustomerId, Status) INCLUDE (TotalAmount, OrderDate)
+        const string sql = @&quot;
+            SELECT OrderId, CustomerId, TotalAmount, Status, OrderDate
+            FROM Orders
+            WHERE CustomerId = @CustomerId AND Status = @Status
+            ORDER BY OrderDate DESC;&quot;;
+
+        return await _connection.QueryAsync&lt;CustomerOrderSummary&gt;(sql, new { CustomerId = customerId, Status = status });
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day08.SqlIndexes.Tests/DsaExercisesTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd8-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d8-tests-code-0" class="language-csharp">using Xunit;
+using Day08.SqlIndexes;
+
+namespace Day08.SqlIndexes.Tests;
+
+public class DsaExercisesTests
+{
+    [Theory]
+    [InlineData(&quot;abcabcbb&quot;, 3)] // &quot;abc&quot;
+    [InlineData(&quot;bbbbb&quot;, 1)]    // &quot;b&quot;
+    [InlineData(&quot;pwwkew&quot;, 3)]   // &quot;wke&quot;
+    [InlineData(&quot;&quot;, 0)]
+    [InlineData(&quot; &quot;, 1)]
+    [InlineData(&quot;au&quot;, 2)]
+    public void LengthOfLongestSubstring_ComputesExpectedLength(string s, int expected)
+    {
+        int result = DsaExercises.LengthOfLongestSubstring(s);
+        Assert.Equal(expected, result);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day08.SqlIndexes.Tests/SqlIndexesTests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd8-tests-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d8-tests-code-1" class="language-csharp">using System.Data;
+using Dapper;
+using Microsoft.Data.Sqlite;
+using Xunit;
+
+namespace Day08.SqlIndexes.Tests;
+
+public class SqlIndexesTests : IDisposable
+{
+    private readonly SqliteConnection _connection;
+    private readonly DapperEventTicketRepository _repository;
+
+    public SqlIndexesTests()
+    {
+        _connection = new SqliteConnection(&quot;DataSource=:memory:&quot;);
+        _connection.Open();
+
+        InitializeDatabase(_connection);
+        _repository = new DapperEventTicketRepository(_connection);
+    }
+
+    private static void InitializeDatabase(IDbConnection db)
+    {
+        const string schema = @&quot;
+            CREATE TABLE Venues (
+                VenueId INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name TEXT NOT NULL,
+                City TEXT NOT NULL,
+                Capacity INTEGER NOT NULL
+            );
+
+            CREATE TABLE Events (
+                EventId INTEGER PRIMARY KEY AUTOINCREMENT,
+                VenueId INTEGER NOT NULL,
+                Name TEXT NOT NULL,
+                Category TEXT NOT NULL,
+                EventDate TEXT NOT NULL,
+                BasePrice REAL NOT NULL,
+                Status TEXT NOT NULL
+            );
+
+            CREATE TABLE Orders (
+                OrderId INTEGER PRIMARY KEY AUTOINCREMENT,
+                CustomerId INTEGER NOT NULL,
+                TotalAmount REAL NOT NULL,
+                Status TEXT NOT NULL,
+                OrderDate TEXT NOT NULL
+            );
+
+            CREATE TABLE Tickets (
+                TicketId INTEGER PRIMARY KEY AUTOINCREMENT,
+                EventId INTEGER NOT NULL,
+                OrderId INTEGER,
+                SeatNumber TEXT NOT NULL,
+                Price REAL NOT NULL,
+                Status TEXT NOT NULL
+            );
+
+            -- Sample Data
+            INSERT INTO Venues (VenueId, Name, City, Capacity) VALUES (1, &#x27;Emirates Stadium&#x27;, &#x27;London&#x27;, 60000);
+            INSERT INTO Events (EventId, VenueId, Name, Category, EventDate, BasePrice, Status)
+            VALUES (1001, 1, &#x27;Arsenal vs Chelsea&#x27;, &#x27;Football&#x27;, &#x27;2026-10-15 19:45:00&#x27;, 150.00, &#x27;Scheduled&#x27;);
+
+            INSERT INTO Tickets (EventId, OrderId, SeatNumber, Price, Status)
+            VALUES 
+                (1001, NULL, &#x27;Block-A-1&#x27;, 150.00, &#x27;Available&#x27;),
+                (1001, NULL, &#x27;Block-A-2&#x27;, 175.00, &#x27;Available&#x27;),
+                (1001, 501, &#x27;Block-VIP-1&#x27;, 300.00, &#x27;Sold&#x27;);
+
+            INSERT INTO Orders (OrderId, CustomerId, TotalAmount, Status, OrderDate)
+            VALUES 
+                (501, 42, 300.00, &#x27;Completed&#x27;, &#x27;2026-09-20 14:00:00&#x27;),
+                (502, 42, 150.00, &#x27;Pending&#x27;, &#x27;2026-09-21 10:00:00&#x27;);
+        &quot;;
+
+        db.Execute(schema);
+    }
+
+    [Fact]
+    public async Task GetEventDetailsAsync_ReturnsJoinedDetails()
+    {
+        var details = await _repository.GetEventDetailsAsync(1001);
+
+        Assert.NotNull(details);
+        Assert.Equal(1001, details.EventId);
+        Assert.Equal(&quot;Arsenal vs Chelsea&quot;, details.Name);
+        Assert.Equal(&quot;Emirates Stadium&quot;, details.VenueName);
+        Assert.Equal(60000, details.Capacity);
+    }
+
+    [Fact]
+    public async Task GetAvailableTicketsAsync_ReturnsOnlyAvailableTicketsOrderedByPrice()
+    {
+        var tickets = (await _repository.GetAvailableTicketsAsync(1001)).ToList();
+
+        Assert.Equal(2, tickets.Count);
+        Assert.All(tickets, t =&gt; Assert.Equal(&quot;Available&quot;, t.Status));
+        Assert.True(tickets[0].Price &lt;= tickets[1].Price);
+    }
+
+    [Fact]
+    public async Task GetCustomerOrdersByStatusAsync_ReturnsFilteredOrders()
+    {
+        var completedOrders = (await _repository.GetCustomerOrdersByStatusAsync(42, &quot;Completed&quot;)).ToList();
+
+        Assert.Single(completedOrders);
+        Assert.Equal(501, completedOrders[0].OrderId);
+        Assert.Equal(300m, completedOrders[0].TotalAmount);
+    }
+
+    [Fact]
+    public void BTreeStructuralAnalyzer_ComputesPageCapacities_Accurately()
+    {
+        var layout = BTreeStructuralAnalyzer.AnalyzePageCapacity(averageIndexKeySizeBytes: 16);
+
+        Assert.Equal(8192, layout.PageSizeBytes);
+        Assert.Equal(24, layout.PageHeaderSizeBytes);
+        Assert.Equal(4, layout.LinpPointerSizeBytes);
+        // (8192 - 24 - 16) / (4 + 16) = 8152 / 20 = 407 tuples per page
+        Assert.Equal(407, layout.MaxTuplesPerPage);
+    }
+
+    public void Dispose()
+    {
+        _connection.Close();
+        _connection.Dispose();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 08 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
 
   <script>
     // Tab switching
@@ -1224,16 +2147,10 @@ Every PostgreSQL table and index page is exactly **8192 bytes** (8 KB):
       if (pane) pane.classList.add('active');
     }
 
-    // QA Accordion
-    function toggleQa(id) {
-      const el = document.getElementById(id);
-      if (el) el.classList.toggle('open');
-    }
-
+    // QA Accordion (using native details elements)
     function toggleAllQa(open) {
-      document.querySelectorAll('.qa-card').forEach(c => {
-        if (open) c.classList.add('open');
-        else c.classList.remove('open');
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
       });
     }
 
@@ -1252,23 +2169,7 @@ Every PostgreSQL table and index page is exactly **8192 bytes** (8 KB):
       });
     }
 
-    // Render Markdown when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.marked) {
-        const rEl = document.getElementById('raw-readme');
-        if (rEl) {
-          document.getElementById('readme-container').innerHTML = marked.parse(rEl.textContent);
-        }
-        const nEl = document.getElementById('raw-notes');
-        if (nEl) {
-          const nTarget = document.getElementById('notes-container');
-          if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
-        }
-        // Render inner QA contents
-        document.querySelectorAll('.raw-qa-content').forEach(el => {
-          el.innerHTML = marked.parse(el.textContent);
-        });
-      }
       if (window.Prism) {
         Prism.highlightAll();
       }

@@ -143,6 +143,27 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
@@ -248,6 +269,65 @@
       margin-bottom: 16px;
       color: #e2e8f0;
     }
+    /* QA Accordion Cards */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    .qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    .qa-card.open .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .qa-card.open .qa-body {
+      display: block;
+    }
+    /* Code Viewer Styles */
     .file-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -340,10 +420,41 @@
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
     </div>
 
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">ref struct Stack Invariant vs Memory&lt;T&gt; Across Async Boundaries</text>
+          
+          <rect x="50" y="65" width="370" height="250" rx="10" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="70" y="95" fill="#f87171" font-size="15" font-weight="bold">SYNCHRONOUS ONLY: ref struct (Span&lt;T&gt;)</text>
+          <rect x="70" y="115" width="330" height="70" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="85" y="140" fill="#f8fafc" font-size="12">Guaranteed on execution stack</text>
+          <text x="85" y="160" fill="#ef4444" font-size="12">❌ Cannot cross 'await' (CS4013)</text>
+          <rect x="70" y="200" width="330" height="95" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="85" y="225" fill="#94a3b8" font-size="11">Why? Async state machine hoists locals to heap.</text>
+          <text x="85" y="245" fill="#94a3b8" font-size="11">Placing ref struct on heap is strictly forbidden</text>
+          <text x="85" y="265" fill="#94a3b8" font-size="11">by the CLR type safety invariants.</text>
+
+          <rect x="480" y="65" width="370" height="250" rx="10" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
+          <text x="500" y="95" fill="#34d399" font-size="15" font-weight="bold">ASYNC SAFE: Memory&lt;T&gt; &amp; ReadOnlyMemory&lt;T&gt;</text>
+          <rect x="500" y="115" width="330" height="70" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="515" y="140" fill="#f8fafc" font-size="12">Regular struct (holds object _target, int _index, int _length)</text>
+          <text x="515" y="160" fill="#10b981" font-size="12">✅ Safe to cross 'await' &amp; live in heap state machine</text>
+          <rect x="500" y="200" width="330" height="95" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="515" y="225" fill="#38bdf8" font-size="11">Thread 1: Read HTTP Chunk into Memory&lt;byte&gt;</text>
+          <text x="515" y="245" fill="#f59e0b" font-size="11">⚡ await socket.ReadAsync() [Stack frame drops]</text>
+          <text x="515" y="265" fill="#38bdf8" font-size="11">Thread 4: Resumes from ThreadPool with Memory intact!</text>
+        </svg>
+        
+    </div>
+
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
       <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
-      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (2 files)</button>
     </div>
@@ -355,16 +466,227 @@
       </div>
     </div>
 
-    
-            <div id="pane-notes" class="tab-pane">
-              <div class="markdown-content" id="notes-container"></div>
+    <div id="pane-notes" class="tab-pane">
+      <div class="markdown-content" id="notes-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <div class="qa-card open" id="qa-card-1">
+          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why can&#x27;t `Span&lt;T&gt;` be used across an `await` statement in C#?</span>
             </div>
-            
-    
-            <div id="pane-interview" class="tab-pane">
-              <div class="markdown-content" id="interview-container"></div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Because `Span&lt;T&gt;` is a `ref struct` that could point to stack memory; hoisting it into an async state machine on the managed heap could lead to stack tearing and memory corruption.
+- **Deeper answer**: When an async method pauses at an `await` that doesn&#x27;t complete synchronously, its state machine is preserved on the heap. If `Span&lt;T&gt;` were permitted in that state machine, its interior pointer would reference stack memory that is invalidated when the initial thread unwinds. The continuation could then execute on a different thread with an invalid pointer.
+- **Practical example**: Use `Memory&lt;T&gt;` or `ReadOnlyMemory&lt;T&gt;` to store buffer state across `await`, and access `.Span` only within synchronous code blocks between awaits.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card open" id="qa-card-2">
+          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the internal memory layout of `Memory&lt;T&gt;` compared to `Span&lt;T&gt;`?</span>
             </div>
-            
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `Span&lt;T&gt;` contains a managed interior pointer (`ref T`) and length (`int`). `Memory&lt;T&gt;` contains an object reference (`object?`), starting offset (`int`), and length (`int`).
+- **Deeper answer**: Because `Memory&lt;T&gt;` refers to the owning heap object (such as an array, string, or `MemoryManager&lt;T&gt;`) rather than an ephemeral interior pointer directly on the stack, the GC can track the root object safely on the heap. Calling `.Span` performs the pointer calculation dynamically for stack-only usage.
+- **Practical example**:
+```csharp
+ReadOnlyMemory&lt;byte&gt; memory = new byte[1024]; // Safe on heap
+ReadOnlySpan&lt;byte&gt; span = memory.Span; // Safe on stack only
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-3">
+          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the purpose of the `in` parameter modifier and what is its performance trap?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `in` passes an argument by reference for read-only access. Its trap is hidden defensive copying when used with non-`readonly` structs.
+- **Deeper answer**: If a struct is not declared with the `readonly struct` modifier, the C# compiler cannot prove that accessing its properties or methods won&#x27;t mutate its internal state. Therefore, the compiler silently creates a temporary defensive copy on the stack before invoking any member, destroying any performance gain.
+- **Practical example**:
+```csharp
+public struct MutablePoint { public int X; public int GetX() =&gt; X; }
+public void Process(in MutablePoint p) { p.GetX(); /* Compiler inserts defensive copy! */ }
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-4">
+          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">When should you NOT use the `in` parameter modifier?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Do not use `in` for primitive types (e.g., `int`, `float`, `bool`) or small structs ($\le 16$ bytes).
+- **Deeper answer**: On 64-bit architectures, passing by reference requires pushing an 8-byte memory pointer onto the stack. Reading the value requires an extra pointer dereference. For types that fit in a 32-bit or 64-bit CPU register, passing by value is faster and avoids dereferencing overhead.
+- **Practical example**: Prefer `void Add(int a, int b)` over `void Add(in int a, in int b)`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-5">
+          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do `System.IO.Pipelines` leverage `ReadOnlySequence&lt;T&gt;` and `Memory&lt;T&gt;`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `System.IO.Pipelines` breaks network socket streams into linked segments of memory, exposing them as `ReadOnlySequence&lt;byte&gt;` without continuous heap reallocation.
+- **Deeper answer**: In high-throughput servers like Kestrel, incoming data arrives in variable-sized buffers. `ReadOnlySequence&lt;byte&gt;` can span multiple distinct memory blocks (`ReadOnlyMemory&lt;byte&gt;`). Code can parse contiguous chunks as `ReadOnlySpan&lt;byte&gt;` without reallocating a single monolithic array.
+- **Practical example**:
+```csharp
+ReadResult result = await pipeReader.ReadAsync();
+ReadOnlySequence&lt;byte&gt; buffer = result.Buffer;
+// Inspect buffer without copying
+pipeReader.AdvanceTo(buffer.Start, buffer.End);
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-6">
+          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">Can a `ref struct` implement an interface in modern C#?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Prior to C# 13, no. In C# 13 (.NET 9), ref structs can implement interfaces if the interface is constrained with `allows ref struct`.
+- **Deeper answer**: Historically, calling an interface method on a struct requires boxing it to the interface type, which is forbidden for `ref struct`. In C# 13, the anti-constraint `where T : allows ref struct` allows generic code and interfaces to work with ref structs without boxing.
+- **Practical example**: In C# 12 / .NET 8, `public ref struct MySpan : IDisposable` compiles only if `Dispose()` is implemented via duck-typing pattern (a public `void Dispose()` method) rather than explicit interface implementation.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-7">
+          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is `MemoryManager&lt;T&gt;` and when is it necessary in production?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: An abstract base class used to wrap custom or unmanaged memory (like native memory, memory-mapped files, or hardware buffers) inside a safe `Memory&lt;T&gt;`.
+- **Deeper answer**: When integrating with native C libraries or GPU/DMA buffers, you cannot wrap unmanaged memory into a standard `Memory&lt;T&gt;` directly. Subclassing `MemoryManager&lt;T&gt;` allows you to implement pinning, span retrieval, and custom disposal lifecycle while exposing idiomatic `Memory&lt;T&gt;` to downstream .NET code.
+- **Practical example**: Wrapping memory mapped files or native ring buffers in zero-copy messaging architectures.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-8">
+          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the difference between `ReadOnlySpan&lt;T&gt;.Slice()` and `ReadOnlyMemory&lt;T&gt;.Slice()`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Both perform $O(1)$ zero-allocation slicing by adjusting the offset and length, but `ReadOnlySpan&lt;T&gt;` produces a stack-only `ref struct`, while `ReadOnlyMemory&lt;T&gt;` produces a heap-safe struct.
+- **Deeper answer**: `Span.Slice()` adjusts the internal interior pointer `_reference + (offset * sizeof(T))` and decrements length. `Memory.Slice()` simply calculates `newIndex = _index + offset` and updates length, retaining the original root object reference.
+- **Practical example**: Slicing a 1MB payload into 100 individual records across asynchronous tasks requires `ReadOnlyMemory&lt;T&gt;.Slice()`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-9">
+          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Why is `stackalloc` dangerous if used without length validation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Unbounded `stackalloc` can cause a `StackOverflowException`, which terminates the process immediately and cannot be caught by a `try/catch` block.
+- **Deeper answer**: The execution stack is small (typically 1MB on Windows, 1.5MB on Linux/macOS). If user-supplied input dictates the size of `stackalloc char[userSize]`, a malicious or large payload will blow the stack, causing an unrecoverable crash (denial of service). Always guard with a threshold (e.g. $\le 256$ elements) and fallback to `ArrayPool&lt;T&gt;.Shared`.
+- **Practical example**:
+```csharp
+Span&lt;char&gt; buffer = size &lt;= 256 ? stackalloc char[size] : (rented = ArrayPool&lt;char&gt;.Shared.Rent(size));
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-10">
+          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does `ArrayPool&lt;T&gt;.Shared` interact with `Memory&lt;T&gt;` in async pipelines?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: You rent an array from the pool, wrap it in `Memory&lt;T&gt;`, slice it to the valid data length, process it asynchronously, and return the underlying array in a `finally` block.
+- **Deeper answer**: Because rented arrays may be larger than the requested size, `Memory&lt;T&gt;.Slice(0, actualBytes)` restricts consumer visibility to the valid portion. Returning the array prematurely before an `await` finishes will lead to race conditions where other threads overwrite active data.
+- **Practical example**:
+```csharp
+byte[] rented = ArrayPool&lt;byte&gt;.Shared.Rent(4096);
+try {
+    int read = await stream.ReadAsync(rented.AsMemory(0, 4096));
+    await ProcessDataAsync(rented.AsMemory(0, read));
+} finally {
+    ArrayPool&lt;byte&gt;.Shared.Return(rented);
+}
+```</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
 
     <div id="pane-source" class="tab-pane">
       
@@ -981,102 +1303,6 @@ Because it does not hold a raw unmanaged stack interior pointer, `Memory&lt;T&gt
 - **Valid Anagram**: A fixed-size array of 26 integers on the stack (`stackalloc int[26]`) tracks character delta counts in a single pass ($O(n)$ time, $O(1)$ memory).
 - **Group Anagrams**: Sorting each string ($O(K \log K)$) yields a canonical signature to bucket anagrams into a `Dictionary&lt;string, List&lt;string&gt;&gt;`.
 </script>
-  <script type="text/markdown" id="raw-interview"># Day 02 - Senior .NET Interview Questions: ref struct &amp; Memory&lt;T&gt;
-
-### Q1: Why can&#x27;t `Span&lt;T&gt;` be used across an `await` statement in C#?
-- **Short answer**: Because `Span&lt;T&gt;` is a `ref struct` that could point to stack memory; hoisting it into an async state machine on the managed heap could lead to stack tearing and memory corruption.
-- **Deeper answer**: When an async method pauses at an `await` that doesn&#x27;t complete synchronously, its state machine is preserved on the heap. If `Span&lt;T&gt;` were permitted in that state machine, its interior pointer would reference stack memory that is invalidated when the initial thread unwinds. The continuation could then execute on a different thread with an invalid pointer.
-- **Practical example**: Use `Memory&lt;T&gt;` or `ReadOnlyMemory&lt;T&gt;` to store buffer state across `await`, and access `.Span` only within synchronous code blocks between awaits.
-
----
-
-### Q2: What is the internal memory layout of `Memory&lt;T&gt;` compared to `Span&lt;T&gt;`?
-- **Short answer**: `Span&lt;T&gt;` contains a managed interior pointer (`ref T`) and length (`int`). `Memory&lt;T&gt;` contains an object reference (`object?`), starting offset (`int`), and length (`int`).
-- **Deeper answer**: Because `Memory&lt;T&gt;` refers to the owning heap object (such as an array, string, or `MemoryManager&lt;T&gt;`) rather than an ephemeral interior pointer directly on the stack, the GC can track the root object safely on the heap. Calling `.Span` performs the pointer calculation dynamically for stack-only usage.
-- **Practical example**:
-```csharp
-ReadOnlyMemory&lt;byte&gt; memory = new byte[1024]; // Safe on heap
-ReadOnlySpan&lt;byte&gt; span = memory.Span; // Safe on stack only
-```
-
----
-
-### Q3: What is the purpose of the `in` parameter modifier and what is its performance trap?
-- **Short answer**: `in` passes an argument by reference for read-only access. Its trap is hidden defensive copying when used with non-`readonly` structs.
-- **Deeper answer**: If a struct is not declared with the `readonly struct` modifier, the C# compiler cannot prove that accessing its properties or methods won&#x27;t mutate its internal state. Therefore, the compiler silently creates a temporary defensive copy on the stack before invoking any member, destroying any performance gain.
-- **Practical example**:
-```csharp
-public struct MutablePoint { public int X; public int GetX() =&gt; X; }
-public void Process(in MutablePoint p) { p.GetX(); /* Compiler inserts defensive copy! */ }
-```
-
----
-
-### Q4: When should you NOT use the `in` parameter modifier?
-- **Short answer**: Do not use `in` for primitive types (e.g., `int`, `float`, `bool`) or small structs ($\le 16$ bytes).
-- **Deeper answer**: On 64-bit architectures, passing by reference requires pushing an 8-byte memory pointer onto the stack. Reading the value requires an extra pointer dereference. For types that fit in a 32-bit or 64-bit CPU register, passing by value is faster and avoids dereferencing overhead.
-- **Practical example**: Prefer `void Add(int a, int b)` over `void Add(in int a, in int b)`.
-
----
-
-### Q5: How do `System.IO.Pipelines` leverage `ReadOnlySequence&lt;T&gt;` and `Memory&lt;T&gt;`?
-- **Short answer**: `System.IO.Pipelines` breaks network socket streams into linked segments of memory, exposing them as `ReadOnlySequence&lt;byte&gt;` without continuous heap reallocation.
-- **Deeper answer**: In high-throughput servers like Kestrel, incoming data arrives in variable-sized buffers. `ReadOnlySequence&lt;byte&gt;` can span multiple distinct memory blocks (`ReadOnlyMemory&lt;byte&gt;`). Code can parse contiguous chunks as `ReadOnlySpan&lt;byte&gt;` without reallocating a single monolithic array.
-- **Practical example**:
-```csharp
-ReadResult result = await pipeReader.ReadAsync();
-ReadOnlySequence&lt;byte&gt; buffer = result.Buffer;
-// Inspect buffer without copying
-pipeReader.AdvanceTo(buffer.Start, buffer.End);
-```
-
----
-
-### Q6: Can a `ref struct` implement an interface in modern C#?
-- **Short answer**: Prior to C# 13, no. In C# 13 (.NET 9), ref structs can implement interfaces if the interface is constrained with `allows ref struct`.
-- **Deeper answer**: Historically, calling an interface method on a struct requires boxing it to the interface type, which is forbidden for `ref struct`. In C# 13, the anti-constraint `where T : allows ref struct` allows generic code and interfaces to work with ref structs without boxing.
-- **Practical example**: In C# 12 / .NET 8, `public ref struct MySpan : IDisposable` compiles only if `Dispose()` is implemented via duck-typing pattern (a public `void Dispose()` method) rather than explicit interface implementation.
-
----
-
-### Q7: What is `MemoryManager&lt;T&gt;` and when is it necessary in production?
-- **Short answer**: An abstract base class used to wrap custom or unmanaged memory (like native memory, memory-mapped files, or hardware buffers) inside a safe `Memory&lt;T&gt;`.
-- **Deeper answer**: When integrating with native C libraries or GPU/DMA buffers, you cannot wrap unmanaged memory into a standard `Memory&lt;T&gt;` directly. Subclassing `MemoryManager&lt;T&gt;` allows you to implement pinning, span retrieval, and custom disposal lifecycle while exposing idiomatic `Memory&lt;T&gt;` to downstream .NET code.
-- **Practical example**: Wrapping memory mapped files or native ring buffers in zero-copy messaging architectures.
-
----
-
-### Q8: What is the difference between `ReadOnlySpan&lt;T&gt;.Slice()` and `ReadOnlyMemory&lt;T&gt;.Slice()`?
-- **Short answer**: Both perform $O(1)$ zero-allocation slicing by adjusting the offset and length, but `ReadOnlySpan&lt;T&gt;` produces a stack-only `ref struct`, while `ReadOnlyMemory&lt;T&gt;` produces a heap-safe struct.
-- **Deeper answer**: `Span.Slice()` adjusts the internal interior pointer `_reference + (offset * sizeof(T))` and decrements length. `Memory.Slice()` simply calculates `newIndex = _index + offset` and updates length, retaining the original root object reference.
-- **Practical example**: Slicing a 1MB payload into 100 individual records across asynchronous tasks requires `ReadOnlyMemory&lt;T&gt;.Slice()`.
-
----
-
-### Q9: Why is `stackalloc` dangerous if used without length validation?
-- **Short answer**: Unbounded `stackalloc` can cause a `StackOverflowException`, which terminates the process immediately and cannot be caught by a `try/catch` block.
-- **Deeper answer**: The execution stack is small (typically 1MB on Windows, 1.5MB on Linux/macOS). If user-supplied input dictates the size of `stackalloc char[userSize]`, a malicious or large payload will blow the stack, causing an unrecoverable crash (denial of service). Always guard with a threshold (e.g. $\le 256$ elements) and fallback to `ArrayPool&lt;T&gt;.Shared`.
-- **Practical example**:
-```csharp
-Span&lt;char&gt; buffer = size &lt;= 256 ? stackalloc char[size] : (rented = ArrayPool&lt;char&gt;.Shared.Rent(size));
-```
-
----
-
-### Q10: How does `ArrayPool&lt;T&gt;.Shared` interact with `Memory&lt;T&gt;` in async pipelines?
-- **Short answer**: You rent an array from the pool, wrap it in `Memory&lt;T&gt;`, slice it to the valid data length, process it asynchronously, and return the underlying array in a `finally` block.
-- **Deeper answer**: Because rented arrays may be larger than the requested size, `Memory&lt;T&gt;.Slice(0, actualBytes)` restricts consumer visibility to the valid portion. Returning the array prematurely before an `await` finishes will lead to race conditions where other threads overwrite active data.
-- **Practical example**:
-```csharp
-byte[] rented = ArrayPool&lt;byte&gt;.Shared.Rent(4096);
-try {
-    int read = await stream.ReadAsync(rented.AsMemory(0, 4096));
-    await ProcessDataAsync(rented.AsMemory(0, read));
-} finally {
-    ArrayPool&lt;byte&gt;.Shared.Return(rented);
-}
-```
-</script>
 
   <script>
     // Tab switching
@@ -1089,6 +1315,19 @@ try {
 
       const pane = document.getElementById('pane-' + tabId);
       if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion
+    function toggleQa(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    }
+
+    function toggleAllQa(open) {
+      document.querySelectorAll('.qa-card').forEach(c => {
+        if (open) c.classList.add('open');
+        else c.classList.remove('open');
+      });
     }
 
     // Copy to clipboard
@@ -1118,11 +1357,10 @@ try {
           const nTarget = document.getElementById('notes-container');
           if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
         }
-        const iEl = document.getElementById('raw-interview');
-        if (iEl) {
-          const iTarget = document.getElementById('interview-container');
-          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
-        }
+        // Render inner QA contents
+        document.querySelectorAll('.raw-qa-content').forEach(el => {
+          el.innerHTML = marked.parse(el.textContent);
+        });
       }
       if (window.Prism) {
         Prism.highlightAll();

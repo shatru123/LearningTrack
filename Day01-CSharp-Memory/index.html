@@ -143,6 +143,27 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
@@ -248,6 +269,65 @@
       margin-bottom: 16px;
       color: #e2e8f0;
     }
+    /* QA Accordion Cards */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    .qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    .qa-card.open .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .qa-card.open .qa-body {
+      display: block;
+    }
+    /* Code Viewer Styles */
     .file-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -340,10 +420,55 @@
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
     </div>
 
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="gradStack" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="gradHeap" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="gradSpan" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#818cf8"/></linearGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="3" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">C# Memory Model: Stack vs Heap & Span&lt;T&gt; Zero-Allocation Slicing</text>
+          
+          <!-- Stack Frame -->
+          <rect x="50" y="60" width="340" height="260" rx="10" fill="url(#gradStack)" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="70" y="90" fill="#60a5fa" font-size="15" font-weight="bold">THREAD STACK FRAME</text>
+          <rect x="70" y="110" width="300" height="70" rx="6" fill="#1e293b" stroke="#475569"/>
+          <text x="85" y="135" fill="#f8fafc" font-size="13" font-weight="bold">Local ref struct: Span&lt;char&gt;</text>
+          <text x="85" y="155" fill="#94a3b8" font-size="11">ref T _pointer (8-byte pointer) | int _length: 6</text>
+          <text x="85" y="170" fill="#38bdf8" font-size="11">Stack allocated • Cannot escape frame</text>
+
+          <rect x="70" y="200" width="300" height="90" rx="6" fill="#1e293b" stroke="#475569"/>
+          <text x="85" y="225" fill="#f8fafc" font-size="13" font-weight="bold">Primitive Value Types</text>
+          <text x="85" y="248" fill="#94a3b8" font-size="12">int count = 42 (4 bytes)</text>
+          <text x="85" y="268" fill="#94a3b8" font-size="12">double price = 99.99 (8 bytes)</text>
+
+          <!-- Managed Heap -->
+          <rect x="510" y="60" width="340" height="260" rx="10" fill="url(#gradHeap)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="530" y="90" fill="#34d399" font-size="15" font-weight="bold">MANAGED HEAP (GC)</text>
+          <rect x="530" y="110" width="300" height="180" rx="6" fill="#1e293b" stroke="#475569"/>
+          <text x="545" y="135" fill="#f8fafc" font-size="13" font-weight="bold">Heap Object: System.String</text>
+          <rect x="545" y="145" width="270" height="24" rx="4" fill="#0f172a"/><text x="555" y="161" fill="#cbd5e1" font-size="11">SyncBlock Index (8 bytes)</text>
+          <rect x="545" y="175" width="270" height="24" rx="4" fill="#0f172a"/><text x="555" y="191" fill="#cbd5e1" font-size="11">MethodTable Pointer (8 bytes)</text>
+          <rect x="545" y="205" width="270" height="24" rx="4" fill="#0f172a"/><text x="555" y="221" fill="#cbd5e1" font-size="11">String Length (4 bytes) = 11</text>
+          <rect x="545" y="235" width="270" height="40" rx="4" fill="#1e3a8a" stroke="#38bdf8"/><text x="555" y="260" fill="#38bdf8" font-size="13" font-weight="bold">"OrderPlaced" (UTF-16 buffer)</text>
+
+          <!-- Pointer Arrow -->
+          <path d="M 370 145 C 440 145, 460 255, 540 255" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="6,4" filter="url(#glow)"/>
+          <polygon points="545,255 535,250 535,260" fill="#38bdf8"/>
+          <text x="445" y="190" fill="#38bdf8" font-size="12" font-weight="bold" text-anchor="middle">Zero-Copy Interior Pointer</text>
+        </svg>
+        
+    </div>
+
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
       <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
-      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (2 files)</button>
     </div>
@@ -355,16 +480,225 @@
       </div>
     </div>
 
-    
-            <div id="pane-notes" class="tab-pane">
-              <div class="markdown-content" id="notes-container"></div>
+    <div id="pane-notes" class="tab-pane">
+      <div class="markdown-content" id="notes-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <div class="qa-card open" id="qa-card-1">
+          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Do all value types live on the stack in C#?</span>
             </div>
-            
-    
-            <div id="pane-interview" class="tab-pane">
-              <div class="markdown-content" id="interview-container"></div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: No. Value types live wherever their declaring container lives.
+- **Deeper answer**: A value type declared as a local variable lives on the stack. If declared as an instance field of a class, it lives on the managed heap inside that class object. If declared in an array, it lives in the array&#x27;s heap allocation. If boxed or captured in a lambda closure, it lives on the heap.
+- **Practical example**:
+```csharp
+public class Order { public int OrderId; } // OrderId (int) lives on the heap inside Order instance!
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card open" id="qa-card-2">
+          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is `Span&lt;T&gt;` and what problem does it solve in high-throughput systems?</span>
             </div>
-            
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `Span&lt;T&gt;` is a `ref struct` representing a contiguous region of arbitrary memory, providing type-safe, bounds-checked, zero-allocation slicing.
+- **Deeper answer**: Traditional string and array slicing in .NET creates new array or string objects on the heap. `Span&lt;T&gt;` encapsulates a managed interior pointer (`ref T`) and a length (`int`). It enables zero-copy operations over managed arrays, native unmanaged pointers (`stackalloc`, `NativeMemory`), and string character buffers without triggering GC allocations.
+- **Practical example**:
+```csharp
+ReadOnlySpan&lt;char&gt; slice = rawPayload.AsSpan().Slice(0, 10); // 0 bytes allocated
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-3">
+          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why is `Span&lt;T&gt;` declared as a `ref struct` instead of a regular struct?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: To prevent its interior pointer from escaping the execution stack and pointing to invalid or collected memory.
+- **Deeper answer**: Because `Span&lt;T&gt;` can point to a thread&#x27;s stack memory (e.g. from `stackalloc`), if it could be placed on the heap (inside a class field, boxed, or passed across an `await` boundary), the stack frame could unwind while the heap reference still exists, leading to undefined behavior, memory corruption, and security vulnerabilities.
+- **Practical example**: The C# compiler rejects `class CacheItem { public Span&lt;byte&gt; Data; }` with compile error CS8345.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-4">
+          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is the difference between `Span&lt;T&gt;` and `ReadOnlySpan&lt;T&gt;`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `Span&lt;T&gt;` provides read/write access to mutable memory, whereas `ReadOnlySpan&lt;T&gt;` enforces read-only access and can view immutable memory like `System.String`.
+- **Deeper answer**: C# strings are immutable. You cannot create a mutable `Span&lt;char&gt;` directly over a `string` without unsafe memory manipulation. `ReadOnlySpan&lt;char&gt;` can safely view a `string`&#x27;s internal buffer (`str.AsSpan()`) without copying.
+- **Practical example**:
+```csharp
+string text = &quot;OrderPlaced&quot;;
+ReadOnlySpan&lt;char&gt; readOnly = text.AsSpan(); // Valid zero-allocation view
+// Span&lt;char&gt; mutable = text.AsSpan(); // Compile Error!
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-5">
+          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How does boxing impact memory and GC performance in production?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Boxing converts a value type to a reference type, forcing a heap allocation and adding a TypeHandle and SyncBlockIndex header (typically 16–24 bytes overhead).
+- **Deeper answer**: In tight loops or high-frequency message processing, boxing thousands of value types creates immense Generation 0 garbage collection pressure. It also breaks CPU cache locality because data must be dereferenced through a heap pointer instead of read directly from stack or contiguous memory.
+- **Practical example**:
+```csharp
+int count = 42;
+object boxed = count; // Allocates 24 bytes on 64-bit CLR (8-byte header + 8-byte method table + 8-byte payload)
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-6">
+          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">Can a `Span&lt;T&gt;` be passed across an `await` expression in an async method? Why or why not?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: No. The compiler prohibits `ref struct` types across `await` expressions.
+- **Deeper answer**: The C# compiler transforms `async` methods into an `IAsyncStateMachine`. Any local variable that survives an `await` is hoisted into a field of the state machine. If the state machine is boxed onto the heap when an operation goes asynchronous, storing a `ref struct` inside it would violate the stack-only guarantee.
+- **Practical example**: Use `Memory&lt;T&gt;` or `ReadOnlyMemory&lt;T&gt;` instead of `Span&lt;T&gt;` when data must survive across `await` expressions.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-7">
+          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is the difference between `stackalloc` and `ArrayPool&lt;T&gt;.Shared.Rent()`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `stackalloc` allocates memory on the current execution stack frame; `ArrayPool` rents a reusable buffer from the heap.
+- **Deeper answer**: `stackalloc` is instant (pointer bump) and has zero GC cost, but risks `StackOverflowException` if the buffer is large or unbounded. `ArrayPool&lt;T&gt;` is safe for large or dynamic buffers, avoids GC allocations by recycling arrays, but requires careful return (`Dispose` / `Return`) to avoid pool starvation or memory leaks.
+- **Practical example**:
+```csharp
+Span&lt;char&gt; smallBuffer = stackalloc char[128]; // Safe for small, known sizes
+char[] rented = ArrayPool&lt;char&gt;.Shared.Rent(4096); // Preferred for larger buffers
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-8">
+          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is interior pointer tracking in the .NET Garbage Collector?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: The GC&#x27;s ability to track and update references that point inside an object rather than to the beginning of the object.
+- **Deeper answer**: `Span&lt;T&gt;` uses a managed reference (`ref T`) which can point to the middle of an array or pinned buffer. During GC compaction and relocation, the GC detects interior pointers and updates them accurately relative to the new base address of the moved object.
+- **Practical example**: Slicing an array `int[] arr = new int[100]; Span&lt;int&gt; slice = arr.AsSpan(50, 10);` creates an interior pointer to `arr[50]`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-9">
+          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How does `string.Create` utilize `Span&lt;T&gt;` for zero-allocation string construction?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: It allocates the exact target string on the heap once and exposes its uninitialized buffer as a `Span&lt;char&gt;` to a callback delegate.
+- **Deeper answer**: Traditionally, building strings without fixed concatenation required `StringBuilder` or multiple intermediate strings. `string.Create(length, state, (span, state) =&gt; ...)` lets developers populate the newly allocated string buffer in-place using fast Span operations before the string reference is published as immutable.
+- **Practical example**:
+```csharp
+string id = string.Create(8, 1234, (span, val) =&gt; {
+    val.TryFormat(span, out _);
+});
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-10">
+          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you choose between `struct` and `class` when designing domain entities?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Use `class` for entities with identity, lifecycle, or large size (&gt;16–24 bytes). Use `struct` for small, immutable, identity-free values that behave like mathematical primitives.
+- **Deeper answer**: Passing large structs by value copies their entire byte footprint on every method call, causing CPU cache and memory copying overhead that exceeds reference passing overhead. Structs should typically be immutable (`readonly struct`), small, and avoid holding reference-type fields that complicate GC tracking.
+- **Practical example**: `Money(decimal Amount, string Currency)` is a good candidate for `readonly record struct`, whereas `Order` with collections and lifecycle events is a `class`.</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
 
     <div id="pane-source" class="tab-pane">
       
@@ -1027,100 +1361,6 @@ Zero intermediate string allocations. Primitives are parsed directly from memory
 - **Two Sum**: Using a complement lookup in `Dictionary&lt;int, int&gt;` yields single-pass $O(n)$ time complexity vs $O(n^2)$ brute force.
 - **Contains Duplicate**: `HashSet&lt;T&gt;.Add()` returns `false` if the item already exists, allowing immediate early exit without double lookups.
 </script>
-  <script type="text/markdown" id="raw-interview"># Day 01 - Senior .NET Interview Questions: C# Memory &amp; Span
-
-### Q1: Do all value types live on the stack in C#?
-- **Short answer**: No. Value types live wherever their declaring container lives.
-- **Deeper answer**: A value type declared as a local variable lives on the stack. If declared as an instance field of a class, it lives on the managed heap inside that class object. If declared in an array, it lives in the array&#x27;s heap allocation. If boxed or captured in a lambda closure, it lives on the heap.
-- **Practical example**:
-```csharp
-public class Order { public int OrderId; } // OrderId (int) lives on the heap inside Order instance!
-```
-
----
-
-### Q2: What is `Span&lt;T&gt;` and what problem does it solve in high-throughput systems?
-- **Short answer**: `Span&lt;T&gt;` is a `ref struct` representing a contiguous region of arbitrary memory, providing type-safe, bounds-checked, zero-allocation slicing.
-- **Deeper answer**: Traditional string and array slicing in .NET creates new array or string objects on the heap. `Span&lt;T&gt;` encapsulates a managed interior pointer (`ref T`) and a length (`int`). It enables zero-copy operations over managed arrays, native unmanaged pointers (`stackalloc`, `NativeMemory`), and string character buffers without triggering GC allocations.
-- **Practical example**:
-```csharp
-ReadOnlySpan&lt;char&gt; slice = rawPayload.AsSpan().Slice(0, 10); // 0 bytes allocated
-```
-
----
-
-### Q3: Why is `Span&lt;T&gt;` declared as a `ref struct` instead of a regular struct?
-- **Short answer**: To prevent its interior pointer from escaping the execution stack and pointing to invalid or collected memory.
-- **Deeper answer**: Because `Span&lt;T&gt;` can point to a thread&#x27;s stack memory (e.g. from `stackalloc`), if it could be placed on the heap (inside a class field, boxed, or passed across an `await` boundary), the stack frame could unwind while the heap reference still exists, leading to undefined behavior, memory corruption, and security vulnerabilities.
-- **Practical example**: The C# compiler rejects `class CacheItem { public Span&lt;byte&gt; Data; }` with compile error CS8345.
-
----
-
-### Q4: What is the difference between `Span&lt;T&gt;` and `ReadOnlySpan&lt;T&gt;`?
-- **Short answer**: `Span&lt;T&gt;` provides read/write access to mutable memory, whereas `ReadOnlySpan&lt;T&gt;` enforces read-only access and can view immutable memory like `System.String`.
-- **Deeper answer**: C# strings are immutable. You cannot create a mutable `Span&lt;char&gt;` directly over a `string` without unsafe memory manipulation. `ReadOnlySpan&lt;char&gt;` can safely view a `string`&#x27;s internal buffer (`str.AsSpan()`) without copying.
-- **Practical example**:
-```csharp
-string text = &quot;OrderPlaced&quot;;
-ReadOnlySpan&lt;char&gt; readOnly = text.AsSpan(); // Valid zero-allocation view
-// Span&lt;char&gt; mutable = text.AsSpan(); // Compile Error!
-```
-
----
-
-### Q5: How does boxing impact memory and GC performance in production?
-- **Short answer**: Boxing converts a value type to a reference type, forcing a heap allocation and adding a TypeHandle and SyncBlockIndex header (typically 16–24 bytes overhead).
-- **Deeper answer**: In tight loops or high-frequency message processing, boxing thousands of value types creates immense Generation 0 garbage collection pressure. It also breaks CPU cache locality because data must be dereferenced through a heap pointer instead of read directly from stack or contiguous memory.
-- **Practical example**:
-```csharp
-int count = 42;
-object boxed = count; // Allocates 24 bytes on 64-bit CLR (8-byte header + 8-byte method table + 8-byte payload)
-```
-
----
-
-### Q6: Can a `Span&lt;T&gt;` be passed across an `await` expression in an async method? Why or why not?
-- **Short answer**: No. The compiler prohibits `ref struct` types across `await` expressions.
-- **Deeper answer**: The C# compiler transforms `async` methods into an `IAsyncStateMachine`. Any local variable that survives an `await` is hoisted into a field of the state machine. If the state machine is boxed onto the heap when an operation goes asynchronous, storing a `ref struct` inside it would violate the stack-only guarantee.
-- **Practical example**: Use `Memory&lt;T&gt;` or `ReadOnlyMemory&lt;T&gt;` instead of `Span&lt;T&gt;` when data must survive across `await` expressions.
-
----
-
-### Q7: What is the difference between `stackalloc` and `ArrayPool&lt;T&gt;.Shared.Rent()`?
-- **Short answer**: `stackalloc` allocates memory on the current execution stack frame; `ArrayPool` rents a reusable buffer from the heap.
-- **Deeper answer**: `stackalloc` is instant (pointer bump) and has zero GC cost, but risks `StackOverflowException` if the buffer is large or unbounded. `ArrayPool&lt;T&gt;` is safe for large or dynamic buffers, avoids GC allocations by recycling arrays, but requires careful return (`Dispose` / `Return`) to avoid pool starvation or memory leaks.
-- **Practical example**:
-```csharp
-Span&lt;char&gt; smallBuffer = stackalloc char[128]; // Safe for small, known sizes
-char[] rented = ArrayPool&lt;char&gt;.Shared.Rent(4096); // Preferred for larger buffers
-```
-
----
-
-### Q8: What is interior pointer tracking in the .NET Garbage Collector?
-- **Short answer**: The GC&#x27;s ability to track and update references that point inside an object rather than to the beginning of the object.
-- **Deeper answer**: `Span&lt;T&gt;` uses a managed reference (`ref T`) which can point to the middle of an array or pinned buffer. During GC compaction and relocation, the GC detects interior pointers and updates them accurately relative to the new base address of the moved object.
-- **Practical example**: Slicing an array `int[] arr = new int[100]; Span&lt;int&gt; slice = arr.AsSpan(50, 10);` creates an interior pointer to `arr[50]`.
-
----
-
-### Q9: How does `string.Create` utilize `Span&lt;T&gt;` for zero-allocation string construction?
-- **Short answer**: It allocates the exact target string on the heap once and exposes its uninitialized buffer as a `Span&lt;char&gt;` to a callback delegate.
-- **Deeper answer**: Traditionally, building strings without fixed concatenation required `StringBuilder` or multiple intermediate strings. `string.Create(length, state, (span, state) =&gt; ...)` lets developers populate the newly allocated string buffer in-place using fast Span operations before the string reference is published as immutable.
-- **Practical example**:
-```csharp
-string id = string.Create(8, 1234, (span, val) =&gt; {
-    val.TryFormat(span, out _);
-});
-```
-
----
-
-### Q10: How do you choose between `struct` and `class` when designing domain entities?
-- **Short answer**: Use `class` for entities with identity, lifecycle, or large size (&gt;16–24 bytes). Use `struct` for small, immutable, identity-free values that behave like mathematical primitives.
-- **Deeper answer**: Passing large structs by value copies their entire byte footprint on every method call, causing CPU cache and memory copying overhead that exceeds reference passing overhead. Structs should typically be immutable (`readonly struct`), small, and avoid holding reference-type fields that complicate GC tracking.
-- **Practical example**: `Money(decimal Amount, string Currency)` is a good candidate for `readonly record struct`, whereas `Order` with collections and lifecycle events is a `class`.
-</script>
 
   <script>
     // Tab switching
@@ -1133,6 +1373,19 @@ string id = string.Create(8, 1234, (span, val) =&gt; {
 
       const pane = document.getElementById('pane-' + tabId);
       if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion
+    function toggleQa(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    }
+
+    function toggleAllQa(open) {
+      document.querySelectorAll('.qa-card').forEach(c => {
+        if (open) c.classList.add('open');
+        else c.classList.remove('open');
+      });
     }
 
     // Copy to clipboard
@@ -1162,11 +1415,10 @@ string id = string.Create(8, 1234, (span, val) =&gt; {
           const nTarget = document.getElementById('notes-container');
           if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
         }
-        const iEl = document.getElementById('raw-interview');
-        if (iEl) {
-          const iTarget = document.getElementById('interview-container');
-          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
-        }
+        // Render inner QA contents
+        document.querySelectorAll('.raw-qa-content').forEach(el => {
+          el.innerHTML = marked.parse(el.textContent);
+        });
       }
       if (window.Prism) {
         Prism.highlightAll();

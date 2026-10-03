@@ -143,6 +143,27 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
@@ -248,6 +269,65 @@
       margin-bottom: 16px;
       color: #e2e8f0;
     }
+    /* QA Accordion Cards */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    .qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    .qa-card.open .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .qa-card.open .qa-body {
+      display: block;
+    }
+    /* Code Viewer Styles */
     .file-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -340,10 +420,42 @@
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
     </div>
 
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Dependency Injection: Service Lifetimes &amp; Captive Dependency Danger</text>
+          
+          <rect x="50" y="65" width="230" height="250" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="70" y="95" fill="#60a5fa" font-size="14" font-weight="bold">TRANSIENT</text>
+          <text x="70" y="125" fill="#cbd5e1" font-size="11">Created every time resolved</text>
+          <text x="70" y="150" fill="#94a3b8" font-size="11">Lightweight, stateless</text>
+
+          <rect x="310" y="65" width="230" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="330" y="95" fill="#34d399" font-size="14" font-weight="bold">SCOPED</text>
+          <text x="330" y="125" fill="#cbd5e1" font-size="11">1 instance per HTTP request</text>
+          <text x="330" y="150" fill="#94a3b8" font-size="11">DbContext, Unit of Work</text>
+
+          <rect x="570" y="65" width="280" height="250" rx="8" fill="#1e293b" stroke="#f59e0b"/>
+          <text x="590" y="95" fill="#fbbf24" font-size="14" font-weight="bold">SINGLETON</text>
+          <text x="590" y="125" fill="#cbd5e1" font-size="11">1 instance per application lifecycle</text>
+          
+          <rect x="590" y="150" width="240" height="145" rx="6" fill="#450a0a" stroke="#ef4444"/>
+          <text x="605" y="175" fill="#f87171" font-size="12" font-weight="bold">⚠️ Captive Dependency</text>
+          <text x="605" y="195" fill="#fca5a5" font-size="10">Singleton injects Scoped service</text>
+          <text x="605" y="215" fill="#fca5a5" font-size="10">➔ Scoped service captured forever!</text>
+          <text x="605" y="235" fill="#fca5a5" font-size="10">➔ Stale DbContext &amp; Memory Leaks</text>
+          <text x="605" y="265" fill="#6ee7b7" font-size="10">Fix: Use IServiceScopeFactory</text>
+        </svg>
+        
+    </div>
+
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
       <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
-      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (2 files)</button>
     </div>
@@ -355,16 +467,215 @@
       </div>
     </div>
 
-    
-            <div id="pane-notes" class="tab-pane">
-              <div class="markdown-content" id="notes-container"></div>
+    <div id="pane-notes" class="tab-pane">
+      <div class="markdown-content" id="notes-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <div class="qa-card open" id="qa-card-1">
+          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is a Captive Dependency in .NET and how does it manifest in production?</span>
             </div>
-            
-    
-            <div id="pane-interview" class="tab-pane">
-              <div class="markdown-content" id="interview-container"></div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: A captive dependency occurs when a service with a longer lifetime (e.g. Singleton) injects a service with a shorter lifetime (e.g. Scoped).
+- **Deeper answer**: Because the singleton survives for the lifetime of the application, the scoped dependency it holds is never disposed and is effectively promoted to a singleton. If that scoped dependency is stateful or non-thread-safe (such as EF Core `DbContext`), concurrent requests access the same instance simultaneously, resulting in multi-threading crashes, stale data, and memory leaks.
+- **Practical example**: Injecting `DbContext` into a `BackgroundService` constructor causes `InvalidOperationException: A second operation was started on this context instance before a previous operation completed`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card open" id="qa-card-2">
+          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How do `ValidateScopes` and `ValidateOnBuild` differ in `ServiceProviderOptions`?</span>
             </div>
-            
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `ValidateScopes` checks that singletons do not directly or indirectly consume scoped services. `ValidateOnBuild` verifies that all registered services can be created at container build time.
+- **Deeper answer**: `ValidateScopes = true` intercepts service resolution calls (or build-time call sites) and throws an exception if a scoped service is requested from the root provider or from a singleton. `ValidateOnBuild = true` eagerly iterates through all registered service descriptors at startup, verifying that all constructors can be resolved, detecting circular dependencies or missing registrations before the first request arrives.
+- **Practical example**:
+```csharp
+var provider = services.BuildServiceProvider(new ServiceProviderOptions {
+    ValidateScopes = true,
+    ValidateOnBuild = true
+});
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-3">
+          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why is `IServiceProvider` considered a Service Locator anti-pattern when injected into business logic?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: It hides class dependencies, makes unit testing difficult, and bypasses compile-time dependency verification.
+- **Deeper answer**: When a class takes `IServiceProvider` and calls `provider.GetRequiredService&lt;T&gt;()` internally, consumers cannot determine what dependencies the class actually requires without reading its internal code. Constructor injection explicitly advertises dependencies in the class contract, facilitating easy mocking with Moq or NSubstitute.
+- **Practical example**: Injected `IServiceProvider` makes `new OrderProcessor(provider)` opaque, whereas `new OrderProcessor(IRepository repo, IPaymentGateway payment)` is explicit and testable.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-4">
+          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">When is Transient lifetime preferred over Scoped?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: For small, lightweight, stateless helper services that do not need to share state within a single HTTP request.
+- **Deeper answer**: Transient services are created every time they are requested. If multiple services within the same request need independent instances that do not interfere with each other or if the class is completely stateless (e.g. calculation utilities, builders), Transient avoids keeping references inside the request scope list until scope disposal.
+- **Practical example**: Custom validation rules, mathematical processors, or lightweight formatting components.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-5">
+          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What happens to `IDisposable` and `IAsyncDisposable` instances created by the DI container?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: The DI container retains a reference to every disposable instance it creates and disposes them when the owning scope is disposed.
+- **Deeper answer**: If a Transient service implements `IDisposable`, the container tracks it in its internal disposal list. If hundreds of transient disposable objects are resolved within a long-running scope (or the root container), they are not garbage collected until that scope is disposed, causing unexpected memory retention.
+- **Practical example**: Resolving thousands of transient `IDisposable` objects in a loop from a single scope causes memory accumulation until the loop finishes and the scope is disposed.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-6">
+          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you safely consume a Scoped service inside a Singleton or Hosted Service?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Inject `IServiceScopeFactory`, call `CreateScope()`, resolve the scoped service from `scope.ServiceProvider`, and dispose the scope when finished.
+- **Deeper answer**: The scope factory creates a child `IServiceProvider` with its own isolated scope cache. When `scope.Dispose()` is called (typically via a `using` statement), all scoped services created within that scope are cleanly disposed, ensuring no memory leaks and zero cross-thread state sharing.
+- **Practical example**:
+```csharp
+using var scope = _scopeFactory.CreateScope();
+var db = scope.ServiceProvider.GetRequiredService&lt;AppDbContext&gt;();
+await db.SaveChangesAsync();
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-7">
+          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Can a Scoped service inject a Transient service? What about a Singleton injecting a Transient service?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: A Scoped service can inject a Transient service safely. A Singleton injecting a Transient service will turn that Transient into a singleton!
+- **Deeper answer**: When a Singleton injects a Transient service, that Transient is instantiated once when the Singleton is created and held for the application lifetime. If the Transient service assumed it would be created fresh every time or is not thread-safe, bugs will occur.
+- **Practical example**: Injecting a non-thread-safe transient serializer into a singleton API gateway client.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-8">
+          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What are Keyed Services introduced in .NET 8?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: A native feature in `Microsoft.Extensions.DependencyInjection` allowing registration and resolution of dependencies by key/name without third-party containers.
+- **Deeper answer**: Prior to .NET 8, resolving different implementations of an interface (e.g., `AzureBlobStorage` vs `AmazonS3Storage` for `IStorageService`) required custom factories or libraries like Autofac. .NET 8 allows `services.AddKeyedSingleton&lt;IStorageService, S3Storage&gt;(&quot;s3&quot;)` and injection via `[FromKeyedServices(&quot;s3&quot;)] IStorageService storage`.
+- **Practical example**:
+```csharp
+app.MapGet(&quot;/download&quot;, ([FromKeyedServices(&quot;s3&quot;)] IStorageService storage) =&gt; ...);
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-9">
+          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How does ASP.NET Core manage the request scope lifetime?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Kestrel / the host creates a new `IServiceScope` via `IServiceScopeFactory` at the beginning of each HTTP request and disposes it at the end of the request.
+- **Deeper answer**: In `HttpProtocol.ProcessRequestsAsync()`, the server creates a request scope and assigns `HttpContext.RequestServices = scope.ServiceProvider`. When the HTTP response pipeline completes and the response body is flushed, the scope is disposed, triggering `Dispose()` on all scoped services and any transient disposable services created during that request.
+- **Practical example**: All controllers and minimal API handlers resolve dependencies directly from `HttpContext.RequestServices`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-10">
+          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">Why should you avoid resolving services from `app.Services` (Root Provider) in HTTP handlers?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Resolving scoped services from `app.Services` bypasses the HTTP request scope, which throws an exception if `ValidateScopes` is enabled, or resolves un-scoped instances that never get disposed.
+- **Deeper answer**: `app.Services` is the root container. If you resolve a scoped service from the root container, it will either throw `InvalidOperationException` (if scope validation is on) or become rooted in the root container&#x27;s disposal list, living forever and acting as an accidental singleton. Always resolve from `HttpContext.RequestServices`.
+- **Practical example**: Use `context.RequestServices.GetRequiredService&lt;T&gt;()` instead of `builder.Services.BuildServiceProvider().GetRequiredService&lt;T&gt;()`.</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
 
     <div id="pane-source" class="tab-pane">
       
@@ -991,90 +1302,6 @@ This forces the container to verify all singleton call sites at startup and fail
 - **3Sum**: Sort the array ($O(n \log n)$). Fix element $i$, then use two pointers ($left, right$) to find pairs summing to $-nums[i]$. Skipping duplicate adjacent values prevents duplicate triplets ($O(n^2)$ time, $O(1)$ space).
 - **Container With Most Water**: Two pointers at extremes ($0$ and $n-1$). Area is $(right - left) \times \min(h_l, h_r)$. Always advance the pointer pointing to the shorter line because keeping the shorter line cannot yield a larger area with a smaller width ($O(n)$ time, $O(1)$ space).
 </script>
-  <script type="text/markdown" id="raw-interview"># Day 06 - Senior .NET Interview Questions: Dependency Injection &amp; Lifetimes
-
-### Q1: What is a Captive Dependency in .NET and how does it manifest in production?
-- **Short answer**: A captive dependency occurs when a service with a longer lifetime (e.g. Singleton) injects a service with a shorter lifetime (e.g. Scoped).
-- **Deeper answer**: Because the singleton survives for the lifetime of the application, the scoped dependency it holds is never disposed and is effectively promoted to a singleton. If that scoped dependency is stateful or non-thread-safe (such as EF Core `DbContext`), concurrent requests access the same instance simultaneously, resulting in multi-threading crashes, stale data, and memory leaks.
-- **Practical example**: Injecting `DbContext` into a `BackgroundService` constructor causes `InvalidOperationException: A second operation was started on this context instance before a previous operation completed`.
-
----
-
-### Q2: How do `ValidateScopes` and `ValidateOnBuild` differ in `ServiceProviderOptions`?
-- **Short answer**: `ValidateScopes` checks that singletons do not directly or indirectly consume scoped services. `ValidateOnBuild` verifies that all registered services can be created at container build time.
-- **Deeper answer**: `ValidateScopes = true` intercepts service resolution calls (or build-time call sites) and throws an exception if a scoped service is requested from the root provider or from a singleton. `ValidateOnBuild = true` eagerly iterates through all registered service descriptors at startup, verifying that all constructors can be resolved, detecting circular dependencies or missing registrations before the first request arrives.
-- **Practical example**:
-```csharp
-var provider = services.BuildServiceProvider(new ServiceProviderOptions {
-    ValidateScopes = true,
-    ValidateOnBuild = true
-});
-```
-
----
-
-### Q3: Why is `IServiceProvider` considered a Service Locator anti-pattern when injected into business logic?
-- **Short answer**: It hides class dependencies, makes unit testing difficult, and bypasses compile-time dependency verification.
-- **Deeper answer**: When a class takes `IServiceProvider` and calls `provider.GetRequiredService&lt;T&gt;()` internally, consumers cannot determine what dependencies the class actually requires without reading its internal code. Constructor injection explicitly advertises dependencies in the class contract, facilitating easy mocking with Moq or NSubstitute.
-- **Practical example**: Injected `IServiceProvider` makes `new OrderProcessor(provider)` opaque, whereas `new OrderProcessor(IRepository repo, IPaymentGateway payment)` is explicit and testable.
-
----
-
-### Q4: When is Transient lifetime preferred over Scoped?
-- **Short answer**: For small, lightweight, stateless helper services that do not need to share state within a single HTTP request.
-- **Deeper answer**: Transient services are created every time they are requested. If multiple services within the same request need independent instances that do not interfere with each other or if the class is completely stateless (e.g. calculation utilities, builders), Transient avoids keeping references inside the request scope list until scope disposal.
-- **Practical example**: Custom validation rules, mathematical processors, or lightweight formatting components.
-
----
-
-### Q5: What happens to `IDisposable` and `IAsyncDisposable` instances created by the DI container?
-- **Short answer**: The DI container retains a reference to every disposable instance it creates and disposes them when the owning scope is disposed.
-- **Deeper answer**: If a Transient service implements `IDisposable`, the container tracks it in its internal disposal list. If hundreds of transient disposable objects are resolved within a long-running scope (or the root container), they are not garbage collected until that scope is disposed, causing unexpected memory retention.
-- **Practical example**: Resolving thousands of transient `IDisposable` objects in a loop from a single scope causes memory accumulation until the loop finishes and the scope is disposed.
-
----
-
-### Q6: How do you safely consume a Scoped service inside a Singleton or Hosted Service?
-- **Short answer**: Inject `IServiceScopeFactory`, call `CreateScope()`, resolve the scoped service from `scope.ServiceProvider`, and dispose the scope when finished.
-- **Deeper answer**: The scope factory creates a child `IServiceProvider` with its own isolated scope cache. When `scope.Dispose()` is called (typically via a `using` statement), all scoped services created within that scope are cleanly disposed, ensuring no memory leaks and zero cross-thread state sharing.
-- **Practical example**:
-```csharp
-using var scope = _scopeFactory.CreateScope();
-var db = scope.ServiceProvider.GetRequiredService&lt;AppDbContext&gt;();
-await db.SaveChangesAsync();
-```
-
----
-
-### Q7: Can a Scoped service inject a Transient service? What about a Singleton injecting a Transient service?
-- **Short answer**: A Scoped service can inject a Transient service safely. A Singleton injecting a Transient service will turn that Transient into a singleton!
-- **Deeper answer**: When a Singleton injects a Transient service, that Transient is instantiated once when the Singleton is created and held for the application lifetime. If the Transient service assumed it would be created fresh every time or is not thread-safe, bugs will occur.
-- **Practical example**: Injecting a non-thread-safe transient serializer into a singleton API gateway client.
-
----
-
-### Q8: What are Keyed Services introduced in .NET 8?
-- **Short answer**: A native feature in `Microsoft.Extensions.DependencyInjection` allowing registration and resolution of dependencies by key/name without third-party containers.
-- **Deeper answer**: Prior to .NET 8, resolving different implementations of an interface (e.g., `AzureBlobStorage` vs `AmazonS3Storage` for `IStorageService`) required custom factories or libraries like Autofac. .NET 8 allows `services.AddKeyedSingleton&lt;IStorageService, S3Storage&gt;(&quot;s3&quot;)` and injection via `[FromKeyedServices(&quot;s3&quot;)] IStorageService storage`.
-- **Practical example**:
-```csharp
-app.MapGet(&quot;/download&quot;, ([FromKeyedServices(&quot;s3&quot;)] IStorageService storage) =&gt; ...);
-```
-
----
-
-### Q9: How does ASP.NET Core manage the request scope lifetime?
-- **Short answer**: Kestrel / the host creates a new `IServiceScope` via `IServiceScopeFactory` at the beginning of each HTTP request and disposes it at the end of the request.
-- **Deeper answer**: In `HttpProtocol.ProcessRequestsAsync()`, the server creates a request scope and assigns `HttpContext.RequestServices = scope.ServiceProvider`. When the HTTP response pipeline completes and the response body is flushed, the scope is disposed, triggering `Dispose()` on all scoped services and any transient disposable services created during that request.
-- **Practical example**: All controllers and minimal API handlers resolve dependencies directly from `HttpContext.RequestServices`.
-
----
-
-### Q10: Why should you avoid resolving services from `app.Services` (Root Provider) in HTTP handlers?
-- **Short answer**: Resolving scoped services from `app.Services` bypasses the HTTP request scope, which throws an exception if `ValidateScopes` is enabled, or resolves un-scoped instances that never get disposed.
-- **Deeper answer**: `app.Services` is the root container. If you resolve a scoped service from the root container, it will either throw `InvalidOperationException` (if scope validation is on) or become rooted in the root container&#x27;s disposal list, living forever and acting as an accidental singleton. Always resolve from `HttpContext.RequestServices`.
-- **Practical example**: Use `context.RequestServices.GetRequiredService&lt;T&gt;()` instead of `builder.Services.BuildServiceProvider().GetRequiredService&lt;T&gt;()`.
-</script>
 
   <script>
     // Tab switching
@@ -1087,6 +1314,19 @@ app.MapGet(&quot;/download&quot;, ([FromKeyedServices(&quot;s3&quot;)] IStorageS
 
       const pane = document.getElementById('pane-' + tabId);
       if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion
+    function toggleQa(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    }
+
+    function toggleAllQa(open) {
+      document.querySelectorAll('.qa-card').forEach(c => {
+        if (open) c.classList.add('open');
+        else c.classList.remove('open');
+      });
     }
 
     // Copy to clipboard
@@ -1116,11 +1356,10 @@ app.MapGet(&quot;/download&quot;, ([FromKeyedServices(&quot;s3&quot;)] IStorageS
           const nTarget = document.getElementById('notes-container');
           if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
         }
-        const iEl = document.getElementById('raw-interview');
-        if (iEl) {
-          const iTarget = document.getElementById('interview-container');
-          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
-        }
+        // Render inner QA contents
+        document.querySelectorAll('.raw-qa-content').forEach(el => {
+          el.innerHTML = marked.parse(el.textContent);
+        });
       }
       if (window.Prism) {
         Prism.highlightAll();

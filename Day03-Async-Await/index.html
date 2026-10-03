@@ -143,6 +143,27 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
@@ -248,6 +269,65 @@
       margin-bottom: 16px;
       color: #e2e8f0;
     }
+    /* QA Accordion Cards */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    .qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    .qa-card.open .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .qa-card.open .qa-body {
+      display: block;
+    }
+    /* Code Viewer Styles */
     .file-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -340,10 +420,45 @@
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
     </div>
 
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Roslyn Async/Await Compiler Lowering &amp; IAsyncStateMachine</text>
+          
+          <rect x="50" y="65" width="240" height="250" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="65" y="95" fill="#60a5fa" font-size="14" font-weight="bold">1. Method Call</text>
+          <text x="65" y="125" fill="#cbd5e1" font-size="12">public async Task&lt;int&gt;</text>
+          <text x="65" y="145" fill="#cbd5e1" font-size="12">GetOrderAsync()</text>
+          <path d="M 65 170 L 270 170" stroke="#475569"/>
+          <text x="65" y="195" fill="#94a3b8" font-size="11">Compiler generates:</text>
+          <text x="65" y="215" fill="#38bdf8" font-size="11">struct &lt;GetOrderAsync&gt;d__1</text>
+          <text x="65" y="235" fill="#38bdf8" font-size="11">: IAsyncStateMachine</text>
+
+          <rect x="330" y="65" width="240" height="250" rx="8" fill="#1e293b" stroke="#8b5cf6"/>
+          <text x="345" y="95" fill="#c084fc" font-size="14" font-weight="bold">2. State Transitions</text>
+          <rect x="345" y="115" width="210" height="40" rx="4" fill="#0f172a"/><text x="355" y="140" fill="#e2e8f0" font-size="11">state = -1 (Initial / Running)</text>
+          <rect x="345" y="165" width="210" height="40" rx="4" fill="#0f172a"/><text x="355" y="190" fill="#f59e0b" font-size="11">state = 0 (Suspended at await)</text>
+          <rect x="345" y="215" width="210" height="40" rx="4" fill="#0f172a"/><text x="355" y="240" fill="#10b981" font-size="11">state = -2 (Completed)</text>
+
+          <rect x="610" y="65" width="240" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="625" y="95" fill="#34d399" font-size="14" font-weight="bold">3. Execution Engine</text>
+          <text x="625" y="125" fill="#cbd5e1" font-size="11">AsyncTaskMethodBuilder</text>
+          <text x="625" y="145" fill="#94a3b8" font-size="11">• Synchronous completion?</text>
+          <text x="625" y="165" fill="#10b981" font-size="11">  Return completed Task (0 alloc)</text>
+          <text x="625" y="195" fill="#94a3b8" font-size="11">• Incomplete awaiter?</text>
+          <text x="625" y="215" fill="#f59e0b" font-size="11">  Box struct state machine</text>
+          <text x="625" y="235" fill="#f59e0b" font-size="11">  Attach MoveNext continuation</text>
+        </svg>
+        
+    </div>
+
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
       <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
-      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (2 files)</button>
     </div>
@@ -355,16 +470,214 @@
       </div>
     </div>
 
-    
-            <div id="pane-notes" class="tab-pane">
-              <div class="markdown-content" id="notes-container"></div>
+    <div id="pane-notes" class="tab-pane">
+      <div class="markdown-content" id="notes-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <div class="qa-card open" id="qa-card-1">
+          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What happens under the hood when a method is marked with `async`?</span>
             </div>
-            
-    
-            <div id="pane-interview" class="tab-pane">
-              <div class="markdown-content" id="interview-container"></div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Roslyn generates a compiler state machine implementing `IAsyncStateMachine` and transforms local variables spanning awaits into fields of that struct.
+- **Deeper answer**: The original method body becomes a stub that instantiates `AsyncTaskMethodBuilder&lt;T&gt;`, calls `.Start(ref stateMachine)`, and returns the builder&#x27;s Task. The state machine&#x27;s `MoveNext()` method divides execution into states separated by `await` expressions, attaching continuations when awaiters are incomplete.
+- **Practical example**: A single `await Task.Delay(10)` creates a state machine with states `-1` (running), `0` (suspended waiting for delay), and `-2` (completed).
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card open" id="qa-card-2">
+          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why is `async void` considered dangerous, and what is its only valid use case?</span>
             </div>
-            
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `async void` methods cannot be awaited, and unhandled exceptions crash the entire process. Its only valid use case is UI event handlers (e.g. `button_Click(object sender, EventArgs e)`).
+- **Deeper answer**: Because `async void` does not return a `Task`, the caller has no handle to track completion or catch exceptions. Unhandled exceptions are posted directly to the `SynchronizationContext` or rethrown on the ThreadPool, terminating the application.
+- **Practical example**: In ASP.NET Core middleware or backend services, always return `Task` or `Task&lt;T&gt;`, never `async void`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-3">
+          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the difference between `Task.Run` and `Task.Factory.StartNew`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `Task.Run(fn)` is a simplified, safe wrapper around `Task.Factory.StartNew` with `TaskScheduler.Default` and `TaskCreationOptions.DenyChildAttach`.
+- **Deeper answer**: `Task.Factory.StartNew` has dangerous defaults: it uses the ambient `TaskScheduler.Current` (which might be a UI or custom scheduler) and does not automatically unwrap nested tasks if the delegate is async (`Task&lt;Task&lt;T&gt;&gt;`), requiring `.Unwrap()`. `Task.Run` avoids these pitfalls.
+- **Practical example**: Always use `Task.Run` for offloading CPU-bound operations to the ThreadPool.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-4">
+          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does `ConfigureAwait(false)` work and why is it recommended for library code?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: It instructs the awaiter not to marshal the continuation back to the original `SynchronizationContext` or `TaskScheduler`.
+- **Deeper answer**: In desktop UI (WPF/WinForms) or legacy ASP.NET (pre-Core), requests captured a synchronization context. Resuming on that context causes UI thread bottlenecks and potential deadlocks if someone blocks synchronously on `.Result`. `ConfigureAwait(false)` schedules the continuation on any available ThreadPool thread, reducing overhead and preventing deadlocks.
+- **Practical example**: In ASP.NET Core, there is no `SynchronizationContext`, so `ConfigureAwait(false)` is technically redundant in controllers, but still recommended in reusable NuGet libraries.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-5">
+          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What happens when an exception is thrown in `Task.WhenAll`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `Task.WhenAll` waits for all tasks to complete or fault and aggregates all exceptions into an `AggregateException`. However, `await Task.WhenAll(...)` only unwraps and rethrows the *first* exception.
+- **Deeper answer**: If 4 out of 5 tasks throw exceptions, `await whenAllTask` throws only the first one. The remaining 3 exceptions will be swallowed unless you inspect `whenAllTask.Exception.InnerExceptions`.
+- **Practical example**:
+```csharp
+Task all = Task.WhenAll(t1, t2);
+try { await all; }
+catch {
+    foreach(var ex in all.Exception.InnerExceptions) Log(ex);
+}
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-6">
+          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">When should you use `ValueTask&lt;T&gt;` instead of `Task&lt;T&gt;`, and what are the strict rules around it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Use `ValueTask&lt;T&gt;` when an operation often completes synchronously. Rules: Never await a `ValueTask` more than once, never call `.Result` before it completes, and do not await concurrently.
+- **Deeper answer**: A `Task&lt;T&gt;` always allocates an object on the heap even if completed synchronously (unless using a cached Task). A `ValueTask&lt;T&gt;` is a struct that incurs $0$ heap allocation on synchronous paths. If backed by an `IValueTaskSource`, reusing or multiple-awaiting it will corrupt the backing object pool.
+- **Practical example**: A read-through cache method that hits in-memory cache $95\%$ of the time is the ideal candidate for `ValueTask&lt;T&gt;`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-7">
+          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is ThreadPool starvation and how does sync-over-async cause it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Blocking thread pool threads on asynchronous tasks (using `.Result` or `.Wait()`) exhausts available threads, causing catastrophic queuing and latency spikes.
+- **Deeper answer**: If 50 incoming HTTP requests block their threads waiting for database queries to finish, and the database queries need ThreadPool threads to execute their continuations, all workers are blocked. The ThreadPool injects new threads slowly (typically 1–2 per second), resulting in request timeouts and server unresponsiveness.
+- **Practical example**: `var data = GetDataAsync().Result;` inside an ASP.NET Core controller under high load causes ThreadPool starvation.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-8">
+          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How does `CancellationToken.Register` differ from passing the token directly into async APIs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Passing the token lets the underlying async method handle cancellation natively. `Register` attaches a custom callback delegate invoked when cancellation occurs.
+- **Deeper answer**: `token.Register()` allocates a registration node and must be disposed (`using var reg = token.Register(...)`) to avoid memory leaks if the token outlives the scope. It is primarily used to bridge legacy non-cancellable APIs (e.g. closing a socket or stream when cancelled).
+- **Practical example**:
+```csharp
+using var reg = ct.Register(() =&gt; socket.Close());
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-9">
+          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">What is `TaskCompletionSource&lt;T&gt;` and what is the importance of `TaskCreationOptions.RunContinuationsAsynchronously`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: It manually controls the lifecycle of a `Task`. `RunContinuationsAsynchronously` prevents continuations from executing inline on the thread calling `SetResult`.
+- **Deeper answer**: Without this option, when `tcs.SetResult()` is called, any code awaiting `tcs.Task` immediately runs on the caller&#x27;s thread. If that continuation does heavy work or blocks, it hijacks the producer thread, risking deadlocks and stack overflow.
+- **Practical example**:
+```csharp
+var tcs = new TaskCompletionSource&lt;bool&gt;(TaskCreationOptions.RunContinuationsAsynchronously);
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-10">
+          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do asynchronous local variables (`AsyncLocal&lt;T&gt;`) propagate across `await` boundaries?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Through the ambient `ExecutionContext`, which flows from the calling thread to the continuation thread.
+- **Deeper answer**: When an async method yields at an await, the current `ExecutionContext` is captured. When the continuation resumes on a ThreadPool worker, the captured `ExecutionContext` is restored, allowing ambient context like trace IDs, correlation IDs, and tenant info to persist across threads.
+- **Practical example**: `IHttpContextAccessor` in ASP.NET Core uses `AsyncLocal&lt;HttpContext&gt;` internally to make the current request accessible across async calls.</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
 
     <div id="pane-source" class="tab-pane">
       
@@ -1107,89 +1420,6 @@ In production, log or inspect `allTasks.Exception.InnerExceptions` to avoid blin
 ## 5. DSA Takeaways
 - **Top K Frequent Elements**: Using `PriorityQueue&lt;int, int&gt;` as a min-heap maintains the largest $K$ elements in $O(N \log K)$ time, outperforming full array sorting ($O(N \log N)$).
 </script>
-  <script type="text/markdown" id="raw-interview"># Day 03 - Senior .NET Interview Questions: Async/Await &amp; State Machine
-
-### Q1: What happens under the hood when a method is marked with `async`?
-- **Short answer**: Roslyn generates a compiler state machine implementing `IAsyncStateMachine` and transforms local variables spanning awaits into fields of that struct.
-- **Deeper answer**: The original method body becomes a stub that instantiates `AsyncTaskMethodBuilder&lt;T&gt;`, calls `.Start(ref stateMachine)`, and returns the builder&#x27;s Task. The state machine&#x27;s `MoveNext()` method divides execution into states separated by `await` expressions, attaching continuations when awaiters are incomplete.
-- **Practical example**: A single `await Task.Delay(10)` creates a state machine with states `-1` (running), `0` (suspended waiting for delay), and `-2` (completed).
-
----
-
-### Q2: Why is `async void` considered dangerous, and what is its only valid use case?
-- **Short answer**: `async void` methods cannot be awaited, and unhandled exceptions crash the entire process. Its only valid use case is UI event handlers (e.g. `button_Click(object sender, EventArgs e)`).
-- **Deeper answer**: Because `async void` does not return a `Task`, the caller has no handle to track completion or catch exceptions. Unhandled exceptions are posted directly to the `SynchronizationContext` or rethrown on the ThreadPool, terminating the application.
-- **Practical example**: In ASP.NET Core middleware or backend services, always return `Task` or `Task&lt;T&gt;`, never `async void`.
-
----
-
-### Q3: What is the difference between `Task.Run` and `Task.Factory.StartNew`?
-- **Short answer**: `Task.Run(fn)` is a simplified, safe wrapper around `Task.Factory.StartNew` with `TaskScheduler.Default` and `TaskCreationOptions.DenyChildAttach`.
-- **Deeper answer**: `Task.Factory.StartNew` has dangerous defaults: it uses the ambient `TaskScheduler.Current` (which might be a UI or custom scheduler) and does not automatically unwrap nested tasks if the delegate is async (`Task&lt;Task&lt;T&gt;&gt;`), requiring `.Unwrap()`. `Task.Run` avoids these pitfalls.
-- **Practical example**: Always use `Task.Run` for offloading CPU-bound operations to the ThreadPool.
-
----
-
-### Q4: How does `ConfigureAwait(false)` work and why is it recommended for library code?
-- **Short answer**: It instructs the awaiter not to marshal the continuation back to the original `SynchronizationContext` or `TaskScheduler`.
-- **Deeper answer**: In desktop UI (WPF/WinForms) or legacy ASP.NET (pre-Core), requests captured a synchronization context. Resuming on that context causes UI thread bottlenecks and potential deadlocks if someone blocks synchronously on `.Result`. `ConfigureAwait(false)` schedules the continuation on any available ThreadPool thread, reducing overhead and preventing deadlocks.
-- **Practical example**: In ASP.NET Core, there is no `SynchronizationContext`, so `ConfigureAwait(false)` is technically redundant in controllers, but still recommended in reusable NuGet libraries.
-
----
-
-### Q5: What happens when an exception is thrown in `Task.WhenAll`?
-- **Short answer**: `Task.WhenAll` waits for all tasks to complete or fault and aggregates all exceptions into an `AggregateException`. However, `await Task.WhenAll(...)` only unwraps and rethrows the *first* exception.
-- **Deeper answer**: If 4 out of 5 tasks throw exceptions, `await whenAllTask` throws only the first one. The remaining 3 exceptions will be swallowed unless you inspect `whenAllTask.Exception.InnerExceptions`.
-- **Practical example**:
-```csharp
-Task all = Task.WhenAll(t1, t2);
-try { await all; }
-catch {
-    foreach(var ex in all.Exception.InnerExceptions) Log(ex);
-}
-```
-
----
-
-### Q6: When should you use `ValueTask&lt;T&gt;` instead of `Task&lt;T&gt;`, and what are the strict rules around it?
-- **Short answer**: Use `ValueTask&lt;T&gt;` when an operation often completes synchronously. Rules: Never await a `ValueTask` more than once, never call `.Result` before it completes, and do not await concurrently.
-- **Deeper answer**: A `Task&lt;T&gt;` always allocates an object on the heap even if completed synchronously (unless using a cached Task). A `ValueTask&lt;T&gt;` is a struct that incurs $0$ heap allocation on synchronous paths. If backed by an `IValueTaskSource`, reusing or multiple-awaiting it will corrupt the backing object pool.
-- **Practical example**: A read-through cache method that hits in-memory cache $95\%$ of the time is the ideal candidate for `ValueTask&lt;T&gt;`.
-
----
-
-### Q7: What is ThreadPool starvation and how does sync-over-async cause it?
-- **Short answer**: Blocking thread pool threads on asynchronous tasks (using `.Result` or `.Wait()`) exhausts available threads, causing catastrophic queuing and latency spikes.
-- **Deeper answer**: If 50 incoming HTTP requests block their threads waiting for database queries to finish, and the database queries need ThreadPool threads to execute their continuations, all workers are blocked. The ThreadPool injects new threads slowly (typically 1–2 per second), resulting in request timeouts and server unresponsiveness.
-- **Practical example**: `var data = GetDataAsync().Result;` inside an ASP.NET Core controller under high load causes ThreadPool starvation.
-
----
-
-### Q8: How does `CancellationToken.Register` differ from passing the token directly into async APIs?
-- **Short answer**: Passing the token lets the underlying async method handle cancellation natively. `Register` attaches a custom callback delegate invoked when cancellation occurs.
-- **Deeper answer**: `token.Register()` allocates a registration node and must be disposed (`using var reg = token.Register(...)`) to avoid memory leaks if the token outlives the scope. It is primarily used to bridge legacy non-cancellable APIs (e.g. closing a socket or stream when cancelled).
-- **Practical example**:
-```csharp
-using var reg = ct.Register(() =&gt; socket.Close());
-```
-
----
-
-### Q9: What is `TaskCompletionSource&lt;T&gt;` and what is the importance of `TaskCreationOptions.RunContinuationsAsynchronously`?
-- **Short answer**: It manually controls the lifecycle of a `Task`. `RunContinuationsAsynchronously` prevents continuations from executing inline on the thread calling `SetResult`.
-- **Deeper answer**: Without this option, when `tcs.SetResult()` is called, any code awaiting `tcs.Task` immediately runs on the caller&#x27;s thread. If that continuation does heavy work or blocks, it hijacks the producer thread, risking deadlocks and stack overflow.
-- **Practical example**:
-```csharp
-var tcs = new TaskCompletionSource&lt;bool&gt;(TaskCreationOptions.RunContinuationsAsynchronously);
-```
-
----
-
-### Q10: How do asynchronous local variables (`AsyncLocal&lt;T&gt;`) propagate across `await` boundaries?
-- **Short answer**: Through the ambient `ExecutionContext`, which flows from the calling thread to the continuation thread.
-- **Deeper answer**: When an async method yields at an await, the current `ExecutionContext` is captured. When the continuation resumes on a ThreadPool worker, the captured `ExecutionContext` is restored, allowing ambient context like trace IDs, correlation IDs, and tenant info to persist across threads.
-- **Practical example**: `IHttpContextAccessor` in ASP.NET Core uses `AsyncLocal&lt;HttpContext&gt;` internally to make the current request accessible across async calls.
-</script>
 
   <script>
     // Tab switching
@@ -1202,6 +1432,19 @@ var tcs = new TaskCompletionSource&lt;bool&gt;(TaskCreationOptions.RunContinuati
 
       const pane = document.getElementById('pane-' + tabId);
       if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion
+    function toggleQa(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    }
+
+    function toggleAllQa(open) {
+      document.querySelectorAll('.qa-card').forEach(c => {
+        if (open) c.classList.add('open');
+        else c.classList.remove('open');
+      });
     }
 
     // Copy to clipboard
@@ -1231,11 +1474,10 @@ var tcs = new TaskCompletionSource&lt;bool&gt;(TaskCreationOptions.RunContinuati
           const nTarget = document.getElementById('notes-container');
           if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
         }
-        const iEl = document.getElementById('raw-interview');
-        if (iEl) {
-          const iTarget = document.getElementById('interview-container');
-          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
-        }
+        // Render inner QA contents
+        document.querySelectorAll('.raw-qa-content').forEach(el => {
+          el.innerHTML = marked.parse(el.textContent);
+        });
       }
       if (window.Prism) {
         Prism.highlightAll();

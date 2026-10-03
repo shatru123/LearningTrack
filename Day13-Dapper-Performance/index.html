@@ -143,6 +143,27 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
@@ -248,6 +269,65 @@
       margin-bottom: 16px;
       color: #e2e8f0;
     }
+    /* QA Accordion Cards */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    .qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    .qa-card.open .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .qa-card.open .qa-body {
+      display: block;
+    }
+    /* Code Viewer Styles */
     .file-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -340,10 +420,40 @@
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
     </div>
 
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Dapper Architecture: DynamicMethod IL Generation &amp; Streaming</text>
+          
+          <rect x="50" y="65" width="230" height="250" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="70" y="95" fill="#60a5fa" font-size="14" font-weight="bold">1. SQL &amp; Parameters</text>
+          <text x="70" y="125" fill="#cbd5e1" font-size="11">conn.QueryAsync&lt;Order&gt;(sql)</text>
+          <text x="70" y="150" fill="#94a3b8" font-size="11">Executes on raw ADO.NET</text>
+          <text x="70" y="180" fill="#38bdf8" font-size="11">Multi-mapping with splitOn</text>
+          <text x="70" y="205" fill="#94a3b8" font-size="10">Deduplicates 1:N relations</text>
+
+          <rect x="320" y="65" width="260" height="250" rx="8" fill="#1e293b" stroke="#8b5cf6"/>
+          <text x="340" y="95" fill="#c084fc" font-size="14" font-weight="bold">2. DynamicMethod IL</text>
+          <rect x="340" y="115" width="220" height="50" rx="4" fill="#0f172a"/><text x="350" y="145" fill="#cbd5e1" font-size="11">Emits MSIL at runtime</text>
+          <rect x="340" y="175" width="220" height="50" rx="4" fill="#0f172a"/><text x="350" y="205" fill="#34d399" font-size="11">Caches Func&lt;IDataReader, T&gt;</text>
+          <text x="340" y="255" fill="#c084fc" font-size="11">Zero reflection on repeat queries</text>
+
+          <rect x="620" y="65" width="230" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="640" y="95" fill="#34d399" font-size="14" font-weight="bold">3. Memory Modes</text>
+          <rect x="640" y="115" width="190" height="55" rx="4" fill="#0f172a"/><text x="650" y="137" fill="#fbbf24" font-size="11" font-weight="bold">buffered: true</text><text x="650" y="157" fill="#94a3b8" font-size="10">Eager list in memory</text>
+          <rect x="640" y="185" width="190" height="55" rx="4" fill="#0f172a"/><text x="650" y="207" fill="#34d399" font-size="11" font-weight="bold">IAsyncEnumerable&lt;T&gt;</text><text x="650" y="227" fill="#94a3b8" font-size="10">Non-allocating streaming</text>
+          <text x="640" y="275" fill="#34d399" font-size="11">O(1) memory for millions of rows</text>
+        </svg>
+        
+    </div>
+
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
-      
-      
+      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
     </div>
@@ -355,8 +465,229 @@
       </div>
     </div>
 
-    
-    
+    <div id="pane-notes" class="tab-pane">
+      <div class="markdown-content" id="notes-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <div class="qa-card open" id="qa-card-1">
+          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why is Dapper almost as fast as hand-written ADO.NET code?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Dapper compiles custom IL delegates at runtime using `DynamicMethod` and caches them. It performs zero change tracking, zero expression tree parsing, and zero dirty checking.
+- **Deeper answer**: When an ADO.NET reader executes, mapping fields to properties using standard reflection (`PropertyInfo.SetValue()`) is slow due to boxing and metadata lookups. Dapper inspects the `IDataReader` schema once, emits IL instructions directly calling the property setters and type casts, and compiles it into a `Func&lt;IDataReader, T&gt;` delegate. Future executions invoke this delegate directly with no reflection overhead.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card open" id="qa-card-2">
+          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the difference between `Query&lt;T&gt;()` and `QueryAsync&lt;T&gt;()` in Dapper regarding buffering?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `Query&lt;T&gt;` supports `buffered: false` for deferred lazy streaming, while `QueryAsync&lt;T&gt;` currently always buffers the entire result set into an in-memory `List&lt;T&gt;` before returning.
+- **Deeper answer**: `QueryAsync&lt;T&gt;` returns `Task&lt;IEnumerable&lt;T&gt;&gt;`. Because `IEnumerable&lt;T&gt;` is a synchronous iterator interface, Dapper cannot yield items asynchronously across `await` expressions using classic `IEnumerable`. Therefore, `QueryAsync` eagerly reads the entire `DbDataReader` into an internal list. To achieve true asynchronous streaming, developers must use `DbDataReader.ReadAsync()` with `reader.GetRowParser&lt;T&gt;()` yielding an `IAsyncEnumerable&lt;T&gt;`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-3">
+          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How does Dapper&#x27;s multi-mapping determine where one entity ends and another begins?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Using the `splitOn` parameter (defaults to `&quot;Id&quot;`), which tells Dapper to split columns whenever a column name matches the delimiter.
+- **Deeper answer**: In a query joining `Users` and `Roles`:
+```sql
+SELECT u.Id, u.Name, r.Id, r.RoleName FROM Users u JOIN Roles r ON u.RoleId = r.Id
+```
+When Dapper encounters the second column named `Id` (matching `splitOn: &quot;Id&quot;`), it ceases mapping properties on the `User` object and begins mapping subsequent columns to the `Role` object, passing both to the user&#x27;s mapping lambda.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-4">
+          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">When would you choose Dapper over EF Core in an enterprise architecture?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: When you need raw SQL performance, batch processing, bulk operations, reporting/analytics with complex joins, or want full control over database execution plans.
+- **Deeper answer**:
+  - **Dapper**: Ideal for read-heavy microservices, high-throughput CQRS query handlers, reporting pipelines, and DBAs who require hand-tuned SQL with optimizer hints.
+  - **EF Core**: Ideal for write-heavy business domains, transactional domain models requiring unit-of-work (`SaveChanges`), complex optimistic concurrency, migrations, and database schema generation.
+  - **Hybrid Pattern**: Many high-scale .NET architectures use EF Core for commands (`INSERT`/`UPDATE` with domain validation) and Dapper for queries (`SELECT` projections).
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-5">
+          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is the risk of string interpolation in Dapper SQL queries, and how does Dapper prevent SQL injection?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: String interpolation (`$&quot;SELECT * FROM Users WHERE Name = &#x27;{name}&#x27;&quot;`) leads to critical SQL injection. Dapper prevents injection via parameterized queries using anonymous objects.
+- **Deeper answer**:
+  - Insecure: `conn.Query&lt;User&gt;($&quot;SELECT * FROM Users WHERE Name = &#x27;{userInput}&#x27;&quot;)`
+  - Secure: `conn.Query&lt;User&gt;(&quot;SELECT * FROM Users WHERE Name = @Name&quot;, new { Name = userInput })`
+  Dapper converts properties of the anonymous object into strongly-typed `DbParameter` instances, ensuring input is treated strictly as data, never as executable SQL.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-6">
+          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does Dapper handle `IN` clauses with lists of parameters?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Dapper natively expands `IEnumerable` parameters into a comma-separated list of individual parameterized values.
+- **Deeper answer**:
+```csharp
+var ids = new[] { 1, 2, 3, 4, 5 };
+var orders = await conn.QueryAsync&lt;Order&gt;(
+    &quot;SELECT * FROM Orders WHERE Id IN @Ids&quot;, new { Ids = ids });
+```
+Dapper dynamically rewrites the SQL to: `SELECT * FROM Orders WHERE Id IN (@Ids1, @Ids2, @Ids3, @Ids4, @Ids5)` and binds 5 separate parameters, preventing injection while avoiding manual string manipulation.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-7">
+          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is `SqlMapper.TypeHandler&lt;T&gt;`, and what problem does it solve?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: A custom serializer/deserializer hook that enables Dapper to map non-primitive types (such as JSON columns, value objects, or custom Enums) to and from database columns.
+- **Deeper answer**:
+```csharp
+public class JsonTypeHandler&lt;T&gt; : SqlMapper.TypeHandler&lt;T&gt;
+{
+    public override void SetValue(IDbDataParameter parameter, T value)
+        =&gt; parameter.Value = JsonSerializer.Serialize(value);
+
+    public override T Parse(object value)
+        =&gt; JsonSerializer.Deserialize&lt;T&gt;(value.ToString()!)!;
+}
+// Registered once at startup:
+SqlMapper.AddTypeHandler(new JsonTypeHandler&lt;Address&gt;());
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-8">
+          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How does Dapper handle multiple result sets from a stored procedure or batch script?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Using `conn.QueryMultipleAsync()`, returning a `GridReader` that allows sequentially reading each result set.
+- **Deeper answer**:
+```csharp
+const string sql = @&quot;
+    SELECT * FROM Customers WHERE Id = @Id;
+    SELECT * FROM Orders WHERE CustomerId = @Id;&quot;;
+
+using var multi = await conn.QueryMultipleAsync(sql, new { Id = 42 });
+var customer = await multi.ReadSingleOrDefaultAsync&lt;Customer&gt;();
+var orders = (await multi.ReadAsync&lt;Order&gt;()).ToList();
+```
+This executes in a single database network roundtrip, maximizing throughput.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-9">
+          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">What happens if an unbuffered Dapper query (`buffered: false`) is not fully enumerated?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: The underlying `IDataReader` and connection remain open, leading to connection leaks and connection pool starvation.
+- **Deeper answer**: If a method returns an unbuffered `IEnumerable&lt;Order&gt;` and the caller exits early (e.g. `var first = service.GetOrders().First()`), the iterator does not reach the end of the stream. Unless the caller wraps the enumeration in a `using` statement or consumes the iterator fully, the `IDataReader` remains locked on the connection, preventing other queries from reusing that connection.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-10">
+          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you benchmark Dapper against EF Core accurately without JIT warm-up bias?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Use `BenchmarkDotNet`, which runs multiple warm-up iterations, prevents JIT tiering distortions, measures hardware performance counters, and tracks Gen 0/1/2 GC allocations.
+- **Deeper answer**: Naive benchmarking with `Stopwatch` produces inaccurate results due to cold start JIT compilation, connection pooling warm-up, and garbage collector interference. BenchmarkDotNet isolates runs in separate target processes, calculates statistical variance, and accurately reports exact heap memory allocations using `[MemoryDiagnoser]`.</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
 
     <div id="pane-source" class="tab-pane">
       
@@ -985,8 +1316,91 @@ This module explores high-performance relational data access patterns using Dapp
 dotnet test tests/Day13.DapperPerformance.Tests/Day13.DapperPerformance.Tests.csproj
 ```
 </script>
-  
-  
+  <script type="text/markdown" id="raw-notes"># Day 13 - Engineering Notes: Dapper High-Performance Data Access &amp; Streaming
+
+## 1. Dapper Architecture &amp; Execution Pipeline
+
+Dapper is a micro-ORM built as a set of extension methods on ADO.NET&#x27;s `IDbConnection`.
+
+### Internal Materialization Mechanism
+1. **Dynamic IL Generation (`DynamicMethod`)**:
+   - The first time Dapper executes a query against a POCO type `T`, it reads the column schema from the `IDataReader`.
+   - It generates an optimized MSIL method using `System.Reflection.Emit.DynamicMethod`.
+   - The method reads column ordinals, checks for `DBNull`, performs direct type casting, and instantiates the object.
+2. **Delegate Caching**:
+   - The compiled IL delegate is cached in a global dictionary keyed by `(Type, CommandText, ConnectionString, ParametersHash)`.
+   - Subsequent executions execute the pre-compiled delegate directly with near-native hand-written ADO.NET speed.
+
+---
+
+## 2. Multi-Mapping (1:1 and 1:N Relationships)
+
+### Dapper Column Splitting
+When joining multiple tables, Dapper uses `splitOn: &quot;Id&quot;` to separate entity fields:
+```csharp
+var lookup = new Dictionary&lt;int, Customer&gt;();
+
+await conn.QueryAsync&lt;Customer, Order, Customer&gt;(
+    @&quot;SELECT c.Id, c.Name, c.Email, o.Id, o.CustomerId, o.TotalAmount 
+      FROM Customers c 
+      LEFT JOIN Orders o ON c.Id = o.CustomerId&quot;,
+    (customer, order) =&gt; {
+        if (!lookup.TryGetValue(customer.Id, out var existing))
+        {
+            existing = customer;
+            lookup.Add(existing.Id, existing);
+        }
+        if (order != null &amp;&amp; order.Id &gt; 0)
+        {
+            existing.Orders.Add(order);
+        }
+        return existing;
+    },
+    splitOn: &quot;Id&quot;);
+
+return lookup.Values.ToList();
+```
+
+---
+
+## 3. Buffered vs. Unbuffered Execution
+
+### `buffered: true` (Default)
+- Reads the entire `IDataReader` into an in-memory `List&lt;T&gt;`.
+- Immediately closes the underlying `DbDataReader` and connection.
+- **Pros**: Connection returned to connection pool immediately; safe for concurrent reads on other threads.
+- **Cons**: High peak memory allocation for queries returning tens of thousands of rows.
+
+### `buffered: false`
+- Returns an unbuffered `IEnumerable&lt;T&gt;`.
+- Defers reader advancement until `foreach` iterates over the collection.
+- **Pros**: Ultra-low memory footprint. Rows are processed and GC-reclaimed on the fly.
+- **Cons**: The database connection and reader stay open for the entire duration of iteration.
+
+---
+
+## 4. True Non-Allocating Async Streaming (`IAsyncEnumerable&lt;T&gt;`)
+
+Dapper&#x27;s `QueryAsync&lt;T&gt;` buffers all results into a list. To achieve true non-buffering asynchronous streaming, combine ADO.NET `DbDataReader.ReadAsync()` with Dapper&#x27;s compiled row parser:
+
+```csharp
+public async IAsyncEnumerable&lt;Order&gt; StreamOrdersAsync(
+    DbConnection conn, [EnumeratorCancellation] CancellationToken ct = default)
+{
+    await using var cmd = conn.CreateCommand();
+    cmd.CommandText = &quot;SELECT Id, CustomerId, TotalAmount, CreatedAtUtc FROM Orders;&quot;;
+
+    await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SequentialAccess, ct);
+    var rowParser = reader.GetRowParser&lt;Order&gt;();
+
+    while (await reader.ReadAsync(ct))
+    {
+        yield return rowParser(reader);
+    }
+}
+```
+This enables processing millions of database rows with constant $O(1)$ memory usage.
+</script>
 
   <script>
     // Tab switching
@@ -999,6 +1413,19 @@ dotnet test tests/Day13.DapperPerformance.Tests/Day13.DapperPerformance.Tests.cs
 
       const pane = document.getElementById('pane-' + tabId);
       if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion
+    function toggleQa(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    }
+
+    function toggleAllQa(open) {
+      document.querySelectorAll('.qa-card').forEach(c => {
+        if (open) c.classList.add('open');
+        else c.classList.remove('open');
+      });
     }
 
     // Copy to clipboard
@@ -1028,11 +1455,10 @@ dotnet test tests/Day13.DapperPerformance.Tests/Day13.DapperPerformance.Tests.cs
           const nTarget = document.getElementById('notes-container');
           if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
         }
-        const iEl = document.getElementById('raw-interview');
-        if (iEl) {
-          const iTarget = document.getElementById('interview-container');
-          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
-        }
+        // Render inner QA contents
+        document.querySelectorAll('.raw-qa-content').forEach(el => {
+          el.innerHTML = marked.parse(el.textContent);
+        });
       }
       if (window.Prism) {
         Prism.highlightAll();

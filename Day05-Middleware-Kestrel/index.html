@@ -143,6 +143,27 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
@@ -248,6 +269,65 @@
       margin-bottom: 16px;
       color: #e2e8f0;
     }
+    /* QA Accordion Cards */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    .qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    .qa-card.open .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .qa-card.open .qa-body {
+      display: block;
+    }
+    /* Code Viewer Styles */
     .file-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -340,10 +420,46 @@
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
     </div>
 
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">ASP.NET Core Middleware Pipeline: The Russian Doll Model</text>
+          
+          <rect x="50" y="65" width="800" height="250" rx="12" fill="#111827" stroke="#3b82f6" stroke-dasharray="4,4"/>
+          <text x="70" y="95" fill="#60a5fa" font-size="13" font-weight="bold">KESTREL HTTP PIPELINE (HttpContext)</text>
+          
+          <rect x="80" y="115" width="200" height="170" rx="8" fill="#1e293b" stroke="#38bdf8"/>
+          <text x="95" y="140" fill="#38bdf8" font-size="12" font-weight="bold">1. CorrelationId</text>
+          <text x="95" y="165" fill="#cbd5e1" font-size="10">IN: Set X-Correlation-ID</text>
+          <text x="95" y="235" fill="#34d399" font-size="10">OUT: Append header</text>
+
+          <rect x="310" y="115" width="200" height="170" rx="8" fill="#1e293b" stroke="#f59e0b"/>
+          <text x="325" y="140" fill="#fbbf24" font-size="12" font-weight="bold">2. ExceptionHandling</text>
+          <text x="325" y="165" fill="#cbd5e1" font-size="10">IN: try { await next() }</text>
+          <text x="325" y="235" fill="#f87171" font-size="10">OUT: catch ➔ RFC 7807</text>
+
+          <rect x="540" y="115" width="200" height="170" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="555" y="140" fill="#34d399" font-size="12" font-weight="bold">3. Endpoint Handler</text>
+          <text x="555" y="165" fill="#cbd5e1" font-size="10">IN: Route execute</text>
+          <text x="555" y="195" fill="#a7f3d0" font-size="11" font-weight="bold">Execute API Action</text>
+          <text x="555" y="235" fill="#cbd5e1" font-size="10">OUT: Return 200 OK</text>
+
+          <!-- Flow arrows -->
+          <path d="M 280 160 L 310 160" stroke="#38bdf8" stroke-width="2"/>
+          <path d="M 510 160 L 540 160" stroke="#f59e0b" stroke-width="2"/>
+          <path d="M 540 230 L 510 230" stroke="#34d399" stroke-width="2"/>
+          <path d="M 310 230 L 280 230" stroke="#34d399" stroke-width="2"/>
+        </svg>
+        
+    </div>
+
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
       <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
-      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (5 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (2 files)</button>
     </div>
@@ -355,16 +471,221 @@
       </div>
     </div>
 
-    
-            <div id="pane-notes" class="tab-pane">
-              <div class="markdown-content" id="notes-container"></div>
+    <div id="pane-notes" class="tab-pane">
+      <div class="markdown-content" id="notes-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <div class="qa-card open" id="qa-card-1">
+          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the architectural difference between convention-based and factory-activated (`IMiddleware`) middleware?</span>
             </div>
-            
-    
-            <div id="pane-interview" class="tab-pane">
-              <div class="markdown-content" id="interview-container"></div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Convention-based middleware is instantiated once at startup (Singleton lifecycle); factory middleware (`IMiddleware`) is resolved from the DI container per request.
+- **Deeper answer**: Convention-based middleware takes `RequestDelegate next` in its constructor and cannot have scoped dependencies injected into its constructor without causing captive dependencies. Factory middleware implements `IMiddleware`, takes `next` as a method argument in `InvokeAsync`, and can safely inject transient or scoped services directly into its constructor.
+- **Practical example**: Injecting `DbContext` into the constructor of convention middleware creates a captive dependency; with `IMiddleware`, `DbContext` can be injected into the constructor safely.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card open" id="qa-card-2">
+          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why does middleware order matter in ASP.NET Core? Give a concrete example.</span>
             </div>
-            
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Middleware executes in the order it is registered in `Program.cs`. Surrounding concerns (exception handling, authentication) must wrap inner execution.
+- **Deeper answer**: The middleware pipeline is a nested Russian-doll structure. If `ExceptionHandlingMiddleware` is registered *after* `Routing` or endpoint execution, any exception thrown in downstream endpoints will bypass the exception handler and bubble up directly to Kestrel, returning raw 500 errors to the client.
+- **Practical example**:
+```csharp
+app.UseMiddleware&lt;ExceptionHandlingMiddleware&gt;(); // Catches all below
+app.UseAuthentication();                         // Establishes ClaimsPrincipal
+app.UseAuthorization();                          // Enforces policy
+app.MapControllers();                            // Executes action
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-3">
+          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What happens if you try to modify `context.Response.Headers` after calling `await next(context)`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: An `InvalidOperationException` is thrown: &quot;Headers are read-only, response has already started.&quot;
+- **Deeper answer**: Once the endpoint or downstream middleware starts writing bytes to the response body stream, Kestrel flushes the HTTP headers to the network socket (`Response.HasStarted = true`). After this point, no HTTP headers or status codes can be modified.
+- **Practical example**: Always attach correlation IDs or security headers *before* calling `await _next(context)`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-4">
+          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does Kestrel achieve high throughput compared to traditional IIS / HttpListener?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Through non-blocking asynchronous socket I/O built on `System.IO.Pipelines`, zero-copy buffer pooling, and minimal abstraction overhead.
+- **Deeper answer**: Kestrel avoids thread-per-request models. It uses OS-level epoll (Linux) or kqueue (macOS) / IOCP (Windows) via Libuv or managed sockets. Request reading and response writing happen over reusable pooled memory buffers (`MemoryPool&lt;byte&gt;`), virtually eliminating GC allocations on the request hot path.
+- **Practical example**: Kestrel can process hundreds of thousands of plaintext requests per second per machine on standard commodity hardware.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-5">
+          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is the RFC 7807 standard and why should production APIs adopt it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: RFC 7807 defines `ProblemDetails`, a standard machine-readable JSON structure for reporting HTTP API errors.
+- **Deeper answer**: Without RFC 7807, APIs return arbitrary error structures (`{ &quot;error&quot;: &quot;msg&quot; }` vs `{ &quot;message&quot;: &quot;msg&quot; }` vs raw text), forcing API clients to write brittle parsing logic. ProblemDetails standardizes `type`, `title`, `status`, `detail`, `instance`, and custom extensions (like `traceId`).
+- **Practical example**:
+```json
+{
+  &quot;status&quot;: 500,
+  &quot;title&quot;: &quot;An unexpected server error occurred.&quot;,
+  &quot;detail&quot;: &quot;Database connection timed out.&quot;,
+  &quot;traceId&quot;: &quot;d7a71141-8ddb-4e17&quot;
+}
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-6">
+          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">Can you resolve a Scoped service inside a convention-based middleware? If yes, how?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Yes, by adding the Scoped service as a parameter to the `InvokeAsync` method rather than the constructor.
+- **Deeper answer**: At runtime, ASP.NET Core inspects the parameters of `InvokeAsync` via reflection/compiled expressions and resolves them from the current request&#x27;s `HttpContext.RequestServices` (the request scope).
+- **Practical example**:
+```csharp
+public async Task InvokeAsync(HttpContext context, IOrderRepository scopedRepo) {
+    // scopedRepo is correctly scoped to this specific HTTP request
+    await _next(context);
+}
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-7">
+          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Why is storing `HttpContext` in a static field or background task hazardous?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `HttpContext` is not thread-safe and is pooled/recycled by Kestrel as soon as the request completes.
+- **Deeper answer**: After the response finishes, Kestrel resets the `DefaultHttpContext` instance and returns it to the object pool. If a background task holds a reference to it, it will observe corrupted or completely different request data from a subsequent user&#x27;s HTTP request, creating severe security vulnerabilities.
+- **Practical example**: If a background fire-and-forget task needs request data, extract the specific values (e.g. `userId`, `correlationId`) into immutable local variables before firing the task.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-8">
+          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the difference between `EndpointRoutingMiddleware` and `EndpointMiddleware`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `UseRouting()` matches the request URL to an endpoint and attaches metadata to `HttpContext`. `UseEndpoints()` executes the matched endpoint delegate.
+- **Deeper answer**: Splitting routing into two phases allows middleware positioned between `UseRouting` and `UseEndpoints` (like `UseAuthentication`, `UseAuthorization`, and `UseCors`) to inspect endpoint metadata (e.g. `[Authorize]`, `[AllowAnonymous]`) before deciding whether to allow the request to proceed.
+- **Practical example**: Authorization middleware checks `context.GetEndpoint()?.Metadata.GetMetadata&lt;AuthorizeAttribute&gt;()`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-9">
+          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How does the Correlation ID pattern facilitate observability in microservices?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: It generates a unique identifier at the API gateway and propagates it across all downstream HTTP, gRPC, and message queues to stitch distributed logs together.
+- **Deeper answer**: In a distributed system, a single user click may trigger calls across 10 distinct microservices. By propagating `X-Correlation-ID` across HTTP headers and logging it with every log message (via Serilog/OpenTelemetry log scopes), engineers can query `correlationId: xyz` and view the entire causal chain of events.
+- **Practical example**: Sending `X-Correlation-ID: 7a9b-4c2d` in outgoing `HttpClient` calls via a `DelegatingHandler`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-10">
+          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does ASP.NET Core short-circuit the middleware pipeline?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: By not calling `await next(context)` and returning directly from `InvokeAsync`.
+- **Deeper answer**: When a middleware decides the request cannot proceed (e.g., authentication failure, rate limit exceeded, static file found and served), it writes the response directly and returns without invoking `next(context)`. Execution immediately unwinds back up through the previous middleware layers.
+- **Practical example**: Static file middleware returns the cached file and terminates the pipeline without routing or hitting endpoint handlers.</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
 
     <div id="pane-source" class="tab-pane">
       
@@ -949,96 +1270,6 @@ Any header modifications (like `X-Correlation-ID`) MUST happen **before** callin
 - **Valid Palindrome**: Two-pointer convergence skipping non-alphanumeric characters validates palindromes in $O(n)$ time with $0$ extra heap allocation.
 - **Two Sum II**: In a sorted array, if `arr[left] + arr[right] &lt; target`, incrementing `left` increases the sum; if `&gt; target`, decrementing `right` decreases the sum ($O(n)$ time, $O(1)$ space).
 </script>
-  <script type="text/markdown" id="raw-interview"># Day 05 - Senior .NET Interview Questions: Middleware &amp; Kestrel
-
-### Q1: What is the architectural difference between convention-based and factory-activated (`IMiddleware`) middleware?
-- **Short answer**: Convention-based middleware is instantiated once at startup (Singleton lifecycle); factory middleware (`IMiddleware`) is resolved from the DI container per request.
-- **Deeper answer**: Convention-based middleware takes `RequestDelegate next` in its constructor and cannot have scoped dependencies injected into its constructor without causing captive dependencies. Factory middleware implements `IMiddleware`, takes `next` as a method argument in `InvokeAsync`, and can safely inject transient or scoped services directly into its constructor.
-- **Practical example**: Injecting `DbContext` into the constructor of convention middleware creates a captive dependency; with `IMiddleware`, `DbContext` can be injected into the constructor safely.
-
----
-
-### Q2: Why does middleware order matter in ASP.NET Core? Give a concrete example.
-- **Short answer**: Middleware executes in the order it is registered in `Program.cs`. Surrounding concerns (exception handling, authentication) must wrap inner execution.
-- **Deeper answer**: The middleware pipeline is a nested Russian-doll structure. If `ExceptionHandlingMiddleware` is registered *after* `Routing` or endpoint execution, any exception thrown in downstream endpoints will bypass the exception handler and bubble up directly to Kestrel, returning raw 500 errors to the client.
-- **Practical example**:
-```csharp
-app.UseMiddleware&lt;ExceptionHandlingMiddleware&gt;(); // Catches all below
-app.UseAuthentication();                         // Establishes ClaimsPrincipal
-app.UseAuthorization();                          // Enforces policy
-app.MapControllers();                            // Executes action
-```
-
----
-
-### Q3: What happens if you try to modify `context.Response.Headers` after calling `await next(context)`?
-- **Short answer**: An `InvalidOperationException` is thrown: &quot;Headers are read-only, response has already started.&quot;
-- **Deeper answer**: Once the endpoint or downstream middleware starts writing bytes to the response body stream, Kestrel flushes the HTTP headers to the network socket (`Response.HasStarted = true`). After this point, no HTTP headers or status codes can be modified.
-- **Practical example**: Always attach correlation IDs or security headers *before* calling `await _next(context)`.
-
----
-
-### Q4: How does Kestrel achieve high throughput compared to traditional IIS / HttpListener?
-- **Short answer**: Through non-blocking asynchronous socket I/O built on `System.IO.Pipelines`, zero-copy buffer pooling, and minimal abstraction overhead.
-- **Deeper answer**: Kestrel avoids thread-per-request models. It uses OS-level epoll (Linux) or kqueue (macOS) / IOCP (Windows) via Libuv or managed sockets. Request reading and response writing happen over reusable pooled memory buffers (`MemoryPool&lt;byte&gt;`), virtually eliminating GC allocations on the request hot path.
-- **Practical example**: Kestrel can process hundreds of thousands of plaintext requests per second per machine on standard commodity hardware.
-
----
-
-### Q5: What is the RFC 7807 standard and why should production APIs adopt it?
-- **Short answer**: RFC 7807 defines `ProblemDetails`, a standard machine-readable JSON structure for reporting HTTP API errors.
-- **Deeper answer**: Without RFC 7807, APIs return arbitrary error structures (`{ &quot;error&quot;: &quot;msg&quot; }` vs `{ &quot;message&quot;: &quot;msg&quot; }` vs raw text), forcing API clients to write brittle parsing logic. ProblemDetails standardizes `type`, `title`, `status`, `detail`, `instance`, and custom extensions (like `traceId`).
-- **Practical example**:
-```json
-{
-  &quot;status&quot;: 500,
-  &quot;title&quot;: &quot;An unexpected server error occurred.&quot;,
-  &quot;detail&quot;: &quot;Database connection timed out.&quot;,
-  &quot;traceId&quot;: &quot;d7a71141-8ddb-4e17&quot;
-}
-```
-
----
-
-### Q6: Can you resolve a Scoped service inside a convention-based middleware? If yes, how?
-- **Short answer**: Yes, by adding the Scoped service as a parameter to the `InvokeAsync` method rather than the constructor.
-- **Deeper answer**: At runtime, ASP.NET Core inspects the parameters of `InvokeAsync` via reflection/compiled expressions and resolves them from the current request&#x27;s `HttpContext.RequestServices` (the request scope).
-- **Practical example**:
-```csharp
-public async Task InvokeAsync(HttpContext context, IOrderRepository scopedRepo) {
-    // scopedRepo is correctly scoped to this specific HTTP request
-    await _next(context);
-}
-```
-
----
-
-### Q7: Why is storing `HttpContext` in a static field or background task hazardous?
-- **Short answer**: `HttpContext` is not thread-safe and is pooled/recycled by Kestrel as soon as the request completes.
-- **Deeper answer**: After the response finishes, Kestrel resets the `DefaultHttpContext` instance and returns it to the object pool. If a background task holds a reference to it, it will observe corrupted or completely different request data from a subsequent user&#x27;s HTTP request, creating severe security vulnerabilities.
-- **Practical example**: If a background fire-and-forget task needs request data, extract the specific values (e.g. `userId`, `correlationId`) into immutable local variables before firing the task.
-
----
-
-### Q8: What is the difference between `EndpointRoutingMiddleware` and `EndpointMiddleware`?
-- **Short answer**: `UseRouting()` matches the request URL to an endpoint and attaches metadata to `HttpContext`. `UseEndpoints()` executes the matched endpoint delegate.
-- **Deeper answer**: Splitting routing into two phases allows middleware positioned between `UseRouting` and `UseEndpoints` (like `UseAuthentication`, `UseAuthorization`, and `UseCors`) to inspect endpoint metadata (e.g. `[Authorize]`, `[AllowAnonymous]`) before deciding whether to allow the request to proceed.
-- **Practical example**: Authorization middleware checks `context.GetEndpoint()?.Metadata.GetMetadata&lt;AuthorizeAttribute&gt;()`.
-
----
-
-### Q9: How does the Correlation ID pattern facilitate observability in microservices?
-- **Short answer**: It generates a unique identifier at the API gateway and propagates it across all downstream HTTP, gRPC, and message queues to stitch distributed logs together.
-- **Deeper answer**: In a distributed system, a single user click may trigger calls across 10 distinct microservices. By propagating `X-Correlation-ID` across HTTP headers and logging it with every log message (via Serilog/OpenTelemetry log scopes), engineers can query `correlationId: xyz` and view the entire causal chain of events.
-- **Practical example**: Sending `X-Correlation-ID: 7a9b-4c2d` in outgoing `HttpClient` calls via a `DelegatingHandler`.
-
----
-
-### Q10: How does ASP.NET Core short-circuit the middleware pipeline?
-- **Short answer**: By not calling `await next(context)` and returning directly from `InvokeAsync`.
-- **Deeper answer**: When a middleware decides the request cannot proceed (e.g., authentication failure, rate limit exceeded, static file found and served), it writes the response directly and returns without invoking `next(context)`. Execution immediately unwinds back up through the previous middleware layers.
-- **Practical example**: Static file middleware returns the cached file and terminates the pipeline without routing or hitting endpoint handlers.
-</script>
 
   <script>
     // Tab switching
@@ -1051,6 +1282,19 @@ public async Task InvokeAsync(HttpContext context, IOrderRepository scopedRepo) 
 
       const pane = document.getElementById('pane-' + tabId);
       if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion
+    function toggleQa(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    }
+
+    function toggleAllQa(open) {
+      document.querySelectorAll('.qa-card').forEach(c => {
+        if (open) c.classList.add('open');
+        else c.classList.remove('open');
+      });
     }
 
     // Copy to clipboard
@@ -1080,11 +1324,10 @@ public async Task InvokeAsync(HttpContext context, IOrderRepository scopedRepo) 
           const nTarget = document.getElementById('notes-container');
           if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
         }
-        const iEl = document.getElementById('raw-interview');
-        if (iEl) {
-          const iTarget = document.getElementById('interview-container');
-          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
-        }
+        // Render inner QA contents
+        document.querySelectorAll('.raw-qa-content').forEach(el => {
+          el.innerHTML = marked.parse(el.textContent);
+        });
       }
       if (window.Prism) {
         Prism.highlightAll();

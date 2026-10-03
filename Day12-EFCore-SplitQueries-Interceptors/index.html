@@ -143,6 +143,27 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
@@ -248,6 +269,65 @@
       margin-bottom: 16px;
       color: #e2e8f0;
     }
+    /* QA Accordion Cards */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    .qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    .qa-card.open .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .qa-card.open .qa-body {
+      display: block;
+    }
+    /* Code Viewer Styles */
     .file-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -340,10 +420,40 @@
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
     </div>
 
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Cartesian Product Explosion vs. EF Core Split Queries (.AsSplitQuery())</text>
+          
+          <rect x="50" y="65" width="370" height="250" rx="8" fill="#1e293b" stroke="#ef4444"/>
+          <text x="70" y="95" fill="#f87171" font-size="14" font-weight="bold">SINGLE QUERY (.AsSingleQuery())</text>
+          <text x="70" y="120" fill="#94a3b8" font-size="11">Orders ➔ LEFT JOIN Items ➔ LEFT JOIN Shipments</text>
+          <rect x="70" y="140" width="330" height="85" rx="6" fill="#450a0a" stroke="#ef4444"/>
+          <text x="85" y="165" fill="#fca5a5" font-size="12" font-weight="bold">Cartesian Row Multiplication:</text>
+          <text x="85" y="188" fill="#fca5a5" font-size="11">10 Orders × 20 Items × 4 Shipments</text>
+          <text x="85" y="210" fill="#ffffff" font-size="14" font-weight="bold">= 800 Redundant Rows Transferred!</text>
+          <text x="70" y="255" fill="#ef4444" font-size="11">❌ High network latency, buffer bloat &amp; Gen 2 GC</text>
+
+          <rect x="480" y="65" width="370" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="500" y="95" fill="#34d399" font-size="14" font-weight="bold">SPLIT QUERY (.AsSplitQuery())</text>
+          <text x="500" y="120" fill="#94a3b8" font-size="11">Emits 3 independent queries over connection</text>
+          <rect x="500" y="140" width="330" height="85" rx="6" fill="#064e3b" stroke="#10b981"/>
+          <text x="515" y="165" fill="#a7f3d0" font-size="11">Query 1: Orders (10 rows)</text>
+          <text x="515" y="185" fill="#a7f3d0" font-size="11">Query 2: Items (200 rows)</text>
+          <text x="515" y="205" fill="#a7f3d0" font-size="11">Query 3: Shipments (40 rows)</text>
+          <text x="500" y="250" fill="#34d399" font-size="13" font-weight="bold">= 250 Total Rows (68.7% Network Reduction!)</text>
+          <text x="500" y="275" fill="#94a3b8" font-size="11">Intercepted via DbCommandInterceptor</text>
+        </svg>
+        
+    </div>
+
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
-      
-      
+      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (5 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
     </div>
@@ -355,8 +465,226 @@
       </div>
     </div>
 
-    
-    
+    <div id="pane-notes" class="tab-pane">
+      <div class="markdown-content" id="notes-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <div class="qa-card open" id="qa-card-1">
+          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is Cartesian explosion in Entity Framework Core, and how do you diagnose it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Cartesian explosion occurs when multiple 1-to-many collections are joined in a single SQL query, resulting in row counts multiplying across collections ($A \times B$) rather than adding ($A + B$).
+- **Deeper answer**: It manifests as slow query performance, high database CPU, and excessive managed memory allocations. In EF Core, if multiple sibling `.Include()` collections are queried without `.AsSplitQuery()`, the query plan issues multiple `LEFT JOIN` operations, duplicating parent columns across every permutation of child rows.
+- **Diagnosis**: Enable EF Core logging or run a SQL Profiler; EF Core issues warning `RelationalEventId.MultipleCollectionIncludeWarning`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card open" id="qa-card-2">
+          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the main operational risk of using `.AsSplitQuery()`, and how do you mitigate it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Concurrency tearing (data inconsistency across sub-queries) if records are inserted or deleted between the execution of the first query and subsequent split queries.
+- **Deeper answer**: Because `.AsSplitQuery()` sends multiple separate `SELECT` statements, if another transaction updates or deletes an order item between query 1 and query 2, the client could materialize an inconsistent state.
+- **Mitigation**: Wrap the query within a database transaction with `READ COMMITTED` or `REPEATABLE READ` isolation:
+```csharp
+await using var tx = await context.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead);
+var data = await context.Customers.Include(...).AsSplitQuery().ToListAsync();
+await tx.CommitAsync();
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-3">
+          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you configure `.AsSplitQuery()` globally across an entire application?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: In `DbContextOptionsBuilder.UseNpgsql()` or `.UseSqlServer()`, configure `UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)`.
+- **Practical example**:
+```csharp
+services.AddDbContext&lt;AppDbContext&gt;(options =&gt;
+    options.UseSqlServer(connectionString, o =&gt;
+        o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+```
+Individual queries can still override the global setting using `.AsSingleQuery()`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-4">
+          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is a `DbCommandInterceptor`, and what lifecycle events does it hook into?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: A middleware hook in EF Core that intercepts low-level `DbCommand` operations before and after execution across `Reader`, `Scalar`, and `NonQuery` operations (both sync and async).
+- **Deeper answer**: Methods include:
+  - `ReaderExecuting` / `ReaderExecutedAsync`: Intercepts `SELECT` queries returning rows.
+  - `NonQueryExecuting` / `NonQueryExecutedAsync`: Intercepts `INSERT`, `UPDATE`, `DELETE`, and DDL.
+  - `ScalarExecuting` / `ScalarExecutedAsync`: Intercepts aggregate functions like `COUNT()`.
+  - `CommandFailed` / `CommandFailedAsync`: Intercepts database exceptions and connection errors.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-5">
+          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How can you modify SQL commands dynamically using a `DbCommandInterceptor`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Mutate `DbCommand.CommandText` inside the `Executing` methods (`ReaderExecuting`, `NonQueryExecuting`) before the command is dispatched to ADO.NET.
+- **Deeper answer**:
+```csharp
+public override InterceptionResult&lt;DbDataReader&gt; ReaderExecuting(
+    DbCommand command, CommandEventData eventData, InterceptionResult&lt;DbDataReader&gt; result)
+{
+    // Append query hint or tracing comment
+    command.CommandText = $&quot;/* TraceId: {Activity.Current?.Id} */ &quot; + command.CommandText;
+    return base.ReaderExecuting(command, eventData, result);
+}
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-6">
+          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What is the difference between `DbCommandInterceptor` and `SaveChangesInterceptor`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: `DbCommandInterceptor` operates at the low-level SQL/ADO.NET layer; `SaveChangesInterceptor` operates at the high-level EF Core entity state layer before and after change detection.
+- **Deeper answer**:
+  - Use `SaveChangesInterceptor` (`SavingChanges`, `SavedChanges`) to set audit properties on entities (`CreatedAt`, `LastModifiedBy`, `TenantId`) or dispatch domain events before records are converted to SQL.
+  - Use `DbCommandInterceptor` for database connection hooks, SQL query modification, slow query logging, and low-level performance telemetry.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-7">
+          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Can a `DbCommandInterceptor` suppress or replace query execution results?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Yes. Return a non-empty `InterceptionResult&lt;T&gt;` from an `Executing` method to bypass the actual database call and return mock or cached data.
+- **Deeper answer**: By returning `InterceptionResult&lt;DbDataReader&gt;.SuppressWithResult(cachedReader)`, EF Core never sends the SQL command to the physical database. This technique is used to implement second-level distributed caching (e.g. Redis) directly within the EF Core pipeline.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-8">
+          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is Multiple Active Result Sets (MARS), and how does it relate to Split Queries?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: MARS allows a single SQL Server connection to maintain multiple active `SqlDataReader` streams simultaneously, enabling interleaved reads.
+- **Deeper answer**: When MARS is disabled in SQL Server, executing a second query while the first reader is still streaming throws an exception. In Split Queries without MARS, EF Core must read and buffer each query&#x27;s entire result into memory before opening the next split query. Enabling MARS allows concurrent streaming across sub-queries.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-9">
+          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How do you trace and correlate EF Core SQL queries in production using OpenTelemetry?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Use query tagging via `.TagWith()` combined with OpenTelemetry&#x27;s `OpenTelemetry.Instrumentation.EntityFrameworkCore` package.
+- **Deeper answer**:
+```csharp
+var orders = await context.Orders
+    .TagWith(&quot;Endpoint: CheckoutController.ProcessOrder&quot;)
+    .Where(o =&gt; o.CustomerId == id)
+    .ToListAsync();
+```
+EF Core inserts `-- Endpoint: CheckoutController.ProcessOrder` as a leading SQL comment. APM tools (Datadog, Dynatrace, New Relic) and database query profilers (`pg_stat_statements`) group queries by this tag, isolating slow application paths immediately.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-10">
+          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">Why can `.AsSplitQuery()` lead to N+1 query problems if misused?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: If combined with inappropriate joins or projection in client code, splitting queries on deep hierarchical trees can generate dozens of separate queries per HTTP request.
+- **Deeper answer**: While Split Queries solve Cartesian explosion on sibling collections (e.g. `Orders -&gt; Items` and `Orders -&gt; Shipments`), applying them indiscriminately across deep nesting levels (4+ levels deep) increases network roundtrips. On high-latency database connections (e.g. cross-region clouds), network roundtrip latency will outweigh the memory savings of row deduplication.</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
 
     <div id="pane-source" class="tab-pane">
       
@@ -1048,8 +1376,91 @@ EF Core&#x27;s interception mechanism allows deep hooks into command generation 
 dotnet test tests/Day12.SplitQueriesInterceptors.Tests/Day12.SplitQueriesInterceptors.Tests.csproj
 ```
 </script>
-  
-  
+  <script type="text/markdown" id="raw-notes"># Day 12 - Engineering Notes: EF Core Split Queries &amp; DbCommandInterceptor
+
+## 1. The Cartesian Explosion Problem in Relational Queries
+
+When an application loads multiple 1-to-many child collections in a single query:
+```csharp
+var customers = await context.Customers
+    .Include(c =&gt; c.Orders)
+        .ThenInclude(o =&gt; o.OrderItems)
+    .Include(c =&gt; c.Orders)
+        .ThenInclude(o =&gt; o.Shipments)
+    .ToListAsync();
+```
+
+### Mathematical Explosion:
+In a relational database, `JOIN` operations produce the Cartesian product of the matched collections:
+$$\text{Returned Rows per Order} = |\text{OrderItems}| \times |\text{Shipments}|$$
+
+If a Customer has:
+- 10 Orders
+- Each Order has 20 OrderItems
+- Each Order has 4 Shipments
+
+In a Single Query (`.AsSingleQuery()`):
+- Total rows returned across the network:
+  $$10 \times 20 \times 4 = 800 \text{ rows}$$
+- Each row contains full duplicated customer columns, order columns, item columns, and shipment columns.
+- Across 1,000 customers, this translates to **800,000 rows** transmitted over the wire for only $1,000 + 10,000 + 20,000 + 4,000 = 35,000$ actual entities!
+- Consequences: Massive network bandwidth consumption, database buffer pool exhaustion, high GC Gen 2 allocations, and high client CPU materialization overhead.
+
+---
+
+## 2. Solution: `.AsSplitQuery()`
+
+EF Core splits the relational graph into multiple independent SQL queries executed sequentially over the same database connection:
+1. `SELECT ... FROM Customers`
+2. `SELECT ... FROM Orders WHERE CustomerId IN (...)`
+3. `SELECT ... FROM OrderItems WHERE OrderId IN (...)`
+4. `SELECT ... FROM Shipments WHERE OrderId IN (...)`
+
+### Row Count with Split Queries:
+$$\text{Total Rows} = |\text{Customers}| + |\text{Orders}| + |\text{OrderItems}| + |\text{Shipments}| = 35,000 \text{ rows}$$
+(Compared to 800,000 rows — a **95.6% reduction in data transferred**!)
+
+### Trade-offs: Single Query vs. Split Query
+
+| Characteristic | Single Query (`AsSingleQuery`) | Split Query (`AsSplitQuery`) |
+|---|---|---|
+| **SQL Queries** | Exactly 1 | $1 + N$ (1 per collection level) |
+| **Network Payload** | Can explode quadratically ($O(A \times B)$) | Linear ($O(A + B)$) |
+| **Consistency** | Strict single snapshot | Potential concurrency tear if child records change between sub-queries (unless wrapped in transaction) |
+| **Database Roundtrips** | 1 roundtrip | Multiple roundtrips (mitigated by MARS or pipelining) |
+| **Best Used For** | 1:1 relationships or single 1:N collection | Multiple 1:N collection navigations |
+
+---
+
+## 3. Database Observability with `DbCommandInterceptor`
+
+EF Core provides diagnostic interception through `DbCommandInterceptor`. It intercepts SQL commands before and after execution at the ADO.NET level:
+
+```csharp
+public class SlowQueryInterceptor : DbCommandInterceptor
+{
+    private readonly long _thresholdMs;
+
+    public SlowQueryInterceptor(long thresholdMs = 100) =&gt; _thresholdMs = thresholdMs;
+
+    public override DbDataReader ReaderExecuted(
+        DbCommand command, CommandExecutedEventData eventData, DbDataReader result)
+    {
+        if (eventData.Duration.TotalMilliseconds &gt; _thresholdMs)
+        {
+            LogSlowQuery(command.CommandText, eventData.Duration);
+        }
+        return base.ReaderExecuted(command, eventData, result);
+    }
+}
+```
+
+### Key Use Cases for Interceptors:
+1. **APM and Telemetry**: Capturing real SQL statements with execution durations.
+2. **Slow Query Auditing**: Emitting alerts and OpenTelemetry spans for queries exceeding latency budgets.
+3. **Tenant Security / Row-Level Security**: Injecting session parameters or tenant IDs into `DbCommand.CommandText`.
+4. **Soft Delete / Query Tagging**: Automating `.TagWith()` tracing comments for distributed observability.
+</script>
 
   <script>
     // Tab switching
@@ -1062,6 +1473,19 @@ dotnet test tests/Day12.SplitQueriesInterceptors.Tests/Day12.SplitQueriesInterce
 
       const pane = document.getElementById('pane-' + tabId);
       if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion
+    function toggleQa(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    }
+
+    function toggleAllQa(open) {
+      document.querySelectorAll('.qa-card').forEach(c => {
+        if (open) c.classList.add('open');
+        else c.classList.remove('open');
+      });
     }
 
     // Copy to clipboard
@@ -1091,11 +1515,10 @@ dotnet test tests/Day12.SplitQueriesInterceptors.Tests/Day12.SplitQueriesInterce
           const nTarget = document.getElementById('notes-container');
           if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
         }
-        const iEl = document.getElementById('raw-interview');
-        if (iEl) {
-          const iTarget = document.getElementById('interview-container');
-          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
-        }
+        // Render inner QA contents
+        document.querySelectorAll('.raw-qa-content').forEach(el => {
+          el.innerHTML = marked.parse(el.textContent);
+        });
       }
       if (window.Prism) {
         Prism.highlightAll();

@@ -143,6 +143,27 @@
       color: var(--text-muted);
       font-size: 15px;
     }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
     .tabs-nav {
       display: flex;
       border-bottom: 1px solid var(--border);
@@ -248,6 +269,65 @@
       margin-bottom: 16px;
       color: #e2e8f0;
     }
+    /* QA Accordion Cards */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    .qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    .qa-card.open .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .qa-card.open .qa-body {
+      display: block;
+    }
+    /* Code Viewer Styles */
     .file-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -340,10 +420,43 @@
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
     </div>
 
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">PostgreSQL MVCC Multi-Version Tuple Chaining &amp; Snapshot Visibility</text>
+          
+          <rect x="60" y="70" width="340" height="150" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="80" y="95" fill="#60a5fa" font-size="13" font-weight="bold">TUPLE VERSION 1 (Old)</text>
+          <text x="80" y="120" fill="#94a3b8" font-size="11">xmin: 100 (Created by Tx 100)</text>
+          <text x="80" y="140" fill="#f87171" font-size="11">xmax: 105 (Superseded by Tx 105)</text>
+          <text x="80" y="165" fill="#cbd5e1" font-size="12">Data: Alice | Balance: $500</text>
+          <text x="80" y="195" fill="#38bdf8" font-size="11">ctid ➔ points to Tuple V2</text>
+
+          <path d="M 400 145 L 490 145" stroke="#38bdf8" stroke-width="3" stroke-dasharray="4,4"/>
+          <polygon points="495,145 485,140 485,150" fill="#38bdf8"/>
+
+          <rect x="500" y="70" width="340" height="150" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="520" y="95" fill="#34d399" font-size="13" font-weight="bold">TUPLE VERSION 2 (Current)</text>
+          <text x="520" y="120" fill="#34d399" font-size="11">xmin: 105 (Created by Tx 105)</text>
+          <text x="520" y="140" fill="#94a3b8" font-size="11">xmax: 0 (Live tuple, un-deleted)</text>
+          <text x="520" y="165" fill="#cbd5e1" font-size="12">Data: Alice | Balance: $750</text>
+          <text x="520" y="195" fill="#34d399" font-size="11">ctid ➔ points to self</text>
+
+          <rect x="60" y="245" width="780" height="80" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="80" y="270" fill="#fbbf24" font-size="12" font-weight="bold">Snapshot Isolation Rule:</text>
+          <text x="80" y="292" fill="#cbd5e1" font-size="11">• Tx started at timestamp 102 ➔ Sees Tuple V1 (Tx 105 was not yet committed). Readers never block writers!</text>
+          <text x="80" y="312" fill="#cbd5e1" font-size="11">• Tx started at timestamp 108 ➔ Sees Tuple V2. Vacuum reclaims V1 only after Tx 102 completes.</text>
+        </svg>
+        
+    </div>
+
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
-      
-      
+      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
     </div>
@@ -355,8 +468,210 @@
       </div>
     </div>
 
-    
-    
+    <div id="pane-notes" class="tab-pane">
+      <div class="markdown-content" id="notes-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <div class="qa-card open" id="qa-card-1">
+          <div class="qa-header" onclick="toggleQa('qa-card-1')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the core architectural difference between pessimistic locking and MVCC?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Pessimistic locking acquires shared/exclusive locks to prevent concurrent conflicts, causing readers to block writers and writers to block readers. MVCC maintains multiple row versions with transaction timestamps, ensuring readers never block writers and writers never block readers.
+- **Deeper answer**: Under 2-Phase Locking (2PL), reading a row takes a Shared Lock (S-lock), preventing any transaction from acquiring an Exclusive Lock (X-lock) to update that row. In high-traffic systems, this leads to lock contention, queueing, and deadlocks. MVCC stores historical row versions identified by `xmin` and `xmax`. Readers simply view the version corresponding to their snapshot timestamp without taking any locks on data rows.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card open" id="qa-card-2">
+          <div class="qa-header" onclick="toggleQa('qa-card-2')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why does PostgreSQL treat `READ UNCOMMITTED` as `READ COMMITTED`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: PostgreSQL&#x27;s MVCC architecture inherently isolates transactions by checking tuple visibility against snapshots, making it impossible to read uncommitted tuple versions without deliberately bypassing the MVCC engine.
+- **Deeper answer**: In lock-based databases (like SQL Server), Read Uncommitted allows &quot;dirty reads&quot; by skipping Shared Locks during reads. In PostgreSQL, there are no read locks to skip! When a reader inspects a tuple, it checks if `xmin` has committed. Because uncommitted tuples fail the visibility check, PostgreSQL naturally provides Read Committed guarantees at zero extra locking cost.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-3">
+          <div class="qa-header" onclick="toggleQa('qa-card-3')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is &quot;Write Skew&quot;, and which isolation level is required to prevent it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Write skew occurs when two concurrent transactions read overlapping state, verify a business rule, and then update distinct, disjoint records such that the combined outcome violates the rule. It is only prevented by `SERIALIZABLE` isolation or explicit pessimistic locking (`SELECT FOR UPDATE`).
+- **Deeper answer**: Consider a hospital requiring at least 1 doctor on-call. Doctors Alice and Bob are both on-call. Alice starts a transaction, sees 2 doctors on-call, and withdraws. Simultaneously, Bob starts a transaction, sees 2 doctors on-call, and withdraws. Both commit under `REPEATABLE READ` without row conflicts (Alice updated row A, Bob updated row B). The hospital now has 0 doctors on-call! Only `SERIALIZABLE` detects this serialization dependency and aborts one transaction.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-4">
+          <div class="qa-header" onclick="toggleQa('qa-card-4')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does PostgreSQL implement Serializable Snapshot Isolation (SSI) without heavyweight table locks?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: SSI tracks read-write dependencies at runtime using lightweight in-memory `SIREAD` lock flags and aborts transactions if a cycle (dependency cycle) is formed.
+- **Deeper answer**: Traditional serializable engines use strict 2PL (table-level or range locks). PostgreSQL uses Serializable Snapshot Isolation (SSI). It does not block transactions. Instead, when a query reads a row or page, it creates a non-blocking `SIREAD` lock. If transaction T1 reads what T2 later writes, an rw-antidependency edge is recorded. If a cycle $T_1 \to T_2 \to T_1$ is detected, PostgreSQL raises error `40001: could not serialize access due to read/write dependencies among transactions`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-5">
+          <div class="qa-header" onclick="toggleQa('qa-card-5')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How should a .NET application handle PostgreSQL serializable conflict exceptions (`40001`)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Wrap the transaction in an automatic retry policy (e.g. using Polly or EF Core&#x27;s `ExecutionStrategy`) with exponential backoff and jitter.
+- **Deeper answer**: In Serializable isolation, conflicts and aborts are not bugs; they are expected concurrency control mechanisms. When Npgsql throws `PostgresException` with `SqlState == &quot;40001&quot;`, the application must rollback the aborted transaction and re-execute the entire unit of work from the beginning.
+- **Practical example**:
+```csharp
+var strategy = dbContext.Database.CreateExecutionStrategy();
+await strategy.ExecuteAsync(async () =&gt;
+{
+    await using var tx = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+    // Execute business logic...
+    await dbContext.SaveChangesAsync();
+    await tx.CommitAsync();
+});
+```
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-6">
+          <div class="qa-header" onclick="toggleQa('qa-card-6')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What is the Write-Ahead Log (WAL) and how does it guarantee durability during sudden server power loss?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: WAL ensures changes are written sequentially and flushed to non-volatile disk before the corresponding database page in memory is modified or acknowledged to the client.
+- **Deeper answer**: Writing random 8KB pages to disk on every transaction commit is prohibitively slow. Instead, PostgreSQL flushes an append-only WAL record containing the transaction changes. When a power crash occurs:
+  1. Dirty pages in memory are lost.
+  2. On reboot, the engine inspects the last checkpoint in the WAL.
+  3. **REDO**: Replays all committed WAL records up to the crash point, restoring all committed changes into memory.
+  4. **UNDO**: Discards uncommitted transaction modifications.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-7">
+          <div class="qa-header" onclick="toggleQa('qa-card-7')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is the risk of long-running transactions in PostgreSQL?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Long-running transactions prevent `VACUUM` from cleaning up dead tuples, leading to severe table bloat, disk exhaustion, and degraded query performance.
+- **Deeper answer**: A dead tuple cannot be reclaimed by `VACUUM` if its `xmax` is newer than the oldest active transaction&#x27;s `xmin` (the transaction could theoretically still need to view the old version). If a transaction stays open for hours (e.g. an unclosed connection or slow analytical query), all updates and deletes across the entire database accumulate as dead rows on disk.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-8">
+          <div class="qa-header" onclick="toggleQa('qa-card-8')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the difference between `Pessimistic Concurrency` and `Optimistic Concurrency` in Entity Framework Core?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Pessimistic concurrency locks records at the database level (`SELECT FOR UPDATE`); Optimistic concurrency assumes no conflicts will occur and verifies a rowversion/timestamp column during `UPDATE`.
+- **Deeper answer**: In EF Core, optimistic concurrency is configured via `.IsRowVersion()` or `[Timestamp]`. When executing `SaveChangesAsync()`, EF Core appends `WHERE Id = @id AND Version = @originalVersion`. If another process updated the row in the interim, `RowsAffected == 0`, and EF Core throws `DbUpdateConcurrencyException`.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-9">
+          <div class="qa-header" onclick="toggleQa('qa-card-9')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">What happens when an unhandled exception occurs inside a `using var transaction = ...` block in .NET?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: The transaction is automatically rolled back when the `IDbTransaction` is disposed.
+- **Deeper answer**: `IDbTransaction` follows the RAII pattern. If `Commit()` or `CommitAsync()` was not explicitly executed before reaching the end of the `using` scope, the `Dispose()` method automatically issues a `ROLLBACK` command to the database server, restoring consistency.
+
+---</div>
+          </div>
+        </div>
+        
+
+        <div class="qa-card " id="qa-card-10">
+          <div class="qa-header" onclick="toggleQa('qa-card-10')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do Deadlocks occur in database transactions and how do you design systems to prevent them?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">- **Short answer**: Deadlocks occur when Transaction 1 holds a lock on resource A and requests resource B, while Transaction 2 holds resource B and requests resource A.
+- **Deeper answer**: Database engines detect deadlocks via a directed wait-for graph, terminate one transaction with a deadlock error, and allow the other to proceed.
+- **Prevention Rules**:
+  1. **Consistent Lock Ordering**: Always acquire locks on entities in identical chronological order (e.g. always sort resource IDs: `var sortedIds = ids.OrderBy(x =&gt; x).ToList()`).
+  2. **Short Transactions**: Minimize transaction duration; do not perform external HTTP calls or file I/O inside open database transactions.
+  3. **Keep Isolation Minimal**: Use `Read Committed` unless higher levels are strictly required by business domain invariants.</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
 
     <div id="pane-source" class="tab-pane">
       
@@ -804,8 +1119,57 @@ Every row in a PostgreSQL heap page includes system columns:
 - Supports `Push`, `Pop`, `Top`, and `GetMin` in $O(1)$ constant time.
 - Implemented using pairs `(Value, CurrentMin)` where `CurrentMin = Math.Min(val, previousMin)`.
 </script>
-  
-  
+  <script type="text/markdown" id="raw-notes"># Day 10 - Engineering Notes: SQL Transactions, ACID &amp; MVCC Internals
+
+## 1. ACID Guarantees &amp; Low-Level Mechanics
+
+| Property | Meaning | Underlying Database Mechanism |
+|---|---|---|
+| **Atomicity** | All operations in a transaction succeed or none take effect. | Write-Ahead Logging (WAL) &amp; Undo/Redo logs with transaction abort rollback. |
+| **Consistency** | Database transitions from one valid state to another according to constraints. | Schema constraints, check conditions, foreign keys, and application-level business invariants. |
+| **Isolation** | Concurrent transactions execute without interfering with one another. | Multi-Version Concurrency Control (MVCC) and Two-Phase Locking (2PL / SSI). |
+| **Durability** | Once committed, data survives power loss, crashes, and OS restarts. | Synchronous WAL flush to persistent NVMe/SSD storage before `COMMIT` returns acknowledgment. |
+
+---
+
+## 2. PostgreSQL MVCC (Multi-Version Concurrency Control)
+
+Unlike lock-based engines that block readers while writing, PostgreSQL uses MVCC:
+&gt; **&quot;Readers never block writers, and writers never block readers.&quot;**
+
+### Tuple Header Structure
+Every row tuple on an 8KB page contains internal MVCC metadata:
+- **`xmin` (32-bit/64-bit)**: The Transaction ID (XID) of the transaction that inserted the row.
+- **`xmax` (32-bit/64-bit)**: The Transaction ID that deleted or updated the row (0 if live).
+- **`t_infomask` (16-bit)**: Bit flags describing tuple state (`HEAP_XMIN_COMMITTED`, `HEAP_XMIN_INVALID`, `HEAP_XMAX_COMMITTED`).
+- **`t_ctid`**: Physical location pointer `(page, offset)` pointing to the current or newer version of the tuple.
+
+### Update Mechanism
+When an `UPDATE` occurs:
+1. PostgreSQL does NOT overwrite the existing row in place.
+2. It sets `xmax = current_xid` on the old tuple.
+3. It creates an entirely new tuple with `xmin = current_xid` and `xmax = 0`.
+4. It sets the old tuple&#x27;s `ctid` to point to the new tuple.
+5. Obsolete versions are later purged by the `VACUUM` process.
+
+---
+
+## 3. ANSI Isolation Levels &amp; Concurrency Anomalies
+
+| Isolation Level | Dirty Read | Non-Repeatable Read | Phantom Read | Serialization Anomaly (Write Skew) |
+|---|---|---|---|---|
+| **Read Uncommitted** | Possible (prevented in PG) | Possible | Possible | Possible |
+| **Read Committed** (PG Default) | Prevented | Possible | Possible | Possible |
+| **Repeatable Read** | Prevented | Prevented | Prevented in PG | Possible |
+| **Serializable** (SSI) | Prevented | Prevented | Prevented | Prevented |
+
+### Anatomy of Anomalies
+
+1. **Dirty Read (G1)**: Transaction T2 reads uncommitted modifications made by T1. If T1 rolls back, T2 operated on data that never existed. *(Note: PostgreSQL maps Read Uncommitted to Read Committed, completely prohibiting Dirty Reads).*
+2. **Non-Repeatable Read (Fuzzy Read - G2a)**: T1 reads a row, T2 updates or deletes that row and commits. T1 re-reads the row and observes changed values.
+3. **Phantom Read (A3)**: T1 executes a range query (`WHERE balance &gt; 1000`). T2 inserts a new row satisfying the predicate and commits. T1 re-executes the query and sees a new &quot;phantom&quot; row.
+4. **Write Skew**: Two concurrent transactions read overlapping datasets, make localized decisions based on constraints, and commit distinct modifications that collectively violate global business invariants (e.g. Doctor On-Call shift problem).
+</script>
 
   <script>
     // Tab switching
@@ -818,6 +1182,19 @@ Every row in a PostgreSQL heap page includes system columns:
 
       const pane = document.getElementById('pane-' + tabId);
       if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion
+    function toggleQa(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    }
+
+    function toggleAllQa(open) {
+      document.querySelectorAll('.qa-card').forEach(c => {
+        if (open) c.classList.add('open');
+        else c.classList.remove('open');
+      });
     }
 
     // Copy to clipboard
@@ -847,11 +1224,10 @@ Every row in a PostgreSQL heap page includes system columns:
           const nTarget = document.getElementById('notes-container');
           if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
         }
-        const iEl = document.getElementById('raw-interview');
-        if (iEl) {
-          const iTarget = document.getElementById('interview-container');
-          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
-        }
+        // Render inner QA contents
+        document.querySelectorAll('.raw-qa-content').forEach(el => {
+          el.innerHTML = marked.parse(el.textContent);
+        });
       }
       if (window.Prism) {
         Prism.highlightAll();

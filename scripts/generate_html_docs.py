@@ -2,6 +2,7 @@
 import os
 import json
 import html
+import re
 
 DAYS_INFO = [
     {"num": 1, "dir": "Day01-CSharp-Memory", "title": "C# Memory Model, Span & ReadOnlySpan", "category": "Memory & Performance"},
@@ -18,6 +19,8 @@ DAYS_INFO = [
     {"num": 12, "dir": "Day12-EFCore-SplitQueries-Interceptors", "title": "EF Core Split Queries & DbCommandInterceptor", "category": "EF Core & ORM"},
     {"num": 13, "dir": "Day13-Dapper-Performance", "title": "High-Performance Data Access with Dapper & Rotated Array Search", "category": "Dapper & Performance"},
 ]
+
+from diagram_helpers import get_day_svg
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -164,6 +167,27 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       color: var(--text-muted);
       font-size: 15px;
     }}
+    .diagram-card {{
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }}
+    .diagram-title {{
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }}
     .tabs-nav {{
       display: flex;
       border-bottom: 1px solid var(--border);
@@ -269,6 +293,65 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       margin-bottom: 16px;
       color: #e2e8f0;
     }}
+    /* QA Accordion Cards */
+    .qa-controls {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }}
+    .qa-card {{
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }}
+    .qa-card:hover {{
+      border-color: var(--border-accent);
+    }}
+    .qa-header {{
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }}
+    .qa-badge {{
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }}
+    .qa-title {{
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }}
+    .qa-toggle-icon {{
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }}
+    .qa-card.open .qa-toggle-icon {{
+      transform: rotate(180deg);
+    }}
+    .qa-body {{
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }}
+    .qa-card.open .qa-body {{
+      display: block;
+    }}
+    /* Code Viewer Styles */
     .file-card {{
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -348,10 +431,16 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
     </div>
 
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics &amp; Systems Visual Model</div>
+      {day_svg}
+    </div>
+
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('readme')">📑 Module README</button>
-      {notes_tab_btn}
-      {interview_tab_btn}
+      <button class="tab-btn" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
       <button class="tab-btn" onclick="switchTab('source')">💻 Production Source ({source_files_count} files)</button>
       <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests ({test_files_count} files)</button>
     </div>
@@ -363,8 +452,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       </div>
     </div>
 
-    {notes_tab_pane}
-    {interview_tab_pane}
+    <div id="pane-notes" class="tab-pane">
+      <div class="markdown-content" id="notes-container">
+        <!-- Rendered by Marked.js -->
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        {qa_cards_html}
+      </div>
+    </div>
 
     <div id="pane-source" class="tab-pane">
       {source_files_html}
@@ -381,8 +486,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   <!-- Raw Content Payloads for Client-side Rendering -->
   <script type="text/markdown" id="raw-readme">{raw_readme}</script>
-  {raw_notes_script}
-  {raw_interview_script}
+  <script type="text/markdown" id="raw-notes">{raw_notes}</script>
 
   <script>
     // Tab switching
@@ -395,6 +499,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
       const pane = document.getElementById('pane-' + tabId);
       if (pane) pane.classList.add('active');
+    }}
+
+    // QA Accordion
+    function toggleQa(id) {{
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    }}
+
+    function toggleAllQa(open) {{
+      document.querySelectorAll('.qa-card').forEach(c => {{
+        if (open) c.classList.add('open');
+        else c.classList.remove('open');
+      }});
     }}
 
     // Copy to clipboard
@@ -424,11 +541,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
           const nTarget = document.getElementById('notes-container');
           if (nTarget) nTarget.innerHTML = marked.parse(nEl.textContent);
         }}
-        const iEl = document.getElementById('raw-interview');
-        if (iEl) {{
-          const iTarget = document.getElementById('interview-container');
-          if (iTarget) iTarget.innerHTML = marked.parse(iEl.textContent);
-        }}
+        // Render inner QA contents
+        document.querySelectorAll('.raw-qa-content').forEach(el => {{
+          el.innerHTML = marked.parse(el.textContent);
+        }});
       }}
       if (window.Prism) {{
         Prism.highlightAll();
@@ -581,12 +697,12 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
   <div class="container">
     <header>
       <h1>100-Day .NET + AI Engineering Track</h1>
-      <p class="lead">Complete knowledge repository containing all daily architectural guides, technical notes, senior interview questions, C# source implementations, unit tests, and DSA problem solvers.</p>
+      <p class="lead">Interactive Knowledge Hub containing all 13 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
       <div class="stats-bar">
         <div class="stat-pill">Completed: <span>13 / 100 Days</span></div>
+        <div class="stat-pill">Interview Q&amp;A: <span>130 Senior Scenarios &amp; Answers</span></div>
         <div class="stat-pill">Test Suite: <span>149 / 149 Passed (100%)</span></div>
         <div class="stat-pill">Platform: <span>.NET 8 / C# 12</span></div>
-        <div class="stat-pill">Streak: <span>13 Days Active</span></div>
       </div>
     </header>
 
@@ -603,6 +719,43 @@ def read_file_safely(path):
         with open(path, "r", encoding="utf-8", errors="replace") as f:
             return f.read()
     return ""
+
+def format_interview_qa(interview_md):
+    if not interview_md:
+        return "<p>No interview questions available.</p>"
+    
+    pattern = re.compile(r'###\s+Q(\d+):\s*(.*?)(?=(?:###\s+Q\d+:|$))', re.DOTALL)
+    matches = pattern.findall(interview_md)
+    
+    if not matches:
+        return f'<div class="markdown-content">{html.escape(interview_md)}</div>'
+    
+    qa_cards = []
+    for q_num, q_body in matches:
+        lines = q_body.strip().split("\n")
+        q_title = lines[0].strip()
+        body_content = "\n".join(lines[1:]).strip()
+        card_id = f"qa-card-{q_num}"
+        
+        # Make first 2 open by default for quick view
+        is_open_class = "open" if int(q_num) <= 2 else ""
+        
+        qa_cards.append(f"""
+        <div class="qa-card {is_open_class}" id="{card_id}">
+          <div class="qa-header" onclick="toggleQa('{card_id}')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q{q_num}</span>
+              <span class="qa-title">{html.escape(q_title)}</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </div>
+          <div class="qa-body">
+            <div class="raw-qa-content">{html.escape(body_content)}</div>
+          </div>
+        </div>
+        """)
+    
+    return "\n".join(qa_cards)
 
 def generate_file_cards(base_dir, sub_dir, prefix):
     folder_path = os.path.join(base_dir, sub_dir)
@@ -641,7 +794,7 @@ def generate_file_cards(base_dir, sub_dir, prefix):
 
 def build_days_html():
     root_dir = os.path.abspath(".")
-    print(f"Generating HTML files for Days 1 to {len(DAYS_INFO)} in {root_dir}...")
+    print(f"Generating full HTML files with 3D SVGs & Interview Q&A for Days 1 to {len(DAYS_INFO)}...")
 
     select_options = ""
     for d in DAYS_INFO:
@@ -675,29 +828,8 @@ def build_days_html():
         notes_content = read_file_safely(os.path.join(abs_day_dir, "notes.md"))
         interview_content = read_file_safely(os.path.join(abs_day_dir, "interview-questions.md"))
 
-        notes_tab_btn = ""
-        notes_tab_pane = ""
-        raw_notes_script = ""
-        if notes_content:
-            notes_tab_btn = '<button class="tab-btn" onclick="switchTab(\'notes\')">📝 Deep-Dive Notes</button>'
-            notes_tab_pane = """
-            <div id="pane-notes" class="tab-pane">
-              <div class="markdown-content" id="notes-container"></div>
-            </div>
-            """
-            raw_notes_script = f'<script type="text/markdown" id="raw-notes">{html.escape(notes_content)}</script>'
-
-        interview_tab_btn = ""
-        interview_tab_pane = ""
-        raw_interview_script = ""
-        if interview_content:
-            interview_tab_btn = '<button class="tab-btn" onclick="switchTab(\'interview\')">💡 Senior Interview Q&A</button>'
-            interview_tab_pane = """
-            <div id="pane-interview" class="tab-pane">
-              <div class="markdown-content" id="interview-container"></div>
-            </div>
-            """
-            raw_interview_script = f'<script type="text/markdown" id="raw-interview">{html.escape(interview_content)}</script>'
+        qa_cards_html = format_interview_qa(interview_content)
+        day_svg = get_day_svg(day_num)
 
         source_cards, source_count = generate_file_cards(abs_day_dir, "src", f"d{day_num}-src")
         test_cards, test_count = generate_file_cards(abs_day_dir, "tests", f"d{day_num}-tests")
@@ -712,23 +844,20 @@ def build_days_html():
             prev_link=prev_link,
             next_link=next_link,
             select_options=select_options,
+            day_svg=day_svg,
             source_files_count=source_count,
             test_files_count=test_count,
-            notes_tab_btn=notes_tab_btn,
-            interview_tab_btn=interview_tab_btn,
-            notes_tab_pane=notes_tab_pane,
-            interview_tab_pane=interview_tab_pane,
+            qa_cards_html=qa_cards_html,
             source_files_html=source_files_html,
             test_files_html=test_files_html,
             raw_readme=html.escape(readme_content),
-            raw_notes_script=raw_notes_script,
-            raw_interview_script=raw_interview_script
+            raw_notes=html.escape(notes_content)
         )
 
         out_path = os.path.join(abs_day_dir, "index.html")
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(day_html)
-        print(f"  ✓ Generated: {day_dir}/index.html ({source_count} src, {test_count} tests)")
+        print(f"  ✓ Generated: {day_dir}/index.html ({source_count} src, {test_count} tests, 10 Q&As, SVG diagram)")
 
         summary_preview = ""
         if readme_content:
@@ -746,7 +875,7 @@ def build_days_html():
             <p class="card-desc">{html.escape(summary_preview)}</p>
           </div>
           <div class="card-footer">
-            <span>{source_count + test_count} C# Files • Markdown Included</span>
+            <span>🖼️ 3D Diagram • 💡 10 Q&As • {source_count + test_count} C# Files</span>
             <span class="view-btn">Explore Day {day_num:02d} →</span>
           </div>
         </a>
@@ -756,7 +885,7 @@ def build_days_html():
     hub_path = os.path.join(root_dir, "index.html")
     with open(hub_path, "w", encoding="utf-8") as f:
         f.write(hub_html)
-    print("\n✓ Generated master Knowledge Hub: index.html")
+    print("\n✓ Generated master Knowledge Hub: index.html with all 13 days!")
 
 if __name__ == "__main__":
     build_days_html()

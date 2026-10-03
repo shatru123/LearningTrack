@@ -24,6 +24,15 @@ Roadmap overview: [roadmap/100-day-roadmap.md](roadmap/100-day-roadmap.md)
 
 ---
 
+## 🌐 Quick Access: Interactive Web Knowledge Hub
+
+Read complete daily guides, deep architectural notes, interview questions, and copy C# code snippets directly from your phone or browser:
+
+- **Instant Live Preview**: [Open Knowledge Hub via HTMLPreview](https://htmlpreview.github.io/?https://github.com/shatru123/LearningTrack/blob/main/index.html)
+- **GitHub Pages Portal** *(once enabled)*: [https://shatru123.github.io/LearningTrack/](https://shatru123.github.io/LearningTrack/)
+
+---
+
 ## Completed Curriculum (Days 1–13)
 
 Each day includes complete practical implementations, xUnit test suites, comprehensive engineering notes, and practical scenarios.

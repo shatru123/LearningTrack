@@ -1,0 +1,2575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 17: Introduction to Redis &amp; Cache Patterns | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 17</span>
+        <span class="badge badge-category">Redis &amp; Distributed Systems</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day16-Synchronization-Locks/index.html" class="nav-btn">← Day 16</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+
+        </select>
+        <span class="nav-btn" style="opacity:0.4; cursor:default;">Next Day →</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 17: Introduction to Redis &amp; Cache Patterns</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 3 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Redis Architecture, Caching Topologies &amp; Stampede Protection</text>
+          
+          <!-- Topologies -->
+          <rect x="40" y="65" width="260" height="250" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="60" y="95" fill="#60a5fa" font-size="14" font-weight="bold">Cache Topologies</text>
+          <rect x="55" y="115" width="230" height="40" rx="4" fill="#0f172a"/><text x="65" y="135" fill="#38bdf8" font-size="11">Cache-Aside (Lazy)</text><text x="65" y="148" fill="#94a3b8" font-size="9">Read cache; on miss query DB</text>
+          <rect x="55" y="165" width="230" height="40" rx="4" fill="#0f172a"/><text x="65" y="185" fill="#34d399" font-size="11">Write-Through</text><text x="65" y="198" fill="#94a3b8" font-size="9">Sync write cache + DB together</text>
+          <rect x="55" y="215" width="230" height="40" rx="4" fill="#0f172a"/><text x="65" y="235" fill="#c084fc" font-size="11">Write-Behind (Write-Back)</text><text x="65" y="248" fill="#94a3b8" font-size="9">Async queue batch DB flush</text>
+          <text x="60" y="285" fill="#94a3b8" font-size="11">Singleton ConnectionMultiplexer</text>
+
+          <!-- Cache Stampede / Thundering Herd -->
+          <rect x="330" y="65" width="270" height="250" rx="8" fill="#1e293b" stroke="#ef4444"/>
+          <text x="350" y="95" fill="#f87171" font-size="14" font-weight="bold">Cache Stampede Hazards</text>
+          <rect x="345" y="115" width="240" height="60" rx="4" fill="#0f172a"/>
+          <text x="355" y="135" fill="#ef4444" font-size="11" font-weight="bold">Key Expiration under Load</text>
+          <text x="355" y="152" fill="#cbd5e1" font-size="10">5,000 req/sec hit DB simultaneously</text>
+          <text x="355" y="167" fill="#94a3b8" font-size="10">DB CPU spikes to 100%, cascading outage</text>
+          
+          <rect x="345" y="185" width="240" height="60" rx="4" fill="#0f172a"/>
+          <text x="355" y="205" fill="#fbbf24" font-size="11" font-weight="bold">Cache Avalanche &amp; Jitter</text>
+          <text x="355" y="222" fill="#cbd5e1" font-size="10">All keys expire at midnight</text>
+          <text x="355" y="237" fill="#94a3b8" font-size="10">Mitigate: TTL +/- random jitter</text>
+          <text x="350" y="285" fill="#f87171" font-size="11">Prevent single-point failure</text>
+
+          <!-- Mitigation: Mutex & XFetch -->
+          <rect x="630" y="65" width="230" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="650" y="95" fill="#34d399" font-size="14" font-weight="bold">Mitigation Solutions</text>
+          <rect x="645" y="115" width="200" height="55" rx="4" fill="#0f172a"/>
+          <text x="655" y="135" fill="#60a5fa" font-size="11" font-weight="bold">1. Mutex (Single-Flight)</text>
+          <text x="655" y="155" fill="#94a3b8" font-size="10">1 worker loads DB; others await</text>
+          
+          <rect x="645" y="180" width="200" height="55" rx="4" fill="#0f172a"/>
+          <text x="655" y="200" fill="#34d399" font-size="11" font-weight="bold">2. XFetch Algorithm</text>
+          <text x="655" y="215" fill="#cbd5e1" font-size="9">delta * beta * -ln(rand) &gt; expiry</text>
+          <text x="655" y="228" fill="#94a3b8" font-size="9">Probabilistic background refresh</text>
+          <text x="650" y="275" fill="#34d399" font-size="11">Zero DB stampede guaranteed</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 17 - Engineering Notes: Redis Architecture & Cache Topologies</h1>
+<h2>1. StackExchange.Redis Connection Architecture</h2>
+<h3>Single ConnectionMultiplexer Pattern</h3>
+<p><code>ConnectionMultiplexer</code> in <code>StackExchange.Redis</code> is designed to be shared as a <strong>Singleton</strong> across the entire application lifecycle.</p>
+<ul>
+<li>It manages multiplexed pipelining over a single underlying TCP socket. Multiple threads issue concurrent asynchronous commands without blocking or waiting for individual socket round-trips.</li>
+<li><strong>Anti-Pattern</strong>: Creating a new <code>ConnectionMultiplexer</code> per HTTP request drains OS socket descriptors and causes massive connection handshakes and ThreadPool starvation.</li>
+</ul>
+<h3>Timeout & ThreadPool Starvation Hazards</h3>
+<p>In high-throughput .NET services, Redis timeouts (<code>TimeoutException: Timeout performing GET ...</code>) are frequently caused not by Redis CPU saturation, but by <strong>ThreadPool starvation</strong> on the client machine:</p>
+<ul>
+<li>Synchronous blocking calls (<code>.Result</code>, <code>.Wait()</code>) on ThreadPool worker threads prevent IOCP callbacks from completing.</li>
+<li>Solution: Always use <code>await database.StringGetAsync()</code> and configure <code>ThreadPool.SetMinThreads(50, 50)</code>.</li>
+</ul>
+<hr/>
+<h2>2. Cache Patterns Trade-Off Matrix</h2>
+<div class="table-container"><table><thead><tr>
+<th>Pattern</th>
+<th>Read Latency</th>
+<th>Write Latency</th>
+<th>Consistency</th>
+<th>Failure Risk</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Cache-Aside</strong></td>
+<td>Low (on hit)</td>
+<td>Normal</td>
+<td>Eventual (TTL/Invalidation)</td>
+<td>Stale reads</td>
+</tr>
+<tr>
+<td><strong>Write-Through</strong></td>
+<td>Low</td>
+<td>High (2 writes)</td>
+<td>Strong</td>
+<td>Write latency overhead</td>
+</tr>
+<tr>
+<td><strong>Write-Behind</strong></td>
+<td>Ultra-Low</td>
+<td>Ultra-Low</td>
+<td>Weak / Eventual</td>
+<td>Data loss if cache crashes</td>
+</tr>
+<tr>
+<td><strong>Refresh-Ahead</strong></td>
+<td>Predictable</td>
+<td>Normal</td>
+<td>High</td>
+<td>Extra compute on unused keys</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>3. The XFetch Optimal Probabilistic Refresh Algorithm</h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public static bool ShouldRefreshEarly(DateTime expiresAtUtc, TimeSpan computeDuration, double beta = 1.0)
+{
+    double timeRemainingSec = (expiresAtUtc - DateTime.UtcNow).TotalSeconds;
+    double deltaSec = computeDuration.TotalSeconds;
+    double rand = Random.Shared.NextDouble();
+
+    // Probability escalates as timeRemaining decreases and compute cost increases
+    return (deltaSec * beta * -Math.Log(rand)) &gt; timeRemainingSec;
+}</code></pre></div>
+<p>Published by Vattani et al. in VLDB 2015, XFetch mathematically guarantees zero stampede with minimal redundant compute.</p>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 17: Introduction to Redis & Cache Patterns</h1>
+<h2>Overview</h2>
+<p>Architecting scalable enterprise caching tiers with Redis and .NET. This module covers essential cache patterns (Cache-Aside, Write-Through, Write-Behind, Refresh-Ahead), cache stampede / thundering herd mitigation (per-key mutex locks vs probabilistic early expiration via XFetch), and binary tree recursion algorithms: Invert Binary Tree (LeetCode #226) and Maximum Depth of Binary Tree (LeetCode #104).</p>
+<hr/>
+<h2>Key Architectural Concepts</h2>
+<h3>1. Enterprise Caching Patterns Taxonomy</h3>
+<ul>
+<li><strong>Cache-Aside (Lazy Loading)</strong>: The application checks the cache. On miss, it queries the database, writes the result to cache with a TTL, and returns it. Best for read-heavy workloads with non-critical stale reads.</li>
+<li><strong>Write-Through</strong>: Application writes data to the cache, which synchronously updates the backing database within the same operation. Guarantees strong cache-store consistency at the cost of higher write latency.</li>
+<li><strong>Write-Behind (Write-Back)</strong>: Writes are immediately committed to cache and enqueued into an asynchronous background channel. A background worker periodically flushes batched writes to the database. Delivers ultra-high write throughput, but risks data loss if the cache node crashes before flushing.</li>
+<li><strong>Refresh-Ahead</strong>: The caching tier proactively re-computes hot keys before their TTL expires based on access patterns or background schedules.</li>
+</ul>
+<h3>2. Cache Stampede (Thundering Herd) Protection</h3>
+<p>When a heavily accessed key expires (e.g., 5,000 requests/sec), thousands of concurrent threads experience a simultaneous cache miss. They all execute the expensive database query at once, causing CPU spikes and database outages.</p>
+<ul>
+<li><strong>Solution 1: Distributed Mutex Lock (Single-Flight)</strong>: The first thread acquires an exclusive lock (<code>SET lock:key token NX PX 5000</code>) and executes the database query. All other threads await the lock or read the updated cache value once populated.</li>
+<li><strong>Solution 2: Probabilistic Early Expiration (XFetch Algorithm)</strong>: Re-fetches the key before expiration based on computing duration and access probability:</li>
+</ul>
+<p>$$\Delta \cdot \beta \cdot (-\ln(\text{rand})) > \text{timeRemaining}$$</p>
+<p>As the key nears expiration, the mathematical probability of a single background worker refreshing the key approaches 1.0, guaranteeing the key never officially expires while under active load.</p>
+<hr/>
+<h2>LeetCode Problems Solved</h2>
+<h3>LeetCode #226: Invert Binary Tree</h3>
+<ul>
+<li><strong>Algorithm</strong>: Recursive Post-Order / Pre-Order DFS swapping <code>left</code> and <code>right</code> subtrees, or iterative BFS level-order queue swap.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$ recursive stack, $O(W)$ iterative queue.</li>
+</ul>
+<h3>LeetCode #104: Maximum Depth of Binary Tree</h3>
+<ul>
+<li><strong>Algorithm</strong>: Recursive DFS $\max(\text{depth}(left), \text{depth}(right)) + 1$, or iterative BFS counting level traversals.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why should `ConnectionMultiplexer` in `StackExchange.Redis` be registered as a Singleton?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It multiplexes concurrent operations over a shared persistent TCP connection and is expensive to construct; creating per-request instances exhausts socket descriptors and ThreadPool workers.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p><code>ConnectionMultiplexer</code> does not use a traditional connection pool where each thread takes a socket. Instead, it pipelines multiple commands over a single full-duplex TCP socket, tagging each response with an internal message ID.</p>
+<p>Constructing a multiplexer involves DNS resolution, SSL handshakes, node topology discovery, and background heartbeat timers. If created transiently per HTTP request, the operating system runs out of ephemeral TCP ports (TIME_WAIT socket exhaustion) and the ThreadPool becomes saturated handling connection handshakes.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What causes Redis timeouts in .NET applications when Redis CPU utilization is low (&lt;10%)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Client-side ThreadPool starvation or synchronous blocking on async calls, which delays the completion of Redis response callbacks.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p><code>StackExchange.Redis</code> relies on .NET I/O Completion Ports (IOCP) to dispatch completed socket responses. When client application code calls <code>.Result</code> or <code>.Wait()</code> on asynchronous tasks, worker threads become blocked.</p>
+<p>When the thread pool experiences a burst, the .NET thread pool thread-injection heuristic only adds ~1–2 new worker threads every 500ms. If no threads are available to process incoming Redis socket packets, <code>StackExchange.Redis</code> triggers a timeout exception:</p>
+<p><code>Timeout performing GET (5000ms), inst: 1, mgr: 10, err: none, qs: 50, in: 50, in-pipe: 0, aw: True</code>.</p>
+<p>The <code>qs</code> (queue size) and <code>in</code> parameters reveal that the response arrived from Redis over the wire, but sat queued in the client buffer waiting for an available ThreadPool thread.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the &quot;Cache Stampede&quot; (Thundering Herd) problem and how do you mitigate it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When a heavily accessed key expires, thousands of concurrent requests miss simultaneously, inundating the database with duplicate expensive queries.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a system processing 10,000 requests/sec, if a product catalog cache entry expires, thousands of threads immediately query the database for the exact same record.</p>
+<p><strong>Mitigations</strong>:</p>
+<ol>
+<li><strong>Mutex Locking (Single-Flight Pattern)</strong>: The first thread acquires an in-process <code>SemaphoreSlim</code> or Redis lock (<code>SET lock:key token NX PX 5000</code>). Only the lock winner queries the DB; others wait and read the repopulated cache.</li>
+<li><strong>Probabilistic Early Expiration (XFetch)</strong>: Background workers evaluate <code>delta * beta * -ln(rand) &gt; expiry - now</code> to asynchronously refresh keys before they officially expire.</li>
+<li><strong>Stale-While-Revalidate</strong>: Serve slightly stale data from cache while triggering a background task to refresh the value.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does the XFetch algorithm prevent cache stampedes without manual background timers?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It uses a randomized mathematical threshold to probabilistically trigger a background cache refresh as the key nears expiration, with probability increasing as time runs out.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>The formula is:</p>
+<p>$$\Delta \cdot \beta \cdot (-\ln(\text{rand})) > \text{timeRemaining}$$</p>
+<ul>
+<li>$\Delta$ is the computation time taken to generate the value.</li>
+<li>$\beta > 0$ is an aggressiveness tuning multiplier.</li>
+<li>$\text{rand} \in (0, 1]$ is a uniform random number.</li>
+</ul>
+<p>When a key is accessed, if the formula evaluates to true, the reader triggers an immediate asynchronous refresh while returning the current cached value. As <code>timeRemaining</code> shrinks toward 0, the probability of at least one request triggering a refresh approaches 1.0, ensuring the key is renewed seamlessly without a cache miss.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">Compare Cache-Aside vs Write-Through vs Write-Behind caching strategies.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>:</li>
+<li><strong>Cache-Aside</strong>: Application manages reads from cache and writes directly to database; lazy loading on miss.</li>
+<li><strong>Write-Through</strong>: Application writes to cache, which synchronously persists to database; strong consistency.</li>
+<li><strong>Write-Behind</strong>: Application writes to cache; writes to database are batched and flushed asynchronously; maximum write speed, risk of data loss.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><em>Cache-Aside</em>: Most common, decoupled, resilient against cache outages (falls back to DB), but suffers cold-start misses.</li>
+<li><em>Write-Through</em>: High write latency because each write incurs both cache and DB network overhead, but eliminates cache misses on newly written entities.</li>
+<li><em>Write-Behind</em>: Transforms individual DB <code>INSERT</code> statements into bulk SQL statements (<code>INSERT INTO ... VALUES (...)</code>), reducing DB I/O by 90%. However, if the cache server crashes before flushing, queued writes are lost.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What is Cache Penetration and how do you protect against it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When clients repeatedly query for keys that do not exist in either the cache or the database (e.g., malicious requests for non-existent IDs), bypassing the cache entirely.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Because the requested entity does not exist in the database, Cache-Aside never writes a cache entry. Every subsequent request hits the database directly.</p>
+<p><strong>Mitigations</strong>:</p>
+<ol>
+<li><strong>Caching Null Values</strong>: Store a sentinel <code>NULL</code> object in cache with a short TTL (e.g., 30–60 seconds). Subsequent requests hit the cache and receive a fast 404.</li>
+<li><strong>Bloom Filters</strong>: Place a Bloom Filter in front of the cache containing all valid primary keys. If the Bloom filter returns <code>false</code>, reject the request immediately without touching cache or database.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is Cache Breakdown vs Cache Avalanche?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>:</li>
+<li><strong>Cache Breakdown</strong>: A single super-hot key expires, causing a stampede on the database.</li>
+<li><strong>Cache Avalanche</strong>: A massive batch of different keys expire at the exact same second, causing global database overload.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><em>Cache Breakdown</em>: Addressed via mutex locking or XFetch early refresh for the hot key.</li>
+<li><em>Cache Avalanche</em>: Commonly caused by setting uniform TTLs (e.g., <code>SetAsync(key, val, TimeSpan.FromHours(1))</code>). When midnight passes or a service restarts, all cached items expire simultaneously.</li>
+</ul>
+<p><strong>Mitigation for Avalanche</strong>: Add <strong>TTL Jitter</strong> (randomized offset):</p>
+<p><code>TimeSpan ttl = TimeSpan.FromHours(1) + TimeSpan.FromSeconds(Random.Shared.Next(-300, 300));</code>.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What serialization strategy should be used for Redis in high-performance .NET applications?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Binary serializers like MemoryPack, MessagePack, or Protobuf offer 5–10x faster serialization and 50–70% smaller memory footprints compared to standard JSON.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>While <code>System.Text.Json</code> is readable in <code>redis-cli</code>, serializing complex object graphs to UTF-8 strings incurs high string allocations and CPU overhead.</p>
+<p>Binary formats like MessagePack or MemoryPack serialize directly into <code>byte[]</code> or <code>ReadOnlySpan&lt;byte&gt;</code>, bypassing intermediate string allocations. A smaller payload also cuts network serialization time and saves expensive Redis RAM, which is typically the most expensive infrastructure component.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #226 (Invert Binary Tree), what is the difference between BFS and DFS traversal?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: DFS recursively swaps left and right subtrees in post-order or pre-order; BFS iteratively swaps children level-by-level using a FIFO queue.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Both visit every node exactly once ($O(N)$ time).</p>
+<ul>
+<li>DFS recursion space complexity is bounded by tree height $O(H)$. For balanced trees, $H = \log N$; for degenerate skewed trees, $H = N$.</li>
+<li>BFS queue space complexity is bounded by tree width $O(W)$. For a complete binary tree, the maximum width is at the leaf level, requiring $O(N / 2) = O(N)$ memory.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does LeetCode #104 (Maximum Depth of Binary Tree) handle skewed vs balanced trees?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: In a balanced tree, call stack depth is $O(\log N)$; in a skewed degenerate tree (resembling a linked list), call stack depth is $O(N)$.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>The recursive relation is <code>1 + Math.Max(MaxDepth(root.left), MaxDepth(root.right))</code>.</p>
+<p>When a tree is balanced, recursion depth is logarithmically small ($N = 1,000,000 \implies \text{depth } 20$).</p>
+<p>However, if nodes only have right children, the call stack grows to $N$. On large datasets, recursive DFS can trigger a <code>StackOverflowException</code>. In production environments with uncontrolled tree depth, an iterative BFS level-order traversal using an explicit heap-allocated <code>Queue&lt;TreeNode&gt;</code> is safer because the heap can accommodate millions of node references without exhausting thread stack space.</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day17.RedisCachePatterns/BinaryTreeSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd17-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d17-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day17.RedisCachePatterns;
+
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+
+    public static TreeNode? FromLevelOrder(int?[] values)
+    {
+        if (values == null || values.Length == 0 || values[0] == null) return null;
+
+        var root = new TreeNode(values[0]!.Value);
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int i = 1;
+        while (queue.Count &gt; 0 &amp;&amp; i &lt; values.Length)
+        {
+            var curr = queue.Dequeue();
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.left = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.left);
+            }
+            i++;
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.right = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.right);
+            }
+            i++;
+        }
+
+        return root;
+    }
+
+    public List&lt;int?&gt; ToLevelOrder()
+    {
+        var result = new List&lt;int?&gt;();
+        var queue = new Queue&lt;TreeNode?&gt;();
+        queue.Enqueue(this);
+
+        while (queue.Count &gt; 0)
+        {
+            var node = queue.Dequeue();
+            if (node != null)
+            {
+                result.Add(node.val);
+                queue.Enqueue(node.left);
+                queue.Enqueue(node.right);
+            }
+            else
+            {
+                result.Add(null);
+            }
+        }
+
+        // Trim trailing nulls
+        for (int i = result.Count - 1; i &gt;= 0; i--)
+        {
+            if (result[i] == null) result.RemoveAt(i);
+            else break;
+        }
+
+        return result;
+    }
+}
+
+public static class BinaryTreeSolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #226: Invert Binary Tree (Recursive DFS).
+    /// Time: O(N), Space: O(H) where H is height of the tree.
+    /// &lt;/summary&gt;
+    public static TreeNode? InvertTree(TreeNode? root)
+    {
+        if (root == null) return null;
+
+        var temp = root.left;
+        root.left = InvertTree(root.right);
+        root.right = InvertTree(temp);
+
+        return root;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #226: Invert Binary Tree (Iterative BFS Queue).
+    /// Time: O(N), Space: O(W) where W is maximum tree width.
+    /// &lt;/summary&gt;
+    public static TreeNode? InvertTreeIterative(TreeNode? root)
+    {
+        if (root == null) return null;
+
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        while (queue.Count &gt; 0)
+        {
+            var node = queue.Dequeue();
+
+            var temp = node.left;
+            node.left = node.right;
+            node.right = temp;
+
+            if (node.left != null) queue.Enqueue(node.left);
+            if (node.right != null) queue.Enqueue(node.right);
+        }
+
+        return root;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #104: Maximum Depth of Binary Tree (Recursive DFS).
+    /// Time: O(N), Space: O(H).
+    /// &lt;/summary&gt;
+    public static int MaxDepth(TreeNode? root)
+    {
+        if (root == null) return 0;
+
+        int leftDepth = MaxDepth(root.left);
+        int rightDepth = MaxDepth(root.right);
+
+        return Math.Max(leftDepth, rightDepth) + 1;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #104: Maximum Depth of Binary Tree (Iterative BFS Level-Order).
+    /// Time: O(N), Space: O(W).
+    /// &lt;/summary&gt;
+    public static int MaxDepthIterative(TreeNode? root)
+    {
+        if (root == null) return 0;
+
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+        int depth = 0;
+
+        while (queue.Count &gt; 0)
+        {
+            int levelSize = queue.Count;
+            depth++;
+
+            for (int i = 0; i &lt; levelSize; i++)
+            {
+                var curr = queue.Dequeue();
+                if (curr.left != null) queue.Enqueue(curr.left);
+                if (curr.right != null) queue.Enqueue(curr.right);
+            }
+        }
+
+        return depth;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day17.RedisCachePatterns/CacheService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd17-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d17-src-code-1" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+
+namespace Day17.RedisCachePatterns;
+
+public interface IDistributedCacheProvider
+{
+    Task&lt;T?&gt; GetAsync&lt;T&gt;(string key);
+    Task SetAsync&lt;T&gt;(string key, T value, TimeSpan ttl);
+    Task&lt;bool&gt; RemoveAsync(string key);
+    Task&lt;bool&gt; AcquireLockAsync(string key, string owner, TimeSpan ttl);
+    Task&lt;bool&gt; ReleaseLockAsync(string key, string owner);
+}
+
+public class MockRedisCacheProvider : IDistributedCacheProvider
+{
+    private readonly ConcurrentDictionary&lt;string, (object Value, DateTime ExpiresAt)&gt; _store = new();
+    private readonly ConcurrentDictionary&lt;string, (string Owner, DateTime ExpiresAt)&gt; _locks = new();
+
+    public Task&lt;T?&gt; GetAsync&lt;T&gt;(string key)
+    {
+        if (_store.TryGetValue(key, out var item))
+        {
+            if (DateTime.UtcNow &lt; item.ExpiresAt)
+            {
+                return Task.FromResult&lt;T?&gt;((T)item.Value);
+            }
+            _store.TryRemove(key, out _);
+        }
+        return Task.FromResult&lt;T?&gt;(default);
+    }
+
+    public Task SetAsync&lt;T&gt;(string key, T value, TimeSpan ttl)
+    {
+        _store[key] = (value!, DateTime.UtcNow.Add(ttl));
+        return Task.CompletedTask;
+    }
+
+    public Task&lt;bool&gt; RemoveAsync(string key)
+    {
+        return Task.FromResult(_store.TryRemove(key, out _));
+    }
+
+    public Task&lt;bool&gt; AcquireLockAsync(string key, string owner, TimeSpan ttl)
+    {
+        var now = DateTime.UtcNow;
+        if (_locks.TryGetValue(key, out var existing))
+        {
+            if (now &lt; existing.ExpiresAt)
+            {
+                return Task.FromResult(false);
+            }
+        }
+
+        _locks[key] = (owner, now.Add(ttl));
+        return Task.FromResult(true);
+    }
+
+    public Task&lt;bool&gt; ReleaseLockAsync(string key, string owner)
+    {
+        if (_locks.TryGetValue(key, out var existing) &amp;&amp; existing.Owner == owner)
+        {
+            return Task.FromResult(_locks.TryRemove(key, out _));
+        }
+        return Task.FromResult(false);
+    }
+}
+
+/// &lt;summary&gt;
+/// Cache-Aside (Lazy Loading) with Cache Stampede / Thundering Herd Mutex Protection
+/// &lt;/summary&gt;
+public class CacheAsideManager
+{
+    private readonly IDistributedCacheProvider _cache;
+    private readonly ConcurrentDictionary&lt;string, SemaphoreSlim&gt; _keyLocks = new();
+    private int _hits = 0;
+    private int _misses = 0;
+    private int _dbLoads = 0;
+
+    public CacheMetrics GetMetrics() =&gt; new(_hits, _misses, _dbLoads, 0);
+
+    public CacheAsideManager(IDistributedCacheProvider cache)
+    {
+        _cache = cache;
+    }
+
+    public async Task&lt;T&gt; GetOrCreateAsync&lt;T&gt;(
+        string key,
+        Func&lt;Task&lt;T&gt;&gt; databaseLoader,
+        TimeSpan ttl)
+    {
+        // 1. Check Cache
+        var cached = await _cache.GetAsync&lt;T&gt;(key);
+        if (cached != null)
+        {
+            Interlocked.Increment(ref _hits);
+            return cached;
+        }
+
+        Interlocked.Increment(ref _misses);
+
+        // 2. Cache Stampede Mutex: only one task queries the database for this specific key
+        var keyLock = _keyLocks.GetOrAdd(key, _ =&gt; new SemaphoreSlim(1, 1));
+        await keyLock.WaitAsync();
+        try
+        {
+            // Double check cache
+            cached = await _cache.GetAsync&lt;T&gt;(key);
+            if (cached != null)
+            {
+                Interlocked.Increment(ref _hits);
+                return cached;
+            }
+
+            // 3. Query Database
+            var dbValue = await databaseLoader();
+            Interlocked.Increment(ref _dbLoads);
+
+            // 4. Populate Cache
+            await _cache.SetAsync(key, dbValue, ttl);
+            return dbValue;
+        }
+        finally
+        {
+            keyLock.Release();
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Write-Through: Simultaneously writes to cache and database in one call
+/// &lt;/summary&gt;
+public class WriteThroughManager
+{
+    private readonly IDistributedCacheProvider _cache;
+    private readonly ConcurrentDictionary&lt;int, Product&gt; _database = new();
+
+    public WriteThroughManager(IDistributedCacheProvider cache)
+    {
+        _cache = cache;
+    }
+
+    public async Task SaveProductAsync(Product product, TimeSpan ttl)
+    {
+        // 1. Write to database synchronously
+        _database[product.Id] = product;
+
+        // 2. Write to cache synchronously
+        await _cache.SetAsync($&quot;product:{product.Id}&quot;, product, ttl);
+    }
+
+    public async Task&lt;Product?&gt; GetProductAsync(int id)
+    {
+        var cached = await _cache.GetAsync&lt;Product&gt;($&quot;product:{id}&quot;);
+        if (cached != null) return cached;
+
+        if (_database.TryGetValue(id, out var dbProduct))
+        {
+            await _cache.SetAsync($&quot;product:{id}&quot;, dbProduct, TimeSpan.FromMinutes(10));
+            return dbProduct;
+        }
+
+        return null;
+    }
+}
+
+/// &lt;summary&gt;
+/// Write-Behind (Write-Back): Enqueues writes into an asynchronous background channel for batch persistence
+/// &lt;/summary&gt;
+public class WriteBehindManager
+{
+    private readonly IDistributedCacheProvider _cache;
+    private readonly Channel&lt;Product&gt; _writeQueue;
+    private readonly ConcurrentDictionary&lt;int, Product&gt; _backingDatabase = new();
+    private int _flushedCount = 0;
+
+    public int FlushedCount =&gt; _flushedCount;
+
+    public WriteBehindManager(IDistributedCacheProvider cache, int queueCapacity = 1000)
+    {
+        _cache = cache;
+        _writeQueue = Channel.CreateBounded&lt;Product&gt;(new BoundedChannelOptions(queueCapacity)
+        {
+            FullMode = BoundedChannelFullMode.Wait
+        });
+    }
+
+    public async Task WriteAsync(Product product, TimeSpan ttl)
+    {
+        // 1. Update cache immediately for sub-millisecond client reads
+        await _cache.SetAsync($&quot;product:{product.Id}&quot;, product, ttl);
+
+        // 2. Enqueue for asynchronous database flush
+        await _writeQueue.Writer.WriteAsync(product);
+    }
+
+    public async Task&lt;int&gt; FlushBatchAsync(int maxBatchSize = 100)
+    {
+        int processed = 0;
+        while (processed &lt; maxBatchSize &amp;&amp; _writeQueue.Reader.TryRead(out var product))
+        {
+            _backingDatabase[product.Id] = product;
+            processed++;
+            Interlocked.Increment(ref _flushedCount);
+        }
+        return processed;
+    }
+
+    public Product? GetFromDatabaseDirectly(int id)
+    {
+        _backingDatabase.TryGetValue(id, out var prod);
+        return prod;
+    }
+}
+
+/// &lt;summary&gt;
+/// Probabilistic Early Expiration (XFetch Algorithm)
+/// Evaluates: delta * beta * (-ln(rand)) &gt; timeRemaining
+/// &lt;/summary&gt;
+public static class XFetchProtector
+{
+    private static readonly Random _rng = new();
+
+    public static bool ShouldRefreshEarly(
+        DateTime expiresAtUtc,
+        TimeSpan computeDuration,
+        double beta = 1.0)
+    {
+        var now = DateTime.UtcNow;
+        if (now &gt;= expiresAtUtc) return true; // Already expired
+
+        double timeRemainingSec = (expiresAtUtc - now).TotalSeconds;
+        double deltaSec = computeDuration.TotalSeconds;
+
+        double randomVal = _rng.NextDouble();
+        if (randomVal &lt;= 0.0) randomVal = 0.0001; // Avoid log(0)
+
+        double xfetch = deltaSec * beta * -Math.Log(randomVal);
+
+        return xfetch &gt; timeRemainingSec;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day17.RedisCachePatterns/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd17-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d17-src-code-2" class="language-csharp">using System;
+
+namespace Day17.RedisCachePatterns;
+
+public record Product(
+    int Id,
+    string Name,
+    decimal Price,
+    int StockQuantity,
+    DateTime UpdatedAtUtc);
+
+public record CacheEntry&lt;T&gt;(
+    T Value,
+    DateTime ExpiresAtUtc,
+    TimeSpan DeltaComputeTime);
+
+public record CacheMetrics(
+    int Hits,
+    int Misses,
+    int DatabaseLoads,
+    int Writes);
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day17.RedisCachePatterns.Tests/Day17Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd17-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d17-tests-code-0" class="language-csharp">using System;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day17.RedisCachePatterns.Tests;
+
+public class Day17Tests
+{
+    [Fact]
+    public void LeetCode226_InvertTree_InvertsLeftAndRightNodes()
+    {
+        // Tree: [4, 2, 7, 1, 3, 6, 9] -&gt; Inverted: [4, 7, 2, 9, 6, 3, 1]
+        var root = TreeNode.FromLevelOrder(new int?[] { 4, 2, 7, 1, 3, 6, 9 });
+        var inverted = BinaryTreeSolvers.InvertTree(root);
+
+        inverted.Should().NotBeNull();
+        inverted!.ToLevelOrder().Should().Equal(new int?[] { 4, 7, 2, 9, 6, 3, 1 });
+
+        // Null tree
+        BinaryTreeSolvers.InvertTree(null).Should().BeNull();
+    }
+
+    [Fact]
+    public void LeetCode226_InvertTreeIterative_MatchesRecursive()
+    {
+        var root = TreeNode.FromLevelOrder(new int?[] { 2, 1, 3 });
+        var inverted = BinaryTreeSolvers.InvertTreeIterative(root);
+
+        inverted!.ToLevelOrder().Should().Equal(new int?[] { 2, 3, 1 });
+    }
+
+    [Fact]
+    public void LeetCode104_MaxDepth_CalculatesCorrectDepth()
+    {
+        // Tree: [3, 9, 20, null, null, 15, 7] -&gt; depth 3
+        var root = TreeNode.FromLevelOrder(new int?[] { 3, 9, 20, null, null, 15, 7 });
+        BinaryTreeSolvers.MaxDepth(root).Should().Be(3);
+        BinaryTreeSolvers.MaxDepthIterative(root).Should().Be(3);
+
+        // Linear degenerate tree: 1 -&gt; 2 -&gt; 3
+        var root2 = TreeNode.FromLevelOrder(new int?[] { 1, null, 2, null, 3 });
+        BinaryTreeSolvers.MaxDepth(root2).Should().Be(3);
+
+        // Null tree
+        BinaryTreeSolvers.MaxDepth(null).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CacheAside_PopulatesCacheOnMiss_AndAvoidsDbOnHit()
+    {
+        var cache = new MockRedisCacheProvider();
+        var manager = new CacheAsideManager(cache);
+        int dbQueryCount = 0;
+
+        Task&lt;string&gt; LoadFromDb()
+        {
+            dbQueryCount++;
+            return Task.FromResult(&quot;user-profile-data&quot;);
+        }
+
+        // First call: Cache Miss -&gt; loads DB
+        var res1 = await manager.GetOrCreateAsync(&quot;user:42&quot;, LoadFromDb, TimeSpan.FromMinutes(5));
+        res1.Should().Be(&quot;user-profile-data&quot;);
+        dbQueryCount.Should().Be(1);
+
+        // Second call: Cache Hit -&gt; skips DB
+        var res2 = await manager.GetOrCreateAsync(&quot;user:42&quot;, LoadFromDb, TimeSpan.FromMinutes(5));
+        res2.Should().Be(&quot;user-profile-data&quot;);
+        dbQueryCount.Should().Be(1);
+
+        var metrics = manager.GetMetrics();
+        metrics.Hits.Should().Be(1);
+        metrics.Misses.Should().Be(1);
+        metrics.DatabaseLoads.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CacheStampedeMutex_PreventsThunderingHerd()
+    {
+        var cache = new MockRedisCacheProvider();
+        var manager = new CacheAsideManager(cache);
+        int dbQueryCount = 0;
+
+        async Task&lt;string&gt; SlowDbQuery()
+        {
+            await Task.Delay(50);
+            System.Threading.Interlocked.Increment(ref dbQueryCount);
+            return &quot;expensive-report&quot;;
+        }
+
+        // Fire 10 concurrent requests for the exact same un-cached key
+        var tasks = new Task&lt;string&gt;[10];
+        for (int i = 0; i &lt; 10; i++)
+        {
+            tasks[i] = manager.GetOrCreateAsync(&quot;report:monthly&quot;, SlowDbQuery, TimeSpan.FromMinutes(5));
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        // All 10 received the result
+        foreach (var r in results) r.Should().Be(&quot;expensive-report&quot;);
+
+        // BUT the expensive DB query executed exactly ONCE!
+        dbQueryCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task WriteThrough_UpdatesCacheAndStoreSimultaneously()
+    {
+        var cache = new MockRedisCacheProvider();
+        var manager = new WriteThroughManager(cache);
+
+        var prod = new Product(101, &quot;Mechanical Keyboard&quot;, 129.99m, 50, DateTime.UtcNow);
+        await manager.SaveProductAsync(prod, TimeSpan.FromMinutes(10));
+
+        // Read verifies cache is populated immediately
+        var fetched = await manager.GetProductAsync(101);
+        fetched.Should().NotBeNull();
+        fetched!.Name.Should().Be(&quot;Mechanical Keyboard&quot;);
+        fetched.Price.Should().Be(129.99m);
+    }
+
+    [Fact]
+    public async Task WriteBehind_EnqueuesAndFlushesBatch()
+    {
+        var cache = new MockRedisCacheProvider();
+        var manager = new WriteBehindManager(cache, queueCapacity: 100);
+
+        var prod1 = new Product(1, &quot;Mouse&quot;, 49.99m, 100, DateTime.UtcNow);
+        var prod2 = new Product(2, &quot;Monitor&quot;, 399.99m, 20, DateTime.UtcNow);
+
+        await manager.WriteAsync(prod1, TimeSpan.FromMinutes(5));
+        await manager.WriteAsync(prod2, TimeSpan.FromMinutes(5));
+
+        // Immediately available in cache
+        var cached = await cache.GetAsync&lt;Product&gt;(&quot;product:1&quot;);
+        cached.Should().NotBeNull();
+        cached!.Name.Should().Be(&quot;Mouse&quot;);
+
+        // Before flush, database does not have them yet
+        manager.GetFromDatabaseDirectly(1).Should().BeNull();
+
+        // Flush batch to database
+        var flushed = await manager.FlushBatchAsync(10);
+        flushed.Should().Be(2);
+
+        // Now database has them
+        manager.GetFromDatabaseDirectly(1).Should().NotBeNull();
+        manager.GetFromDatabaseDirectly(2).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void XFetch_EvaluatesProbabilisticEarlyRefresh()
+    {
+        // Case 1: Already expired -&gt; MUST refresh
+        XFetchProtector.ShouldRefreshEarly(
+            expiresAtUtc: DateTime.UtcNow.AddSeconds(-1),
+            computeDuration: TimeSpan.FromSeconds(1)
+        ).Should().BeTrue();
+
+        // Case 2: Far future expiry with tiny compute duration -&gt; should almost certainly NOT refresh
+        bool refreshed = XFetchProtector.ShouldRefreshEarly(
+            expiresAtUtc: DateTime.UtcNow.AddDays(10),
+            computeDuration: TimeSpan.FromMilliseconds(1)
+        );
+        refreshed.Should().BeFalse();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 17 - Engineering Notes: Redis Architecture & Cache Topologies</h1>
+<h2>1. StackExchange.Redis Connection Architecture</h2>
+<h3>Single ConnectionMultiplexer Pattern</h3>
+<p><code>ConnectionMultiplexer</code> in <code>StackExchange.Redis</code> is designed to be shared as a <strong>Singleton</strong> across the entire application lifecycle.</p>
+<ul>
+<li>It manages multiplexed pipelining over a single underlying TCP socket. Multiple threads issue concurrent asynchronous commands without blocking or waiting for individual socket round-trips.</li>
+<li><strong>Anti-Pattern</strong>: Creating a new <code>ConnectionMultiplexer</code> per HTTP request drains OS socket descriptors and causes massive connection handshakes and ThreadPool starvation.</li>
+</ul>
+<h3>Timeout & ThreadPool Starvation Hazards</h3>
+<p>In high-throughput .NET services, Redis timeouts (<code>TimeoutException: Timeout performing GET ...</code>) are frequently caused not by Redis CPU saturation, but by <strong>ThreadPool starvation</strong> on the client machine:</p>
+<ul>
+<li>Synchronous blocking calls (<code>.Result</code>, <code>.Wait()</code>) on ThreadPool worker threads prevent IOCP callbacks from completing.</li>
+<li>Solution: Always use <code>await database.StringGetAsync()</code> and configure <code>ThreadPool.SetMinThreads(50, 50)</code>.</li>
+</ul>
+<hr/>
+<h2>2. Cache Patterns Trade-Off Matrix</h2>
+<div class="table-container"><table><thead><tr>
+<th>Pattern</th>
+<th>Read Latency</th>
+<th>Write Latency</th>
+<th>Consistency</th>
+<th>Failure Risk</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Cache-Aside</strong></td>
+<td>Low (on hit)</td>
+<td>Normal</td>
+<td>Eventual (TTL/Invalidation)</td>
+<td>Stale reads</td>
+</tr>
+<tr>
+<td><strong>Write-Through</strong></td>
+<td>Low</td>
+<td>High (2 writes)</td>
+<td>Strong</td>
+<td>Write latency overhead</td>
+</tr>
+<tr>
+<td><strong>Write-Behind</strong></td>
+<td>Ultra-Low</td>
+<td>Ultra-Low</td>
+<td>Weak / Eventual</td>
+<td>Data loss if cache crashes</td>
+</tr>
+<tr>
+<td><strong>Refresh-Ahead</strong></td>
+<td>Predictable</td>
+<td>Normal</td>
+<td>High</td>
+<td>Extra compute on unused keys</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>3. The XFetch Optimal Probabilistic Refresh Algorithm</h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public static bool ShouldRefreshEarly(DateTime expiresAtUtc, TimeSpan computeDuration, double beta = 1.0)
+{
+    double timeRemainingSec = (expiresAtUtc - DateTime.UtcNow).TotalSeconds;
+    double deltaSec = computeDuration.TotalSeconds;
+    double rand = Random.Shared.NextDouble();
+
+    // Probability escalates as timeRemaining decreases and compute cost increases
+    return (deltaSec * beta * -Math.Log(rand)) &gt; timeRemainingSec;
+}</code></pre></div>
+<p>Published by Vattani et al. in VLDB 2015, XFetch mathematically guarantees zero stampede with minimal redundant compute.</p>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 17: Introduction to Redis & Cache Patterns</h1>
+<h2>Overview</h2>
+<p>Architecting scalable enterprise caching tiers with Redis and .NET. This module covers essential cache patterns (Cache-Aside, Write-Through, Write-Behind, Refresh-Ahead), cache stampede / thundering herd mitigation (per-key mutex locks vs probabilistic early expiration via XFetch), and binary tree recursion algorithms: Invert Binary Tree (LeetCode #226) and Maximum Depth of Binary Tree (LeetCode #104).</p>
+<hr/>
+<h2>Key Architectural Concepts</h2>
+<h3>1. Enterprise Caching Patterns Taxonomy</h3>
+<ul>
+<li><strong>Cache-Aside (Lazy Loading)</strong>: The application checks the cache. On miss, it queries the database, writes the result to cache with a TTL, and returns it. Best for read-heavy workloads with non-critical stale reads.</li>
+<li><strong>Write-Through</strong>: Application writes data to the cache, which synchronously updates the backing database within the same operation. Guarantees strong cache-store consistency at the cost of higher write latency.</li>
+<li><strong>Write-Behind (Write-Back)</strong>: Writes are immediately committed to cache and enqueued into an asynchronous background channel. A background worker periodically flushes batched writes to the database. Delivers ultra-high write throughput, but risks data loss if the cache node crashes before flushing.</li>
+<li><strong>Refresh-Ahead</strong>: The caching tier proactively re-computes hot keys before their TTL expires based on access patterns or background schedules.</li>
+</ul>
+<h3>2. Cache Stampede (Thundering Herd) Protection</h3>
+<p>When a heavily accessed key expires (e.g., 5,000 requests/sec), thousands of concurrent threads experience a simultaneous cache miss. They all execute the expensive database query at once, causing CPU spikes and database outages.</p>
+<ul>
+<li><strong>Solution 1: Distributed Mutex Lock (Single-Flight)</strong>: The first thread acquires an exclusive lock (<code>SET lock:key token NX PX 5000</code>) and executes the database query. All other threads await the lock or read the updated cache value once populated.</li>
+<li><strong>Solution 2: Probabilistic Early Expiration (XFetch Algorithm)</strong>: Re-fetches the key before expiration based on computing duration and access probability:</li>
+</ul>
+<p>$$\Delta \cdot \beta \cdot (-\ln(\text{rand})) > \text{timeRemaining}$$</p>
+<p>As the key nears expiration, the mathematical probability of a single background worker refreshing the key approaches 1.0, guaranteeing the key never officially expires while under active load.</p>
+<hr/>
+<h2>LeetCode Problems Solved</h2>
+<h3>LeetCode #226: Invert Binary Tree</h3>
+<ul>
+<li><strong>Algorithm</strong>: Recursive Post-Order / Pre-Order DFS swapping <code>left</code> and <code>right</code> subtrees, or iterative BFS level-order queue swap.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$ recursive stack, $O(W)$ iterative queue.</li>
+</ul>
+<h3>LeetCode #104: Maximum Depth of Binary Tree</h3>
+<ul>
+<li><strong>Algorithm</strong>: Recursive DFS $\max(\text{depth}(left), \text{depth}(right)) + 1$, or iterative BFS counting level traversals.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why should `ConnectionMultiplexer` in `StackExchange.Redis` be registered as a Singleton?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It multiplexes concurrent operations over a shared persistent TCP connection and is expensive to construct; creating per-request instances exhausts socket descriptors and ThreadPool workers.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p><code>ConnectionMultiplexer</code> does not use a traditional connection pool where each thread takes a socket. Instead, it pipelines multiple commands over a single full-duplex TCP socket, tagging each response with an internal message ID.</p>
+<p>Constructing a multiplexer involves DNS resolution, SSL handshakes, node topology discovery, and background heartbeat timers. If created transiently per HTTP request, the operating system runs out of ephemeral TCP ports (TIME_WAIT socket exhaustion) and the ThreadPool becomes saturated handling connection handshakes.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What causes Redis timeouts in .NET applications when Redis CPU utilization is low (&lt;10%)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Client-side ThreadPool starvation or synchronous blocking on async calls, which delays the completion of Redis response callbacks.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p><code>StackExchange.Redis</code> relies on .NET I/O Completion Ports (IOCP) to dispatch completed socket responses. When client application code calls <code>.Result</code> or <code>.Wait()</code> on asynchronous tasks, worker threads become blocked.</p>
+<p>When the thread pool experiences a burst, the .NET thread pool thread-injection heuristic only adds ~1–2 new worker threads every 500ms. If no threads are available to process incoming Redis socket packets, <code>StackExchange.Redis</code> triggers a timeout exception:</p>
+<p><code>Timeout performing GET (5000ms), inst: 1, mgr: 10, err: none, qs: 50, in: 50, in-pipe: 0, aw: True</code>.</p>
+<p>The <code>qs</code> (queue size) and <code>in</code> parameters reveal that the response arrived from Redis over the wire, but sat queued in the client buffer waiting for an available ThreadPool thread.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the &quot;Cache Stampede&quot; (Thundering Herd) problem and how do you mitigate it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When a heavily accessed key expires, thousands of concurrent requests miss simultaneously, inundating the database with duplicate expensive queries.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a system processing 10,000 requests/sec, if a product catalog cache entry expires, thousands of threads immediately query the database for the exact same record.</p>
+<p><strong>Mitigations</strong>:</p>
+<ol>
+<li><strong>Mutex Locking (Single-Flight Pattern)</strong>: The first thread acquires an in-process <code>SemaphoreSlim</code> or Redis lock (<code>SET lock:key token NX PX 5000</code>). Only the lock winner queries the DB; others wait and read the repopulated cache.</li>
+<li><strong>Probabilistic Early Expiration (XFetch)</strong>: Background workers evaluate <code>delta * beta * -ln(rand) &gt; expiry - now</code> to asynchronously refresh keys before they officially expire.</li>
+<li><strong>Stale-While-Revalidate</strong>: Serve slightly stale data from cache while triggering a background task to refresh the value.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does the XFetch algorithm prevent cache stampedes without manual background timers?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It uses a randomized mathematical threshold to probabilistically trigger a background cache refresh as the key nears expiration, with probability increasing as time runs out.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>The formula is:</p>
+<p>$$\Delta \cdot \beta \cdot (-\ln(\text{rand})) > \text{timeRemaining}$$</p>
+<ul>
+<li>$\Delta$ is the computation time taken to generate the value.</li>
+<li>$\beta > 0$ is an aggressiveness tuning multiplier.</li>
+<li>$\text{rand} \in (0, 1]$ is a uniform random number.</li>
+</ul>
+<p>When a key is accessed, if the formula evaluates to true, the reader triggers an immediate asynchronous refresh while returning the current cached value. As <code>timeRemaining</code> shrinks toward 0, the probability of at least one request triggering a refresh approaches 1.0, ensuring the key is renewed seamlessly without a cache miss.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">Compare Cache-Aside vs Write-Through vs Write-Behind caching strategies.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>:</li>
+<li><strong>Cache-Aside</strong>: Application manages reads from cache and writes directly to database; lazy loading on miss.</li>
+<li><strong>Write-Through</strong>: Application writes to cache, which synchronously persists to database; strong consistency.</li>
+<li><strong>Write-Behind</strong>: Application writes to cache; writes to database are batched and flushed asynchronously; maximum write speed, risk of data loss.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><em>Cache-Aside</em>: Most common, decoupled, resilient against cache outages (falls back to DB), but suffers cold-start misses.</li>
+<li><em>Write-Through</em>: High write latency because each write incurs both cache and DB network overhead, but eliminates cache misses on newly written entities.</li>
+<li><em>Write-Behind</em>: Transforms individual DB <code>INSERT</code> statements into bulk SQL statements (<code>INSERT INTO ... VALUES (...)</code>), reducing DB I/O by 90%. However, if the cache server crashes before flushing, queued writes are lost.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What is Cache Penetration and how do you protect against it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When clients repeatedly query for keys that do not exist in either the cache or the database (e.g., malicious requests for non-existent IDs), bypassing the cache entirely.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Because the requested entity does not exist in the database, Cache-Aside never writes a cache entry. Every subsequent request hits the database directly.</p>
+<p><strong>Mitigations</strong>:</p>
+<ol>
+<li><strong>Caching Null Values</strong>: Store a sentinel <code>NULL</code> object in cache with a short TTL (e.g., 30–60 seconds). Subsequent requests hit the cache and receive a fast 404.</li>
+<li><strong>Bloom Filters</strong>: Place a Bloom Filter in front of the cache containing all valid primary keys. If the Bloom filter returns <code>false</code>, reject the request immediately without touching cache or database.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is Cache Breakdown vs Cache Avalanche?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>:</li>
+<li><strong>Cache Breakdown</strong>: A single super-hot key expires, causing a stampede on the database.</li>
+<li><strong>Cache Avalanche</strong>: A massive batch of different keys expire at the exact same second, causing global database overload.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><em>Cache Breakdown</em>: Addressed via mutex locking or XFetch early refresh for the hot key.</li>
+<li><em>Cache Avalanche</em>: Commonly caused by setting uniform TTLs (e.g., <code>SetAsync(key, val, TimeSpan.FromHours(1))</code>). When midnight passes or a service restarts, all cached items expire simultaneously.</li>
+</ul>
+<p><strong>Mitigation for Avalanche</strong>: Add <strong>TTL Jitter</strong> (randomized offset):</p>
+<p><code>TimeSpan ttl = TimeSpan.FromHours(1) + TimeSpan.FromSeconds(Random.Shared.Next(-300, 300));</code>.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What serialization strategy should be used for Redis in high-performance .NET applications?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Binary serializers like MemoryPack, MessagePack, or Protobuf offer 5–10x faster serialization and 50–70% smaller memory footprints compared to standard JSON.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>While <code>System.Text.Json</code> is readable in <code>redis-cli</code>, serializing complex object graphs to UTF-8 strings incurs high string allocations and CPU overhead.</p>
+<p>Binary formats like MessagePack or MemoryPack serialize directly into <code>byte[]</code> or <code>ReadOnlySpan&lt;byte&gt;</code>, bypassing intermediate string allocations. A smaller payload also cuts network serialization time and saves expensive Redis RAM, which is typically the most expensive infrastructure component.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #226 (Invert Binary Tree), what is the difference between BFS and DFS traversal?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: DFS recursively swaps left and right subtrees in post-order or pre-order; BFS iteratively swaps children level-by-level using a FIFO queue.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Both visit every node exactly once ($O(N)$ time).</p>
+<ul>
+<li>DFS recursion space complexity is bounded by tree height $O(H)$. For balanced trees, $H = \log N$; for degenerate skewed trees, $H = N$.</li>
+<li>BFS queue space complexity is bounded by tree width $O(W)$. For a complete binary tree, the maximum width is at the leaf level, requiring $O(N / 2) = O(N)$ memory.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does LeetCode #104 (Maximum Depth of Binary Tree) handle skewed vs balanced trees?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: In a balanced tree, call stack depth is $O(\log N)$; in a skewed degenerate tree (resembling a linked list), call stack depth is $O(N)$.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>The recursive relation is <code>1 + Math.Max(MaxDepth(root.left), MaxDepth(root.right))</code>.</p>
+<p>When a tree is balanced, recursion depth is logarithmically small ($N = 1,000,000 \implies \text{depth } 20$).</p>
+<p>However, if nodes only have right children, the call stack grows to $N$. On large datasets, recursive DFS can trigger a <code>StackOverflowException</code>. In production environments with uncontrolled tree depth, an iterative BFS level-order traversal using an explicit heap-allocated <code>Queue&lt;TreeNode&gt;</code> is safer because the heap can accommodate millions of node references without exhausting thread stack space.</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day17.RedisCachePatterns/BinaryTreeSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd17-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d17-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day17.RedisCachePatterns;
+
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+
+    public static TreeNode? FromLevelOrder(int?[] values)
+    {
+        if (values == null || values.Length == 0 || values[0] == null) return null;
+
+        var root = new TreeNode(values[0]!.Value);
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int i = 1;
+        while (queue.Count &gt; 0 &amp;&amp; i &lt; values.Length)
+        {
+            var curr = queue.Dequeue();
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.left = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.left);
+            }
+            i++;
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.right = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.right);
+            }
+            i++;
+        }
+
+        return root;
+    }
+
+    public List&lt;int?&gt; ToLevelOrder()
+    {
+        var result = new List&lt;int?&gt;();
+        var queue = new Queue&lt;TreeNode?&gt;();
+        queue.Enqueue(this);
+
+        while (queue.Count &gt; 0)
+        {
+            var node = queue.Dequeue();
+            if (node != null)
+            {
+                result.Add(node.val);
+                queue.Enqueue(node.left);
+                queue.Enqueue(node.right);
+            }
+            else
+            {
+                result.Add(null);
+            }
+        }
+
+        // Trim trailing nulls
+        for (int i = result.Count - 1; i &gt;= 0; i--)
+        {
+            if (result[i] == null) result.RemoveAt(i);
+            else break;
+        }
+
+        return result;
+    }
+}
+
+public static class BinaryTreeSolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #226: Invert Binary Tree (Recursive DFS).
+    /// Time: O(N), Space: O(H) where H is height of the tree.
+    /// &lt;/summary&gt;
+    public static TreeNode? InvertTree(TreeNode? root)
+    {
+        if (root == null) return null;
+
+        var temp = root.left;
+        root.left = InvertTree(root.right);
+        root.right = InvertTree(temp);
+
+        return root;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #226: Invert Binary Tree (Iterative BFS Queue).
+    /// Time: O(N), Space: O(W) where W is maximum tree width.
+    /// &lt;/summary&gt;
+    public static TreeNode? InvertTreeIterative(TreeNode? root)
+    {
+        if (root == null) return null;
+
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        while (queue.Count &gt; 0)
+        {
+            var node = queue.Dequeue();
+
+            var temp = node.left;
+            node.left = node.right;
+            node.right = temp;
+
+            if (node.left != null) queue.Enqueue(node.left);
+            if (node.right != null) queue.Enqueue(node.right);
+        }
+
+        return root;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #104: Maximum Depth of Binary Tree (Recursive DFS).
+    /// Time: O(N), Space: O(H).
+    /// &lt;/summary&gt;
+    public static int MaxDepth(TreeNode? root)
+    {
+        if (root == null) return 0;
+
+        int leftDepth = MaxDepth(root.left);
+        int rightDepth = MaxDepth(root.right);
+
+        return Math.Max(leftDepth, rightDepth) + 1;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #104: Maximum Depth of Binary Tree (Iterative BFS Level-Order).
+    /// Time: O(N), Space: O(W).
+    /// &lt;/summary&gt;
+    public static int MaxDepthIterative(TreeNode? root)
+    {
+        if (root == null) return 0;
+
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+        int depth = 0;
+
+        while (queue.Count &gt; 0)
+        {
+            int levelSize = queue.Count;
+            depth++;
+
+            for (int i = 0; i &lt; levelSize; i++)
+            {
+                var curr = queue.Dequeue();
+                if (curr.left != null) queue.Enqueue(curr.left);
+                if (curr.right != null) queue.Enqueue(curr.right);
+            }
+        }
+
+        return depth;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day17.RedisCachePatterns/CacheService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd17-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d17-src-code-1" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+
+namespace Day17.RedisCachePatterns;
+
+public interface IDistributedCacheProvider
+{
+    Task&lt;T?&gt; GetAsync&lt;T&gt;(string key);
+    Task SetAsync&lt;T&gt;(string key, T value, TimeSpan ttl);
+    Task&lt;bool&gt; RemoveAsync(string key);
+    Task&lt;bool&gt; AcquireLockAsync(string key, string owner, TimeSpan ttl);
+    Task&lt;bool&gt; ReleaseLockAsync(string key, string owner);
+}
+
+public class MockRedisCacheProvider : IDistributedCacheProvider
+{
+    private readonly ConcurrentDictionary&lt;string, (object Value, DateTime ExpiresAt)&gt; _store = new();
+    private readonly ConcurrentDictionary&lt;string, (string Owner, DateTime ExpiresAt)&gt; _locks = new();
+
+    public Task&lt;T?&gt; GetAsync&lt;T&gt;(string key)
+    {
+        if (_store.TryGetValue(key, out var item))
+        {
+            if (DateTime.UtcNow &lt; item.ExpiresAt)
+            {
+                return Task.FromResult&lt;T?&gt;((T)item.Value);
+            }
+            _store.TryRemove(key, out _);
+        }
+        return Task.FromResult&lt;T?&gt;(default);
+    }
+
+    public Task SetAsync&lt;T&gt;(string key, T value, TimeSpan ttl)
+    {
+        _store[key] = (value!, DateTime.UtcNow.Add(ttl));
+        return Task.CompletedTask;
+    }
+
+    public Task&lt;bool&gt; RemoveAsync(string key)
+    {
+        return Task.FromResult(_store.TryRemove(key, out _));
+    }
+
+    public Task&lt;bool&gt; AcquireLockAsync(string key, string owner, TimeSpan ttl)
+    {
+        var now = DateTime.UtcNow;
+        if (_locks.TryGetValue(key, out var existing))
+        {
+            if (now &lt; existing.ExpiresAt)
+            {
+                return Task.FromResult(false);
+            }
+        }
+
+        _locks[key] = (owner, now.Add(ttl));
+        return Task.FromResult(true);
+    }
+
+    public Task&lt;bool&gt; ReleaseLockAsync(string key, string owner)
+    {
+        if (_locks.TryGetValue(key, out var existing) &amp;&amp; existing.Owner == owner)
+        {
+            return Task.FromResult(_locks.TryRemove(key, out _));
+        }
+        return Task.FromResult(false);
+    }
+}
+
+/// &lt;summary&gt;
+/// Cache-Aside (Lazy Loading) with Cache Stampede / Thundering Herd Mutex Protection
+/// &lt;/summary&gt;
+public class CacheAsideManager
+{
+    private readonly IDistributedCacheProvider _cache;
+    private readonly ConcurrentDictionary&lt;string, SemaphoreSlim&gt; _keyLocks = new();
+    private int _hits = 0;
+    private int _misses = 0;
+    private int _dbLoads = 0;
+
+    public CacheMetrics GetMetrics() =&gt; new(_hits, _misses, _dbLoads, 0);
+
+    public CacheAsideManager(IDistributedCacheProvider cache)
+    {
+        _cache = cache;
+    }
+
+    public async Task&lt;T&gt; GetOrCreateAsync&lt;T&gt;(
+        string key,
+        Func&lt;Task&lt;T&gt;&gt; databaseLoader,
+        TimeSpan ttl)
+    {
+        // 1. Check Cache
+        var cached = await _cache.GetAsync&lt;T&gt;(key);
+        if (cached != null)
+        {
+            Interlocked.Increment(ref _hits);
+            return cached;
+        }
+
+        Interlocked.Increment(ref _misses);
+
+        // 2. Cache Stampede Mutex: only one task queries the database for this specific key
+        var keyLock = _keyLocks.GetOrAdd(key, _ =&gt; new SemaphoreSlim(1, 1));
+        await keyLock.WaitAsync();
+        try
+        {
+            // Double check cache
+            cached = await _cache.GetAsync&lt;T&gt;(key);
+            if (cached != null)
+            {
+                Interlocked.Increment(ref _hits);
+                return cached;
+            }
+
+            // 3. Query Database
+            var dbValue = await databaseLoader();
+            Interlocked.Increment(ref _dbLoads);
+
+            // 4. Populate Cache
+            await _cache.SetAsync(key, dbValue, ttl);
+            return dbValue;
+        }
+        finally
+        {
+            keyLock.Release();
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Write-Through: Simultaneously writes to cache and database in one call
+/// &lt;/summary&gt;
+public class WriteThroughManager
+{
+    private readonly IDistributedCacheProvider _cache;
+    private readonly ConcurrentDictionary&lt;int, Product&gt; _database = new();
+
+    public WriteThroughManager(IDistributedCacheProvider cache)
+    {
+        _cache = cache;
+    }
+
+    public async Task SaveProductAsync(Product product, TimeSpan ttl)
+    {
+        // 1. Write to database synchronously
+        _database[product.Id] = product;
+
+        // 2. Write to cache synchronously
+        await _cache.SetAsync($&quot;product:{product.Id}&quot;, product, ttl);
+    }
+
+    public async Task&lt;Product?&gt; GetProductAsync(int id)
+    {
+        var cached = await _cache.GetAsync&lt;Product&gt;($&quot;product:{id}&quot;);
+        if (cached != null) return cached;
+
+        if (_database.TryGetValue(id, out var dbProduct))
+        {
+            await _cache.SetAsync($&quot;product:{id}&quot;, dbProduct, TimeSpan.FromMinutes(10));
+            return dbProduct;
+        }
+
+        return null;
+    }
+}
+
+/// &lt;summary&gt;
+/// Write-Behind (Write-Back): Enqueues writes into an asynchronous background channel for batch persistence
+/// &lt;/summary&gt;
+public class WriteBehindManager
+{
+    private readonly IDistributedCacheProvider _cache;
+    private readonly Channel&lt;Product&gt; _writeQueue;
+    private readonly ConcurrentDictionary&lt;int, Product&gt; _backingDatabase = new();
+    private int _flushedCount = 0;
+
+    public int FlushedCount =&gt; _flushedCount;
+
+    public WriteBehindManager(IDistributedCacheProvider cache, int queueCapacity = 1000)
+    {
+        _cache = cache;
+        _writeQueue = Channel.CreateBounded&lt;Product&gt;(new BoundedChannelOptions(queueCapacity)
+        {
+            FullMode = BoundedChannelFullMode.Wait
+        });
+    }
+
+    public async Task WriteAsync(Product product, TimeSpan ttl)
+    {
+        // 1. Update cache immediately for sub-millisecond client reads
+        await _cache.SetAsync($&quot;product:{product.Id}&quot;, product, ttl);
+
+        // 2. Enqueue for asynchronous database flush
+        await _writeQueue.Writer.WriteAsync(product);
+    }
+
+    public async Task&lt;int&gt; FlushBatchAsync(int maxBatchSize = 100)
+    {
+        int processed = 0;
+        while (processed &lt; maxBatchSize &amp;&amp; _writeQueue.Reader.TryRead(out var product))
+        {
+            _backingDatabase[product.Id] = product;
+            processed++;
+            Interlocked.Increment(ref _flushedCount);
+        }
+        return processed;
+    }
+
+    public Product? GetFromDatabaseDirectly(int id)
+    {
+        _backingDatabase.TryGetValue(id, out var prod);
+        return prod;
+    }
+}
+
+/// &lt;summary&gt;
+/// Probabilistic Early Expiration (XFetch Algorithm)
+/// Evaluates: delta * beta * (-ln(rand)) &gt; timeRemaining
+/// &lt;/summary&gt;
+public static class XFetchProtector
+{
+    private static readonly Random _rng = new();
+
+    public static bool ShouldRefreshEarly(
+        DateTime expiresAtUtc,
+        TimeSpan computeDuration,
+        double beta = 1.0)
+    {
+        var now = DateTime.UtcNow;
+        if (now &gt;= expiresAtUtc) return true; // Already expired
+
+        double timeRemainingSec = (expiresAtUtc - now).TotalSeconds;
+        double deltaSec = computeDuration.TotalSeconds;
+
+        double randomVal = _rng.NextDouble();
+        if (randomVal &lt;= 0.0) randomVal = 0.0001; // Avoid log(0)
+
+        double xfetch = deltaSec * beta * -Math.Log(randomVal);
+
+        return xfetch &gt; timeRemainingSec;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day17.RedisCachePatterns/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd17-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d17-src-code-2" class="language-csharp">using System;
+
+namespace Day17.RedisCachePatterns;
+
+public record Product(
+    int Id,
+    string Name,
+    decimal Price,
+    int StockQuantity,
+    DateTime UpdatedAtUtc);
+
+public record CacheEntry&lt;T&gt;(
+    T Value,
+    DateTime ExpiresAtUtc,
+    TimeSpan DeltaComputeTime);
+
+public record CacheMetrics(
+    int Hits,
+    int Misses,
+    int DatabaseLoads,
+    int Writes);
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day17.RedisCachePatterns.Tests/Day17Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd17-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d17-tests-code-0" class="language-csharp">using System;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day17.RedisCachePatterns.Tests;
+
+public class Day17Tests
+{
+    [Fact]
+    public void LeetCode226_InvertTree_InvertsLeftAndRightNodes()
+    {
+        // Tree: [4, 2, 7, 1, 3, 6, 9] -&gt; Inverted: [4, 7, 2, 9, 6, 3, 1]
+        var root = TreeNode.FromLevelOrder(new int?[] { 4, 2, 7, 1, 3, 6, 9 });
+        var inverted = BinaryTreeSolvers.InvertTree(root);
+
+        inverted.Should().NotBeNull();
+        inverted!.ToLevelOrder().Should().Equal(new int?[] { 4, 7, 2, 9, 6, 3, 1 });
+
+        // Null tree
+        BinaryTreeSolvers.InvertTree(null).Should().BeNull();
+    }
+
+    [Fact]
+    public void LeetCode226_InvertTreeIterative_MatchesRecursive()
+    {
+        var root = TreeNode.FromLevelOrder(new int?[] { 2, 1, 3 });
+        var inverted = BinaryTreeSolvers.InvertTreeIterative(root);
+
+        inverted!.ToLevelOrder().Should().Equal(new int?[] { 2, 3, 1 });
+    }
+
+    [Fact]
+    public void LeetCode104_MaxDepth_CalculatesCorrectDepth()
+    {
+        // Tree: [3, 9, 20, null, null, 15, 7] -&gt; depth 3
+        var root = TreeNode.FromLevelOrder(new int?[] { 3, 9, 20, null, null, 15, 7 });
+        BinaryTreeSolvers.MaxDepth(root).Should().Be(3);
+        BinaryTreeSolvers.MaxDepthIterative(root).Should().Be(3);
+
+        // Linear degenerate tree: 1 -&gt; 2 -&gt; 3
+        var root2 = TreeNode.FromLevelOrder(new int?[] { 1, null, 2, null, 3 });
+        BinaryTreeSolvers.MaxDepth(root2).Should().Be(3);
+
+        // Null tree
+        BinaryTreeSolvers.MaxDepth(null).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CacheAside_PopulatesCacheOnMiss_AndAvoidsDbOnHit()
+    {
+        var cache = new MockRedisCacheProvider();
+        var manager = new CacheAsideManager(cache);
+        int dbQueryCount = 0;
+
+        Task&lt;string&gt; LoadFromDb()
+        {
+            dbQueryCount++;
+            return Task.FromResult(&quot;user-profile-data&quot;);
+        }
+
+        // First call: Cache Miss -&gt; loads DB
+        var res1 = await manager.GetOrCreateAsync(&quot;user:42&quot;, LoadFromDb, TimeSpan.FromMinutes(5));
+        res1.Should().Be(&quot;user-profile-data&quot;);
+        dbQueryCount.Should().Be(1);
+
+        // Second call: Cache Hit -&gt; skips DB
+        var res2 = await manager.GetOrCreateAsync(&quot;user:42&quot;, LoadFromDb, TimeSpan.FromMinutes(5));
+        res2.Should().Be(&quot;user-profile-data&quot;);
+        dbQueryCount.Should().Be(1);
+
+        var metrics = manager.GetMetrics();
+        metrics.Hits.Should().Be(1);
+        metrics.Misses.Should().Be(1);
+        metrics.DatabaseLoads.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CacheStampedeMutex_PreventsThunderingHerd()
+    {
+        var cache = new MockRedisCacheProvider();
+        var manager = new CacheAsideManager(cache);
+        int dbQueryCount = 0;
+
+        async Task&lt;string&gt; SlowDbQuery()
+        {
+            await Task.Delay(50);
+            System.Threading.Interlocked.Increment(ref dbQueryCount);
+            return &quot;expensive-report&quot;;
+        }
+
+        // Fire 10 concurrent requests for the exact same un-cached key
+        var tasks = new Task&lt;string&gt;[10];
+        for (int i = 0; i &lt; 10; i++)
+        {
+            tasks[i] = manager.GetOrCreateAsync(&quot;report:monthly&quot;, SlowDbQuery, TimeSpan.FromMinutes(5));
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        // All 10 received the result
+        foreach (var r in results) r.Should().Be(&quot;expensive-report&quot;);
+
+        // BUT the expensive DB query executed exactly ONCE!
+        dbQueryCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task WriteThrough_UpdatesCacheAndStoreSimultaneously()
+    {
+        var cache = new MockRedisCacheProvider();
+        var manager = new WriteThroughManager(cache);
+
+        var prod = new Product(101, &quot;Mechanical Keyboard&quot;, 129.99m, 50, DateTime.UtcNow);
+        await manager.SaveProductAsync(prod, TimeSpan.FromMinutes(10));
+
+        // Read verifies cache is populated immediately
+        var fetched = await manager.GetProductAsync(101);
+        fetched.Should().NotBeNull();
+        fetched!.Name.Should().Be(&quot;Mechanical Keyboard&quot;);
+        fetched.Price.Should().Be(129.99m);
+    }
+
+    [Fact]
+    public async Task WriteBehind_EnqueuesAndFlushesBatch()
+    {
+        var cache = new MockRedisCacheProvider();
+        var manager = new WriteBehindManager(cache, queueCapacity: 100);
+
+        var prod1 = new Product(1, &quot;Mouse&quot;, 49.99m, 100, DateTime.UtcNow);
+        var prod2 = new Product(2, &quot;Monitor&quot;, 399.99m, 20, DateTime.UtcNow);
+
+        await manager.WriteAsync(prod1, TimeSpan.FromMinutes(5));
+        await manager.WriteAsync(prod2, TimeSpan.FromMinutes(5));
+
+        // Immediately available in cache
+        var cached = await cache.GetAsync&lt;Product&gt;(&quot;product:1&quot;);
+        cached.Should().NotBeNull();
+        cached!.Name.Should().Be(&quot;Mouse&quot;);
+
+        // Before flush, database does not have them yet
+        manager.GetFromDatabaseDirectly(1).Should().BeNull();
+
+        // Flush batch to database
+        var flushed = await manager.FlushBatchAsync(10);
+        flushed.Should().Be(2);
+
+        // Now database has them
+        manager.GetFromDatabaseDirectly(1).Should().NotBeNull();
+        manager.GetFromDatabaseDirectly(2).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void XFetch_EvaluatesProbabilisticEarlyRefresh()
+    {
+        // Case 1: Already expired -&gt; MUST refresh
+        XFetchProtector.ShouldRefreshEarly(
+            expiresAtUtc: DateTime.UtcNow.AddSeconds(-1),
+            computeDuration: TimeSpan.FromSeconds(1)
+        ).Should().BeTrue();
+
+        // Case 2: Far future expiry with tiny compute duration -&gt; should almost certainly NOT refresh
+        bool refreshed = XFetchProtector.ShouldRefreshEarly(
+            expiresAtUtc: DateTime.UtcNow.AddDays(10),
+            computeDuration: TimeSpan.FromMilliseconds(1)
+        );
+        refreshed.Should().BeFalse();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 17 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

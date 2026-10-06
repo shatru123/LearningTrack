@@ -13,7 +13,7 @@
 | Day 7 | Minimal APIs | ✅ Completed |
 | Day 8 | SQL + B-Tree | ✅ Completed |
 
-## Active Roadmap (Days 9–13)
+## Active Roadmap (Days 9–17)
 
 | Day | Topic | Status |
 |---|---|---|
@@ -22,7 +22,11 @@
 | Day 11 | EF Core Change Tracking Mechanics & Monotonic Stack | ✅ Completed |
 | Day 12 | EF Core Split Queries, Interceptors & Binary Search | ✅ Completed |
 | Day 13 | High-Performance Data Access with Dapper & Rotated Array Search | ✅ Completed |
+| Day 14 | EF Core Migrations & Production Strategy (LC #33 & #81) | ✅ Completed |
+| Day 15 | Channels & High-Throughput Concurrency in C# (LC #206 & #21) | ✅ Completed |
+| Day 16 | Distributed Locking & Concurrency Primitives (LC #143 & #19) | ✅ Completed |
+| Day 17 | Introduction to Redis & Cache Patterns (LC #226 & #104) | ✅ Completed |
 
 ## Next
 
-Day 14 — Continue the original 100-day LearningOS roadmap.
+Day 18 — Continue the original 100-day LearningOS roadmap.

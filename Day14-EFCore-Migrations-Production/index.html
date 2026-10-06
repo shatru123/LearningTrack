@@ -1,0 +1,2430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 14: EF Core Migrations &amp; Production Strategy | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 14</span>
+        <span class="badge badge-category">EF Core &amp; DevOps</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day13-Dapper-Performance/index.html" class="nav-btn">← Day 13</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+
+        </select>
+        <a href="../Day15-Channels-Concurrency/index.html" class="nav-btn">Day 15 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 14: EF Core Migrations &amp; Production Strategy</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 4 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Zero-Downtime Migration Architecture &amp; Expand-Contract Pipeline</text>
+          
+          <!-- Phase 1: Expand -->
+          <rect x="40" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="60" y="95" fill="#60a5fa" font-size="14" font-weight="bold">Phase 1: Expand</text>
+          <rect x="55" y="115" width="220" height="40" rx="4" fill="#0f172a"/><text x="65" y="140" fill="#cbd5e1" font-size="11">Add New Column (NULL)</text>
+          <rect x="55" y="165" width="220" height="50" rx="4" fill="#0f172a"/><text x="65" y="185" fill="#34d399" font-size="11">App V1.5: Dual Write</text><text x="65" y="205" fill="#94a3b8" font-size="10">Writes to Old &amp; New Column</text>
+          <text x="60" y="250" fill="#94a3b8" font-size="11">Idempotent script: -i</text>
+          <text x="60" y="275" fill="#38bdf8" font-size="11">Checks __EFMigrationsHistory</text>
+
+          <!-- Phase 2: Backfill -->
+          <rect x="325" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#8b5cf6"/>
+          <text x="345" y="95" fill="#c084fc" font-size="14" font-weight="bold">Phase 2: Backfill</text>
+          <rect x="340" y="115" width="220" height="50" rx="4" fill="#0f172a"/><text x="350" y="137" fill="#cbd5e1" font-size="11">Async Background Job</text><text x="350" y="155" fill="#94a3b8" font-size="10">Batch 5,000 rows / tx</text>
+          <rect x="340" y="175" width="220" height="50" rx="4" fill="#0f172a"/><text x="350" y="197" fill="#fbbf24" font-size="11">Advisory Lock Sync</text><text x="350" y="215" fill="#94a3b8" font-size="10">Prevents concurrent DDL</text>
+          <text x="345" y="260" fill="#c084fc" font-size="11">No table lock escalation</text>
+          <text x="345" y="285" fill="#94a3b8" font-size="10">Zero impact on read traffic</text>
+
+          <!-- Phase 3: Contract -->
+          <rect x="610" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="630" y="95" fill="#34d399" font-size="14" font-weight="bold">Phase 3: Contract</text>
+          <rect x="625" y="115" width="220" height="50" rx="4" fill="#0f172a"/><text x="635" y="137" fill="#34d399" font-size="11">App V2: Reads New Col</text><text x="635" y="155" fill="#94a3b8" font-size="10">All V1 pods terminated</text>
+          <rect x="625" y="175" width="220" height="50" rx="4" fill="#0f172a"/><text x="635" y="197" fill="#ef4444" font-size="11">Drop Old Column</text><text x="635" y="215" fill="#94a3b8" font-size="10">Metadata lock safe</text>
+          <text x="630" y="260" fill="#34d399" font-size="11">Zero-Downtime achieved</text>
+          <text x="630" y="285" fill="#94a3b8" font-size="10">Clean final schema</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (4 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 14 - Engineering Notes: EF Core Migrations & Production Strategy</h1>
+<h2>1. Zero-Downtime Migration Pipeline Architecture</h2>
+<h3>Migration Deployment Strategies Matrix</h3>
+<div class="table-container"><table><thead><tr>
+<th>Strategy</th>
+<th>When to Use</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr></thead><tbody>
+<tr>
+<td><strong><code>Database.Migrate()</code> on Startup</strong></td>
+<td>Local development only</td>
+<td>Zero friction</td>
+<td>Pod race conditions, high DDL DB privileges required, crash loops</td>
+</tr>
+<tr>
+<td><strong>Idempotent SQL Script (<code>-i</code>)</strong></td>
+<td>Standard CI/CD Pipelines</td>
+<td>Auditable by DBAs, transactional, reproducible</td>
+<td>Requires CI/CD execution pipeline</td>
+</tr>
+<tr>
+<td><strong>Migration Bundles (<code>dotnet ef migrations bundle</code>)</strong></td>
+<td>Containerized Kubernetes Jobs</td>
+<td>Self-contained executable, no .NET SDK required on runner</td>
+<td>Slightly larger artifact</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>2. DDL Locking & Concurrency Hazards</h2>
+<h3>Exclusive Locks During DDL</h3>
+<p>In PostgreSQL and SQL Server, DDL operations take heavy schema locks:</p>
+<ul>
+<li><code>ALTER TABLE ... ADD COLUMN ... NOT NULL</code> without a default value takes an <code>ACCESS EXCLUSIVE</code> lock in older database engines and rewrites the entire table heap.</li>
+<li><code>CREATE INDEX</code> takes a table-level write lock. In production, always use <code>CREATE INDEX CONCURRENTLY</code> (PostgreSQL) or <code>WITH (ONLINE = ON)</code> (SQL Server Enterprise).</li>
+</ul>
+<h3>Application Advisory Locking</h3>
+<p>When multi-replica services must synchronize schema application, use database-native advisory locks:</p>
+<ul>
+<li>PostgreSQL: <code>SELECT pg_advisory_lock(123456);</code></li>
+<li>SQL Server: <code>sp_getapplock @Resource = &#x27;DbMigration&#x27;, @LockMode = &#x27;Exclusive&#x27;;</code></li>
+</ul>
+<hr/>
+<h2>3. The Expand-Contract (Parallel-Run) Pattern</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Timeline:
+V1 App  ----[Reads/Writes Old Col]------------------&gt; Terminated
+V1.5 App                        ----[Dual-Write Both]---&gt; Terminated
+V2 App                                              ----[Reads/Writes New Col]----&gt;
+Database: [Old Col] -------------&gt; [Add New Col] ------&gt; [Backfill] -----------&gt; [Drop Old Col]</code></pre></div>
+<ol>
+<li><strong>Step 1 (Expand)</strong>: Add the new column as <code>NULL</code>. Old application continues running without disruption.</li>
+<li><strong>Step 2 (Dual Write)</strong>: Update application to read from Old and write to both Old and New.</li>
+<li><strong>Step 3 (Backfill)</strong>: Backfill historical rows in small batches (e.g., 5,000 rows per transaction) to prevent lock escalation.</li>
+<li><strong>Step 4 (Cutover)</strong>: Point read logic to New column.</li>
+<li><strong>Step 5 (Contract)</strong>: Drop Old column once no replicas read from it.</li>
+</ol>
+<hr/>
+<h2>4. Modified Binary Search on Rotated Arrays (LC #33 & #81)</h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">int mid = left + (right - left) / 2;
+if (nums[mid] == target) return mid;
+
+if (nums[left] &lt;= nums[mid]) // Left half is monotonically increasing
+{
+    if (nums[left] &lt;= target &amp;&amp; target &lt; nums[mid])
+        right = mid - 1;
+    else
+        left = mid + 1;
+}
+else // Right half is monotonically increasing
+{
+    if (nums[mid] &lt; target &amp;&amp; target &lt;= nums[right])
+        left = mid + 1;
+    else
+        right = mid - 1;
+}</code></pre></div>
+<p>When duplicates exist, <code>nums[left] == nums[mid] == nums[right]</code> destroys our ability to tell which side is sorted. Pruning <code>left++</code> and <code>right--</code> recovers correctness with $O(N)$ worst-case.</p>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 14: EF Core Migrations & Production Strategy</h1>
+<h2>Overview</h2>
+<p>Designing and executing zero-downtime database schema deployment pipelines in high-availability enterprise environments. This module tackles automated CI/CD migration scripts (<code>dotnet ef migrations script -i</code>), breaking change identification, expand-contract patterns for multi-replica Kubernetes clusters, advisory locking mechanisms, and DSA: Search in Rotated Sorted Array (LeetCode #33 & #81).</p>
+<hr/>
+<h2>Key Architectural Concepts</h2>
+<h3>1. The Anti-Pattern: <code>DbContext.Database.Migrate()</code> on Application Startup</h3>
+<p>Executing migrations inside <code>Program.cs</code> during application bootstrap creates catastrophic failure modes:</p>
+<ul>
+<li><strong>Race Conditions in Multi-Replica Deployments</strong>: When Kubernetes scales 10 pods simultaneously, multiple replicas attempt to apply DDL concurrently, causing deadlocks or corrupted <code>__EFMigrationsHistory</code> tables.</li>
+<li><strong>Excessive Database Permissions</strong>: The web application connection string requires DDL privileges (<code>ALTER TABLE</code>, <code>DROP</code>, <code>CREATE</code>), violating the principle of least privilege.</li>
+<li><strong>Uncontrolled Rollouts</strong>: If a migration fails mid-way, application pods crash-loop and bring down the entire cluster.</li>
+</ul>
+<h3>2. The Production Solution: Idempotent SQL Scripts (<code>-i</code>)</h3>
+<p>Generate migration SQL artifacts during CI/CD build stages:</p>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet ef migrations script --idempotent --output ./migrations.sql --context MigrationDbContext</code></pre></div>
+<p>The resulting SQL wraps each migration step in an <code>IF NOT EXISTS</code> check against <code>__EFMigrationsHistory</code>:</p>
+<ul>
+<li>Safe to re-run multiple times without failure.</li>
+<li>Allows DBAs to inspect, benchmark, and approve schema changes before deployment.</li>
+<li>Executed by a dedicated CI/CD deployment runner with elevated DDL credentials, keeping the web application restricted to DML (<code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>).</li>
+</ul>
+<h3>3. Expand-Contract Pattern for Rolling Updates</h3>
+<p>When making schema modifications (such as renaming or dropping a column):</p>
+<ol>
+<li><strong>Phase 1 (Expand)</strong>: Add the new column as nullable. Deploy Phase 1 application which reads from old column and writes to both old and new columns (dual-write).</li>
+<li><strong>Phase 2 (Backfill)</strong>: Run an asynchronous background job to backfill historical data from the old column into the new column.</li>
+<li><strong>Phase 3 (Switch)</strong>: Deploy Phase 2 application which reads and writes exclusively to the new column.</li>
+<li><strong>Phase 4 (Contract)</strong>: Drop the old column in a subsequent migration after all previous replica versions have terminated.</li>
+</ol>
+<hr/>
+<h2>LeetCode Problems Solved</h2>
+<h3>LeetCode #33: Search in Rotated Sorted Array</h3>
+<ul>
+<li><strong>Algorithm</strong>: Modified Binary Search determining which half of the array is monotonically sorted (<code>nums[left] &lt;= nums[mid]</code>).</li>
+<li><strong>Complexity</strong>: Time: $O(\log N)$, Space: $O(1)$.</li>
+</ul>
+<h3>LeetCode #81: Search in Rotated Sorted Array II (Duplicates)</h3>
+<ul>
+<li><strong>Algorithm</strong>: When <code>nums[left] == nums[mid] == nums[right]</code>, we cannot know which half is sorted. Safely shrink both ends (<code>left++</code>, <code>right--</code>).</li>
+<li><strong>Complexity</strong>: Average Time: $O(\log N)$, Worst Time: $O(N)$, Space: $O(1)$.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why is running `context.Database.Migrate()` in production `Program.cs` considered an anti-pattern?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: In multi-replica cloud environments (Kubernetes, ECS), parallel startup causes race conditions, lock deadlocks, and migration table corruption. It also forces web application containers to hold destructive DDL database permissions.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When a deployment scales out, 5–20 pods boot concurrently. Each executes <code>Migrate()</code>. Even though EF Core attempts to coordinate via transactions, DDL statements in many databases (like PostgreSQL or MySQL) either do not support transactional rollback or hold catalog locks that cause immediate deadlocks. Furthermore, security compliance (SOC2/PCI-DSS) requires least privilege: running services should only hold DML (<code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>) grants, never DDL (<code>DROP</code>, <code>ALTER</code>, <code>TRUNCATE</code>). If an application container is compromised, having DDL permissions allows attackers to drop entire schemas.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How does `dotnet ef migrations script --idempotent` achieve idempotency?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It wraps each migration's DDL inside a check querying <code>__EFMigrationsHistory</code>, executing statements only if the specific <code>MigrationId</code> has not yet been recorded.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>The generated script creates <code>__EFMigrationsHistory</code> if it does not exist. For every migration, it evaluates:</p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">  IF NOT EXISTS (SELECT 1 FROM &quot;__EFMigrationsHistory&quot; WHERE &quot;MigrationId&quot; = &#x27;20261004_Initial&#x27;)
+  BEGIN
+      -- DDL commands here
+      INSERT INTO &quot;__EFMigrationsHistory&quot; (&quot;MigrationId&quot;, &quot;ProductVersion&quot;) VALUES (&#x27;20261004_Initial&#x27;, &#x27;8.0.8&#x27;);
+  END;</code></pre></div>
+<p>This allows the deployment pipeline to run the exact same script on staging, production, or disaster recovery instances without errors, ensuring the database is always brought to the target migration level safely.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the &quot;Expand-Contract&quot; pattern and why is it mandatory for zero-downtime rolling deployments?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It decouples schema changes into two non-breaking phases: expanding the schema first so old and new application versions can co-exist, and contracting (deleting obsolete structures) only after old versions terminate.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>During a Kubernetes rolling deployment, old pods (V1) and new pods (V2) run simultaneously for several minutes. If V2 drops or renames a column upon deployment, in-flight requests on V1 will crash instantly with <code>ColumnNotFoundException</code>.</p>
+<ul>
+<li><strong>Expand</strong>: Add new columns as nullable or with defaults. V2 dual-writes to both columns.</li>
+<li><strong>Backfill</strong>: Asynchronous background jobs sync historic data.</li>
+<li><strong>Contract</strong>: Once V1 pods are completely terminated and V2 runs 100% of traffic, a subsequent deployment drops the old column.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How should large table index creation be handled in PostgreSQL and SQL Server production databases?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Standard <code>CREATE INDEX</code> locks the entire table against concurrent writes. In production, use <code>CREATE INDEX CONCURRENTLY</code> in PostgreSQL or <code>WITH (ONLINE = ON)</code> in SQL Server.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>On a table with 50 million rows, standard index creation can take minutes, blocking all incoming <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code> queries, causing cascading request timeouts across microservices.</p>
+<p>In EF Core, you override the migration:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  migrationBuilder.CreateIndex(
+      name: &quot;IX_Orders_CustomerId&quot;,
+      table: &quot;Orders&quot;,
+      column: &quot;CustomerId&quot;)
+      .Annotation(&quot;Npgsql:Concurrent&quot;, true);</code></pre></div>
+<p>Note: PostgreSQL requires concurrent index operations to execute outside of a multi-statement transaction (<code>suppressTransaction: true</code>).</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do EF Core Migration Bundles (`dotnet ef migrations bundle`) work in containerized CI/CD?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A migration bundle compiles migrations and the EF Core runtime into a self-contained, single-file executable that runs without requiring the .NET SDK or source code.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In modern CI/CD:</p>
+<ol>
+<li>Build container runs <code>dotnet ef migrations bundle --output ./bundle --self-contained -r linux-x64</code>.</li>
+<li>The CI/CD pipeline runs <code>./bundle --connection &quot;Server=...&quot;</code> as a Kubernetes <code>Job</code> or pre-deployment task.</li>
+<li>The web application deployment only proceeds if the migration job exits with exit code 0.</li>
+</ol>
+<p>This completely isolates migration credentials and execution from the running web service containers.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does advisory locking prevent concurrent migration execution across distributed workers?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Advisory locks provide an explicit, application-defined lock in the database catalog that prevents multiple workers from executing migration logic simultaneously.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Unlike row locks, advisory locks do not lock specific records. In PostgreSQL, <code>SELECT pg_advisory_lock(app_hash)</code> or <code>pg_try_advisory_lock()</code> reserves a 64-bit integer lock. If a pod crashes, PostgreSQL automatically releases session-level advisory locks when the connection drops. This guarantees that even if three deployment jobs trigger at once, only one executes DDL while the others wait or gracefully exit.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What are the risks of adding a `NOT NULL` column to an existing table with millions of rows?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Without a default value, the database must validate or fail on all existing rows, taking table-level write locks. In older database engines, it rewrites every data page on disk.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In SQL Server 2012+ and PostgreSQL 11+, adding a <code>NOT NULL</code> column with a constant <code>DEFAULT</code> is metadata-only (fast). However:</p>
+<ol>
+<li>If added without a default value, it immediately fails because existing rows evaluate to <code>NULL</code>.</li>
+<li>If the default is volatile (e.g., <code>DEFAULT NEWID()</code>), the engine must generate a value for every row on disk, causing massive disk I/O, WAL expansion, and replication lag.</li>
+</ol>
+<p><strong>Best Practice</strong>: Add the column as <code>NULL</code>, backfill in batches, and alter column to <code>NOT NULL</code> once populated.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How do you handle schema rollbacks safely in a zero-downtime architecture?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Never roll back the database schema in production. Instead, fix forward with a new migration or roll back only application code that was designed to support the expanded schema.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Down migrations (<code>Down()</code>) often involve dropping newly added columns or tables. If the new code wrote legitimate customer data to those columns during the 10 minutes it was live, running <code>Down()</code> causes irrecoverable data loss. Under the Expand-Contract model, because schema expansions are strictly backward-compatible, rolling back application code from V2 to V1 requires zero database changes because V1 never depended on the newly added fields.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #33 (Search in Rotated Sorted Array), how do we guarantee $O(\log N)$ time complexity?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: At every step of binary search, at least one half of the array (left to mid, or mid to right) is guaranteed to be strictly sorted.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When an array is rotated at a pivot, splitting at <code>mid</code> always divides it into one normally sorted subarray and one rotated subarray.</p>
+<ol>
+<li>If <code>nums[left] &lt;= nums[mid]</code>, the left subarray is sorted. We check if <code>nums[left] &lt;= target &lt; nums[mid]</code>. If yes, search left; else search right.</li>
+<li>If <code>nums[left] &gt; nums[mid]</code>, the right subarray is guaranteed to be sorted. We check if <code>nums[mid] &lt; target &lt;= nums[right]</code>. If yes, search right; else search left.</li>
+</ol>
+<p>Because half the search space is eliminated on each iteration, time is strictly $O(\log N)$.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">Why does duplicate elements in LeetCode #81 degrade binary search from $O(\log N)$ to $O(N)$?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When <code>nums[left] == nums[mid] == nums[right]</code>, it is impossible to determine whether the left or right half contains the pivot or target without scanning.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Consider <code>[1, 1, 1, 2, 1, 1]</code> vs <code>[1, 2, 1, 1, 1, 1]</code>.</p>
+<p>In both cases, <code>nums[0] == 1</code>, <code>nums[mid] == 1</code>, and <code>nums[5] == 1</code>.</p>
+<p>The value 2 could be located either to the right or to the left of <code>mid</code>. No constant-time mathematical comparison can distinguish which partition is sorted. The only safe action is <code>left++</code> and <code>right--</code>. In the worst case where all elements are identical except one (e.g., <code>[1, 1, 1, 1, 2]</code>), the algorithm decrements one by one, resulting in $O(N)$ linear time.</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day14.EfCoreMigrations/IdempotentMigrationPipeline.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd14-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d14-src-code-0" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
+
+namespace Day14.EfCoreMigrations;
+
+public record MigrationStep(string MigrationId, string UpSql);
+
+public class IdempotentMigrationPipeline
+{
+    private readonly ConcurrentDictionary&lt;string, byte&gt; _appliedMigrations = new();
+    private readonly SemaphoreSlim _advisoryLock = new(1, 1);
+    private int _isLocked = 0;
+
+    public IReadOnlyCollection&lt;string&gt; AppliedMigrations =&gt; _appliedMigrations.Keys.ToList();
+
+    public async Task&lt;bool&gt; AcquireMigrationLockAsync(TimeSpan timeout, CancellationToken ct = default)
+    {
+        var entered = await _advisoryLock.WaitAsync(timeout, ct);
+        if (entered)
+        {
+            Interlocked.Exchange(ref _isLocked, 1);
+            return true;
+        }
+        return false;
+    }
+
+    public void ReleaseMigrationLock()
+    {
+        if (Interlocked.Exchange(ref _isLocked, 0) == 1)
+        {
+            _advisoryLock.Release();
+        }
+    }
+
+    public string GenerateIdempotentSql(IEnumerable&lt;MigrationStep&gt; steps)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(&quot;-- Idempotent Migration Script Generated for Zero-Downtime Pipeline&quot;);
+        sb.AppendLine(&quot;CREATE TABLE IF NOT EXISTS \&quot;__EFMigrationsHistory\&quot; (\&quot;MigrationId\&quot; TEXT NOT NULL PRIMARY KEY, \&quot;ProductVersion\&quot; TEXT NOT NULL);&quot;);
+
+        foreach (var step in steps)
+        {
+            sb.AppendLine($&quot;-- Begin Migration: {step.MigrationId}&quot;);
+            sb.AppendLine($&quot;-- Check if already applied&quot;);
+            sb.AppendLine($&quot;-- IF NOT EXISTS (SELECT 1 FROM \&quot;__EFMigrationsHistory\&quot; WHERE \&quot;MigrationId\&quot; = &#x27;{step.MigrationId}&#x27;)&quot;);
+            sb.AppendLine(step.UpSql);
+            sb.AppendLine($&quot;INSERT INTO \&quot;__EFMigrationsHistory\&quot; (\&quot;MigrationId\&quot;, \&quot;ProductVersion\&quot;) VALUES (&#x27;{step.MigrationId}&#x27;, &#x27;8.0.8&#x27;);&quot;);
+            sb.AppendLine($&quot;-- End Migration: {step.MigrationId}\n&quot;);
+        }
+
+        return sb.ToString();
+    }
+
+    public async Task&lt;int&gt; ApplyMigrationsIdempotentlyAsync(
+        IEnumerable&lt;MigrationStep&gt; steps,
+        SqliteConnection connection,
+        CancellationToken ct = default)
+    {
+        // Ensure table exists
+        await using (var initCmd = connection.CreateCommand())
+        {
+            initCmd.CommandText = &quot;CREATE TABLE IF NOT EXISTS \&quot;__EFMigrationsHistory\&quot; (\&quot;MigrationId\&quot; TEXT NOT NULL PRIMARY KEY, \&quot;ProductVersion\&quot; TEXT NOT NULL);&quot;;
+            await initCmd.ExecuteNonQueryAsync(ct);
+        }
+
+        int appliedCount = 0;
+        foreach (var step in steps)
+        {
+            // Check if applied
+            bool alreadyApplied = false;
+            await using (var checkCmd = connection.CreateCommand())
+            {
+                checkCmd.CommandText = &quot;SELECT COUNT(1) FROM \&quot;__EFMigrationsHistory\&quot; WHERE \&quot;MigrationId\&quot; = @mId;&quot;;
+                checkCmd.Parameters.AddWithValue(&quot;@mId&quot;, step.MigrationId);
+                var scalar = await checkCmd.ExecuteScalarAsync(ct);
+                alreadyApplied = Convert.ToInt64(scalar) &gt; 0;
+            }
+
+            if (!alreadyApplied)
+            {
+                await using var trans = (SqliteTransaction)await connection.BeginTransactionAsync(ct);
+                try
+                {
+                    await using var upCmd = connection.CreateCommand();
+                    upCmd.Transaction = trans;
+                    upCmd.CommandText = step.UpSql;
+                    await upCmd.ExecuteNonQueryAsync(ct);
+
+                    await using var recordCmd = connection.CreateCommand();
+                    recordCmd.Transaction = trans;
+                    recordCmd.CommandText = &quot;INSERT INTO \&quot;__EFMigrationsHistory\&quot; (\&quot;MigrationId\&quot;, \&quot;ProductVersion\&quot;) VALUES (@mId, &#x27;8.0.8&#x27;);&quot;;
+                    recordCmd.Parameters.AddWithValue(&quot;@mId&quot;, step.MigrationId);
+                    await recordCmd.ExecuteNonQueryAsync(ct);
+
+                    await trans.CommitAsync(ct);
+                    _appliedMigrations.TryAdd(step.MigrationId, 0);
+                    appliedCount++;
+                }
+                catch
+                {
+                    await trans.RollbackAsync(ct);
+                    throw;
+                }
+            }
+        }
+
+        return appliedCount;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day14.EfCoreMigrations/MigrationSafetyAnalyzer.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd14-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d14-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+
+namespace Day14.EfCoreMigrations;
+
+public enum ChangeSeverity
+{
+    Safe,
+    Warning,
+    Breaking
+}
+
+public record SchemaChangeEvaluation(
+    string Statement,
+    ChangeSeverity Severity,
+    string Reason,
+    string RecommendedMitigation);
+
+public class MigrationSafetyAnalyzer
+{
+    private static readonly Regex DropTableRegex = new(@&quot;\bDROP\s+TABLE\b&quot;, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex DropColumnRegex = new(@&quot;\bALTER\s+TABLE\s+.*?\bDROP\s+COLUMN\b&quot;, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RenameColumnRegex = new(@&quot;\bRENAME\s+COLUMN\b|\bsp_rename\b&quot;, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex AddNotNullNoDefaultRegex = new(@&quot;\bADD\s+(?!COLUMN\s+)?(\w+)\s+[^;]*?\bNOT\s+NULL\b(?!\s+DEFAULT)&quot;, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex CreateIndexWithoutConcurrentRegex = new(@&quot;\bCREATE\s+(?:UNIQUE\s+)?INDEX\s+(?!CONCURRENTLY\b)&quot;, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    public IReadOnlyList&lt;SchemaChangeEvaluation&gt; AnalyzeSql(string sqlScript)
+    {
+        var results = new List&lt;SchemaChangeEvaluation&gt;();
+        var statements = sqlScript.Split(&#x27;;&#x27;, StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var raw in statements)
+        {
+            var stmt = raw.Trim();
+            if (string.IsNullOrWhiteSpace(stmt)) continue;
+
+            if (DropTableRegex.IsMatch(stmt))
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Breaking,
+                    &quot;Immediate data loss and fatal errors for in-flight service queries.&quot;,
+                    &quot;Adopt Expand-Contract: Stop writing to table, archive data, release contract migration later.&quot;));
+            }
+            else if (DropColumnRegex.IsMatch(stmt))
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Breaking,
+                    &quot;Old application replicas querying the column will crash immediately.&quot;,
+                    &quot;Expand-Contract: Deprecate property in code first, verify no replicas use column, then drop.&quot;));
+            }
+            else if (RenameColumnRegex.IsMatch(stmt))
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Breaking,
+                    &quot;Renaming breaks backward compatibility for running replicas during rolling deployment.&quot;,
+                    &quot;Add new column, dual-write to both in application code, backfill existing rows, then contract old column.&quot;));
+            }
+            else if (AddNotNullNoDefaultRegex.IsMatch(stmt))
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Breaking,
+                    &quot;Adding NOT NULL column without DEFAULT locks large tables and fails if table has rows.&quot;,
+                    &quot;Add as nullable first, populate data/default in batches, then alter to NOT NULL with validation.&quot;));
+            }
+            else if (CreateIndexWithoutConcurrentRegex.IsMatch(stmt) &amp;&amp; stmt.Contains(&quot;INDEX&quot;, StringComparison.OrdinalIgnoreCase))
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Warning,
+                    &quot;Standard CREATE INDEX takes ACCESS EXCLUSIVE lock on PostgreSQL, blocking all writes.&quot;,
+                    &quot;Use CREATE INDEX CONCURRENTLY in production to avoid table write locks.&quot;));
+            }
+            else
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Safe,
+                    &quot;Non-destructive backward-compatible schema expansion.&quot;,
+                    &quot;Safe for rolling deployments.&quot;));
+            }
+        }
+
+        return results;
+    }
+
+    public bool IsDeploymentSafe(IReadOnlyList&lt;SchemaChangeEvaluation&gt; evaluations)
+    {
+        return !evaluations.Any(e =&gt; e.Severity == ChangeSeverity.Breaking);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day14.EfCoreMigrations/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd14-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d14-src-code-2" class="language-csharp">using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+
+namespace Day14.EfCoreMigrations;
+
+public class AppUser
+{
+    public int Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; } // Nullable column added safely
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+public class Order
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string Status { get; set; } = &quot;Pending&quot;;
+    public DateTime PlacedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+public class MigrationHistoryRecord
+{
+    public string MigrationId { get; set; } = string.Empty;
+    public string ProductVersion { get; set; } = &quot;8.0.8&quot;;
+    public DateTime AppliedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+public class MigrationDbContext : DbContext
+{
+    public DbSet&lt;AppUser&gt; Users =&gt; Set&lt;AppUser&gt;();
+    public DbSet&lt;Order&gt; Orders =&gt; Set&lt;Order&gt;();
+
+    public MigrationDbContext(DbContextOptions&lt;MigrationDbContext&gt; options) : base(options) { }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity&lt;AppUser&gt;(entity =&gt;
+        {
+            entity.HasKey(e =&gt; e.Id);
+            entity.Property(e =&gt; e.Username).IsRequired().HasMaxLength(100);
+            entity.Property(e =&gt; e.Email).IsRequired().HasMaxLength(255);
+            entity.HasIndex(e =&gt; e.Email).IsUnique();
+        });
+
+        modelBuilder.Entity&lt;Order&gt;(entity =&gt;
+        {
+            entity.HasKey(e =&gt; e.Id);
+            entity.Property(e =&gt; e.TotalAmount).HasPrecision(18, 2);
+            entity.HasIndex(e =&gt; e.UserId);
+        });
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day14.EfCoreMigrations/RotatedArraySearcher.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd14-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d14-src-code-3" class="language-csharp">using System;
+
+namespace Day14.EfCoreMigrations;
+
+public static class RotatedArraySearcher
+{
+    /// &lt;summary&gt;
+    /// LeetCode #33: Search in Rotated Sorted Array (All distinct elements).
+    /// Returns 0-based index of target if found, or -1 if not found. Time: O(log N), Space: O(1).
+    /// &lt;/summary&gt;
+    public static int Search(int[] nums, int target)
+    {
+        if (nums == null || nums.Length == 0) return -1;
+
+        int left = 0;
+        int right = nums.Length - 1;
+
+        while (left &lt;= right)
+        {
+            int mid = left + (right - left) / 2;
+
+            if (nums[mid] == target) return mid;
+
+            // Check if left half is sorted
+            if (nums[left] &lt;= nums[mid])
+            {
+                // Target is within the sorted left half
+                if (nums[left] &lt;= target &amp;&amp; target &lt; nums[mid])
+                {
+                    right = mid - 1;
+                }
+                else
+                {
+                    left = mid + 1;
+                }
+            }
+            else // Right half is sorted
+            {
+                // Target is within the sorted right half
+                if (nums[mid] &lt; target &amp;&amp; target &lt;= nums[right])
+                {
+                    left = mid + 1;
+                }
+                else
+                {
+                    right = mid - 1;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #81: Search in Rotated Sorted Array II (May contain duplicates).
+    /// Returns true if target exists, false otherwise.
+    /// Average: O(log N), Worst-case: O(N) when elements are identical. Space: O(1).
+    /// &lt;/summary&gt;
+    public static bool SearchWithDuplicates(int[] nums, int target)
+    {
+        if (nums == null || nums.Length == 0) return false;
+
+        int left = 0;
+        int right = nums.Length - 1;
+
+        while (left &lt;= right)
+        {
+            int mid = left + (right - left) / 2;
+
+            if (nums[mid] == target) return true;
+
+            // When left, mid, and right are equal, we cannot determine which half is sorted.
+            // Safely shrink boundaries by 1.
+            if (nums[left] == nums[mid] &amp;&amp; nums[mid] == nums[right])
+            {
+                left++;
+                right--;
+            }
+            else if (nums[left] &lt;= nums[mid]) // Left half is sorted
+            {
+                if (nums[left] &lt;= target &amp;&amp; target &lt; nums[mid])
+                {
+                    right = mid - 1;
+                }
+                else
+                {
+                    left = mid + 1;
+                }
+            }
+            else // Right half is sorted
+            {
+                if (nums[mid] &lt; target &amp;&amp; target &lt;= nums[right])
+                {
+                    left = mid + 1;
+                }
+                else
+                {
+                    right = mid - 1;
+                }
+            }
+        }
+
+        return false;
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day14.EfCoreMigrations.Tests/Day14Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd14-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d14-tests-code-0" class="language-csharp">using System;
+using System.IO;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Microsoft.Data.Sqlite;
+using Xunit;
+
+namespace Day14.EfCoreMigrations.Tests;
+
+public class Day14Tests
+{
+    [Theory]
+    [InlineData(new int[] { 4, 5, 6, 7, 0, 1, 2 }, 0, 4)]
+    [InlineData(new int[] { 4, 5, 6, 7, 0, 1, 2 }, 3, -1)]
+    [InlineData(new int[] { 1 }, 0, -1)]
+    [InlineData(new int[] { 1 }, 1, 0)]
+    [InlineData(new int[] { 3, 1 }, 1, 1)]
+    [InlineData(new int[] { 5, 1, 3 }, 5, 0)]
+    public void LeetCode33_Search_RotatedDistinctArray_FindsCorrectIndex(int[] nums, int target, int expected)
+    {
+        var result = RotatedArraySearcher.Search(nums, target);
+        result.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(new int[] { 2, 5, 6, 0, 0, 1, 2 }, 0, true)]
+    [InlineData(new int[] { 2, 5, 6, 0, 0, 1, 2 }, 3, false)]
+    [InlineData(new int[] { 1, 0, 1, 1, 1 }, 0, true)]
+    [InlineData(new int[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1 }, 2, true)]
+    [InlineData(new int[] { 1, 1, 1, 1 }, 2, false)]
+    [InlineData(new int[] { 3, 1, 1 }, 3, true)]
+    public void LeetCode81_SearchWithDuplicates_RotatedArray_ReturnsExpected(int[] nums, int target, bool expected)
+    {
+        var result = RotatedArraySearcher.SearchWithDuplicates(nums, target);
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void MigrationSafetyAnalyzer_DetectsBreakingChanges()
+    {
+        var analyzer = new MigrationSafetyAnalyzer();
+        var sql = @&quot;
+            ALTER TABLE Users DROP COLUMN LegacyToken;
+            DROP TABLE TempAudit;
+            ALTER TABLE Orders RENAME COLUMN OldStatus TO NewStatus;
+            ALTER TABLE Accounts ADD Balance DECIMAL NOT NULL;
+            CREATE INDEX idx_users_email ON Users(Email);
+            ALTER TABLE Users ADD Nickname TEXT NULL;
+        &quot;;
+
+        var evaluations = analyzer.AnalyzeSql(sql);
+
+        evaluations.Should().HaveCount(6);
+        evaluations.Count(e =&gt; e.Severity == ChangeSeverity.Breaking).Should().Be(4);
+        evaluations.Count(e =&gt; e.Severity == ChangeSeverity.Warning).Should().Be(1);
+        evaluations.Count(e =&gt; e.Severity == ChangeSeverity.Safe).Should().Be(1);
+
+        analyzer.IsDeploymentSafe(evaluations).Should().BeFalse();
+    }
+
+    [Fact]
+    public void MigrationSafetyAnalyzer_ApprovesSafeExpandStep()
+    {
+        var analyzer = new MigrationSafetyAnalyzer();
+        var safeSql = @&quot;
+            CREATE TABLE FeatureFlags (Id INT, Name TEXT);
+            ALTER TABLE Users ADD PreferencesJson TEXT NULL;
+        &quot;;
+
+        var evaluations = analyzer.AnalyzeSql(safeSql);
+        analyzer.IsDeploymentSafe(evaluations).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task IdempotentMigrationPipeline_AppliesOnlyOnce()
+    {
+        using var conn = new SqliteConnection(&quot;DataSource=:memory:&quot;);
+        await conn.OpenAsync();
+
+        var pipeline = new IdempotentMigrationPipeline();
+        var steps = new[]
+        {
+            new MigrationStep(&quot;20261004_CreateUsers&quot;, &quot;CREATE TABLE Users (Id INTEGER PRIMARY KEY, Username TEXT NOT NULL);&quot;),
+            new MigrationStep(&quot;20261004_AddEmail&quot;, &quot;ALTER TABLE Users ADD COLUMN Email TEXT NULL;&quot;)
+        };
+
+        // First execution -&gt; 2 applied
+        var appliedFirst = await pipeline.ApplyMigrationsIdempotentlyAsync(steps, conn);
+        appliedFirst.Should().Be(2);
+
+        // Second execution -&gt; 0 applied (idempotency verified)
+        var appliedSecond = await pipeline.ApplyMigrationsIdempotentlyAsync(steps, conn);
+        appliedSecond.Should().Be(0);
+
+        // Verify Users table works
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = &quot;INSERT INTO Users (Id, Username, Email) VALUES (1, &#x27;alice&#x27;, &#x27;alice@test.com&#x27;);&quot;;
+        await cmd.ExecuteNonQueryAsync();
+
+        cmd.CommandText = &quot;SELECT COUNT(*) FROM Users;&quot;;
+        var count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+        count.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task MigrationPipeline_AdvisoryLock_PreventsSimultaneousRuns()
+    {
+        var pipeline = new IdempotentMigrationPipeline();
+
+        var acquired1 = await pipeline.AcquireMigrationLockAsync(TimeSpan.FromMilliseconds(100));
+        acquired1.Should().BeTrue();
+
+        // Second attempt times out immediately
+        var acquired2 = await pipeline.AcquireMigrationLockAsync(TimeSpan.FromMilliseconds(50));
+        acquired2.Should().BeFalse();
+
+        pipeline.ReleaseMigrationLock();
+
+        // Third attempt succeeds after release
+        var acquired3 = await pipeline.AcquireMigrationLockAsync(TimeSpan.FromMilliseconds(100));
+        acquired3.Should().BeTrue();
+        pipeline.ReleaseMigrationLock();
+    }
+
+    [Fact]
+    public void GenerateIdempotentSql_IncludesHistoryTableChecks()
+    {
+        var pipeline = new IdempotentMigrationPipeline();
+        var steps = new[]
+        {
+            new MigrationStep(&quot;20261004_Init&quot;, &quot;CREATE TABLE Items (Id INT);&quot;)
+        };
+
+        var script = pipeline.GenerateIdempotentSql(steps);
+        script.Should().Contain(&quot;__EFMigrationsHistory&quot;);
+        script.Should().Contain(&quot;20261004_Init&quot;);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 14 - Engineering Notes: EF Core Migrations & Production Strategy</h1>
+<h2>1. Zero-Downtime Migration Pipeline Architecture</h2>
+<h3>Migration Deployment Strategies Matrix</h3>
+<div class="table-container"><table><thead><tr>
+<th>Strategy</th>
+<th>When to Use</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr></thead><tbody>
+<tr>
+<td><strong><code>Database.Migrate()</code> on Startup</strong></td>
+<td>Local development only</td>
+<td>Zero friction</td>
+<td>Pod race conditions, high DDL DB privileges required, crash loops</td>
+</tr>
+<tr>
+<td><strong>Idempotent SQL Script (<code>-i</code>)</strong></td>
+<td>Standard CI/CD Pipelines</td>
+<td>Auditable by DBAs, transactional, reproducible</td>
+<td>Requires CI/CD execution pipeline</td>
+</tr>
+<tr>
+<td><strong>Migration Bundles (<code>dotnet ef migrations bundle</code>)</strong></td>
+<td>Containerized Kubernetes Jobs</td>
+<td>Self-contained executable, no .NET SDK required on runner</td>
+<td>Slightly larger artifact</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>2. DDL Locking & Concurrency Hazards</h2>
+<h3>Exclusive Locks During DDL</h3>
+<p>In PostgreSQL and SQL Server, DDL operations take heavy schema locks:</p>
+<ul>
+<li><code>ALTER TABLE ... ADD COLUMN ... NOT NULL</code> without a default value takes an <code>ACCESS EXCLUSIVE</code> lock in older database engines and rewrites the entire table heap.</li>
+<li><code>CREATE INDEX</code> takes a table-level write lock. In production, always use <code>CREATE INDEX CONCURRENTLY</code> (PostgreSQL) or <code>WITH (ONLINE = ON)</code> (SQL Server Enterprise).</li>
+</ul>
+<h3>Application Advisory Locking</h3>
+<p>When multi-replica services must synchronize schema application, use database-native advisory locks:</p>
+<ul>
+<li>PostgreSQL: <code>SELECT pg_advisory_lock(123456);</code></li>
+<li>SQL Server: <code>sp_getapplock @Resource = &#x27;DbMigration&#x27;, @LockMode = &#x27;Exclusive&#x27;;</code></li>
+</ul>
+<hr/>
+<h2>3. The Expand-Contract (Parallel-Run) Pattern</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Timeline:
+V1 App  ----[Reads/Writes Old Col]------------------&gt; Terminated
+V1.5 App                        ----[Dual-Write Both]---&gt; Terminated
+V2 App                                              ----[Reads/Writes New Col]----&gt;
+Database: [Old Col] -------------&gt; [Add New Col] ------&gt; [Backfill] -----------&gt; [Drop Old Col]</code></pre></div>
+<ol>
+<li><strong>Step 1 (Expand)</strong>: Add the new column as <code>NULL</code>. Old application continues running without disruption.</li>
+<li><strong>Step 2 (Dual Write)</strong>: Update application to read from Old and write to both Old and New.</li>
+<li><strong>Step 3 (Backfill)</strong>: Backfill historical rows in small batches (e.g., 5,000 rows per transaction) to prevent lock escalation.</li>
+<li><strong>Step 4 (Cutover)</strong>: Point read logic to New column.</li>
+<li><strong>Step 5 (Contract)</strong>: Drop Old column once no replicas read from it.</li>
+</ol>
+<hr/>
+<h2>4. Modified Binary Search on Rotated Arrays (LC #33 & #81)</h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">int mid = left + (right - left) / 2;
+if (nums[mid] == target) return mid;
+
+if (nums[left] &lt;= nums[mid]) // Left half is monotonically increasing
+{
+    if (nums[left] &lt;= target &amp;&amp; target &lt; nums[mid])
+        right = mid - 1;
+    else
+        left = mid + 1;
+}
+else // Right half is monotonically increasing
+{
+    if (nums[mid] &lt; target &amp;&amp; target &lt;= nums[right])
+        left = mid + 1;
+    else
+        right = mid - 1;
+}</code></pre></div>
+<p>When duplicates exist, <code>nums[left] == nums[mid] == nums[right]</code> destroys our ability to tell which side is sorted. Pruning <code>left++</code> and <code>right--</code> recovers correctness with $O(N)$ worst-case.</p>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 14: EF Core Migrations & Production Strategy</h1>
+<h2>Overview</h2>
+<p>Designing and executing zero-downtime database schema deployment pipelines in high-availability enterprise environments. This module tackles automated CI/CD migration scripts (<code>dotnet ef migrations script -i</code>), breaking change identification, expand-contract patterns for multi-replica Kubernetes clusters, advisory locking mechanisms, and DSA: Search in Rotated Sorted Array (LeetCode #33 & #81).</p>
+<hr/>
+<h2>Key Architectural Concepts</h2>
+<h3>1. The Anti-Pattern: <code>DbContext.Database.Migrate()</code> on Application Startup</h3>
+<p>Executing migrations inside <code>Program.cs</code> during application bootstrap creates catastrophic failure modes:</p>
+<ul>
+<li><strong>Race Conditions in Multi-Replica Deployments</strong>: When Kubernetes scales 10 pods simultaneously, multiple replicas attempt to apply DDL concurrently, causing deadlocks or corrupted <code>__EFMigrationsHistory</code> tables.</li>
+<li><strong>Excessive Database Permissions</strong>: The web application connection string requires DDL privileges (<code>ALTER TABLE</code>, <code>DROP</code>, <code>CREATE</code>), violating the principle of least privilege.</li>
+<li><strong>Uncontrolled Rollouts</strong>: If a migration fails mid-way, application pods crash-loop and bring down the entire cluster.</li>
+</ul>
+<h3>2. The Production Solution: Idempotent SQL Scripts (<code>-i</code>)</h3>
+<p>Generate migration SQL artifacts during CI/CD build stages:</p>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet ef migrations script --idempotent --output ./migrations.sql --context MigrationDbContext</code></pre></div>
+<p>The resulting SQL wraps each migration step in an <code>IF NOT EXISTS</code> check against <code>__EFMigrationsHistory</code>:</p>
+<ul>
+<li>Safe to re-run multiple times without failure.</li>
+<li>Allows DBAs to inspect, benchmark, and approve schema changes before deployment.</li>
+<li>Executed by a dedicated CI/CD deployment runner with elevated DDL credentials, keeping the web application restricted to DML (<code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>).</li>
+</ul>
+<h3>3. Expand-Contract Pattern for Rolling Updates</h3>
+<p>When making schema modifications (such as renaming or dropping a column):</p>
+<ol>
+<li><strong>Phase 1 (Expand)</strong>: Add the new column as nullable. Deploy Phase 1 application which reads from old column and writes to both old and new columns (dual-write).</li>
+<li><strong>Phase 2 (Backfill)</strong>: Run an asynchronous background job to backfill historical data from the old column into the new column.</li>
+<li><strong>Phase 3 (Switch)</strong>: Deploy Phase 2 application which reads and writes exclusively to the new column.</li>
+<li><strong>Phase 4 (Contract)</strong>: Drop the old column in a subsequent migration after all previous replica versions have terminated.</li>
+</ol>
+<hr/>
+<h2>LeetCode Problems Solved</h2>
+<h3>LeetCode #33: Search in Rotated Sorted Array</h3>
+<ul>
+<li><strong>Algorithm</strong>: Modified Binary Search determining which half of the array is monotonically sorted (<code>nums[left] &lt;= nums[mid]</code>).</li>
+<li><strong>Complexity</strong>: Time: $O(\log N)$, Space: $O(1)$.</li>
+</ul>
+<h3>LeetCode #81: Search in Rotated Sorted Array II (Duplicates)</h3>
+<ul>
+<li><strong>Algorithm</strong>: When <code>nums[left] == nums[mid] == nums[right]</code>, we cannot know which half is sorted. Safely shrink both ends (<code>left++</code>, <code>right--</code>).</li>
+<li><strong>Complexity</strong>: Average Time: $O(\log N)$, Worst Time: $O(N)$, Space: $O(1)$.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why is running `context.Database.Migrate()` in production `Program.cs` considered an anti-pattern?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: In multi-replica cloud environments (Kubernetes, ECS), parallel startup causes race conditions, lock deadlocks, and migration table corruption. It also forces web application containers to hold destructive DDL database permissions.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When a deployment scales out, 5–20 pods boot concurrently. Each executes <code>Migrate()</code>. Even though EF Core attempts to coordinate via transactions, DDL statements in many databases (like PostgreSQL or MySQL) either do not support transactional rollback or hold catalog locks that cause immediate deadlocks. Furthermore, security compliance (SOC2/PCI-DSS) requires least privilege: running services should only hold DML (<code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>) grants, never DDL (<code>DROP</code>, <code>ALTER</code>, <code>TRUNCATE</code>). If an application container is compromised, having DDL permissions allows attackers to drop entire schemas.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How does `dotnet ef migrations script --idempotent` achieve idempotency?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It wraps each migration's DDL inside a check querying <code>__EFMigrationsHistory</code>, executing statements only if the specific <code>MigrationId</code> has not yet been recorded.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>The generated script creates <code>__EFMigrationsHistory</code> if it does not exist. For every migration, it evaluates:</p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">  IF NOT EXISTS (SELECT 1 FROM &quot;__EFMigrationsHistory&quot; WHERE &quot;MigrationId&quot; = &#x27;20261004_Initial&#x27;)
+  BEGIN
+      -- DDL commands here
+      INSERT INTO &quot;__EFMigrationsHistory&quot; (&quot;MigrationId&quot;, &quot;ProductVersion&quot;) VALUES (&#x27;20261004_Initial&#x27;, &#x27;8.0.8&#x27;);
+  END;</code></pre></div>
+<p>This allows the deployment pipeline to run the exact same script on staging, production, or disaster recovery instances without errors, ensuring the database is always brought to the target migration level safely.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the &quot;Expand-Contract&quot; pattern and why is it mandatory for zero-downtime rolling deployments?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It decouples schema changes into two non-breaking phases: expanding the schema first so old and new application versions can co-exist, and contracting (deleting obsolete structures) only after old versions terminate.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>During a Kubernetes rolling deployment, old pods (V1) and new pods (V2) run simultaneously for several minutes. If V2 drops or renames a column upon deployment, in-flight requests on V1 will crash instantly with <code>ColumnNotFoundException</code>.</p>
+<ul>
+<li><strong>Expand</strong>: Add new columns as nullable or with defaults. V2 dual-writes to both columns.</li>
+<li><strong>Backfill</strong>: Asynchronous background jobs sync historic data.</li>
+<li><strong>Contract</strong>: Once V1 pods are completely terminated and V2 runs 100% of traffic, a subsequent deployment drops the old column.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How should large table index creation be handled in PostgreSQL and SQL Server production databases?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Standard <code>CREATE INDEX</code> locks the entire table against concurrent writes. In production, use <code>CREATE INDEX CONCURRENTLY</code> in PostgreSQL or <code>WITH (ONLINE = ON)</code> in SQL Server.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>On a table with 50 million rows, standard index creation can take minutes, blocking all incoming <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code> queries, causing cascading request timeouts across microservices.</p>
+<p>In EF Core, you override the migration:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  migrationBuilder.CreateIndex(
+      name: &quot;IX_Orders_CustomerId&quot;,
+      table: &quot;Orders&quot;,
+      column: &quot;CustomerId&quot;)
+      .Annotation(&quot;Npgsql:Concurrent&quot;, true);</code></pre></div>
+<p>Note: PostgreSQL requires concurrent index operations to execute outside of a multi-statement transaction (<code>suppressTransaction: true</code>).</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do EF Core Migration Bundles (`dotnet ef migrations bundle`) work in containerized CI/CD?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A migration bundle compiles migrations and the EF Core runtime into a self-contained, single-file executable that runs without requiring the .NET SDK or source code.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In modern CI/CD:</p>
+<ol>
+<li>Build container runs <code>dotnet ef migrations bundle --output ./bundle --self-contained -r linux-x64</code>.</li>
+<li>The CI/CD pipeline runs <code>./bundle --connection &quot;Server=...&quot;</code> as a Kubernetes <code>Job</code> or pre-deployment task.</li>
+<li>The web application deployment only proceeds if the migration job exits with exit code 0.</li>
+</ol>
+<p>This completely isolates migration credentials and execution from the running web service containers.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does advisory locking prevent concurrent migration execution across distributed workers?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Advisory locks provide an explicit, application-defined lock in the database catalog that prevents multiple workers from executing migration logic simultaneously.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Unlike row locks, advisory locks do not lock specific records. In PostgreSQL, <code>SELECT pg_advisory_lock(app_hash)</code> or <code>pg_try_advisory_lock()</code> reserves a 64-bit integer lock. If a pod crashes, PostgreSQL automatically releases session-level advisory locks when the connection drops. This guarantees that even if three deployment jobs trigger at once, only one executes DDL while the others wait or gracefully exit.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What are the risks of adding a `NOT NULL` column to an existing table with millions of rows?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Without a default value, the database must validate or fail on all existing rows, taking table-level write locks. In older database engines, it rewrites every data page on disk.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In SQL Server 2012+ and PostgreSQL 11+, adding a <code>NOT NULL</code> column with a constant <code>DEFAULT</code> is metadata-only (fast). However:</p>
+<ol>
+<li>If added without a default value, it immediately fails because existing rows evaluate to <code>NULL</code>.</li>
+<li>If the default is volatile (e.g., <code>DEFAULT NEWID()</code>), the engine must generate a value for every row on disk, causing massive disk I/O, WAL expansion, and replication lag.</li>
+</ol>
+<p><strong>Best Practice</strong>: Add the column as <code>NULL</code>, backfill in batches, and alter column to <code>NOT NULL</code> once populated.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How do you handle schema rollbacks safely in a zero-downtime architecture?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Never roll back the database schema in production. Instead, fix forward with a new migration or roll back only application code that was designed to support the expanded schema.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Down migrations (<code>Down()</code>) often involve dropping newly added columns or tables. If the new code wrote legitimate customer data to those columns during the 10 minutes it was live, running <code>Down()</code> causes irrecoverable data loss. Under the Expand-Contract model, because schema expansions are strictly backward-compatible, rolling back application code from V2 to V1 requires zero database changes because V1 never depended on the newly added fields.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #33 (Search in Rotated Sorted Array), how do we guarantee $O(\log N)$ time complexity?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: At every step of binary search, at least one half of the array (left to mid, or mid to right) is guaranteed to be strictly sorted.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When an array is rotated at a pivot, splitting at <code>mid</code> always divides it into one normally sorted subarray and one rotated subarray.</p>
+<ol>
+<li>If <code>nums[left] &lt;= nums[mid]</code>, the left subarray is sorted. We check if <code>nums[left] &lt;= target &lt; nums[mid]</code>. If yes, search left; else search right.</li>
+<li>If <code>nums[left] &gt; nums[mid]</code>, the right subarray is guaranteed to be sorted. We check if <code>nums[mid] &lt; target &lt;= nums[right]</code>. If yes, search right; else search left.</li>
+</ol>
+<p>Because half the search space is eliminated on each iteration, time is strictly $O(\log N)$.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">Why does duplicate elements in LeetCode #81 degrade binary search from $O(\log N)$ to $O(N)$?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When <code>nums[left] == nums[mid] == nums[right]</code>, it is impossible to determine whether the left or right half contains the pivot or target without scanning.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Consider <code>[1, 1, 1, 2, 1, 1]</code> vs <code>[1, 2, 1, 1, 1, 1]</code>.</p>
+<p>In both cases, <code>nums[0] == 1</code>, <code>nums[mid] == 1</code>, and <code>nums[5] == 1</code>.</p>
+<p>The value 2 could be located either to the right or to the left of <code>mid</code>. No constant-time mathematical comparison can distinguish which partition is sorted. The only safe action is <code>left++</code> and <code>right--</code>. In the worst case where all elements are identical except one (e.g., <code>[1, 1, 1, 1, 2]</code>), the algorithm decrements one by one, resulting in $O(N)$ linear time.</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day14.EfCoreMigrations/IdempotentMigrationPipeline.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd14-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d14-src-code-0" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
+
+namespace Day14.EfCoreMigrations;
+
+public record MigrationStep(string MigrationId, string UpSql);
+
+public class IdempotentMigrationPipeline
+{
+    private readonly ConcurrentDictionary&lt;string, byte&gt; _appliedMigrations = new();
+    private readonly SemaphoreSlim _advisoryLock = new(1, 1);
+    private int _isLocked = 0;
+
+    public IReadOnlyCollection&lt;string&gt; AppliedMigrations =&gt; _appliedMigrations.Keys.ToList();
+
+    public async Task&lt;bool&gt; AcquireMigrationLockAsync(TimeSpan timeout, CancellationToken ct = default)
+    {
+        var entered = await _advisoryLock.WaitAsync(timeout, ct);
+        if (entered)
+        {
+            Interlocked.Exchange(ref _isLocked, 1);
+            return true;
+        }
+        return false;
+    }
+
+    public void ReleaseMigrationLock()
+    {
+        if (Interlocked.Exchange(ref _isLocked, 0) == 1)
+        {
+            _advisoryLock.Release();
+        }
+    }
+
+    public string GenerateIdempotentSql(IEnumerable&lt;MigrationStep&gt; steps)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(&quot;-- Idempotent Migration Script Generated for Zero-Downtime Pipeline&quot;);
+        sb.AppendLine(&quot;CREATE TABLE IF NOT EXISTS \&quot;__EFMigrationsHistory\&quot; (\&quot;MigrationId\&quot; TEXT NOT NULL PRIMARY KEY, \&quot;ProductVersion\&quot; TEXT NOT NULL);&quot;);
+
+        foreach (var step in steps)
+        {
+            sb.AppendLine($&quot;-- Begin Migration: {step.MigrationId}&quot;);
+            sb.AppendLine($&quot;-- Check if already applied&quot;);
+            sb.AppendLine($&quot;-- IF NOT EXISTS (SELECT 1 FROM \&quot;__EFMigrationsHistory\&quot; WHERE \&quot;MigrationId\&quot; = &#x27;{step.MigrationId}&#x27;)&quot;);
+            sb.AppendLine(step.UpSql);
+            sb.AppendLine($&quot;INSERT INTO \&quot;__EFMigrationsHistory\&quot; (\&quot;MigrationId\&quot;, \&quot;ProductVersion\&quot;) VALUES (&#x27;{step.MigrationId}&#x27;, &#x27;8.0.8&#x27;);&quot;);
+            sb.AppendLine($&quot;-- End Migration: {step.MigrationId}\n&quot;);
+        }
+
+        return sb.ToString();
+    }
+
+    public async Task&lt;int&gt; ApplyMigrationsIdempotentlyAsync(
+        IEnumerable&lt;MigrationStep&gt; steps,
+        SqliteConnection connection,
+        CancellationToken ct = default)
+    {
+        // Ensure table exists
+        await using (var initCmd = connection.CreateCommand())
+        {
+            initCmd.CommandText = &quot;CREATE TABLE IF NOT EXISTS \&quot;__EFMigrationsHistory\&quot; (\&quot;MigrationId\&quot; TEXT NOT NULL PRIMARY KEY, \&quot;ProductVersion\&quot; TEXT NOT NULL);&quot;;
+            await initCmd.ExecuteNonQueryAsync(ct);
+        }
+
+        int appliedCount = 0;
+        foreach (var step in steps)
+        {
+            // Check if applied
+            bool alreadyApplied = false;
+            await using (var checkCmd = connection.CreateCommand())
+            {
+                checkCmd.CommandText = &quot;SELECT COUNT(1) FROM \&quot;__EFMigrationsHistory\&quot; WHERE \&quot;MigrationId\&quot; = @mId;&quot;;
+                checkCmd.Parameters.AddWithValue(&quot;@mId&quot;, step.MigrationId);
+                var scalar = await checkCmd.ExecuteScalarAsync(ct);
+                alreadyApplied = Convert.ToInt64(scalar) &gt; 0;
+            }
+
+            if (!alreadyApplied)
+            {
+                await using var trans = (SqliteTransaction)await connection.BeginTransactionAsync(ct);
+                try
+                {
+                    await using var upCmd = connection.CreateCommand();
+                    upCmd.Transaction = trans;
+                    upCmd.CommandText = step.UpSql;
+                    await upCmd.ExecuteNonQueryAsync(ct);
+
+                    await using var recordCmd = connection.CreateCommand();
+                    recordCmd.Transaction = trans;
+                    recordCmd.CommandText = &quot;INSERT INTO \&quot;__EFMigrationsHistory\&quot; (\&quot;MigrationId\&quot;, \&quot;ProductVersion\&quot;) VALUES (@mId, &#x27;8.0.8&#x27;);&quot;;
+                    recordCmd.Parameters.AddWithValue(&quot;@mId&quot;, step.MigrationId);
+                    await recordCmd.ExecuteNonQueryAsync(ct);
+
+                    await trans.CommitAsync(ct);
+                    _appliedMigrations.TryAdd(step.MigrationId, 0);
+                    appliedCount++;
+                }
+                catch
+                {
+                    await trans.RollbackAsync(ct);
+                    throw;
+                }
+            }
+        }
+
+        return appliedCount;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day14.EfCoreMigrations/MigrationSafetyAnalyzer.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd14-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d14-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+
+namespace Day14.EfCoreMigrations;
+
+public enum ChangeSeverity
+{
+    Safe,
+    Warning,
+    Breaking
+}
+
+public record SchemaChangeEvaluation(
+    string Statement,
+    ChangeSeverity Severity,
+    string Reason,
+    string RecommendedMitigation);
+
+public class MigrationSafetyAnalyzer
+{
+    private static readonly Regex DropTableRegex = new(@&quot;\bDROP\s+TABLE\b&quot;, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex DropColumnRegex = new(@&quot;\bALTER\s+TABLE\s+.*?\bDROP\s+COLUMN\b&quot;, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex RenameColumnRegex = new(@&quot;\bRENAME\s+COLUMN\b|\bsp_rename\b&quot;, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex AddNotNullNoDefaultRegex = new(@&quot;\bADD\s+(?!COLUMN\s+)?(\w+)\s+[^;]*?\bNOT\s+NULL\b(?!\s+DEFAULT)&quot;, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex CreateIndexWithoutConcurrentRegex = new(@&quot;\bCREATE\s+(?:UNIQUE\s+)?INDEX\s+(?!CONCURRENTLY\b)&quot;, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    public IReadOnlyList&lt;SchemaChangeEvaluation&gt; AnalyzeSql(string sqlScript)
+    {
+        var results = new List&lt;SchemaChangeEvaluation&gt;();
+        var statements = sqlScript.Split(&#x27;;&#x27;, StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var raw in statements)
+        {
+            var stmt = raw.Trim();
+            if (string.IsNullOrWhiteSpace(stmt)) continue;
+
+            if (DropTableRegex.IsMatch(stmt))
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Breaking,
+                    &quot;Immediate data loss and fatal errors for in-flight service queries.&quot;,
+                    &quot;Adopt Expand-Contract: Stop writing to table, archive data, release contract migration later.&quot;));
+            }
+            else if (DropColumnRegex.IsMatch(stmt))
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Breaking,
+                    &quot;Old application replicas querying the column will crash immediately.&quot;,
+                    &quot;Expand-Contract: Deprecate property in code first, verify no replicas use column, then drop.&quot;));
+            }
+            else if (RenameColumnRegex.IsMatch(stmt))
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Breaking,
+                    &quot;Renaming breaks backward compatibility for running replicas during rolling deployment.&quot;,
+                    &quot;Add new column, dual-write to both in application code, backfill existing rows, then contract old column.&quot;));
+            }
+            else if (AddNotNullNoDefaultRegex.IsMatch(stmt))
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Breaking,
+                    &quot;Adding NOT NULL column without DEFAULT locks large tables and fails if table has rows.&quot;,
+                    &quot;Add as nullable first, populate data/default in batches, then alter to NOT NULL with validation.&quot;));
+            }
+            else if (CreateIndexWithoutConcurrentRegex.IsMatch(stmt) &amp;&amp; stmt.Contains(&quot;INDEX&quot;, StringComparison.OrdinalIgnoreCase))
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Warning,
+                    &quot;Standard CREATE INDEX takes ACCESS EXCLUSIVE lock on PostgreSQL, blocking all writes.&quot;,
+                    &quot;Use CREATE INDEX CONCURRENTLY in production to avoid table write locks.&quot;));
+            }
+            else
+            {
+                results.Add(new SchemaChangeEvaluation(
+                    stmt,
+                    ChangeSeverity.Safe,
+                    &quot;Non-destructive backward-compatible schema expansion.&quot;,
+                    &quot;Safe for rolling deployments.&quot;));
+            }
+        }
+
+        return results;
+    }
+
+    public bool IsDeploymentSafe(IReadOnlyList&lt;SchemaChangeEvaluation&gt; evaluations)
+    {
+        return !evaluations.Any(e =&gt; e.Severity == ChangeSeverity.Breaking);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day14.EfCoreMigrations/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd14-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d14-src-code-2" class="language-csharp">using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+
+namespace Day14.EfCoreMigrations;
+
+public class AppUser
+{
+    public int Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; } // Nullable column added safely
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+public class Order
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string Status { get; set; } = &quot;Pending&quot;;
+    public DateTime PlacedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+public class MigrationHistoryRecord
+{
+    public string MigrationId { get; set; } = string.Empty;
+    public string ProductVersion { get; set; } = &quot;8.0.8&quot;;
+    public DateTime AppliedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+public class MigrationDbContext : DbContext
+{
+    public DbSet&lt;AppUser&gt; Users =&gt; Set&lt;AppUser&gt;();
+    public DbSet&lt;Order&gt; Orders =&gt; Set&lt;Order&gt;();
+
+    public MigrationDbContext(DbContextOptions&lt;MigrationDbContext&gt; options) : base(options) { }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity&lt;AppUser&gt;(entity =&gt;
+        {
+            entity.HasKey(e =&gt; e.Id);
+            entity.Property(e =&gt; e.Username).IsRequired().HasMaxLength(100);
+            entity.Property(e =&gt; e.Email).IsRequired().HasMaxLength(255);
+            entity.HasIndex(e =&gt; e.Email).IsUnique();
+        });
+
+        modelBuilder.Entity&lt;Order&gt;(entity =&gt;
+        {
+            entity.HasKey(e =&gt; e.Id);
+            entity.Property(e =&gt; e.TotalAmount).HasPrecision(18, 2);
+            entity.HasIndex(e =&gt; e.UserId);
+        });
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day14.EfCoreMigrations/RotatedArraySearcher.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd14-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d14-src-code-3" class="language-csharp">using System;
+
+namespace Day14.EfCoreMigrations;
+
+public static class RotatedArraySearcher
+{
+    /// &lt;summary&gt;
+    /// LeetCode #33: Search in Rotated Sorted Array (All distinct elements).
+    /// Returns 0-based index of target if found, or -1 if not found. Time: O(log N), Space: O(1).
+    /// &lt;/summary&gt;
+    public static int Search(int[] nums, int target)
+    {
+        if (nums == null || nums.Length == 0) return -1;
+
+        int left = 0;
+        int right = nums.Length - 1;
+
+        while (left &lt;= right)
+        {
+            int mid = left + (right - left) / 2;
+
+            if (nums[mid] == target) return mid;
+
+            // Check if left half is sorted
+            if (nums[left] &lt;= nums[mid])
+            {
+                // Target is within the sorted left half
+                if (nums[left] &lt;= target &amp;&amp; target &lt; nums[mid])
+                {
+                    right = mid - 1;
+                }
+                else
+                {
+                    left = mid + 1;
+                }
+            }
+            else // Right half is sorted
+            {
+                // Target is within the sorted right half
+                if (nums[mid] &lt; target &amp;&amp; target &lt;= nums[right])
+                {
+                    left = mid + 1;
+                }
+                else
+                {
+                    right = mid - 1;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #81: Search in Rotated Sorted Array II (May contain duplicates).
+    /// Returns true if target exists, false otherwise.
+    /// Average: O(log N), Worst-case: O(N) when elements are identical. Space: O(1).
+    /// &lt;/summary&gt;
+    public static bool SearchWithDuplicates(int[] nums, int target)
+    {
+        if (nums == null || nums.Length == 0) return false;
+
+        int left = 0;
+        int right = nums.Length - 1;
+
+        while (left &lt;= right)
+        {
+            int mid = left + (right - left) / 2;
+
+            if (nums[mid] == target) return true;
+
+            // When left, mid, and right are equal, we cannot determine which half is sorted.
+            // Safely shrink boundaries by 1.
+            if (nums[left] == nums[mid] &amp;&amp; nums[mid] == nums[right])
+            {
+                left++;
+                right--;
+            }
+            else if (nums[left] &lt;= nums[mid]) // Left half is sorted
+            {
+                if (nums[left] &lt;= target &amp;&amp; target &lt; nums[mid])
+                {
+                    right = mid - 1;
+                }
+                else
+                {
+                    left = mid + 1;
+                }
+            }
+            else // Right half is sorted
+            {
+                if (nums[mid] &lt; target &amp;&amp; target &lt;= nums[right])
+                {
+                    left = mid + 1;
+                }
+                else
+                {
+                    right = mid - 1;
+                }
+            }
+        }
+
+        return false;
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day14.EfCoreMigrations.Tests/Day14Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd14-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d14-tests-code-0" class="language-csharp">using System;
+using System.IO;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Microsoft.Data.Sqlite;
+using Xunit;
+
+namespace Day14.EfCoreMigrations.Tests;
+
+public class Day14Tests
+{
+    [Theory]
+    [InlineData(new int[] { 4, 5, 6, 7, 0, 1, 2 }, 0, 4)]
+    [InlineData(new int[] { 4, 5, 6, 7, 0, 1, 2 }, 3, -1)]
+    [InlineData(new int[] { 1 }, 0, -1)]
+    [InlineData(new int[] { 1 }, 1, 0)]
+    [InlineData(new int[] { 3, 1 }, 1, 1)]
+    [InlineData(new int[] { 5, 1, 3 }, 5, 0)]
+    public void LeetCode33_Search_RotatedDistinctArray_FindsCorrectIndex(int[] nums, int target, int expected)
+    {
+        var result = RotatedArraySearcher.Search(nums, target);
+        result.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(new int[] { 2, 5, 6, 0, 0, 1, 2 }, 0, true)]
+    [InlineData(new int[] { 2, 5, 6, 0, 0, 1, 2 }, 3, false)]
+    [InlineData(new int[] { 1, 0, 1, 1, 1 }, 0, true)]
+    [InlineData(new int[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1 }, 2, true)]
+    [InlineData(new int[] { 1, 1, 1, 1 }, 2, false)]
+    [InlineData(new int[] { 3, 1, 1 }, 3, true)]
+    public void LeetCode81_SearchWithDuplicates_RotatedArray_ReturnsExpected(int[] nums, int target, bool expected)
+    {
+        var result = RotatedArraySearcher.SearchWithDuplicates(nums, target);
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void MigrationSafetyAnalyzer_DetectsBreakingChanges()
+    {
+        var analyzer = new MigrationSafetyAnalyzer();
+        var sql = @&quot;
+            ALTER TABLE Users DROP COLUMN LegacyToken;
+            DROP TABLE TempAudit;
+            ALTER TABLE Orders RENAME COLUMN OldStatus TO NewStatus;
+            ALTER TABLE Accounts ADD Balance DECIMAL NOT NULL;
+            CREATE INDEX idx_users_email ON Users(Email);
+            ALTER TABLE Users ADD Nickname TEXT NULL;
+        &quot;;
+
+        var evaluations = analyzer.AnalyzeSql(sql);
+
+        evaluations.Should().HaveCount(6);
+        evaluations.Count(e =&gt; e.Severity == ChangeSeverity.Breaking).Should().Be(4);
+        evaluations.Count(e =&gt; e.Severity == ChangeSeverity.Warning).Should().Be(1);
+        evaluations.Count(e =&gt; e.Severity == ChangeSeverity.Safe).Should().Be(1);
+
+        analyzer.IsDeploymentSafe(evaluations).Should().BeFalse();
+    }
+
+    [Fact]
+    public void MigrationSafetyAnalyzer_ApprovesSafeExpandStep()
+    {
+        var analyzer = new MigrationSafetyAnalyzer();
+        var safeSql = @&quot;
+            CREATE TABLE FeatureFlags (Id INT, Name TEXT);
+            ALTER TABLE Users ADD PreferencesJson TEXT NULL;
+        &quot;;
+
+        var evaluations = analyzer.AnalyzeSql(safeSql);
+        analyzer.IsDeploymentSafe(evaluations).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task IdempotentMigrationPipeline_AppliesOnlyOnce()
+    {
+        using var conn = new SqliteConnection(&quot;DataSource=:memory:&quot;);
+        await conn.OpenAsync();
+
+        var pipeline = new IdempotentMigrationPipeline();
+        var steps = new[]
+        {
+            new MigrationStep(&quot;20261004_CreateUsers&quot;, &quot;CREATE TABLE Users (Id INTEGER PRIMARY KEY, Username TEXT NOT NULL);&quot;),
+            new MigrationStep(&quot;20261004_AddEmail&quot;, &quot;ALTER TABLE Users ADD COLUMN Email TEXT NULL;&quot;)
+        };
+
+        // First execution -&gt; 2 applied
+        var appliedFirst = await pipeline.ApplyMigrationsIdempotentlyAsync(steps, conn);
+        appliedFirst.Should().Be(2);
+
+        // Second execution -&gt; 0 applied (idempotency verified)
+        var appliedSecond = await pipeline.ApplyMigrationsIdempotentlyAsync(steps, conn);
+        appliedSecond.Should().Be(0);
+
+        // Verify Users table works
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = &quot;INSERT INTO Users (Id, Username, Email) VALUES (1, &#x27;alice&#x27;, &#x27;alice@test.com&#x27;);&quot;;
+        await cmd.ExecuteNonQueryAsync();
+
+        cmd.CommandText = &quot;SELECT COUNT(*) FROM Users;&quot;;
+        var count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+        count.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task MigrationPipeline_AdvisoryLock_PreventsSimultaneousRuns()
+    {
+        var pipeline = new IdempotentMigrationPipeline();
+
+        var acquired1 = await pipeline.AcquireMigrationLockAsync(TimeSpan.FromMilliseconds(100));
+        acquired1.Should().BeTrue();
+
+        // Second attempt times out immediately
+        var acquired2 = await pipeline.AcquireMigrationLockAsync(TimeSpan.FromMilliseconds(50));
+        acquired2.Should().BeFalse();
+
+        pipeline.ReleaseMigrationLock();
+
+        // Third attempt succeeds after release
+        var acquired3 = await pipeline.AcquireMigrationLockAsync(TimeSpan.FromMilliseconds(100));
+        acquired3.Should().BeTrue();
+        pipeline.ReleaseMigrationLock();
+    }
+
+    [Fact]
+    public void GenerateIdempotentSql_IncludesHistoryTableChecks()
+    {
+        var pipeline = new IdempotentMigrationPipeline();
+        var steps = new[]
+        {
+            new MigrationStep(&quot;20261004_Init&quot;, &quot;CREATE TABLE Items (Id INT);&quot;)
+        };
+
+        var script = pipeline.GenerateIdempotentSql(steps);
+        script.Should().Contain(&quot;__EFMigrationsHistory&quot;);
+        script.Should().Contain(&quot;20261004_Init&quot;);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 14 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -18,6 +18,10 @@ DAYS_INFO = [
     {"num": 11, "dir": "Day11-EFCore-ChangeTracking", "title": "EF Core Change Tracking Mechanics & Optimization", "category": "EF Core & ORM"},
     {"num": 12, "dir": "Day12-EFCore-SplitQueries-Interceptors", "title": "EF Core Split Queries & DbCommandInterceptor", "category": "EF Core & ORM"},
     {"num": 13, "dir": "Day13-Dapper-Performance", "title": "High-Performance Data Access with Dapper & Rotated Array Search", "category": "Dapper & Performance"},
+    {"num": 14, "dir": "Day14-EFCore-Migrations-Production", "title": "EF Core Migrations & Production Strategy", "category": "EF Core & DevOps"},
+    {"num": 15, "dir": "Day15-Channels-Concurrency", "title": "Channels & High-Throughput Concurrency in C#", "category": ".NET & Concurrency"},
+    {"num": 16, "dir": "Day16-Synchronization-Locks", "title": "Distributed Locking & Concurrency Primitives", "category": "Architecture & Systems"},
+    {"num": 17, "dir": "Day17-Redis-Cache-Patterns", "title": "Introduction to Redis & Cache Patterns", "category": "Redis & Distributed Systems"},
 ]
 
 from diagram_helpers import get_day_svg
@@ -785,12 +789,12 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
   <div class="container">
     <header>
       <h1>100-Day .NET + AI Engineering Track</h1>
-      <p class="lead">Interactive Knowledge Hub containing all 13 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
+      <p class="lead">Interactive Knowledge Hub containing all 17 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
       <div class="stats-bar">
-        <div class="stat-pill">Completed: <span>13 / 100 Days</span></div>
-        <div class="stat-pill">Deep Notes: <span>13 Architectural Guides</span></div>
-        <div class="stat-pill">Interview Q&amp;A: <span>130 Senior Scenarios &amp; Answers</span></div>
-        <div class="stat-pill">Test Suite: <span>149 / 149 Passed (100%)</span></div>
+        <div class="stat-pill">Completed: <span>17 / 100 Days</span></div>
+        <div class="stat-pill">Deep Notes: <span>17 Architectural Guides</span></div>
+        <div class="stat-pill">Interview Q&amp;A: <span>170 Senior Scenarios &amp; Answers</span></div>
+        <div class="stat-pill">Test Suite: <span>189 / 189 Passed (100%)</span></div>
         <div class="stat-pill">Platform: <span>.NET 8 / C# 12</span></div>
       </div>
     </header>
@@ -981,7 +985,7 @@ def build_days_html():
     hub_path = os.path.join(root_dir, "index.html")
     with open(hub_path, "w", encoding="utf-8") as f:
         f.write(hub_html)
-    print("\n✓ Generated master Knowledge Hub: index.html with all 13 days!")
+    print(f"\n✓ Generated master Knowledge Hub: index.html with all {len(DAYS_INFO)} days!")
 
 if __name__ == "__main__":
     build_days_html()

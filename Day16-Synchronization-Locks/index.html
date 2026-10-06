@@ -1,0 +1,2438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 16: Distributed Locking &amp; Concurrency Primitives | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 16</span>
+        <span class="badge badge-category">Architecture &amp; Systems</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day15-Channels-Concurrency/index.html" class="nav-btn">← Day 15</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+
+        </select>
+        <a href="../Day17-Redis-Cache-Patterns/index.html" class="nav-btn">Day 17 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 16: Distributed Locking &amp; Concurrency Primitives</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 3 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Synchronization Primitives &amp; Distributed Locking Hierarchy</text>
+          
+          <!-- In-Process Lock-Free -->
+          <rect x="40" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="60" y="95" fill="#60a5fa" font-size="14" font-weight="bold">1. Interlocked (Hardware)</text>
+          <rect x="55" y="115" width="220" height="45" rx="4" fill="#0f172a"/><text x="65" y="137" fill="#cbd5e1" font-size="11">CPU Bus Lock (CMPXCHG)</text><text x="65" y="152" fill="#94a3b8" font-size="10">Latency: ~5-10 ns</text>
+          <rect x="55" y="170" width="220" height="45" rx="4" fill="#0f172a"/><text x="65" y="192" fill="#34d399" font-size="11">CompareExchange Loop</text><text x="65" y="207" fill="#94a3b8" font-size="10">Optimistic state updates</text>
+          <text x="60" y="250" fill="#38bdf8" font-size="11">Lock-free atomic counters</text>
+          <text x="60" y="275" fill="#94a3b8" font-size="10">Zero thread suspension</text>
+
+          <!-- In-Process Async Throttle -->
+          <rect x="325" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#8b5cf6"/>
+          <text x="345" y="95" fill="#c084fc" font-size="14" font-weight="bold">2. SemaphoreSlim &amp; RWLock</text>
+          <rect x="340" y="115" width="220" height="45" rx="4" fill="#0f172a"/><text x="350" y="137" fill="#c084fc" font-size="11">SemaphoreSlim.WaitAsync()</text><text x="350" y="152" fill="#94a3b8" font-size="10">Cooperative async waiter queue</text>
+          <rect x="340" y="170" width="220" height="45" rx="4" fill="#0f172a"/><text x="350" y="192" fill="#fbbf24" font-size="11">ReaderWriterLockSlim</text><text x="350" y="207" fill="#94a3b8" font-size="10">Shared read, exclusive write</text>
+          <text x="345" y="250" fill="#c084fc" font-size="11">Disposable Lease Pattern</text>
+          <text x="345" y="275" fill="#94a3b8" font-size="10">Prevents permit leakage</text>
+
+          <!-- Distributed Lock -->
+          <rect x="610" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="630" y="95" fill="#34d399" font-size="14" font-weight="bold">3. Distributed Lock &amp; Fencing</text>
+          <rect x="625" y="115" width="220" height="45" rx="4" fill="#0f172a"/><text x="635" y="137" fill="#34d399" font-size="11">Redis Redlock Quorum</text><text x="635" y="152" fill="#94a3b8" font-size="10">SET resource token NX PX ttl</text>
+          <rect x="625" y="170" width="220" height="45" rx="4" fill="#0f172a"/><text x="635" y="192" fill="#ef4444" font-size="11">Fencing Token (Monotonic)</text><text x="635" y="207" fill="#94a3b8" font-size="10">Rejects GC-paused zombie writes</text>
+          <text x="630" y="250" fill="#34d399" font-size="11">Multi-pod mutual exclusion</text>
+          <text x="630" y="275" fill="#94a3b8" font-size="10">Guarantees distributed safety</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 16 - Engineering Notes: Thread Synchronization & Distributed Locking</h1>
+<h2>1. Concurrency Primitives Performance Comparison</h2>
+<div class="table-container"><table><thead><tr>
+<th>Primitive</th>
+<th>Mechanism</th>
+<th>Blocking?</th>
+<th>Async Compatible?</th>
+<th>Typical Cost</th>
+</tr></thead><tbody>
+<tr>
+<td><strong><code>Interlocked</code></strong></td>
+<td>CPU hardware bus lock (<code>LOCK CMPXCHG</code>)</td>
+<td>No (Spin/Retry)</td>
+<td>Yes</td>
+<td>~5–10 ns</td>
+</tr>
+<tr>
+<td><strong><code>lock</code> (<code>Monitor</code>)</strong></td>
+<td>Hybrid user-space spin + OS event</td>
+<td>Yes (Blocks thread)</td>
+<td><strong>NO</strong> (Cannot await inside lock)</td>
+<td>~20–50 ns</td>
+</tr>
+<tr>
+<td><strong><code>ReaderWriterLockSlim</code></strong></td>
+<td>Read-shared, write-exclusive</td>
+<td>Yes (Blocks thread)</td>
+<td><strong>NO</strong></td>
+<td>~40–80 ns</td>
+</tr>
+<tr>
+<td><strong><code>SemaphoreSlim</code></strong></td>
+<td>Managed async waiter queue</td>
+<td>Configurable</td>
+<td><strong>YES</strong> (<code>WaitAsync()</code>)</td>
+<td>~100–300 ns</td>
+</tr>
+<tr>
+<td><strong>Distributed Lock (Redis)</strong></td>
+<td>Network round-trip + Redis Lua script</td>
+<td>Network latency</td>
+<td><strong>YES</strong></td>
+<td>~1–5 ms</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>2. Lock-Free Programming with <code>Interlocked.CompareExchange</code></h2>
+<p>Optimistic concurrency in memory:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public bool UpdateIfGreaterThan(long candidate)
+{
+    while (true)
+    {
+        long current = Interlocked.Read(ref _value);
+        if (candidate &lt;= current) return false;
+
+        // Atomically set _value to candidate IF _value is still current
+        if (Interlocked.CompareExchange(ref _value, candidate, current) == current)
+        {
+            return true;
+        }
+    }
+}</code></pre></div>
+<hr/>
+<h2>3. Distributed Lock Leases & Fencing Tokens</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Worker 1: Acquire Lock -&gt; Granted (Token: 41) -&gt; GC Pause (15s) ----[Resumes]---&gt; Write (Token 41) [REJECTED!]
+                                                    |
+Redis:                                         Lock Expires (10s)
+                                                    |
+Worker 2:                                       Acquire Lock -&gt; Granted (Token: 42) -&gt; Write (Token 42) [COMMITTED]</code></pre></div>
+<p>The storage engine verifies <code>Write(token)</code>:</p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">UPDATE Accounts SET Balance = @newBal, LastFencingToken = @token
+WHERE Id = @id AND LastFencingToken &lt; @token;</code></pre></div>
+<p>If <code>RowsAffected == 0</code>, the stale zombie write is safely rejected!</p>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 16: Distributed Locking & Synchronization Primitives</h1>
+<h2>Overview</h2>
+<p>Comparing in-process thread synchronization with distributed locking across multi-node clusters. This module explores atomic lock-free coordination via <code>Interlocked</code>, asynchronous resource throttling using <code>SemaphoreSlim</code>, read-biased concurrency with <code>ReaderWriterLockSlim</code>, and enterprise distributed locking architectures (Redis Redlock, fencing tokens, zombie process mitigation). We also master two pointer-based linked list problems: Reorder List (LeetCode #143) and Remove Nth Node From End of List (LeetCode #19).</p>
+<hr/>
+<h2>Key Architectural Concepts</h2>
+<h3>1. In-Process Synchronization Primitives Hierarchy</h3>
+<ul>
+<li><strong><code>Interlocked</code></strong>: Hardware-level atomic CPU instructions (<code>LOCK CMPXCHG</code> on x86/x64). Zero kernel transitions, zero thread blocking, ultra-low latency (<10ns). Ideal for lock-free counters, sequence numbers, and optimistic state machines.</li>
+<li><strong><code>SemaphoreSlim</code></strong>: Lightweight asynchronous semaphore supporting <code>WaitAsync(timeout, ct)</code>. Essential for rate-limiting concurrent outbound HTTP connections, database connection pool access, and parallel batch processing.</li>
+<li><strong><code>ReaderWriterLockSlim</code></strong>: Grants concurrent shared access to multiple reader threads while enforcing exclusive access for writers. Drastically reduces contention in read-heavy in-memory caches.</li>
+</ul>
+<h3>2. Distributed Locking & The Zombie Process Hazard</h3>
+<p>In a distributed cloud architecture (Kubernetes), process memory is isolated. In-process locks cannot protect shared databases. Distributed locks (e.g., Redis <code>SET resource_name my_random_token NX PX 30000</code>) provide mutual exclusion across nodes.</p>
+<ul>
+<li><strong>The Martin Kleppmann Hazard (GC Pause / Zombie Writes)</strong>: A node acquires a lock with a 10s TTL. The node experiences an 11s full GC pause or network stall. The lock expires in Redis. A second node acquires the lock. The first node resumes, unaware that its lock has expired, and writes stale data to the database, corrupting state!</li>
+<li><strong>Fencing Tokens</strong>: Every lock acquisition returns a strictly monotonically increasing 64-bit integer (<code>FencingToken</code>). The database validates that incoming writes must have a higher fencing token than the last committed transaction, safely discarding stale writes.</li>
+</ul>
+<hr/>
+<h2>LeetCode Problems Solved</h2>
+<h3>LeetCode #143: Reorder List</h3>
+<ul>
+<li><strong>Algorithm</strong>: Three-step in-place transformation:</li>
+</ul>
+<ol>
+<li>Find middle of list using fast and slow pointers.</li>
+<li>Reverse the second half in-place.</li>
+<li>Interleave nodes from first and second halves.</li>
+</ol>
+<ul>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(1)$.</li>
+</ul>
+<h3>LeetCode #19: Remove Nth Node From End of List</h3>
+<ul>
+<li><strong>Algorithm</strong>: One-pass two-pointer gap strategy using a sentinel dummy node. Advance <code>fast</code> by $n + 1$ steps, then advance both until <code>fast == null</code>. <code>slow.next</code> is the target node to delete.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(1)$.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why can&#x27;t you use C#&#x27;s `lock` (`Monitor`) statement with `await`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>lock</code> is thread-affine (tied to the specific executing OS thread ID), whereas async continuations frequently resume on different ThreadPool threads.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In .NET, <code>Monitor.Enter(obj)</code> records the managed <code>Thread.CurrentThread.ManagedThreadId</code>. When code hits an <code>await</code> expression, the current thread is returned to the ThreadPool. When the asynchronous operation completes, the continuation is dispatched to an arbitrary available ThreadPool thread. If that continuation attempts <code>Monitor.Exit(obj)</code>, the runtime detects that the exiting thread ID differs from the entering thread ID, throwing an immediate <code>SynchronizationLockException</code>. For async synchronization, <code>SemaphoreSlim</code> must be used instead.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the purpose of Fencing Tokens in distributed locks?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: They prevent data corruption caused by "zombie processes" that resume execution after their distributed lock lease has expired (due to GC pauses or network partitions).</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In any distributed system, a client holding a lease may pause (e.g., during a Gen 2 GC pause or VM migration) longer than the lock's Time-To-Live (TTL). During the pause, the lock expires and is granted to another node. When the first node wakes up, it assumes it still owns the lock and writes to the database.</p>
+<p>A fencing token is a strictly monotonically increasing counter issued with every lock acquisition. The storage service rejects any write whose fencing token is less than or equal to the highest token it has already processed, safely blocking stale writes.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How does `SemaphoreSlim` differ internally from OS-level `Semaphore`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>SemaphoreSlim</code> is a lightweight managed construct that bypasses Windows/Linux kernel primitives unless heavy contention occurs, and natively supports asynchronous waiting (<code>WaitAsync</code>).</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>The classic <code>System.Threading.Semaphore</code> wraps a kernel-mode Win32/POSIX synchronization handle. Entering and exiting requires expensive user-to-kernel mode context transitions (~1,000ns+).</p>
+<p><code>SemaphoreSlim</code> uses a fast user-space spin-wait loop coupled with managed linked lists of <code>TaskCompletionSource</code> objects. It avoids kernel mode transitions for uncontended scenarios and allows threads to await cooperatively without blocking underlying OS threads.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">When should you use `ReaderWriterLockSlim` instead of a standard `lock`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When read operations heavily outnumber write operations (e.g., 95% reads, 5% writes) and read operations take a non-trivial amount of time.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a read-heavy system, <code>lock</code> serializes all reads, creating massive thread contention and latency bottlenecks. <code>ReaderWriterLockSlim</code> allows an unlimited number of concurrent reader threads to execute simultaneously.</p>
+<p>However, <code>ReaderWriterLockSlim</code> has higher tracking overhead than <code>Monitor</code>. If reads are instantaneous (e.g., a simple dictionary lookup taking 5ns), the lock overhead outweighs the concurrency benefits. It shines when read operations involve traversing collections, computing hashes, or serializing data.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is the Redlock algorithm and what are its key trade-offs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A distributed consensus locking algorithm developed for multi-node Redis clusters where a client must acquire locks on a majority ($N/2 + 1$) of independent Redis master instances within a time window.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In standard Redis master-replica replication, replication is asynchronous. If the master crashes before replicating a lock key to the replica, the promoted replica will grant the same lock to a second client, violating mutual exclusion.</p>
+<p>Redlock deploys $N$ (e.g., 5) independent master nodes with no replication between them. A client attempts to acquire the lock on all 5 nodes with a small timeout. If it secures $\ge 3$ nodes and the elapsed time is less than the validity time, the lock is granted. The trade-off is reliance on physical clock drift synchronization across servers and sensitivity to network latency.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does `Interlocked.CompareExchange` enable lock-free algorithms?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It executes a hardware-level atomic Compare-And-Swap (CAS) instruction, updating a memory address if and only if it matches an expected current value.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In CPU architecture, <code>Interlocked.CompareExchange(ref location, newValue, expectedValue)</code> executes <code>LOCK CMPXCHG</code>.</p>
+<p>This allows optimistic concurrency loops:</p>
+<ol>
+<li>Read value $V_1$.</li>
+<li>Compute new state $V_2 = f(V_1)$.</li>
+<li>Attempt CAS: if memory still holds $V_1$, write $V_2$ atomically. If another core modified memory in between, the CAS fails, and the loop retries.</li>
+</ol>
+<p>This avoids thread blocking entirely, providing superior throughput under low to moderate contention.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is the risk of Lock Inversion and how do you prevent deadlocks?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Lock inversion (deadlock) occurs when two threads acquire multiple shared locks in differing orders (Thread 1 acquires A then B; Thread 2 acquires B then A).</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>To prevent deadlocks:</p>
+<ol>
+<li><strong>Strict Global Lock Ordering</strong>: Always acquire locks in a predetermined lexicographical or hierarchical order (e.g., always acquire Lock A before Lock B).</li>
+<li><strong>Timeout Enforcement</strong>: Never use indefinite waits (<code>Wait()</code>); always specify timeouts (<code>WaitAsync(TimeSpan.FromSeconds(5))</code>) and implement circuit breaking or transaction retries on failure.</li>
+<li><strong>Coarse-Grained Locking</strong>: Consolidate fine-grained locks into a single higher-level lock when possible.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How does an asynchronous Disposable Lease pattern enhance `SemaphoreSlim` usage?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It combines <code>await semaphore.WaitAsync()</code> with <code>using var lease = ...</code> to guarantee that <code>semaphore.Release()</code> is always called even if exceptions are thrown.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Without the pattern, developers must remember <code>try { ... } finally { semaphore.Release(); }</code>. If a developer forgets the <code>finally</code> block or returns early, the semaphore permanently leaks permits, eventually halting all incoming requests.</p>
+<p>With a wrapper struct/class implementing <code>IDisposable</code>, the <code>Dispose()</code> method internally calls <code>semaphore.Release()</code>. This makes scoping clean and immune to forgotten release bugs.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #143 (Reorder List), how do we achieve $O(1)$ auxiliary space?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: By modifying pointers in-place across three sequential steps: finding the midpoint with fast/slow pointers, reversing the second half in-place, and interleaving nodes.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Many candidates copy node references into an array or deque, which requires $O(N)$ auxiliary memory.</p>
+<p>To achieve $O(1)$ space:</p>
+<ol>
+<li><code>slow</code> advances 1 step, <code>fast</code> advances 2 steps. When <code>fast</code> reaches the end, <code>slow</code> is at the midpoint.</li>
+<li>Reverse <code>slow.next</code> using the 3-pointer method (<code>prev</code>, <code>curr</code>, <code>nextTemp</code>).</li>
+<li>Break the list into two halves (<code>slow.next = null</code>) and interleave: connect <code>first.next</code> to <code>second</code>, and <code>second.next</code> to <code>firstOriginalNext</code>.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">In LeetCode #19 (Remove Nth Node From End of List), why is a dummy sentinel node critical?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It gracefully handles the edge case where the node to be removed is the head of the list.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>If a list has 5 nodes and you are instructed to remove the 5th node from the end, you must remove the head. Without a dummy node pointing to <code>head</code>, the <code>slow</code> pointer cannot point to the node preceding the head.</p>
+<p>By initializing <code>dummy.next = head</code> and placing <code>slow = dummy</code> and <code>fast = dummy</code>, advancing <code>fast</code> by $n + 1$ positions ensures that when <code>fast</code> reaches null, <code>slow</code> lands exactly on the node immediately preceding the deletion target, allowing <code>slow.next = slow.next.next;</code> to execute universally.</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day16.SynchronizationLocks/AdvancedLinkedListSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd16-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d16-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day16.SynchronizationLocks;
+
+public class ListNode
+{
+    public int val;
+    public ListNode? next;
+
+    public ListNode(int val = 0, ListNode? next = null)
+    {
+        this.val = val;
+        this.next = next;
+    }
+
+    public static ListNode? FromArray(int[] values)
+    {
+        if (values == null || values.Length == 0) return null;
+        var dummy = new ListNode(-1);
+        var curr = dummy;
+        foreach (var v in values)
+        {
+            curr.next = new ListNode(v);
+            curr = curr.next;
+        }
+        return dummy.next;
+    }
+
+    public int[] ToArray()
+    {
+        var list = new List&lt;int&gt;();
+        var curr = this;
+        while (curr != null)
+        {
+            list.Add(curr.val);
+            curr = curr.next;
+        }
+        return list.ToArray();
+    }
+}
+
+public static class AdvancedLinkedListSolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #143: Reorder List
+    /// L0 → L1 → … → Ln - 1 → Ln becomes L0 → Ln → L1 → Ln - 1 → L2 → Ln - 2 → …
+    /// In-place. Time: O(N), Space: O(1).
+    /// &lt;/summary&gt;
+    public static void ReorderList(ListNode? head)
+    {
+        if (head == null || head.next == null || head.next.next == null) return;
+
+        // 1. Find the middle node using fast and slow pointers
+        var slow = head;
+        var fast = head;
+        while (fast.next != null &amp;&amp; fast.next.next != null)
+        {
+            slow = slow.next!;
+            fast = fast.next.next;
+        }
+
+        // 2. Reverse the second half of the list
+        var secondHalf = slow.next;
+        slow.next = null; // Split into two halves
+
+        ListNode? prev = null;
+        var curr = secondHalf;
+        while (curr != null)
+        {
+            var nextTemp = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = nextTemp;
+        }
+        var second = prev;
+
+        // 3. Interleave the two halves
+        var first = head;
+        while (second != null)
+        {
+            var tmp1 = first!.next;
+            var tmp2 = second.next;
+
+            first.next = second;
+            second.next = tmp1;
+
+            first = tmp1;
+            second = tmp2;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #19: Remove Nth Node From End of List
+    /// One-pass with sentinel dummy node and fast/slow gap pointers.
+    /// Time: O(N), Space: O(1).
+    /// &lt;/summary&gt;
+    public static ListNode? RemoveNthFromEnd(ListNode? head, int n)
+    {
+        var dummy = new ListNode(0, head);
+        var fast = dummy;
+        var slow = dummy;
+
+        // Advance fast by n + 1 steps
+        for (int i = 0; i &lt;= n; i++)
+        {
+            if (fast == null) return head; // n is larger than length
+            fast = fast.next!;
+        }
+
+        // Move fast to the end, maintaining the gap
+        while (fast != null)
+        {
+            fast = fast.next!;
+            slow = slow.next!;
+        }
+
+        // Remove the target node
+        slow.next = slow.next?.next;
+
+        return dummy.next;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day16.SynchronizationLocks/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd16-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d16-src-code-1" class="language-csharp">using System;
+
+namespace Day16.SynchronizationLocks;
+
+public record DistributedLockToken(
+    string ResourceName,
+    string OwnerId,
+    long FencingToken,
+    DateTime ExpiresAtUtc)
+{
+    public bool IsExpired =&gt; DateTime.UtcNow &gt;= ExpiresAtUtc;
+}
+
+public record FencingToken(long Value);
+
+public record LockAcquisitionResult(
+    bool Success,
+    DistributedLockToken? Token,
+    string? Reason);
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day16.SynchronizationLocks/SynchronizationServices.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd16-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d16-src-code-2" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day16.SynchronizationLocks;
+
+/// &lt;summary&gt;
+/// 1. Lock-Free Atomic State Management using Interlocked.CompareExchange
+/// &lt;/summary&gt;
+public class LockFreeCounter
+{
+    private long _value;
+
+    public long Value =&gt; Interlocked.Read(ref _value);
+
+    public long Increment() =&gt; Interlocked.Increment(ref _value);
+
+    public long Add(long delta) =&gt; Interlocked.Add(ref _value, delta);
+
+    public bool UpdateIfGreaterThan(long candidate)
+    {
+        while (true)
+        {
+            long current = Interlocked.Read(ref _value);
+            if (candidate &lt;= current) return false;
+
+            if (Interlocked.CompareExchange(ref _value, candidate, current) == current)
+            {
+                return true;
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// 2. Asynchronous Resource Throttling using SemaphoreSlim with IDisposable Lease Pattern
+/// &lt;/summary&gt;
+public class AsyncResourceThrottle
+{
+    private readonly SemaphoreSlim _semaphore;
+    private readonly int _maxConcurrency;
+
+    public int CurrentAvailable =&gt; _semaphore.CurrentCount;
+
+    public AsyncResourceThrottle(int maxConcurrency)
+    {
+        _maxConcurrency = maxConcurrency;
+        _semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
+    }
+
+    public async Task&lt;IDisposable?&gt; TryAcquireLeaseAsync(TimeSpan timeout, CancellationToken ct = default)
+    {
+        bool entered = await _semaphore.WaitAsync(timeout, ct);
+        if (!entered) return null;
+
+        return new SemaphoreLease(_semaphore);
+    }
+
+    private sealed class SemaphoreLease : IDisposable
+    {
+        private readonly SemaphoreSlim _sem;
+        private int _disposed = 0;
+
+        public SemaphoreLease(SemaphoreSlim sem) =&gt; _sem = sem;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                _sem.Release();
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// 3. Read-Heavy In-Memory Cache using ReaderWriterLockSlim
+/// &lt;/summary&gt;
+public class ReadHeavyCache&lt;TKey, TValue&gt; : IDisposable where TKey : notnull
+{
+    private readonly Dictionary&lt;TKey, TValue&gt; _cache = new();
+    private readonly ReaderWriterLockSlim _rwLock = new(LockRecursionPolicy.NoRecursion);
+
+    public bool TryGet(TKey key, out TValue? value)
+    {
+        _rwLock.EnterReadLock();
+        try
+        {
+            return _cache.TryGetValue(key, out value);
+        }
+        finally
+        {
+            _rwLock.ExitReadLock();
+        }
+    }
+
+    public void Set(TKey key, TValue value)
+    {
+        _rwLock.EnterWriteLock();
+        try
+        {
+            _cache[key] = value;
+        }
+        finally
+        {
+            _rwLock.ExitWriteLock();
+        }
+    }
+
+    public TValue GetOrAdd(TKey key, Func&lt;TKey, TValue&gt; valueFactory)
+    {
+        _rwLock.EnterUpgradeableReadLock();
+        try
+        {
+            if (_cache.TryGetValue(key, out var existing))
+            {
+                return existing;
+            }
+
+            _rwLock.EnterWriteLock();
+            try
+            {
+                if (_cache.TryGetValue(key, out var doubleChecked))
+                {
+                    return doubleChecked;
+                }
+
+                var created = valueFactory(key);
+                _cache[key] = created;
+                return created;
+            }
+            finally
+            {
+                _rwLock.ExitWriteLock();
+            }
+        }
+        finally
+        {
+            _rwLock.ExitUpgradeableReadLock();
+        }
+    }
+
+    public void Dispose()
+    {
+        _rwLock.Dispose();
+    }
+}
+
+/// &lt;summary&gt;
+/// 4. Distributed Lock Simulator with Fencing Tokens &amp; Lease Renewals
+/// &lt;/summary&gt;
+public class DistributedLockSimulator
+{
+    private readonly ConcurrentDictionary&lt;string, DistributedLockToken&gt; _activeLocks = new();
+    private long _fencingCounter = 0;
+    private long _lastCommittedFencingToken = 0;
+
+    public LockAcquisitionResult AcquireLock(string resourceName, string ownerId, TimeSpan ttl)
+    {
+        var now = DateTime.UtcNow;
+
+        while (true)
+        {
+            if (_activeLocks.TryGetValue(resourceName, out var existing))
+            {
+                if (!existing.IsExpired)
+                {
+                    return new LockAcquisitionResult(false, null, $&quot;Locked by owner {existing.OwnerId} until {existing.ExpiresAtUtc:O}&quot;);
+                }
+
+                // Lock is expired: try to replace
+                var newFencing = Interlocked.Increment(ref _fencingCounter);
+                var newToken = new DistributedLockToken(resourceName, ownerId, newFencing, now.Add(ttl));
+
+                if (_activeLocks.TryUpdate(resourceName, newToken, existing))
+                {
+                    return new LockAcquisitionResult(true, newToken, null);
+                }
+                continue;
+            }
+            else
+            {
+                var newFencing = Interlocked.Increment(ref _fencingCounter);
+                var newToken = new DistributedLockToken(resourceName, ownerId, newFencing, now.Add(ttl));
+
+                if (_activeLocks.TryAdd(resourceName, newToken))
+                {
+                    return new LockAcquisitionResult(true, newToken, null);
+                }
+            }
+        }
+    }
+
+    public bool ReleaseLock(DistributedLockToken token)
+    {
+        if (_activeLocks.TryGetValue(token.ResourceName, out var existing))
+        {
+            // Only current owner and same fencing token can release
+            if (existing.OwnerId == token.OwnerId &amp;&amp; existing.FencingToken == token.FencingToken)
+            {
+                return _activeLocks.TryRemove(token.ResourceName, out _);
+            }
+        }
+        return false;
+    }
+
+    public bool RenewLock(DistributedLockToken token, TimeSpan extension)
+    {
+        if (_activeLocks.TryGetValue(token.ResourceName, out var existing))
+        {
+            if (existing.OwnerId == token.OwnerId &amp;&amp; existing.FencingToken == token.FencingToken &amp;&amp; !existing.IsExpired)
+            {
+                var renewed = existing with { ExpiresAtUtc = DateTime.UtcNow.Add(extension) };
+                return _activeLocks.TryUpdate(token.ResourceName, renewed, existing);
+            }
+        }
+        return false;
+    }
+
+    public bool ValidateFencingTokenForStorageWrite(long tokenValue)
+    {
+        // Out-of-order write rejection: storage service only accepts strictly monotonically increasing tokens
+        while (true)
+        {
+            long currentCommitted = Interlocked.Read(ref _lastCommittedFencingToken);
+            if (tokenValue &lt;= currentCommitted)
+            {
+                return false; // Stale / Zombie worker write rejected!
+            }
+
+            if (Interlocked.CompareExchange(ref _lastCommittedFencingToken, tokenValue, currentCommitted) == currentCommitted)
+            {
+                return true;
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day16.SynchronizationLocks.Tests/Day16Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd16-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d16-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day16.SynchronizationLocks.Tests;
+
+public class Day16Tests
+{
+    [Fact]
+    public void LeetCode143_ReorderList_EvenAndOddLengths()
+    {
+        // Odd length: [1, 2, 3, 4, 5] -&gt; [1, 5, 2, 4, 3]
+        var list1 = ListNode.FromArray(new[] { 1, 2, 3, 4, 5 });
+        AdvancedLinkedListSolvers.ReorderList(list1);
+        list1!.ToArray().Should().Equal(new[] { 1, 5, 2, 4, 3 });
+
+        // Even length: [1, 2, 3, 4] -&gt; [1, 4, 2, 3]
+        var list2 = ListNode.FromArray(new[] { 1, 2, 3, 4 });
+        AdvancedLinkedListSolvers.ReorderList(list2);
+        list2!.ToArray().Should().Equal(new[] { 1, 4, 2, 3 });
+
+        // Short length: [1, 2] -&gt; [1, 2]
+        var list3 = ListNode.FromArray(new[] { 1, 2 });
+        AdvancedLinkedListSolvers.ReorderList(list3);
+        list3!.ToArray().Should().Equal(new[] { 1, 2 });
+    }
+
+    [Fact]
+    public void LeetCode19_RemoveNthFromEnd_VariousPositions()
+    {
+        // Remove 2nd from end: [1, 2, 3, 4, 5], n=2 -&gt; [1, 2, 3, 5]
+        var list1 = ListNode.FromArray(new[] { 1, 2, 3, 4, 5 });
+        var res1 = AdvancedLinkedListSolvers.RemoveNthFromEnd(list1, 2);
+        res1!.ToArray().Should().Equal(new[] { 1, 2, 3, 5 });
+
+        // Remove only node: [1], n=1 -&gt; null
+        var list2 = ListNode.FromArray(new[] { 1 });
+        var res2 = AdvancedLinkedListSolvers.RemoveNthFromEnd(list2, 1);
+        res2.Should().BeNull();
+
+        // Remove head: [1, 2], n=2 -&gt; [2]
+        var list3 = ListNode.FromArray(new[] { 1, 2 });
+        var res3 = AdvancedLinkedListSolvers.RemoveNthFromEnd(list3, 2);
+        res3!.ToArray().Should().Equal(new[] { 2 });
+    }
+
+    [Fact]
+    public async Task LockFreeCounter_ConcurrentIncrements_NoDataRace()
+    {
+        var counter = new LockFreeCounter();
+        const int tasksCount = 10;
+        const int incPerTask = 1000;
+
+        var tasks = new List&lt;Task&gt;();
+        for (int i = 0; i &lt; tasksCount; i++)
+        {
+            tasks.Add(Task.Run(() =&gt;
+            {
+                for (int j = 0; j &lt; incPerTask; j++)
+                {
+                    counter.Increment();
+                }
+            }));
+        }
+
+        await Task.WhenAll(tasks);
+        counter.Value.Should().Be(tasksCount * incPerTask);
+
+        // Update if greater
+        counter.UpdateIfGreaterThan(5000).Should().BeFalse();
+        counter.UpdateIfGreaterThan(20000).Should().BeTrue();
+        counter.Value.Should().Be(20000);
+    }
+
+    [Fact]
+    public async Task AsyncResourceThrottle_LimitsConcurrencyAndHonorsTimeouts()
+    {
+        var throttle = new AsyncResourceThrottle(maxConcurrency: 2);
+        throttle.CurrentAvailable.Should().Be(2);
+
+        var lease1 = await throttle.TryAcquireLeaseAsync(TimeSpan.FromMilliseconds(50));
+        lease1.Should().NotBeNull();
+        throttle.CurrentAvailable.Should().Be(1);
+
+        var lease2 = await throttle.TryAcquireLeaseAsync(TimeSpan.FromMilliseconds(50));
+        lease2.Should().NotBeNull();
+        throttle.CurrentAvailable.Should().Be(0);
+
+        // Third lease should time out
+        var lease3 = await throttle.TryAcquireLeaseAsync(TimeSpan.FromMilliseconds(20));
+        lease3.Should().BeNull();
+
+        // Release first lease
+        lease1!.Dispose();
+        throttle.CurrentAvailable.Should().Be(1);
+
+        // Now third can acquire
+        var lease3Retry = await throttle.TryAcquireLeaseAsync(TimeSpan.FromMilliseconds(50));
+        lease3Retry.Should().NotBeNull();
+
+        lease2!.Dispose();
+        lease3Retry!.Dispose();
+        throttle.CurrentAvailable.Should().Be(2);
+    }
+
+    [Fact]
+    public void ReadHeavyCache_GetOrAdd_ThreadSafe()
+    {
+        using var cache = new ReadHeavyCache&lt;string, string&gt;();
+        int factoryInvocations = 0;
+
+        Parallel.For(0, 50, _ =&gt;
+        {
+            cache.GetOrAdd(&quot;key1&quot;, k =&gt;
+            {
+                System.Threading.Interlocked.Increment(ref factoryInvocations);
+                return $&quot;computed-{k}&quot;;
+            });
+        });
+
+        factoryInvocations.Should().Be(1);
+        cache.TryGet(&quot;key1&quot;, out var val).Should().BeTrue();
+        val.Should().Be(&quot;computed-key1&quot;);
+    }
+
+    [Fact]
+    public void DistributedLockSimulator_MutualExclusion_AndFencingRejection()
+    {
+        var sim = new DistributedLockSimulator();
+
+        // 1. Worker A acquires lock
+        var resA = sim.AcquireLock(&quot;invoice:100&quot;, &quot;worker-A&quot;, TimeSpan.FromSeconds(5));
+        resA.Success.Should().BeTrue();
+        resA.Token.Should().NotBeNull();
+        var tokenA = resA.Token!;
+
+        // 2. Worker B fails to acquire
+        var resB = sim.AcquireLock(&quot;invoice:100&quot;, &quot;worker-B&quot;, TimeSpan.FromSeconds(5));
+        resB.Success.Should().BeFalse();
+
+        // 3. Worker A commits write to storage with valid fencing token
+        sim.ValidateFencingTokenForStorageWrite(tokenA.FencingToken).Should().BeTrue();
+
+        // 4. Worker A releases lock
+        sim.ReleaseLock(tokenA).Should().BeTrue();
+
+        // 5. Worker B now succeeds with newer fencing token
+        var resB2 = sim.AcquireLock(&quot;invoice:100&quot;, &quot;worker-B&quot;, TimeSpan.FromSeconds(5));
+        resB2.Success.Should().BeTrue();
+        var tokenB = resB2.Token!;
+        tokenB.FencingToken.Should().BeGreaterThan(tokenA.FencingToken);
+
+        // 6. Worker B commits
+        sim.ValidateFencingTokenForStorageWrite(tokenB.FencingToken).Should().BeTrue();
+
+        // 7. Stale Worker A attempts late write with old fencing token -&gt; REJECTED!
+        sim.ValidateFencingTokenForStorageWrite(tokenA.FencingToken).Should().BeFalse();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 16 - Engineering Notes: Thread Synchronization & Distributed Locking</h1>
+<h2>1. Concurrency Primitives Performance Comparison</h2>
+<div class="table-container"><table><thead><tr>
+<th>Primitive</th>
+<th>Mechanism</th>
+<th>Blocking?</th>
+<th>Async Compatible?</th>
+<th>Typical Cost</th>
+</tr></thead><tbody>
+<tr>
+<td><strong><code>Interlocked</code></strong></td>
+<td>CPU hardware bus lock (<code>LOCK CMPXCHG</code>)</td>
+<td>No (Spin/Retry)</td>
+<td>Yes</td>
+<td>~5–10 ns</td>
+</tr>
+<tr>
+<td><strong><code>lock</code> (<code>Monitor</code>)</strong></td>
+<td>Hybrid user-space spin + OS event</td>
+<td>Yes (Blocks thread)</td>
+<td><strong>NO</strong> (Cannot await inside lock)</td>
+<td>~20–50 ns</td>
+</tr>
+<tr>
+<td><strong><code>ReaderWriterLockSlim</code></strong></td>
+<td>Read-shared, write-exclusive</td>
+<td>Yes (Blocks thread)</td>
+<td><strong>NO</strong></td>
+<td>~40–80 ns</td>
+</tr>
+<tr>
+<td><strong><code>SemaphoreSlim</code></strong></td>
+<td>Managed async waiter queue</td>
+<td>Configurable</td>
+<td><strong>YES</strong> (<code>WaitAsync()</code>)</td>
+<td>~100–300 ns</td>
+</tr>
+<tr>
+<td><strong>Distributed Lock (Redis)</strong></td>
+<td>Network round-trip + Redis Lua script</td>
+<td>Network latency</td>
+<td><strong>YES</strong></td>
+<td>~1–5 ms</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>2. Lock-Free Programming with <code>Interlocked.CompareExchange</code></h2>
+<p>Optimistic concurrency in memory:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public bool UpdateIfGreaterThan(long candidate)
+{
+    while (true)
+    {
+        long current = Interlocked.Read(ref _value);
+        if (candidate &lt;= current) return false;
+
+        // Atomically set _value to candidate IF _value is still current
+        if (Interlocked.CompareExchange(ref _value, candidate, current) == current)
+        {
+            return true;
+        }
+    }
+}</code></pre></div>
+<hr/>
+<h2>3. Distributed Lock Leases & Fencing Tokens</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Worker 1: Acquire Lock -&gt; Granted (Token: 41) -&gt; GC Pause (15s) ----[Resumes]---&gt; Write (Token 41) [REJECTED!]
+                                                    |
+Redis:                                         Lock Expires (10s)
+                                                    |
+Worker 2:                                       Acquire Lock -&gt; Granted (Token: 42) -&gt; Write (Token 42) [COMMITTED]</code></pre></div>
+<p>The storage engine verifies <code>Write(token)</code>:</p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">UPDATE Accounts SET Balance = @newBal, LastFencingToken = @token
+WHERE Id = @id AND LastFencingToken &lt; @token;</code></pre></div>
+<p>If <code>RowsAffected == 0</code>, the stale zombie write is safely rejected!</p>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 16: Distributed Locking & Synchronization Primitives</h1>
+<h2>Overview</h2>
+<p>Comparing in-process thread synchronization with distributed locking across multi-node clusters. This module explores atomic lock-free coordination via <code>Interlocked</code>, asynchronous resource throttling using <code>SemaphoreSlim</code>, read-biased concurrency with <code>ReaderWriterLockSlim</code>, and enterprise distributed locking architectures (Redis Redlock, fencing tokens, zombie process mitigation). We also master two pointer-based linked list problems: Reorder List (LeetCode #143) and Remove Nth Node From End of List (LeetCode #19).</p>
+<hr/>
+<h2>Key Architectural Concepts</h2>
+<h3>1. In-Process Synchronization Primitives Hierarchy</h3>
+<ul>
+<li><strong><code>Interlocked</code></strong>: Hardware-level atomic CPU instructions (<code>LOCK CMPXCHG</code> on x86/x64). Zero kernel transitions, zero thread blocking, ultra-low latency (<10ns). Ideal for lock-free counters, sequence numbers, and optimistic state machines.</li>
+<li><strong><code>SemaphoreSlim</code></strong>: Lightweight asynchronous semaphore supporting <code>WaitAsync(timeout, ct)</code>. Essential for rate-limiting concurrent outbound HTTP connections, database connection pool access, and parallel batch processing.</li>
+<li><strong><code>ReaderWriterLockSlim</code></strong>: Grants concurrent shared access to multiple reader threads while enforcing exclusive access for writers. Drastically reduces contention in read-heavy in-memory caches.</li>
+</ul>
+<h3>2. Distributed Locking & The Zombie Process Hazard</h3>
+<p>In a distributed cloud architecture (Kubernetes), process memory is isolated. In-process locks cannot protect shared databases. Distributed locks (e.g., Redis <code>SET resource_name my_random_token NX PX 30000</code>) provide mutual exclusion across nodes.</p>
+<ul>
+<li><strong>The Martin Kleppmann Hazard (GC Pause / Zombie Writes)</strong>: A node acquires a lock with a 10s TTL. The node experiences an 11s full GC pause or network stall. The lock expires in Redis. A second node acquires the lock. The first node resumes, unaware that its lock has expired, and writes stale data to the database, corrupting state!</li>
+<li><strong>Fencing Tokens</strong>: Every lock acquisition returns a strictly monotonically increasing 64-bit integer (<code>FencingToken</code>). The database validates that incoming writes must have a higher fencing token than the last committed transaction, safely discarding stale writes.</li>
+</ul>
+<hr/>
+<h2>LeetCode Problems Solved</h2>
+<h3>LeetCode #143: Reorder List</h3>
+<ul>
+<li><strong>Algorithm</strong>: Three-step in-place transformation:</li>
+</ul>
+<ol>
+<li>Find middle of list using fast and slow pointers.</li>
+<li>Reverse the second half in-place.</li>
+<li>Interleave nodes from first and second halves.</li>
+</ol>
+<ul>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(1)$.</li>
+</ul>
+<h3>LeetCode #19: Remove Nth Node From End of List</h3>
+<ul>
+<li><strong>Algorithm</strong>: One-pass two-pointer gap strategy using a sentinel dummy node. Advance <code>fast</code> by $n + 1$ steps, then advance both until <code>fast == null</code>. <code>slow.next</code> is the target node to delete.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(1)$.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why can&#x27;t you use C#&#x27;s `lock` (`Monitor`) statement with `await`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>lock</code> is thread-affine (tied to the specific executing OS thread ID), whereas async continuations frequently resume on different ThreadPool threads.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In .NET, <code>Monitor.Enter(obj)</code> records the managed <code>Thread.CurrentThread.ManagedThreadId</code>. When code hits an <code>await</code> expression, the current thread is returned to the ThreadPool. When the asynchronous operation completes, the continuation is dispatched to an arbitrary available ThreadPool thread. If that continuation attempts <code>Monitor.Exit(obj)</code>, the runtime detects that the exiting thread ID differs from the entering thread ID, throwing an immediate <code>SynchronizationLockException</code>. For async synchronization, <code>SemaphoreSlim</code> must be used instead.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the purpose of Fencing Tokens in distributed locks?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: They prevent data corruption caused by "zombie processes" that resume execution after their distributed lock lease has expired (due to GC pauses or network partitions).</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In any distributed system, a client holding a lease may pause (e.g., during a Gen 2 GC pause or VM migration) longer than the lock's Time-To-Live (TTL). During the pause, the lock expires and is granted to another node. When the first node wakes up, it assumes it still owns the lock and writes to the database.</p>
+<p>A fencing token is a strictly monotonically increasing counter issued with every lock acquisition. The storage service rejects any write whose fencing token is less than or equal to the highest token it has already processed, safely blocking stale writes.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How does `SemaphoreSlim` differ internally from OS-level `Semaphore`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>SemaphoreSlim</code> is a lightweight managed construct that bypasses Windows/Linux kernel primitives unless heavy contention occurs, and natively supports asynchronous waiting (<code>WaitAsync</code>).</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>The classic <code>System.Threading.Semaphore</code> wraps a kernel-mode Win32/POSIX synchronization handle. Entering and exiting requires expensive user-to-kernel mode context transitions (~1,000ns+).</p>
+<p><code>SemaphoreSlim</code> uses a fast user-space spin-wait loop coupled with managed linked lists of <code>TaskCompletionSource</code> objects. It avoids kernel mode transitions for uncontended scenarios and allows threads to await cooperatively without blocking underlying OS threads.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">When should you use `ReaderWriterLockSlim` instead of a standard `lock`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When read operations heavily outnumber write operations (e.g., 95% reads, 5% writes) and read operations take a non-trivial amount of time.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a read-heavy system, <code>lock</code> serializes all reads, creating massive thread contention and latency bottlenecks. <code>ReaderWriterLockSlim</code> allows an unlimited number of concurrent reader threads to execute simultaneously.</p>
+<p>However, <code>ReaderWriterLockSlim</code> has higher tracking overhead than <code>Monitor</code>. If reads are instantaneous (e.g., a simple dictionary lookup taking 5ns), the lock overhead outweighs the concurrency benefits. It shines when read operations involve traversing collections, computing hashes, or serializing data.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is the Redlock algorithm and what are its key trade-offs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A distributed consensus locking algorithm developed for multi-node Redis clusters where a client must acquire locks on a majority ($N/2 + 1$) of independent Redis master instances within a time window.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In standard Redis master-replica replication, replication is asynchronous. If the master crashes before replicating a lock key to the replica, the promoted replica will grant the same lock to a second client, violating mutual exclusion.</p>
+<p>Redlock deploys $N$ (e.g., 5) independent master nodes with no replication between them. A client attempts to acquire the lock on all 5 nodes with a small timeout. If it secures $\ge 3$ nodes and the elapsed time is less than the validity time, the lock is granted. The trade-off is reliance on physical clock drift synchronization across servers and sensitivity to network latency.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does `Interlocked.CompareExchange` enable lock-free algorithms?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It executes a hardware-level atomic Compare-And-Swap (CAS) instruction, updating a memory address if and only if it matches an expected current value.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In CPU architecture, <code>Interlocked.CompareExchange(ref location, newValue, expectedValue)</code> executes <code>LOCK CMPXCHG</code>.</p>
+<p>This allows optimistic concurrency loops:</p>
+<ol>
+<li>Read value $V_1$.</li>
+<li>Compute new state $V_2 = f(V_1)$.</li>
+<li>Attempt CAS: if memory still holds $V_1$, write $V_2$ atomically. If another core modified memory in between, the CAS fails, and the loop retries.</li>
+</ol>
+<p>This avoids thread blocking entirely, providing superior throughput under low to moderate contention.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is the risk of Lock Inversion and how do you prevent deadlocks?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Lock inversion (deadlock) occurs when two threads acquire multiple shared locks in differing orders (Thread 1 acquires A then B; Thread 2 acquires B then A).</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>To prevent deadlocks:</p>
+<ol>
+<li><strong>Strict Global Lock Ordering</strong>: Always acquire locks in a predetermined lexicographical or hierarchical order (e.g., always acquire Lock A before Lock B).</li>
+<li><strong>Timeout Enforcement</strong>: Never use indefinite waits (<code>Wait()</code>); always specify timeouts (<code>WaitAsync(TimeSpan.FromSeconds(5))</code>) and implement circuit breaking or transaction retries on failure.</li>
+<li><strong>Coarse-Grained Locking</strong>: Consolidate fine-grained locks into a single higher-level lock when possible.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How does an asynchronous Disposable Lease pattern enhance `SemaphoreSlim` usage?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It combines <code>await semaphore.WaitAsync()</code> with <code>using var lease = ...</code> to guarantee that <code>semaphore.Release()</code> is always called even if exceptions are thrown.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Without the pattern, developers must remember <code>try { ... } finally { semaphore.Release(); }</code>. If a developer forgets the <code>finally</code> block or returns early, the semaphore permanently leaks permits, eventually halting all incoming requests.</p>
+<p>With a wrapper struct/class implementing <code>IDisposable</code>, the <code>Dispose()</code> method internally calls <code>semaphore.Release()</code>. This makes scoping clean and immune to forgotten release bugs.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #143 (Reorder List), how do we achieve $O(1)$ auxiliary space?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: By modifying pointers in-place across three sequential steps: finding the midpoint with fast/slow pointers, reversing the second half in-place, and interleaving nodes.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Many candidates copy node references into an array or deque, which requires $O(N)$ auxiliary memory.</p>
+<p>To achieve $O(1)$ space:</p>
+<ol>
+<li><code>slow</code> advances 1 step, <code>fast</code> advances 2 steps. When <code>fast</code> reaches the end, <code>slow</code> is at the midpoint.</li>
+<li>Reverse <code>slow.next</code> using the 3-pointer method (<code>prev</code>, <code>curr</code>, <code>nextTemp</code>).</li>
+<li>Break the list into two halves (<code>slow.next = null</code>) and interleave: connect <code>first.next</code> to <code>second</code>, and <code>second.next</code> to <code>firstOriginalNext</code>.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">In LeetCode #19 (Remove Nth Node From End of List), why is a dummy sentinel node critical?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It gracefully handles the edge case where the node to be removed is the head of the list.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>If a list has 5 nodes and you are instructed to remove the 5th node from the end, you must remove the head. Without a dummy node pointing to <code>head</code>, the <code>slow</code> pointer cannot point to the node preceding the head.</p>
+<p>By initializing <code>dummy.next = head</code> and placing <code>slow = dummy</code> and <code>fast = dummy</code>, advancing <code>fast</code> by $n + 1$ positions ensures that when <code>fast</code> reaches null, <code>slow</code> lands exactly on the node immediately preceding the deletion target, allowing <code>slow.next = slow.next.next;</code> to execute universally.</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day16.SynchronizationLocks/AdvancedLinkedListSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd16-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d16-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day16.SynchronizationLocks;
+
+public class ListNode
+{
+    public int val;
+    public ListNode? next;
+
+    public ListNode(int val = 0, ListNode? next = null)
+    {
+        this.val = val;
+        this.next = next;
+    }
+
+    public static ListNode? FromArray(int[] values)
+    {
+        if (values == null || values.Length == 0) return null;
+        var dummy = new ListNode(-1);
+        var curr = dummy;
+        foreach (var v in values)
+        {
+            curr.next = new ListNode(v);
+            curr = curr.next;
+        }
+        return dummy.next;
+    }
+
+    public int[] ToArray()
+    {
+        var list = new List&lt;int&gt;();
+        var curr = this;
+        while (curr != null)
+        {
+            list.Add(curr.val);
+            curr = curr.next;
+        }
+        return list.ToArray();
+    }
+}
+
+public static class AdvancedLinkedListSolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #143: Reorder List
+    /// L0 → L1 → … → Ln - 1 → Ln becomes L0 → Ln → L1 → Ln - 1 → L2 → Ln - 2 → …
+    /// In-place. Time: O(N), Space: O(1).
+    /// &lt;/summary&gt;
+    public static void ReorderList(ListNode? head)
+    {
+        if (head == null || head.next == null || head.next.next == null) return;
+
+        // 1. Find the middle node using fast and slow pointers
+        var slow = head;
+        var fast = head;
+        while (fast.next != null &amp;&amp; fast.next.next != null)
+        {
+            slow = slow.next!;
+            fast = fast.next.next;
+        }
+
+        // 2. Reverse the second half of the list
+        var secondHalf = slow.next;
+        slow.next = null; // Split into two halves
+
+        ListNode? prev = null;
+        var curr = secondHalf;
+        while (curr != null)
+        {
+            var nextTemp = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = nextTemp;
+        }
+        var second = prev;
+
+        // 3. Interleave the two halves
+        var first = head;
+        while (second != null)
+        {
+            var tmp1 = first!.next;
+            var tmp2 = second.next;
+
+            first.next = second;
+            second.next = tmp1;
+
+            first = tmp1;
+            second = tmp2;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #19: Remove Nth Node From End of List
+    /// One-pass with sentinel dummy node and fast/slow gap pointers.
+    /// Time: O(N), Space: O(1).
+    /// &lt;/summary&gt;
+    public static ListNode? RemoveNthFromEnd(ListNode? head, int n)
+    {
+        var dummy = new ListNode(0, head);
+        var fast = dummy;
+        var slow = dummy;
+
+        // Advance fast by n + 1 steps
+        for (int i = 0; i &lt;= n; i++)
+        {
+            if (fast == null) return head; // n is larger than length
+            fast = fast.next!;
+        }
+
+        // Move fast to the end, maintaining the gap
+        while (fast != null)
+        {
+            fast = fast.next!;
+            slow = slow.next!;
+        }
+
+        // Remove the target node
+        slow.next = slow.next?.next;
+
+        return dummy.next;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day16.SynchronizationLocks/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd16-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d16-src-code-1" class="language-csharp">using System;
+
+namespace Day16.SynchronizationLocks;
+
+public record DistributedLockToken(
+    string ResourceName,
+    string OwnerId,
+    long FencingToken,
+    DateTime ExpiresAtUtc)
+{
+    public bool IsExpired =&gt; DateTime.UtcNow &gt;= ExpiresAtUtc;
+}
+
+public record FencingToken(long Value);
+
+public record LockAcquisitionResult(
+    bool Success,
+    DistributedLockToken? Token,
+    string? Reason);
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day16.SynchronizationLocks/SynchronizationServices.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd16-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d16-src-code-2" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day16.SynchronizationLocks;
+
+/// &lt;summary&gt;
+/// 1. Lock-Free Atomic State Management using Interlocked.CompareExchange
+/// &lt;/summary&gt;
+public class LockFreeCounter
+{
+    private long _value;
+
+    public long Value =&gt; Interlocked.Read(ref _value);
+
+    public long Increment() =&gt; Interlocked.Increment(ref _value);
+
+    public long Add(long delta) =&gt; Interlocked.Add(ref _value, delta);
+
+    public bool UpdateIfGreaterThan(long candidate)
+    {
+        while (true)
+        {
+            long current = Interlocked.Read(ref _value);
+            if (candidate &lt;= current) return false;
+
+            if (Interlocked.CompareExchange(ref _value, candidate, current) == current)
+            {
+                return true;
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// 2. Asynchronous Resource Throttling using SemaphoreSlim with IDisposable Lease Pattern
+/// &lt;/summary&gt;
+public class AsyncResourceThrottle
+{
+    private readonly SemaphoreSlim _semaphore;
+    private readonly int _maxConcurrency;
+
+    public int CurrentAvailable =&gt; _semaphore.CurrentCount;
+
+    public AsyncResourceThrottle(int maxConcurrency)
+    {
+        _maxConcurrency = maxConcurrency;
+        _semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
+    }
+
+    public async Task&lt;IDisposable?&gt; TryAcquireLeaseAsync(TimeSpan timeout, CancellationToken ct = default)
+    {
+        bool entered = await _semaphore.WaitAsync(timeout, ct);
+        if (!entered) return null;
+
+        return new SemaphoreLease(_semaphore);
+    }
+
+    private sealed class SemaphoreLease : IDisposable
+    {
+        private readonly SemaphoreSlim _sem;
+        private int _disposed = 0;
+
+        public SemaphoreLease(SemaphoreSlim sem) =&gt; _sem = sem;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                _sem.Release();
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// 3. Read-Heavy In-Memory Cache using ReaderWriterLockSlim
+/// &lt;/summary&gt;
+public class ReadHeavyCache&lt;TKey, TValue&gt; : IDisposable where TKey : notnull
+{
+    private readonly Dictionary&lt;TKey, TValue&gt; _cache = new();
+    private readonly ReaderWriterLockSlim _rwLock = new(LockRecursionPolicy.NoRecursion);
+
+    public bool TryGet(TKey key, out TValue? value)
+    {
+        _rwLock.EnterReadLock();
+        try
+        {
+            return _cache.TryGetValue(key, out value);
+        }
+        finally
+        {
+            _rwLock.ExitReadLock();
+        }
+    }
+
+    public void Set(TKey key, TValue value)
+    {
+        _rwLock.EnterWriteLock();
+        try
+        {
+            _cache[key] = value;
+        }
+        finally
+        {
+            _rwLock.ExitWriteLock();
+        }
+    }
+
+    public TValue GetOrAdd(TKey key, Func&lt;TKey, TValue&gt; valueFactory)
+    {
+        _rwLock.EnterUpgradeableReadLock();
+        try
+        {
+            if (_cache.TryGetValue(key, out var existing))
+            {
+                return existing;
+            }
+
+            _rwLock.EnterWriteLock();
+            try
+            {
+                if (_cache.TryGetValue(key, out var doubleChecked))
+                {
+                    return doubleChecked;
+                }
+
+                var created = valueFactory(key);
+                _cache[key] = created;
+                return created;
+            }
+            finally
+            {
+                _rwLock.ExitWriteLock();
+            }
+        }
+        finally
+        {
+            _rwLock.ExitUpgradeableReadLock();
+        }
+    }
+
+    public void Dispose()
+    {
+        _rwLock.Dispose();
+    }
+}
+
+/// &lt;summary&gt;
+/// 4. Distributed Lock Simulator with Fencing Tokens &amp; Lease Renewals
+/// &lt;/summary&gt;
+public class DistributedLockSimulator
+{
+    private readonly ConcurrentDictionary&lt;string, DistributedLockToken&gt; _activeLocks = new();
+    private long _fencingCounter = 0;
+    private long _lastCommittedFencingToken = 0;
+
+    public LockAcquisitionResult AcquireLock(string resourceName, string ownerId, TimeSpan ttl)
+    {
+        var now = DateTime.UtcNow;
+
+        while (true)
+        {
+            if (_activeLocks.TryGetValue(resourceName, out var existing))
+            {
+                if (!existing.IsExpired)
+                {
+                    return new LockAcquisitionResult(false, null, $&quot;Locked by owner {existing.OwnerId} until {existing.ExpiresAtUtc:O}&quot;);
+                }
+
+                // Lock is expired: try to replace
+                var newFencing = Interlocked.Increment(ref _fencingCounter);
+                var newToken = new DistributedLockToken(resourceName, ownerId, newFencing, now.Add(ttl));
+
+                if (_activeLocks.TryUpdate(resourceName, newToken, existing))
+                {
+                    return new LockAcquisitionResult(true, newToken, null);
+                }
+                continue;
+            }
+            else
+            {
+                var newFencing = Interlocked.Increment(ref _fencingCounter);
+                var newToken = new DistributedLockToken(resourceName, ownerId, newFencing, now.Add(ttl));
+
+                if (_activeLocks.TryAdd(resourceName, newToken))
+                {
+                    return new LockAcquisitionResult(true, newToken, null);
+                }
+            }
+        }
+    }
+
+    public bool ReleaseLock(DistributedLockToken token)
+    {
+        if (_activeLocks.TryGetValue(token.ResourceName, out var existing))
+        {
+            // Only current owner and same fencing token can release
+            if (existing.OwnerId == token.OwnerId &amp;&amp; existing.FencingToken == token.FencingToken)
+            {
+                return _activeLocks.TryRemove(token.ResourceName, out _);
+            }
+        }
+        return false;
+    }
+
+    public bool RenewLock(DistributedLockToken token, TimeSpan extension)
+    {
+        if (_activeLocks.TryGetValue(token.ResourceName, out var existing))
+        {
+            if (existing.OwnerId == token.OwnerId &amp;&amp; existing.FencingToken == token.FencingToken &amp;&amp; !existing.IsExpired)
+            {
+                var renewed = existing with { ExpiresAtUtc = DateTime.UtcNow.Add(extension) };
+                return _activeLocks.TryUpdate(token.ResourceName, renewed, existing);
+            }
+        }
+        return false;
+    }
+
+    public bool ValidateFencingTokenForStorageWrite(long tokenValue)
+    {
+        // Out-of-order write rejection: storage service only accepts strictly monotonically increasing tokens
+        while (true)
+        {
+            long currentCommitted = Interlocked.Read(ref _lastCommittedFencingToken);
+            if (tokenValue &lt;= currentCommitted)
+            {
+                return false; // Stale / Zombie worker write rejected!
+            }
+
+            if (Interlocked.CompareExchange(ref _lastCommittedFencingToken, tokenValue, currentCommitted) == currentCommitted)
+            {
+                return true;
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day16.SynchronizationLocks.Tests/Day16Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd16-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d16-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day16.SynchronizationLocks.Tests;
+
+public class Day16Tests
+{
+    [Fact]
+    public void LeetCode143_ReorderList_EvenAndOddLengths()
+    {
+        // Odd length: [1, 2, 3, 4, 5] -&gt; [1, 5, 2, 4, 3]
+        var list1 = ListNode.FromArray(new[] { 1, 2, 3, 4, 5 });
+        AdvancedLinkedListSolvers.ReorderList(list1);
+        list1!.ToArray().Should().Equal(new[] { 1, 5, 2, 4, 3 });
+
+        // Even length: [1, 2, 3, 4] -&gt; [1, 4, 2, 3]
+        var list2 = ListNode.FromArray(new[] { 1, 2, 3, 4 });
+        AdvancedLinkedListSolvers.ReorderList(list2);
+        list2!.ToArray().Should().Equal(new[] { 1, 4, 2, 3 });
+
+        // Short length: [1, 2] -&gt; [1, 2]
+        var list3 = ListNode.FromArray(new[] { 1, 2 });
+        AdvancedLinkedListSolvers.ReorderList(list3);
+        list3!.ToArray().Should().Equal(new[] { 1, 2 });
+    }
+
+    [Fact]
+    public void LeetCode19_RemoveNthFromEnd_VariousPositions()
+    {
+        // Remove 2nd from end: [1, 2, 3, 4, 5], n=2 -&gt; [1, 2, 3, 5]
+        var list1 = ListNode.FromArray(new[] { 1, 2, 3, 4, 5 });
+        var res1 = AdvancedLinkedListSolvers.RemoveNthFromEnd(list1, 2);
+        res1!.ToArray().Should().Equal(new[] { 1, 2, 3, 5 });
+
+        // Remove only node: [1], n=1 -&gt; null
+        var list2 = ListNode.FromArray(new[] { 1 });
+        var res2 = AdvancedLinkedListSolvers.RemoveNthFromEnd(list2, 1);
+        res2.Should().BeNull();
+
+        // Remove head: [1, 2], n=2 -&gt; [2]
+        var list3 = ListNode.FromArray(new[] { 1, 2 });
+        var res3 = AdvancedLinkedListSolvers.RemoveNthFromEnd(list3, 2);
+        res3!.ToArray().Should().Equal(new[] { 2 });
+    }
+
+    [Fact]
+    public async Task LockFreeCounter_ConcurrentIncrements_NoDataRace()
+    {
+        var counter = new LockFreeCounter();
+        const int tasksCount = 10;
+        const int incPerTask = 1000;
+
+        var tasks = new List&lt;Task&gt;();
+        for (int i = 0; i &lt; tasksCount; i++)
+        {
+            tasks.Add(Task.Run(() =&gt;
+            {
+                for (int j = 0; j &lt; incPerTask; j++)
+                {
+                    counter.Increment();
+                }
+            }));
+        }
+
+        await Task.WhenAll(tasks);
+        counter.Value.Should().Be(tasksCount * incPerTask);
+
+        // Update if greater
+        counter.UpdateIfGreaterThan(5000).Should().BeFalse();
+        counter.UpdateIfGreaterThan(20000).Should().BeTrue();
+        counter.Value.Should().Be(20000);
+    }
+
+    [Fact]
+    public async Task AsyncResourceThrottle_LimitsConcurrencyAndHonorsTimeouts()
+    {
+        var throttle = new AsyncResourceThrottle(maxConcurrency: 2);
+        throttle.CurrentAvailable.Should().Be(2);
+
+        var lease1 = await throttle.TryAcquireLeaseAsync(TimeSpan.FromMilliseconds(50));
+        lease1.Should().NotBeNull();
+        throttle.CurrentAvailable.Should().Be(1);
+
+        var lease2 = await throttle.TryAcquireLeaseAsync(TimeSpan.FromMilliseconds(50));
+        lease2.Should().NotBeNull();
+        throttle.CurrentAvailable.Should().Be(0);
+
+        // Third lease should time out
+        var lease3 = await throttle.TryAcquireLeaseAsync(TimeSpan.FromMilliseconds(20));
+        lease3.Should().BeNull();
+
+        // Release first lease
+        lease1!.Dispose();
+        throttle.CurrentAvailable.Should().Be(1);
+
+        // Now third can acquire
+        var lease3Retry = await throttle.TryAcquireLeaseAsync(TimeSpan.FromMilliseconds(50));
+        lease3Retry.Should().NotBeNull();
+
+        lease2!.Dispose();
+        lease3Retry!.Dispose();
+        throttle.CurrentAvailable.Should().Be(2);
+    }
+
+    [Fact]
+    public void ReadHeavyCache_GetOrAdd_ThreadSafe()
+    {
+        using var cache = new ReadHeavyCache&lt;string, string&gt;();
+        int factoryInvocations = 0;
+
+        Parallel.For(0, 50, _ =&gt;
+        {
+            cache.GetOrAdd(&quot;key1&quot;, k =&gt;
+            {
+                System.Threading.Interlocked.Increment(ref factoryInvocations);
+                return $&quot;computed-{k}&quot;;
+            });
+        });
+
+        factoryInvocations.Should().Be(1);
+        cache.TryGet(&quot;key1&quot;, out var val).Should().BeTrue();
+        val.Should().Be(&quot;computed-key1&quot;);
+    }
+
+    [Fact]
+    public void DistributedLockSimulator_MutualExclusion_AndFencingRejection()
+    {
+        var sim = new DistributedLockSimulator();
+
+        // 1. Worker A acquires lock
+        var resA = sim.AcquireLock(&quot;invoice:100&quot;, &quot;worker-A&quot;, TimeSpan.FromSeconds(5));
+        resA.Success.Should().BeTrue();
+        resA.Token.Should().NotBeNull();
+        var tokenA = resA.Token!;
+
+        // 2. Worker B fails to acquire
+        var resB = sim.AcquireLock(&quot;invoice:100&quot;, &quot;worker-B&quot;, TimeSpan.FromSeconds(5));
+        resB.Success.Should().BeFalse();
+
+        // 3. Worker A commits write to storage with valid fencing token
+        sim.ValidateFencingTokenForStorageWrite(tokenA.FencingToken).Should().BeTrue();
+
+        // 4. Worker A releases lock
+        sim.ReleaseLock(tokenA).Should().BeTrue();
+
+        // 5. Worker B now succeeds with newer fencing token
+        var resB2 = sim.AcquireLock(&quot;invoice:100&quot;, &quot;worker-B&quot;, TimeSpan.FromSeconds(5));
+        resB2.Success.Should().BeTrue();
+        var tokenB = resB2.Token!;
+        tokenB.FencingToken.Should().BeGreaterThan(tokenA.FencingToken);
+
+        // 6. Worker B commits
+        sim.ValidateFencingTokenForStorageWrite(tokenB.FencingToken).Should().BeTrue();
+
+        // 7. Stale Worker A attempts late write with old fencing token -&gt; REJECTED!
+        sim.ValidateFencingTokenForStorageWrite(tokenA.FencingToken).Should().BeFalse();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 16 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

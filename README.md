@@ -1,8 +1,8 @@
 # 100-Day .NET + AI Engineering Track
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
-[![Status](https://img.shields.io/badge/Roadmap-Days%201--13%20Completed-brightgreen.svg)](#completed-curriculum-days-113)
-[![Tests](https://img.shields.io/badge/Tests-149%20Passed-brightgreen.svg)](#running-builds-and-tests)
+[![Status](https://img.shields.io/badge/Roadmap-Days%201--17%20Completed-brightgreen.svg)](#completed-curriculum-days-117)
+[![Tests](https://img.shields.io/badge/Tests-189%20Passed-brightgreen.svg)](#running-builds-and-tests)
 
 Practical engineering implementations, performance benchmarks, systems architecture labs, and Data Structures & Algorithms (DSA) exercises across the 100-Day .NET + AI Engineering journey.
 
@@ -17,7 +17,7 @@ Practical engineering implementations, performance benchmarks, systems architect
 
 ## Status
 
-**Days 1–13: Completed**
+**Days 1–17: Completed**
 
 Detailed status table: [roadmap/progress.md](roadmap/progress.md)  
 Roadmap overview: [roadmap/100-day-roadmap.md](roadmap/100-day-roadmap.md)
@@ -33,7 +33,7 @@ Read complete daily guides, deep architectural notes, interview questions, and c
 
 ---
 
-## Completed Curriculum (Days 1–13)
+## Completed Curriculum (Days 1–17)
 
 Each day includes complete practical implementations, xUnit test suites, comprehensive engineering notes, and practical scenarios.
 
@@ -47,11 +47,15 @@ Each day includes complete practical implementations, xUnit test suites, compreh
 | **Day 06** | Dependency Injection Lifetimes | Transient, Scoped, Singleton lifecycle tracking, Captive Dependency problem reproduction, `ValidateScopes` / `ValidateOnBuild`, `IServiceScopeFactory`, Moq unit tests, DSA (3Sum, Container With Most Water) | [Day06-Dependency-Injection](Day06-Dependency-Injection/) • [README](Day06-Dependency-Injection/README.md) • [Notes](Day06-Dependency-Injection/notes.md) • [Interview Qs](Day06-Dependency-Injection/interview-questions.md) |
 | **Day 07** | Minimal APIs & Endpoint Routing | `MapGroup`, `TypedResults` union types, `IEndpointFilter` for validation & execution timing, OpenAPI metadata, CRUD lifecycle, Minimal APIs vs Controllers, DSA (Best Time to Buy and Sell Stock) | [Day07-Minimal-APIs](Day07-Minimal-APIs/) • [README](Day07-Minimal-APIs/README.md) • [Notes](Day07-Minimal-APIs/notes.md) • [Interview Qs](Day07-Minimal-APIs/interview-questions.md) |
 | **Day 08** | PostgreSQL B-Tree Indexing | 8KB page layout, PageHeader, ItemId/Linp pointers, `pageinspect` metadata, `EXPLAIN (ANALYZE, BUFFERS)` 4 cases (Seq Scan, Index Scan, Covering Index-Only Scan with INCLUDE, Poorly Designed Index), Dapper repository, DSA (Longest Substring Without Repeating Characters) | [Day08-SQL-Indexes](Day08-SQL-Indexes/) • [README](Day08-SQL-Indexes/README.md) • [Notes](Day08-SQL-Indexes/notes.md) • [Interview Qs](Day08-SQL-Indexes/interview-questions.md) |
-| **Day 09** | SQL Execution Plans & Tuning | PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` node parser, cost models, buffer hit ratios, disk spill detection, cardinality skew alerts, DSA (LeetCode #424 Longest Repeating Character Replacement) | [Day09-SQL-Execution-Plans](Day09-SQL-Execution-Plans/) • [README](Day09-SQL-Execution-Plans/README.md) |
-| **Day 10** | SQL Transactions, ACID & MVCC | ANSI SQL isolation levels, PostgreSQL MVCC `xmin`/`xmax`/snapshot visibility, anomaly simulation (Dirty Read, Non-Repeatable Read, Phantom Read, Write Skew), DSA (LeetCode #20 Valid Parentheses, LeetCode #155 Min Stack) | [Day10-Transactions-ACID](Day10-Transactions-ACID/) • [README](Day10-Transactions-ACID/README.md) |
-| **Day 11** | EF Core Change Tracking Mechanics | Snapshot vs Notification tracking (`INotifyPropertyChanged`/`Changing`), `DetectChanges()` inspection, `AsNoTracking` vs `AsNoTrackingWithIdentityResolution`, DSA (LeetCode #150 Evaluate Reverse Polish Notation, LeetCode #739 Daily Temperatures) | [Day11-EFCore-ChangeTracking](Day11-EFCore-ChangeTracking/) • [README](Day11-EFCore-ChangeTracking/README.md) |
-| **Day 12** | EF Core Split Queries & Interceptors | Cartesian explosion prevention (`.AsSplitQuery()` vs `.AsSingleQuery()`), query auditing & slow query logging with `DbCommandInterceptor`, DSA (LeetCode #704 Binary Search, LeetCode #74 Search a 2D Matrix) | [Day12-EFCore-SplitQueries-Interceptors](Day12-EFCore-SplitQueries-Interceptors/) • [README](Day12-EFCore-SplitQueries-Interceptors/README.md) |
-| **Day 13** | Dapper Performance & Streaming | Multi-mapping 1:N relations, buffered vs unbuffered queries, async streaming with `IAsyncEnumerable<T>`, Dapper vs EF Core raw SQL profiling, DSA (LeetCode #153 Find Minimum in Rotated Sorted Array & #154 Duplicates) | [Day13-Dapper-Performance](Day13-Dapper-Performance/) • [README](Day13-Dapper-Performance/README.md) |
+| **Day 09** | SQL Execution Plans & Tuning | PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` node parser, cost models, buffer hit ratios, disk spill detection, cardinality skew alerts, DSA (LeetCode #424 Longest Repeating Character Replacement) | [Day09-SQL-Execution-Plans](Day09-SQL-Execution-Plans/) • [README](Day09-SQL-Execution-Plans/README.md) • [Notes](Day09-SQL-Execution-Plans/notes.md) • [Interview Qs](Day09-SQL-Execution-Plans/interview-questions.md) |
+| **Day 10** | SQL Transactions, ACID & MVCC | ANSI SQL isolation levels, PostgreSQL MVCC `xmin`/`xmax`/snapshot visibility, anomaly simulation (Dirty Read, Non-Repeatable Read, Phantom Read, Write Skew), DSA (LeetCode #20 Valid Parentheses, LeetCode #155 Min Stack) | [Day10-Transactions-ACID](Day10-Transactions-ACID/) • [README](Day10-Transactions-ACID/README.md) • [Notes](Day10-Transactions-ACID/notes.md) • [Interview Qs](Day10-Transactions-ACID/interview-questions.md) |
+| **Day 11** | EF Core Change Tracking Mechanics | Snapshot vs Notification tracking (`INotifyPropertyChanged`/`Changing`), `DetectChanges()` inspection, `AsNoTracking` vs `AsNoTrackingWithIdentityResolution`, DSA (LeetCode #150 Evaluate Reverse Polish Notation, LeetCode #739 Daily Temperatures) | [Day11-EFCore-ChangeTracking](Day11-EFCore-ChangeTracking/) • [README](Day11-EFCore-ChangeTracking/README.md) • [Notes](Day11-EFCore-ChangeTracking/notes.md) • [Interview Qs](Day11-EFCore-ChangeTracking/interview-questions.md) |
+| **Day 12** | EF Core Split Queries & Interceptors | Cartesian explosion prevention (`.AsSplitQuery()` vs `.AsSingleQuery()`), query auditing & slow query logging with `DbCommandInterceptor`, DSA (LeetCode #704 Binary Search, LeetCode #74 Search a 2D Matrix) | [Day12-EFCore-SplitQueries-Interceptors](Day12-EFCore-SplitQueries-Interceptors/) • [README](Day12-EFCore-SplitQueries-Interceptors/README.md) • [Notes](Day12-EFCore-SplitQueries-Interceptors/notes.md) • [Interview Qs](Day12-EFCore-SplitQueries-Interceptors/interview-questions.md) |
+| **Day 13** | Dapper Performance & Streaming | Multi-mapping 1:N relations, buffered vs unbuffered queries, async streaming with `IAsyncEnumerable<T>`, Dapper vs EF Core raw SQL profiling, DSA (LeetCode #153 Find Minimum in Rotated Sorted Array & #154 Duplicates) | [Day13-Dapper-Performance](Day13-Dapper-Performance/) • [README](Day13-Dapper-Performance/README.md) • [Notes](Day13-Dapper-Performance/notes.md) • [Interview Qs](Day13-Dapper-Performance/interview-questions.md) |
+| **Day 14** | EF Core Migrations & Production Strategy | Idempotent SQL deployment (`dotnet ef migrations script -i`), breaking change analysis, Expand-Contract pattern, advisory locking, DSA (LeetCode #33 Search in Rotated Sorted Array & #81 Duplicates) | [Day14-EFCore-Migrations-Production](Day14-EFCore-Migrations-Production/) • [README](Day14-EFCore-Migrations-Production/README.md) • [Notes](Day14-EFCore-Migrations-Production/notes.md) • [Interview Qs](Day14-EFCore-Migrations-Production/interview-questions.md) |
+| **Day 15** | Channels & Concurrency in C# | `System.Threading.Channels` producer-consumer pipeline, bounded buffer backpressure policies, graceful shutdown, DSA (LeetCode #206 Reverse Linked List & #21 Merge Two Sorted Lists) | [Day15-Channels-Concurrency](Day15-Channels-Concurrency/) • [README](Day15-Channels-Concurrency/README.md) • [Notes](Day15-Channels-Concurrency/notes.md) • [Interview Qs](Day15-Channels-Concurrency/interview-questions.md) |
+| **Day 16** | Distributed Locking & Synchronization | `Interlocked` lock-free atomic CAS, `SemaphoreSlim` async throttled leases, `ReaderWriterLockSlim`, Redlock distributed consensus & fencing tokens, DSA (LeetCode #143 Reorder List & #19 Remove Nth From End) | [Day16-Synchronization-Locks](Day16-Synchronization-Locks/) • [README](Day16-Synchronization-Locks/README.md) • [Notes](Day16-Synchronization-Locks/notes.md) • [Interview Qs](Day16-Synchronization-Locks/interview-questions.md) |
+| **Day 17** | Introduction to Redis & Cache Patterns | Redis connection resilience, Cache-Aside, Write-Through, Write-Behind batch flushing, Cache Stampede (Mutex & XFetch algorithm), DSA (LeetCode #226 Invert Binary Tree & #104 Maximum Depth) | [Day17-Redis-Cache-Patterns](Day17-Redis-Cache-Patterns/) • [README](Day17-Redis-Cache-Patterns/README.md) • [Notes](Day17-Redis-Cache-Patterns/notes.md) • [Interview Qs](Day17-Redis-Cache-Patterns/interview-questions.md) |
 
 ---
 

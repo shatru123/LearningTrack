@@ -90,4 +90,32 @@
   <Folder Name="/Day13-Dapper-Performance/tests/">
     <Project Path="Day13-Dapper-Performance/tests/Day13.DapperPerformance.Tests/Day13.DapperPerformance.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day14-EFCore-Migrations-Production/" />
+  <Folder Name="/Day14-EFCore-Migrations-Production/src/">
+    <Project Path="Day14-EFCore-Migrations-Production/src/Day14.EfCoreMigrations/Day14.EfCoreMigrations.csproj" />
+  </Folder>
+  <Folder Name="/Day14-EFCore-Migrations-Production/tests/">
+    <Project Path="Day14-EFCore-Migrations-Production/tests/Day14.EfCoreMigrations.Tests/Day14.EfCoreMigrations.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day15-Channels-Concurrency/" />
+  <Folder Name="/Day15-Channels-Concurrency/src/">
+    <Project Path="Day15-Channels-Concurrency/src/Day15.ChannelsConcurrency/Day15.ChannelsConcurrency.csproj" />
+  </Folder>
+  <Folder Name="/Day15-Channels-Concurrency/tests/">
+    <Project Path="Day15-Channels-Concurrency/tests/Day15.ChannelsConcurrency.Tests/Day15.ChannelsConcurrency.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day16-Synchronization-Locks/" />
+  <Folder Name="/Day16-Synchronization-Locks/src/">
+    <Project Path="Day16-Synchronization-Locks/src/Day16.SynchronizationLocks/Day16.SynchronizationLocks.csproj" />
+  </Folder>
+  <Folder Name="/Day16-Synchronization-Locks/tests/">
+    <Project Path="Day16-Synchronization-Locks/tests/Day16.SynchronizationLocks.Tests/Day16.SynchronizationLocks.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day17-Redis-Cache-Patterns/" />
+  <Folder Name="/Day17-Redis-Cache-Patterns/src/">
+    <Project Path="Day17-Redis-Cache-Patterns/src/Day17.RedisCachePatterns/Day17.RedisCachePatterns.csproj" />
+  </Folder>
+  <Folder Name="/Day17-Redis-Cache-Patterns/tests/">
+    <Project Path="Day17-Redis-Cache-Patterns/tests/Day17.RedisCachePatterns.Tests/Day17.RedisCachePatterns.Tests.csproj" />
+  </Folder>
 </Solution>

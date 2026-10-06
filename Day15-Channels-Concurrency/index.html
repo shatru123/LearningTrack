@@ -1,0 +1,2192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 15: Channels &amp; High-Throughput Concurrency in C# | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 15</span>
+        <span class="badge badge-category">.NET &amp; Concurrency</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day14-EFCore-Migrations-Production/index.html" class="nav-btn">← Day 14</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+
+        </select>
+        <a href="../Day16-Synchronization-Locks/index.html" class="nav-btn">Day 16 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 15: Channels &amp; High-Throughput Concurrency in C#</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 3 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">System.Threading.Channels: Bounded Producer-Consumer Pipeline</text>
+          
+          <!-- Producers -->
+          <rect x="40" y="65" width="220" height="250" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="60" y="95" fill="#60a5fa" font-size="14" font-weight="bold">Concurrent Producers</text>
+          <rect x="55" y="115" width="190" height="40" rx="4" fill="#0f172a"/><text x="65" y="140" fill="#cbd5e1" font-size="11">Producer #1 (API)</text>
+          <rect x="55" y="165" width="190" height="40" rx="4" fill="#0f172a"/><text x="65" y="190" fill="#cbd5e1" font-size="11">Producer #2 (Worker)</text>
+          <rect x="55" y="215" width="190" height="40" rx="4" fill="#0f172a"/><text x="65" y="240" fill="#cbd5e1" font-size="11">Producer #N (Event)</text>
+          <text x="60" y="285" fill="#38bdf8" font-size="11">channel.Writer.WriteAsync()</text>
+
+          <!-- Bounded Queue -->
+          <rect x="290" y="65" width="320" height="250" rx="8" fill="#1e293b" stroke="#f59e0b"/>
+          <text x="310" y="95" fill="#fbbf24" font-size="14" font-weight="bold">Bounded Channel Buffer</text>
+          <text x="310" y="120" fill="#94a3b8" font-size="11">Capacity: N | Lock-Free Ring Buffer</text>
+          
+          <rect x="310" y="140" width="50" height="50" rx="6" fill="#0f172a" stroke="#10b981"/><text x="325" y="170" fill="#34d399" font-size="12">Item 1</text>
+          <rect x="370" y="140" width="50" height="50" rx="6" fill="#0f172a" stroke="#10b981"/><text x="385" y="170" fill="#34d399" font-size="12">Item 2</text>
+          <rect x="430" y="140" width="50" height="50" rx="6" fill="#0f172a" stroke="#10b981"/><text x="445" y="170" fill="#34d399" font-size="12">Item 3</text>
+          <rect x="490" y="140" width="50" height="50" rx="6" fill="#0f172a" stroke="#3b82f6"/><text x="505" y="170" fill="#60a5fa" font-size="12">Wait...</text>
+          <rect x="550" y="140" width="45" height="50" rx="6" fill="#0f172a" stroke="#64748b"/><text x="560" y="170" fill="#94a3b8" font-size="12">Free</text>
+
+          <rect x="310" y="210" width="280" height="50" rx="4" fill="#0f172a"/>
+          <text x="320" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Backpressure FullMode:</text>
+          <text x="320" y="248" fill="#94a3b8" font-size="10">Wait | DropOldest | DropWrite</text>
+          <text x="310" y="290" fill="#fbbf24" font-size="11">Zero Allocation on reader handoff</text>
+
+          <!-- Consumers -->
+          <rect x="640" y="65" width="220" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="660" y="95" fill="#34d399" font-size="14" font-weight="bold">Concurrent Consumers</text>
+          <rect x="655" y="115" width="190" height="40" rx="4" fill="#0f172a"/><text x="665" y="140" fill="#cbd5e1" font-size="11">Consumer #1</text>
+          <rect x="655" y="165" width="190" height="40" rx="4" fill="#0f172a"/><text x="665" y="190" fill="#cbd5e1" font-size="11">Consumer #2</text>
+          <rect x="655" y="215" width="190" height="40" rx="4" fill="#0f172a"/><text x="665" y="240" fill="#cbd5e1" font-size="11">Consumer #M</text>
+          <text x="660" y="285" fill="#34d399" font-size="11">channel.Reader.ReadAllAsync()</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 15 - Engineering Notes: System.Threading.Channels & High-Throughput Concurrency</h1>
+<h2>1. System.Threading.Channels Internal Mechanics</h2>
+<h3>Ring Buffer & Lock-Free Implementation</h3>
+<p>Under the hood, <code>Channel.CreateBounded&lt;T&gt;(capacity)</code> allocates a fixed-size circular array (ring buffer).</p>
+<ul>
+<li>State transitions are managed using atomic CAS operations via <code>Interlocked</code>.</li>
+<li>When readers await items, <code>ReadAsync()</code> returns an uncompleted <code>ValueTask&lt;T&gt;</code>. The reader's continuation delegate is enqueued directly into an internal waiter list.</li>
+<li>When a writer pushes an item, if a reader is waiting, the item is transferred directly to the reader without passing through the ring buffer, achieving near-zero allocation and bypassing queue overhead.</li>
+</ul>
+<h3>SingleWriter / SingleReader Optimizations</h3>
+<p>When creating a channel:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">var options = new BoundedChannelOptions(1000)
+{
+    SingleWriter = true,
+    SingleReader = false
+};</code></pre></div>
+<p>Setting <code>SingleWriter = true</code> eliminates inter-producer synchronization locks, replacing thread-safe CAS operations with direct array index increments, drastically reducing CPU cache-line bouncing.</p>
+<hr/>
+<h2>2. Bounded Capacity & Backpressure Policies</h2>
+<div class="table-container"><table><thead><tr>
+<th><code>BoundedChannelFullMode</code></th>
+<th>Behavior on Buffer Saturation</th>
+<th>Typical Use Case</th>
+</tr></thead><tbody>
+<tr>
+<td><strong><code>Wait</code></strong></td>
+<td><code>WriteAsync</code> awaits asynchronously</td>
+<td>Financial transactions, audit logging, orders</td>
+</tr>
+<tr>
+<td><strong><code>DropOldest</code></strong></td>
+<td>Drops queue head, writes new item</td>
+<td>GPS tracking, live video frames, UI sensor metrics</td>
+</tr>
+<tr>
+<td><strong><code>DropNewest</code></strong></td>
+<td>Drops newly incoming item</td>
+<td>Rate-limiting incoming requests</td>
+</tr>
+<tr>
+<td><strong><code>DropWrite</code></strong></td>
+<td>Returns <code>false</code> on <code>TryWrite</code></td>
+<td>Non-blocking best-effort notifications</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>3. Linked List Pointer Mechanics (LC #206 & #21)</h2>
+<h3>The Sentinel (Dummy Head) Pattern</h3>
+<p>Without a dummy head, merging two lists requires initializing the head pointer separately:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">var dummy = new ListNode(-1);
+var tail = dummy;
+
+while (l1 != null &amp;&amp; l2 != null)
+{
+    if (l1.val &lt;= l2.val) { tail.next = l1; l1 = l1.next; }
+    else { tail.next = l2; l2 = l2.next; }
+    tail = tail.next;
+}
+tail.next = l1 ?? l2;
+return dummy.next;</code></pre></div>
+<p>This reduces branching, eliminates null-pointer checks for the initial node, and guarantees $O(1)$ extra space.</p>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 15: Channels & Concurrency in C#</h1>
+<h2>Overview</h2>
+<p>High-throughput asynchronous producer-consumer architectures using <code>System.Threading.Channels</code>. This module explores zero-allocation bounded channels, backpressure enforcement (<code>BoundedChannelFullMode</code>), multi-producer/multi-consumer worker scheduling, cancellation propagation, and pointer manipulation DSA algorithms: Reverse Linked List (LeetCode #206) and Merge Two Sorted Lists (LeetCode #21).</p>
+<hr/>
+<h2>Key Architectural Concepts</h2>
+<h3>1. <code>System.Threading.Channels</code> vs <code>BlockingCollection&lt;T&gt;</code></h3>
+<ul>
+<li><strong><code>BlockingCollection&lt;T&gt;</code></strong>: Synchronous thread-blocking concurrency primitive (<code>Take()</code> blocks OS threads). In asynchronous web services, blocking threads causes thread pool starvation.</li>
+<li><strong><code>Channel&lt;T&gt;</code></strong>: High-performance asynchronous construct (<code>ReadAsync()</code>, <code>WriteAsync()</code>) that cooperatively yields threads back to the .NET ThreadPool using <code>ValueTask&lt;bool&gt;</code> and lock-free ring buffers.</li>
+</ul>
+<h3>2. Backpressure Modes in Bounded Channels</h3>
+<p>When producer throughput outpaces consumer capacity, an unbounded channel leads to unbounded heap memory growth and fatal OutOfMemory exceptions. Bounded channels enforce backpressure:</p>
+<ul>
+<li><strong><code>BoundedChannelFullMode.Wait</code></strong>: Asynchronously halts producers until buffer space is reclaimed. Guarantees zero message loss.</li>
+<li><strong><code>BoundedChannelFullMode.DropOldest</code></strong>: Discards the oldest queued item to accept new writes. Ideal for real-time telemetry or latest market price feeds.</li>
+<li><strong><code>BoundedChannelFullMode.DropNewest</code></strong>: Drops the newly incoming message if full.</li>
+<li><strong><code>BoundedChannelFullMode.DropWrite</code></strong>: Rejects writes without queuing.</li>
+</ul>
+<h3>3. Graceful Shutdown & Completion Semantics</h3>
+<p>Producers signal completion via <code>channel.Writer.Complete()</code>.</p>
+<p>Consumers iterating over <code>channel.Reader.ReadAllAsync()</code> automatically drain all buffered items and gracefully terminate once the queue is empty.</p>
+<hr/>
+<h2>LeetCode Problems Solved</h2>
+<h3>LeetCode #206: Reverse Linked List</h3>
+<ul>
+<li><strong>Algorithm</strong>: Three-pointer in-place iteration (<code>prev</code>, <code>curr</code>, <code>nextTemp</code>) and recursive post-order pointer inversion.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(1)$ iterative, $O(N)$ recursive call stack.</li>
+</ul>
+<h3>LeetCode #21: Merge Two Sorted Lists</h3>
+<ul>
+<li><strong>Algorithm</strong>: Two-pointer splice using a sentinel dummy head node to eliminate special cases for the head pointer.</li>
+<li><strong>Complexity</strong>: Time: $O(N + M)$, Space: $O(1)$.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What makes `System.Threading.Channels` significantly faster than `BlockingCollection&lt;T&gt;` in modern ASP.NET Core?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>Channel&lt;T&gt;</code> is purely asynchronous and non-blocking (<code>ValueTask&lt;T&gt;</code>), avoiding OS thread starvation and heavy kernel synchronization context switches.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p><code>BlockingCollection&lt;T&gt;</code> relies on OS-level synchronization primitives like <code>Monitor</code>, <code>Semaphore</code>, and <code>ManualResetEventSlim</code>. Calling <code>.Take()</code> blocks the calling OS thread. In high-concurrency web servers, blocking threads drains the ThreadPool, leading to latency spikes.</p>
+<p><code>Channel&lt;T&gt;</code> uses cooperative async scheduling. If the channel is empty, <code>ReadAsync()</code> returns an uncompleted <code>ValueTask&lt;T&gt;</code>, registering the continuation callback without blocking any thread. Furthermore, if a reader is already awaiting an item, incoming writes can bypass the internal buffer and hand off the item directly to the awaiting reader.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What happens if you enable `AllowSynchronousContinuations = true` in `BoundedChannelOptions`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The reader's continuation executes synchronously on the writer's thread, which can cause unexpected deadlocks, thread hijacking, or priority inversions.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>By default (<code>false</code>), when a writer supplies an item that an awaiting reader needs, the channel schedules the reader continuation on the ThreadPool via <code>ThreadPool.UnsafeQueueUserWorkItem</code>.</p>
+<p>Setting <code>AllowSynchronousContinuations = true</code> executes the reader's subsequent code directly on the calling writer thread. While this saves a thread context switch, if the reader performs long-running CPU work, database queries, or acquires locks held by the writer, it can hijack the producer thread or trigger deadlocks. It should only be enabled in ultra-low latency pipelines with minuscule non-blocking reader lambdas.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you design a backpressure mechanism in a distributed event ingestion service using Channels?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Use a bounded channel with <code>BoundedChannelFullMode.Wait</code>, allowing consumer latency to naturally throttle upstream HTTP or messaging producers.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In an API controller receiving webhooks or telemetry events:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  public async Task&lt;IActionResult&gt; Ingest([FromBody] EventDto payload, CancellationToken ct)
+  {
+      if (!await _channel.Writer.WaitToWriteAsync(ct))
+          return StatusCode(503, &quot;Service Shutting Down&quot;);
+      
+      await _channel.Writer.WriteAsync(payload, ct);
+      return Accepted();
+  }</code></pre></div>
+<p>If background consumers become saturated (e.g., due to database slow-downs), the buffer fills to capacity. <code>WriteAsync</code> awaits, causing the HTTP controller to delay returning <code>202 Accepted</code>. This naturally propagates backpressure to upstream callers or rate limiters without consuming unbounded RAM.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is the significance of `SingleWriter` and `SingleReader` flags in channel creation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: They inform the runtime that inter-thread synchronization is unnecessary on the writer or reader side, allowing lock-free single-threaded pointer increments.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a multi-writer channel, every write requires atomic CAS (<code>Interlocked.CompareExchange</code>) loops to increment queue tail pointers safely across CPU cores.</p>
+<p>When <code>SingleWriter = true</code>, the implementation knows only one thread writes at any given time. It replaces atomic operations with plain non-atomic increments, eliminating memory barriers, hardware bus locks, and CPU L1/L2 cache line invalidations.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you ensure zero data loss during graceful application shutdown in a channel pipeline?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Stop accepting new writes, call <code>channel.Writer.Complete()</code>, and await all consumers processing <code>channel.Reader.ReadAllAsync()</code> before allowing the application host to stop.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In an ASP.NET Core <code>IHostedService</code>:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  public async Task StopAsync(CancellationToken cancellationToken)
+  {
+      _channel.Writer.Complete(); // Closes writer; no new writes accepted
+      await Task.WhenAll(_consumerTasks); // Await until ReadAllAsync finishes draining buffer
+  }</code></pre></div>
+<p><code>Complete()</code> flags the channel as closed for writes, but does NOT discard buffered items. Consumers continue reading until every queued item is processed, after which <code>ReadAllAsync()</code> gracefully completes its loop.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">When would you choose `BoundedChannelFullMode.DropOldest` over `BoundedChannelFullMode.Wait`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When the freshest data supersedes historical data and low latency is prioritized over complete historical delivery (e.g., GPS tracking, stock tickers, sensor telemetry).</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a high-frequency trading or IoT GPS application, processing a 5-second-old car coordinate is worthless if a new coordinate is available right now. If consumers experience transient lag, <code>Wait</code> would cause the entire system to stall. With <code>DropOldest</code>, the system constantly sheds stale data, ensuring consumers always process the latest snapshot with minimal lag.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How does `channel.Reader.ReadAllAsync()` handle exceptions thrown during processing?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: An unhandled exception inside the <code>await foreach</code> loop terminates the consumer loop and faults the consumer task, leaving remaining items in the channel unless handled.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>To build robust fault-tolerant pipelines, the consumer loop must encapsulate item processing in a <code>try/catch</code> block:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  await foreach (var item in _channel.Reader.ReadAllAsync(ct))
+  {
+      try { await ProcessItemAsync(item); }
+      catch (Exception ex) { _logger.LogError(ex, &quot;Failed item {Id}&quot;, item.Id); await _dlq.WriteAsync(item); }
+  }</code></pre></div>
+<p>If an exception escapes the <code>await foreach</code>, that worker task dies. If no other workers exist, unread messages remain trapped in the channel.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How can Channels be used to implement the Fan-Out and Fan-In concurrency patterns?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Fan-Out routes items from 1 producer channel to $N$ worker channels; Fan-In aggregates results from $N$ worker channels into a single consolidated output channel.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><strong>Fan-Out</strong>: A dispatcher reads from the incoming channel and distributes work across $N$ bounded channels based on worker availability or consistent hashing (e.g., <code>item.UserId % workerCount</code>).</li>
+<li><strong>Fan-In</strong>: Multiple workers complete sub-tasks and write results to a shared output <code>Channel&lt;Result&gt;</code>. A single consolidation service reads from this channel to persist results or stream them to a client.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">What is the optimal time and space complexity for reversing a singly-linked list (LeetCode #206)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Iterative approach achieves $O(N)$ time and $O(1)$ space using three pointers.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Iteratively, we track <code>prev</code> (initialized to null) and <code>curr</code> (head). In each step:</p>
+<p><code>nextTemp = curr.next; curr.next = prev; prev = curr; curr = nextTemp;</code>.</p>
+<p>Because we only reassign pointers without allocating new nodes or storing addresses, space is strictly $O(1)$.</p>
+<p>In contrast, recursive reversal requires $O(N)$ auxiliary stack space. On lists with 100,000 nodes, recursion will cause a <code>StackOverflowException</code>.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">Why is a sentinel dummy node preferred when merging two sorted linked lists (LeetCode #21)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It eliminates null checks and conditional branching for initializing the head of the merged list.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Without a dummy node, you must write boilerplate before the loop:</p>
+<p><code>if (l1.val &lt; l2.val) { head = l1; l1 = l1.next; } else { head = l2; l2 = l2.next; } tail = head;</code></p>
+<p>With a dummy head <code>var dummy = new ListNode(-1); var tail = dummy;</code>, every node insertion (including the first) uses identical logic: <code>tail.next = chosenNode; tail = tail.next;</code>.</p>
+<p>At the end, returning <code>dummy.next</code> seamlessly hands back the head of the combined list in $O(1)$ space and $O(N + M)$ time.</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day15.ChannelsConcurrency/ChannelPipelineService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd15-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d15-src-code-0" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+
+namespace Day15.ChannelsConcurrency;
+
+public class ChannelPipelineService
+{
+    public Channel&lt;WorkItem&gt; CreateBoundedChannel(
+        int capacity,
+        BoundedChannelFullMode fullMode = BoundedChannelFullMode.Wait,
+        bool singleWriter = false,
+        bool singleReader = false)
+    {
+        var options = new BoundedChannelOptions(capacity)
+        {
+            FullMode = fullMode,
+            SingleWriter = singleWriter,
+            SingleReader = singleReader,
+            AllowSynchronousContinuations = false
+        };
+
+        return Channel.CreateBounded&lt;WorkItem&gt;(options);
+    }
+
+    public Channel&lt;WorkItem&gt; CreateUnboundedChannel()
+    {
+        var options = new UnboundedChannelOptions
+        {
+            AllowSynchronousContinuations = false
+        };
+        return Channel.CreateUnbounded&lt;WorkItem&gt;(options);
+    }
+
+    public async Task&lt;ChannelPipelineMetrics&gt; RunPipelineAsync(
+        int totalItems,
+        int producerCount,
+        int consumerCount,
+        int channelCapacity,
+        BoundedChannelFullMode fullMode = BoundedChannelFullMode.Wait,
+        int simulatedProcessingDelayMs = 0,
+        CancellationToken ct = default)
+    {
+        var channel = CreateBoundedChannel(channelCapacity, fullMode);
+        var stopwatch = Stopwatch.StartNew();
+
+        int producedCount = 0;
+        int consumedCount = 0;
+        int droppedCount = 0;
+
+        var itemsPerProducer = totalItems / producerCount;
+        var remainingItems = totalItems % producerCount;
+
+        // Producer Tasks
+        var producerTasks = new List&lt;Task&gt;();
+        for (int p = 0; p &lt; producerCount; p++)
+        {
+            int producerId = p;
+            int countToProduce = itemsPerProducer + (p == 0 ? remainingItems : 0);
+            int startOffset = p * itemsPerProducer;
+
+            producerTasks.Add(Task.Run(async () =&gt;
+            {
+                for (int i = 0; i &lt; countToProduce; i++)
+                {
+                    if (ct.IsCancellationRequested) break;
+
+                    var item = new WorkItem(startOffset + i, $&quot;Data-{startOffset + i} from P{producerId}&quot;, DateTime.UtcNow);
+
+                    if (fullMode == BoundedChannelFullMode.Wait)
+                    {
+                        await channel.Writer.WriteAsync(item, ct);
+                        Interlocked.Increment(ref producedCount);
+                    }
+                    else
+                    {
+                        // TryWrite with dropped count tracking for drop modes
+                        if (channel.Writer.TryWrite(item))
+                        {
+                            Interlocked.Increment(ref producedCount);
+                        }
+                        else
+                        {
+                            Interlocked.Increment(ref droppedCount);
+                        }
+                    }
+                }
+            }, ct));
+        }
+
+        // Wait for all producers to finish, then complete the writer
+        var producersCompletion = Task.WhenAll(producerTasks).ContinueWith(_ =&gt;
+        {
+            channel.Writer.Complete();
+        }, TaskScheduler.Default);
+
+        // Consumer Tasks
+        var consumerTasks = new List&lt;Task&gt;();
+        var results = new ConcurrentBag&lt;ProcessingResult&gt;();
+
+        for (int c = 0; c &lt; consumerCount; c++)
+        {
+            int consumerId = c;
+            consumerTasks.Add(Task.Run(async () =&gt;
+            {
+                var workerName = $&quot;Worker-{consumerId}&quot;;
+                // ReadAllAsync automatically exits when channel.Writer is completed and buffer is empty
+                await foreach (var item in channel.Reader.ReadAllAsync(ct))
+                {
+                    var sw = Stopwatch.StartNew();
+                    if (simulatedProcessingDelayMs &gt; 0)
+                    {
+                        await Task.Delay(simulatedProcessingDelayMs, ct);
+                    }
+                    sw.Stop();
+
+                    results.Add(new ProcessingResult(item.Id, workerName, true, sw.Elapsed));
+                    Interlocked.Increment(ref consumedCount);
+                }
+            }, ct));
+        }
+
+        await Task.WhenAll(producersCompletion, Task.WhenAll(consumerTasks));
+        stopwatch.Stop();
+
+        return new ChannelPipelineMetrics(
+            producedCount,
+            consumedCount,
+            droppedCount,
+            stopwatch.Elapsed);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day15.ChannelsConcurrency/LinkedListSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd15-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d15-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day15.ChannelsConcurrency;
+
+public class ListNode
+{
+    public int val;
+    public ListNode? next;
+
+    public ListNode(int val = 0, ListNode? next = null)
+    {
+        this.val = val;
+        this.next = next;
+    }
+
+    public static ListNode? FromArray(int[] values)
+    {
+        if (values == null || values.Length == 0) return null;
+        var dummy = new ListNode(-1);
+        var curr = dummy;
+        foreach (var v in values)
+        {
+            curr.next = new ListNode(v);
+            curr = curr.next;
+        }
+        return dummy.next;
+    }
+
+    public int[] ToArray()
+    {
+        var list = new List&lt;int&gt;();
+        var curr = this;
+        while (curr != null)
+        {
+            list.Add(curr.val);
+            curr = curr.next;
+        }
+        return list.ToArray();
+    }
+}
+
+public static class LinkedListSolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #206: Reverse Linked List (Iterative).
+    /// Time: O(N), Space: O(1).
+    /// &lt;/summary&gt;
+    public static ListNode? ReverseList(ListNode? head)
+    {
+        ListNode? prev = null;
+        var curr = head;
+
+        while (curr != null)
+        {
+            var nextTemp = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = nextTemp;
+        }
+
+        return prev;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #206: Reverse Linked List (Recursive).
+    /// Time: O(N), Space: O(N) call stack.
+    /// &lt;/summary&gt;
+    public static ListNode? ReverseListRecursive(ListNode? head)
+    {
+        if (head == null || head.next == null)
+            return head;
+
+        var newHead = ReverseListRecursive(head.next);
+        head.next.next = head;
+        head.next = null;
+
+        return newHead;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #21: Merge Two Sorted Lists (Iterative with Sentinel Dummy Head).
+    /// Time: O(N + M), Space: O(1).
+    /// &lt;/summary&gt;
+    public static ListNode? MergeTwoLists(ListNode? list1, ListNode? list2)
+    {
+        var dummy = new ListNode(-1);
+        var tail = dummy;
+
+        while (list1 != null &amp;&amp; list2 != null)
+        {
+            if (list1.val &lt;= list2.val)
+            {
+                tail.next = list1;
+                list1 = list1.next;
+            }
+            else
+            {
+                tail.next = list2;
+                list2 = list2.next;
+            }
+            tail = tail.next;
+        }
+
+        tail.next = list1 ?? list2;
+        return dummy.next;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #21: Merge Two Sorted Lists (Recursive).
+    /// Time: O(N + M), Space: O(N + M) call stack.
+    /// &lt;/summary&gt;
+    public static ListNode? MergeTwoListsRecursive(ListNode? list1, ListNode? list2)
+    {
+        if (list1 == null) return list2;
+        if (list2 == null) return list1;
+
+        if (list1.val &lt;= list2.val)
+        {
+            list1.next = MergeTwoListsRecursive(list1.next, list2);
+            return list1;
+        }
+        else
+        {
+            list2.next = MergeTwoListsRecursive(list1, list2.next);
+            return list2;
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day15.ChannelsConcurrency/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd15-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d15-src-code-2" class="language-csharp">using System;
+
+namespace Day15.ChannelsConcurrency;
+
+public record WorkItem(
+    int Id,
+    string Payload,
+    DateTime CreatedAtUtc);
+
+public record ProcessingResult(
+    int WorkItemId,
+    string ProcessedByWorker,
+    bool Success,
+    TimeSpan ProcessingDuration);
+
+public record ChannelPipelineMetrics(
+    int TotalProduced,
+    int TotalConsumed,
+    int DroppedItems,
+    TimeSpan TotalElapsed);
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day15.ChannelsConcurrency.Tests/Day15Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd15-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d15-tests-code-0" class="language-csharp">using System;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day15.ChannelsConcurrency.Tests;
+
+public class Day15Tests
+{
+    [Fact]
+    public void LeetCode206_ReverseList_Iterative_ReversesCorrectly()
+    {
+        var head = ListNode.FromArray(new[] { 1, 2, 3, 4, 5 });
+        var reversed = LinkedListSolvers.ReverseList(head);
+        reversed.Should().NotBeNull();
+        reversed!.ToArray().Should().Equal(new[] { 5, 4, 3, 2, 1 });
+    }
+
+    [Fact]
+    public void LeetCode206_ReverseList_EmptyAndSingleNode()
+    {
+        LinkedListSolvers.ReverseList(null).Should().BeNull();
+
+        var single = ListNode.FromArray(new[] { 42 });
+        var res = LinkedListSolvers.ReverseList(single);
+        res!.ToArray().Should().Equal(new[] { 42 });
+    }
+
+    [Fact]
+    public void LeetCode206_ReverseListRecursive_MatchesIterative()
+    {
+        var head = ListNode.FromArray(new[] { 10, 20, 30 });
+        var reversed = LinkedListSolvers.ReverseListRecursive(head);
+        reversed!.ToArray().Should().Equal(new[] { 30, 20, 10 });
+    }
+
+    [Fact]
+    public void LeetCode21_MergeTwoLists_Iterative_MergesInSortedOrder()
+    {
+        var l1 = ListNode.FromArray(new[] { 1, 2, 4 });
+        var l2 = ListNode.FromArray(new[] { 1, 3, 4 });
+
+        var merged = LinkedListSolvers.MergeTwoLists(l1, l2);
+        merged!.ToArray().Should().Equal(new[] { 1, 1, 2, 3, 4, 4 });
+    }
+
+    [Fact]
+    public void LeetCode21_MergeTwoLists_HandlesNullLists()
+    {
+        var l1 = ListNode.FromArray(new[] { 5, 6 });
+        LinkedListSolvers.MergeTwoLists(l1, null)!.ToArray().Should().Equal(new[] { 5, 6 });
+        LinkedListSolvers.MergeTwoLists(null, l1)!.ToArray().Should().Equal(new[] { 5, 6 });
+        LinkedListSolvers.MergeTwoLists(null, null).Should().BeNull();
+    }
+
+    [Fact]
+    public void LeetCode21_MergeTwoListsRecursive_MatchesIterative()
+    {
+        var l1 = ListNode.FromArray(new[] { 2, 5, 8 });
+        var l2 = ListNode.FromArray(new[] { 1, 6, 9 });
+
+        var merged = LinkedListSolvers.MergeTwoListsRecursive(l1, l2);
+        merged!.ToArray().Should().Equal(new[] { 1, 2, 5, 6, 8, 9 });
+    }
+
+    [Fact]
+    public async Task ChannelPipeline_BoundedWait_DeliversAllItemsWithoutLoss()
+    {
+        var service = new ChannelPipelineService();
+        const int totalItems = 200;
+        const int producers = 4;
+        const int consumers = 2;
+        const int capacity = 20;
+
+        var metrics = await service.RunPipelineAsync(
+            totalItems: totalItems,
+            producerCount: producers,
+            consumerCount: consumers,
+            channelCapacity: capacity,
+            fullMode: BoundedChannelFullMode.Wait);
+
+        metrics.TotalProduced.Should().Be(totalItems);
+        metrics.TotalConsumed.Should().Be(totalItems);
+        metrics.DroppedItems.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ChannelPipeline_BoundedDrop_DiscardsExcessOnBackpressure()
+    {
+        var service = new ChannelPipelineService();
+        var channel = service.CreateBoundedChannel(capacity: 5, fullMode: BoundedChannelFullMode.DropOldest);
+
+        // Fill buffer
+        for (int i = 0; i &lt; 5; i++)
+        {
+            channel.Writer.TryWrite(new WorkItem(i, $&quot;Item-{i}&quot;, DateTime.UtcNow)).Should().BeTrue();
+        }
+
+        // Write additional items - DropOldest allows writing, evicting the oldest
+        channel.Writer.TryWrite(new WorkItem(99, &quot;Item-99&quot;, DateTime.UtcNow)).Should().BeTrue();
+
+        channel.Writer.Complete();
+
+        // Drain channel
+        var items = new System.Collections.Generic.List&lt;WorkItem&gt;();
+        await foreach (var item in channel.Reader.ReadAllAsync())
+        {
+            items.Add(item);
+        }
+
+        items.Should().HaveCount(5);
+        items.Should().Contain(x =&gt; x.Id == 99);
+        items.Should().NotContain(x =&gt; x.Id == 0); // 0 was dropped
+    }
+
+    [Fact]
+    public async Task ChannelPipeline_CancellationToken_AbortsGracefully()
+    {
+        var service = new ChannelPipelineService();
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+
+        // Start large workload with slow consumers
+        Func&lt;Task&gt; act = async () =&gt;
+        {
+            await service.RunPipelineAsync(
+                totalItems: 10000,
+                producerCount: 2,
+                consumerCount: 1,
+                channelCapacity: 10,
+                simulatedProcessingDelayMs: 20,
+                ct: cts.Token);
+        };
+
+        await act.Should().ThrowAsync&lt;OperationCanceledException&gt;();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 15 - Engineering Notes: System.Threading.Channels & High-Throughput Concurrency</h1>
+<h2>1. System.Threading.Channels Internal Mechanics</h2>
+<h3>Ring Buffer & Lock-Free Implementation</h3>
+<p>Under the hood, <code>Channel.CreateBounded&lt;T&gt;(capacity)</code> allocates a fixed-size circular array (ring buffer).</p>
+<ul>
+<li>State transitions are managed using atomic CAS operations via <code>Interlocked</code>.</li>
+<li>When readers await items, <code>ReadAsync()</code> returns an uncompleted <code>ValueTask&lt;T&gt;</code>. The reader's continuation delegate is enqueued directly into an internal waiter list.</li>
+<li>When a writer pushes an item, if a reader is waiting, the item is transferred directly to the reader without passing through the ring buffer, achieving near-zero allocation and bypassing queue overhead.</li>
+</ul>
+<h3>SingleWriter / SingleReader Optimizations</h3>
+<p>When creating a channel:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">var options = new BoundedChannelOptions(1000)
+{
+    SingleWriter = true,
+    SingleReader = false
+};</code></pre></div>
+<p>Setting <code>SingleWriter = true</code> eliminates inter-producer synchronization locks, replacing thread-safe CAS operations with direct array index increments, drastically reducing CPU cache-line bouncing.</p>
+<hr/>
+<h2>2. Bounded Capacity & Backpressure Policies</h2>
+<div class="table-container"><table><thead><tr>
+<th><code>BoundedChannelFullMode</code></th>
+<th>Behavior on Buffer Saturation</th>
+<th>Typical Use Case</th>
+</tr></thead><tbody>
+<tr>
+<td><strong><code>Wait</code></strong></td>
+<td><code>WriteAsync</code> awaits asynchronously</td>
+<td>Financial transactions, audit logging, orders</td>
+</tr>
+<tr>
+<td><strong><code>DropOldest</code></strong></td>
+<td>Drops queue head, writes new item</td>
+<td>GPS tracking, live video frames, UI sensor metrics</td>
+</tr>
+<tr>
+<td><strong><code>DropNewest</code></strong></td>
+<td>Drops newly incoming item</td>
+<td>Rate-limiting incoming requests</td>
+</tr>
+<tr>
+<td><strong><code>DropWrite</code></strong></td>
+<td>Returns <code>false</code> on <code>TryWrite</code></td>
+<td>Non-blocking best-effort notifications</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>3. Linked List Pointer Mechanics (LC #206 & #21)</h2>
+<h3>The Sentinel (Dummy Head) Pattern</h3>
+<p>Without a dummy head, merging two lists requires initializing the head pointer separately:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">var dummy = new ListNode(-1);
+var tail = dummy;
+
+while (l1 != null &amp;&amp; l2 != null)
+{
+    if (l1.val &lt;= l2.val) { tail.next = l1; l1 = l1.next; }
+    else { tail.next = l2; l2 = l2.next; }
+    tail = tail.next;
+}
+tail.next = l1 ?? l2;
+return dummy.next;</code></pre></div>
+<p>This reduces branching, eliminates null-pointer checks for the initial node, and guarantees $O(1)$ extra space.</p>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 15: Channels & Concurrency in C#</h1>
+<h2>Overview</h2>
+<p>High-throughput asynchronous producer-consumer architectures using <code>System.Threading.Channels</code>. This module explores zero-allocation bounded channels, backpressure enforcement (<code>BoundedChannelFullMode</code>), multi-producer/multi-consumer worker scheduling, cancellation propagation, and pointer manipulation DSA algorithms: Reverse Linked List (LeetCode #206) and Merge Two Sorted Lists (LeetCode #21).</p>
+<hr/>
+<h2>Key Architectural Concepts</h2>
+<h3>1. <code>System.Threading.Channels</code> vs <code>BlockingCollection&lt;T&gt;</code></h3>
+<ul>
+<li><strong><code>BlockingCollection&lt;T&gt;</code></strong>: Synchronous thread-blocking concurrency primitive (<code>Take()</code> blocks OS threads). In asynchronous web services, blocking threads causes thread pool starvation.</li>
+<li><strong><code>Channel&lt;T&gt;</code></strong>: High-performance asynchronous construct (<code>ReadAsync()</code>, <code>WriteAsync()</code>) that cooperatively yields threads back to the .NET ThreadPool using <code>ValueTask&lt;bool&gt;</code> and lock-free ring buffers.</li>
+</ul>
+<h3>2. Backpressure Modes in Bounded Channels</h3>
+<p>When producer throughput outpaces consumer capacity, an unbounded channel leads to unbounded heap memory growth and fatal OutOfMemory exceptions. Bounded channels enforce backpressure:</p>
+<ul>
+<li><strong><code>BoundedChannelFullMode.Wait</code></strong>: Asynchronously halts producers until buffer space is reclaimed. Guarantees zero message loss.</li>
+<li><strong><code>BoundedChannelFullMode.DropOldest</code></strong>: Discards the oldest queued item to accept new writes. Ideal for real-time telemetry or latest market price feeds.</li>
+<li><strong><code>BoundedChannelFullMode.DropNewest</code></strong>: Drops the newly incoming message if full.</li>
+<li><strong><code>BoundedChannelFullMode.DropWrite</code></strong>: Rejects writes without queuing.</li>
+</ul>
+<h3>3. Graceful Shutdown & Completion Semantics</h3>
+<p>Producers signal completion via <code>channel.Writer.Complete()</code>.</p>
+<p>Consumers iterating over <code>channel.Reader.ReadAllAsync()</code> automatically drain all buffered items and gracefully terminate once the queue is empty.</p>
+<hr/>
+<h2>LeetCode Problems Solved</h2>
+<h3>LeetCode #206: Reverse Linked List</h3>
+<ul>
+<li><strong>Algorithm</strong>: Three-pointer in-place iteration (<code>prev</code>, <code>curr</code>, <code>nextTemp</code>) and recursive post-order pointer inversion.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(1)$ iterative, $O(N)$ recursive call stack.</li>
+</ul>
+<h3>LeetCode #21: Merge Two Sorted Lists</h3>
+<ul>
+<li><strong>Algorithm</strong>: Two-pointer splice using a sentinel dummy head node to eliminate special cases for the head pointer.</li>
+<li><strong>Complexity</strong>: Time: $O(N + M)$, Space: $O(1)$.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What makes `System.Threading.Channels` significantly faster than `BlockingCollection&lt;T&gt;` in modern ASP.NET Core?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>Channel&lt;T&gt;</code> is purely asynchronous and non-blocking (<code>ValueTask&lt;T&gt;</code>), avoiding OS thread starvation and heavy kernel synchronization context switches.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p><code>BlockingCollection&lt;T&gt;</code> relies on OS-level synchronization primitives like <code>Monitor</code>, <code>Semaphore</code>, and <code>ManualResetEventSlim</code>. Calling <code>.Take()</code> blocks the calling OS thread. In high-concurrency web servers, blocking threads drains the ThreadPool, leading to latency spikes.</p>
+<p><code>Channel&lt;T&gt;</code> uses cooperative async scheduling. If the channel is empty, <code>ReadAsync()</code> returns an uncompleted <code>ValueTask&lt;T&gt;</code>, registering the continuation callback without blocking any thread. Furthermore, if a reader is already awaiting an item, incoming writes can bypass the internal buffer and hand off the item directly to the awaiting reader.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What happens if you enable `AllowSynchronousContinuations = true` in `BoundedChannelOptions`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The reader's continuation executes synchronously on the writer's thread, which can cause unexpected deadlocks, thread hijacking, or priority inversions.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>By default (<code>false</code>), when a writer supplies an item that an awaiting reader needs, the channel schedules the reader continuation on the ThreadPool via <code>ThreadPool.UnsafeQueueUserWorkItem</code>.</p>
+<p>Setting <code>AllowSynchronousContinuations = true</code> executes the reader's subsequent code directly on the calling writer thread. While this saves a thread context switch, if the reader performs long-running CPU work, database queries, or acquires locks held by the writer, it can hijack the producer thread or trigger deadlocks. It should only be enabled in ultra-low latency pipelines with minuscule non-blocking reader lambdas.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you design a backpressure mechanism in a distributed event ingestion service using Channels?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Use a bounded channel with <code>BoundedChannelFullMode.Wait</code>, allowing consumer latency to naturally throttle upstream HTTP or messaging producers.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In an API controller receiving webhooks or telemetry events:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  public async Task&lt;IActionResult&gt; Ingest([FromBody] EventDto payload, CancellationToken ct)
+  {
+      if (!await _channel.Writer.WaitToWriteAsync(ct))
+          return StatusCode(503, &quot;Service Shutting Down&quot;);
+      
+      await _channel.Writer.WriteAsync(payload, ct);
+      return Accepted();
+  }</code></pre></div>
+<p>If background consumers become saturated (e.g., due to database slow-downs), the buffer fills to capacity. <code>WriteAsync</code> awaits, causing the HTTP controller to delay returning <code>202 Accepted</code>. This naturally propagates backpressure to upstream callers or rate limiters without consuming unbounded RAM.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is the significance of `SingleWriter` and `SingleReader` flags in channel creation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: They inform the runtime that inter-thread synchronization is unnecessary on the writer or reader side, allowing lock-free single-threaded pointer increments.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a multi-writer channel, every write requires atomic CAS (<code>Interlocked.CompareExchange</code>) loops to increment queue tail pointers safely across CPU cores.</p>
+<p>When <code>SingleWriter = true</code>, the implementation knows only one thread writes at any given time. It replaces atomic operations with plain non-atomic increments, eliminating memory barriers, hardware bus locks, and CPU L1/L2 cache line invalidations.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you ensure zero data loss during graceful application shutdown in a channel pipeline?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Stop accepting new writes, call <code>channel.Writer.Complete()</code>, and await all consumers processing <code>channel.Reader.ReadAllAsync()</code> before allowing the application host to stop.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In an ASP.NET Core <code>IHostedService</code>:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  public async Task StopAsync(CancellationToken cancellationToken)
+  {
+      _channel.Writer.Complete(); // Closes writer; no new writes accepted
+      await Task.WhenAll(_consumerTasks); // Await until ReadAllAsync finishes draining buffer
+  }</code></pre></div>
+<p><code>Complete()</code> flags the channel as closed for writes, but does NOT discard buffered items. Consumers continue reading until every queued item is processed, after which <code>ReadAllAsync()</code> gracefully completes its loop.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">When would you choose `BoundedChannelFullMode.DropOldest` over `BoundedChannelFullMode.Wait`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: When the freshest data supersedes historical data and low latency is prioritized over complete historical delivery (e.g., GPS tracking, stock tickers, sensor telemetry).</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a high-frequency trading or IoT GPS application, processing a 5-second-old car coordinate is worthless if a new coordinate is available right now. If consumers experience transient lag, <code>Wait</code> would cause the entire system to stall. With <code>DropOldest</code>, the system constantly sheds stale data, ensuring consumers always process the latest snapshot with minimal lag.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How does `channel.Reader.ReadAllAsync()` handle exceptions thrown during processing?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: An unhandled exception inside the <code>await foreach</code> loop terminates the consumer loop and faults the consumer task, leaving remaining items in the channel unless handled.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>To build robust fault-tolerant pipelines, the consumer loop must encapsulate item processing in a <code>try/catch</code> block:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  await foreach (var item in _channel.Reader.ReadAllAsync(ct))
+  {
+      try { await ProcessItemAsync(item); }
+      catch (Exception ex) { _logger.LogError(ex, &quot;Failed item {Id}&quot;, item.Id); await _dlq.WriteAsync(item); }
+  }</code></pre></div>
+<p>If an exception escapes the <code>await foreach</code>, that worker task dies. If no other workers exist, unread messages remain trapped in the channel.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How can Channels be used to implement the Fan-Out and Fan-In concurrency patterns?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Fan-Out routes items from 1 producer channel to $N$ worker channels; Fan-In aggregates results from $N$ worker channels into a single consolidated output channel.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><strong>Fan-Out</strong>: A dispatcher reads from the incoming channel and distributes work across $N$ bounded channels based on worker availability or consistent hashing (e.g., <code>item.UserId % workerCount</code>).</li>
+<li><strong>Fan-In</strong>: Multiple workers complete sub-tasks and write results to a shared output <code>Channel&lt;Result&gt;</code>. A single consolidation service reads from this channel to persist results or stream them to a client.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">What is the optimal time and space complexity for reversing a singly-linked list (LeetCode #206)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Iterative approach achieves $O(N)$ time and $O(1)$ space using three pointers.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Iteratively, we track <code>prev</code> (initialized to null) and <code>curr</code> (head). In each step:</p>
+<p><code>nextTemp = curr.next; curr.next = prev; prev = curr; curr = nextTemp;</code>.</p>
+<p>Because we only reassign pointers without allocating new nodes or storing addresses, space is strictly $O(1)$.</p>
+<p>In contrast, recursive reversal requires $O(N)$ auxiliary stack space. On lists with 100,000 nodes, recursion will cause a <code>StackOverflowException</code>.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">Why is a sentinel dummy node preferred when merging two sorted linked lists (LeetCode #21)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It eliminates null checks and conditional branching for initializing the head of the merged list.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Without a dummy node, you must write boilerplate before the loop:</p>
+<p><code>if (l1.val &lt; l2.val) { head = l1; l1 = l1.next; } else { head = l2; l2 = l2.next; } tail = head;</code></p>
+<p>With a dummy head <code>var dummy = new ListNode(-1); var tail = dummy;</code>, every node insertion (including the first) uses identical logic: <code>tail.next = chosenNode; tail = tail.next;</code>.</p>
+<p>At the end, returning <code>dummy.next</code> seamlessly hands back the head of the combined list in $O(1)$ space and $O(N + M)$ time.</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day15.ChannelsConcurrency/ChannelPipelineService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd15-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d15-src-code-0" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+
+namespace Day15.ChannelsConcurrency;
+
+public class ChannelPipelineService
+{
+    public Channel&lt;WorkItem&gt; CreateBoundedChannel(
+        int capacity,
+        BoundedChannelFullMode fullMode = BoundedChannelFullMode.Wait,
+        bool singleWriter = false,
+        bool singleReader = false)
+    {
+        var options = new BoundedChannelOptions(capacity)
+        {
+            FullMode = fullMode,
+            SingleWriter = singleWriter,
+            SingleReader = singleReader,
+            AllowSynchronousContinuations = false
+        };
+
+        return Channel.CreateBounded&lt;WorkItem&gt;(options);
+    }
+
+    public Channel&lt;WorkItem&gt; CreateUnboundedChannel()
+    {
+        var options = new UnboundedChannelOptions
+        {
+            AllowSynchronousContinuations = false
+        };
+        return Channel.CreateUnbounded&lt;WorkItem&gt;(options);
+    }
+
+    public async Task&lt;ChannelPipelineMetrics&gt; RunPipelineAsync(
+        int totalItems,
+        int producerCount,
+        int consumerCount,
+        int channelCapacity,
+        BoundedChannelFullMode fullMode = BoundedChannelFullMode.Wait,
+        int simulatedProcessingDelayMs = 0,
+        CancellationToken ct = default)
+    {
+        var channel = CreateBoundedChannel(channelCapacity, fullMode);
+        var stopwatch = Stopwatch.StartNew();
+
+        int producedCount = 0;
+        int consumedCount = 0;
+        int droppedCount = 0;
+
+        var itemsPerProducer = totalItems / producerCount;
+        var remainingItems = totalItems % producerCount;
+
+        // Producer Tasks
+        var producerTasks = new List&lt;Task&gt;();
+        for (int p = 0; p &lt; producerCount; p++)
+        {
+            int producerId = p;
+            int countToProduce = itemsPerProducer + (p == 0 ? remainingItems : 0);
+            int startOffset = p * itemsPerProducer;
+
+            producerTasks.Add(Task.Run(async () =&gt;
+            {
+                for (int i = 0; i &lt; countToProduce; i++)
+                {
+                    if (ct.IsCancellationRequested) break;
+
+                    var item = new WorkItem(startOffset + i, $&quot;Data-{startOffset + i} from P{producerId}&quot;, DateTime.UtcNow);
+
+                    if (fullMode == BoundedChannelFullMode.Wait)
+                    {
+                        await channel.Writer.WriteAsync(item, ct);
+                        Interlocked.Increment(ref producedCount);
+                    }
+                    else
+                    {
+                        // TryWrite with dropped count tracking for drop modes
+                        if (channel.Writer.TryWrite(item))
+                        {
+                            Interlocked.Increment(ref producedCount);
+                        }
+                        else
+                        {
+                            Interlocked.Increment(ref droppedCount);
+                        }
+                    }
+                }
+            }, ct));
+        }
+
+        // Wait for all producers to finish, then complete the writer
+        var producersCompletion = Task.WhenAll(producerTasks).ContinueWith(_ =&gt;
+        {
+            channel.Writer.Complete();
+        }, TaskScheduler.Default);
+
+        // Consumer Tasks
+        var consumerTasks = new List&lt;Task&gt;();
+        var results = new ConcurrentBag&lt;ProcessingResult&gt;();
+
+        for (int c = 0; c &lt; consumerCount; c++)
+        {
+            int consumerId = c;
+            consumerTasks.Add(Task.Run(async () =&gt;
+            {
+                var workerName = $&quot;Worker-{consumerId}&quot;;
+                // ReadAllAsync automatically exits when channel.Writer is completed and buffer is empty
+                await foreach (var item in channel.Reader.ReadAllAsync(ct))
+                {
+                    var sw = Stopwatch.StartNew();
+                    if (simulatedProcessingDelayMs &gt; 0)
+                    {
+                        await Task.Delay(simulatedProcessingDelayMs, ct);
+                    }
+                    sw.Stop();
+
+                    results.Add(new ProcessingResult(item.Id, workerName, true, sw.Elapsed));
+                    Interlocked.Increment(ref consumedCount);
+                }
+            }, ct));
+        }
+
+        await Task.WhenAll(producersCompletion, Task.WhenAll(consumerTasks));
+        stopwatch.Stop();
+
+        return new ChannelPipelineMetrics(
+            producedCount,
+            consumedCount,
+            droppedCount,
+            stopwatch.Elapsed);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day15.ChannelsConcurrency/LinkedListSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd15-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d15-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day15.ChannelsConcurrency;
+
+public class ListNode
+{
+    public int val;
+    public ListNode? next;
+
+    public ListNode(int val = 0, ListNode? next = null)
+    {
+        this.val = val;
+        this.next = next;
+    }
+
+    public static ListNode? FromArray(int[] values)
+    {
+        if (values == null || values.Length == 0) return null;
+        var dummy = new ListNode(-1);
+        var curr = dummy;
+        foreach (var v in values)
+        {
+            curr.next = new ListNode(v);
+            curr = curr.next;
+        }
+        return dummy.next;
+    }
+
+    public int[] ToArray()
+    {
+        var list = new List&lt;int&gt;();
+        var curr = this;
+        while (curr != null)
+        {
+            list.Add(curr.val);
+            curr = curr.next;
+        }
+        return list.ToArray();
+    }
+}
+
+public static class LinkedListSolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #206: Reverse Linked List (Iterative).
+    /// Time: O(N), Space: O(1).
+    /// &lt;/summary&gt;
+    public static ListNode? ReverseList(ListNode? head)
+    {
+        ListNode? prev = null;
+        var curr = head;
+
+        while (curr != null)
+        {
+            var nextTemp = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = nextTemp;
+        }
+
+        return prev;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #206: Reverse Linked List (Recursive).
+    /// Time: O(N), Space: O(N) call stack.
+    /// &lt;/summary&gt;
+    public static ListNode? ReverseListRecursive(ListNode? head)
+    {
+        if (head == null || head.next == null)
+            return head;
+
+        var newHead = ReverseListRecursive(head.next);
+        head.next.next = head;
+        head.next = null;
+
+        return newHead;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #21: Merge Two Sorted Lists (Iterative with Sentinel Dummy Head).
+    /// Time: O(N + M), Space: O(1).
+    /// &lt;/summary&gt;
+    public static ListNode? MergeTwoLists(ListNode? list1, ListNode? list2)
+    {
+        var dummy = new ListNode(-1);
+        var tail = dummy;
+
+        while (list1 != null &amp;&amp; list2 != null)
+        {
+            if (list1.val &lt;= list2.val)
+            {
+                tail.next = list1;
+                list1 = list1.next;
+            }
+            else
+            {
+                tail.next = list2;
+                list2 = list2.next;
+            }
+            tail = tail.next;
+        }
+
+        tail.next = list1 ?? list2;
+        return dummy.next;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #21: Merge Two Sorted Lists (Recursive).
+    /// Time: O(N + M), Space: O(N + M) call stack.
+    /// &lt;/summary&gt;
+    public static ListNode? MergeTwoListsRecursive(ListNode? list1, ListNode? list2)
+    {
+        if (list1 == null) return list2;
+        if (list2 == null) return list1;
+
+        if (list1.val &lt;= list2.val)
+        {
+            list1.next = MergeTwoListsRecursive(list1.next, list2);
+            return list1;
+        }
+        else
+        {
+            list2.next = MergeTwoListsRecursive(list1, list2.next);
+            return list2;
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day15.ChannelsConcurrency/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd15-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d15-src-code-2" class="language-csharp">using System;
+
+namespace Day15.ChannelsConcurrency;
+
+public record WorkItem(
+    int Id,
+    string Payload,
+    DateTime CreatedAtUtc);
+
+public record ProcessingResult(
+    int WorkItemId,
+    string ProcessedByWorker,
+    bool Success,
+    TimeSpan ProcessingDuration);
+
+public record ChannelPipelineMetrics(
+    int TotalProduced,
+    int TotalConsumed,
+    int DroppedItems,
+    TimeSpan TotalElapsed);
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day15.ChannelsConcurrency.Tests/Day15Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd15-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d15-tests-code-0" class="language-csharp">using System;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day15.ChannelsConcurrency.Tests;
+
+public class Day15Tests
+{
+    [Fact]
+    public void LeetCode206_ReverseList_Iterative_ReversesCorrectly()
+    {
+        var head = ListNode.FromArray(new[] { 1, 2, 3, 4, 5 });
+        var reversed = LinkedListSolvers.ReverseList(head);
+        reversed.Should().NotBeNull();
+        reversed!.ToArray().Should().Equal(new[] { 5, 4, 3, 2, 1 });
+    }
+
+    [Fact]
+    public void LeetCode206_ReverseList_EmptyAndSingleNode()
+    {
+        LinkedListSolvers.ReverseList(null).Should().BeNull();
+
+        var single = ListNode.FromArray(new[] { 42 });
+        var res = LinkedListSolvers.ReverseList(single);
+        res!.ToArray().Should().Equal(new[] { 42 });
+    }
+
+    [Fact]
+    public void LeetCode206_ReverseListRecursive_MatchesIterative()
+    {
+        var head = ListNode.FromArray(new[] { 10, 20, 30 });
+        var reversed = LinkedListSolvers.ReverseListRecursive(head);
+        reversed!.ToArray().Should().Equal(new[] { 30, 20, 10 });
+    }
+
+    [Fact]
+    public void LeetCode21_MergeTwoLists_Iterative_MergesInSortedOrder()
+    {
+        var l1 = ListNode.FromArray(new[] { 1, 2, 4 });
+        var l2 = ListNode.FromArray(new[] { 1, 3, 4 });
+
+        var merged = LinkedListSolvers.MergeTwoLists(l1, l2);
+        merged!.ToArray().Should().Equal(new[] { 1, 1, 2, 3, 4, 4 });
+    }
+
+    [Fact]
+    public void LeetCode21_MergeTwoLists_HandlesNullLists()
+    {
+        var l1 = ListNode.FromArray(new[] { 5, 6 });
+        LinkedListSolvers.MergeTwoLists(l1, null)!.ToArray().Should().Equal(new[] { 5, 6 });
+        LinkedListSolvers.MergeTwoLists(null, l1)!.ToArray().Should().Equal(new[] { 5, 6 });
+        LinkedListSolvers.MergeTwoLists(null, null).Should().BeNull();
+    }
+
+    [Fact]
+    public void LeetCode21_MergeTwoListsRecursive_MatchesIterative()
+    {
+        var l1 = ListNode.FromArray(new[] { 2, 5, 8 });
+        var l2 = ListNode.FromArray(new[] { 1, 6, 9 });
+
+        var merged = LinkedListSolvers.MergeTwoListsRecursive(l1, l2);
+        merged!.ToArray().Should().Equal(new[] { 1, 2, 5, 6, 8, 9 });
+    }
+
+    [Fact]
+    public async Task ChannelPipeline_BoundedWait_DeliversAllItemsWithoutLoss()
+    {
+        var service = new ChannelPipelineService();
+        const int totalItems = 200;
+        const int producers = 4;
+        const int consumers = 2;
+        const int capacity = 20;
+
+        var metrics = await service.RunPipelineAsync(
+            totalItems: totalItems,
+            producerCount: producers,
+            consumerCount: consumers,
+            channelCapacity: capacity,
+            fullMode: BoundedChannelFullMode.Wait);
+
+        metrics.TotalProduced.Should().Be(totalItems);
+        metrics.TotalConsumed.Should().Be(totalItems);
+        metrics.DroppedItems.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ChannelPipeline_BoundedDrop_DiscardsExcessOnBackpressure()
+    {
+        var service = new ChannelPipelineService();
+        var channel = service.CreateBoundedChannel(capacity: 5, fullMode: BoundedChannelFullMode.DropOldest);
+
+        // Fill buffer
+        for (int i = 0; i &lt; 5; i++)
+        {
+            channel.Writer.TryWrite(new WorkItem(i, $&quot;Item-{i}&quot;, DateTime.UtcNow)).Should().BeTrue();
+        }
+
+        // Write additional items - DropOldest allows writing, evicting the oldest
+        channel.Writer.TryWrite(new WorkItem(99, &quot;Item-99&quot;, DateTime.UtcNow)).Should().BeTrue();
+
+        channel.Writer.Complete();
+
+        // Drain channel
+        var items = new System.Collections.Generic.List&lt;WorkItem&gt;();
+        await foreach (var item in channel.Reader.ReadAllAsync())
+        {
+            items.Add(item);
+        }
+
+        items.Should().HaveCount(5);
+        items.Should().Contain(x =&gt; x.Id == 99);
+        items.Should().NotContain(x =&gt; x.Id == 0); // 0 was dropped
+    }
+
+    [Fact]
+    public async Task ChannelPipeline_CancellationToken_AbortsGracefully()
+    {
+        var service = new ChannelPipelineService();
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+
+        // Start large workload with slow consumers
+        Func&lt;Task&gt; act = async () =&gt;
+        {
+            await service.RunPipelineAsync(
+                totalItems: 10000,
+                producerCount: 2,
+                consumerCount: 1,
+                channelCapacity: 10,
+                simulatedProcessingDelayMs: 20,
+                ct: cts.Token);
+        };
+
+        await act.Should().ThrowAsync&lt;OperationCanceledException&gt;();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 15 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

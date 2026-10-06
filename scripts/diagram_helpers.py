@@ -400,6 +400,149 @@ def get_day_svg(day_num):
           <text x="640" y="275" fill="#34d399" font-size="11">O(1) memory for millions of rows</text>
         </svg>
         """
+    elif day_num == 14:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Zero-Downtime Migration Architecture &amp; Expand-Contract Pipeline</text>
+          
+          <!-- Phase 1: Expand -->
+          <rect x="40" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="60" y="95" fill="#60a5fa" font-size="14" font-weight="bold">Phase 1: Expand</text>
+          <rect x="55" y="115" width="220" height="40" rx="4" fill="#0f172a"/><text x="65" y="140" fill="#cbd5e1" font-size="11">Add New Column (NULL)</text>
+          <rect x="55" y="165" width="220" height="50" rx="4" fill="#0f172a"/><text x="65" y="185" fill="#34d399" font-size="11">App V1.5: Dual Write</text><text x="65" y="205" fill="#94a3b8" font-size="10">Writes to Old &amp; New Column</text>
+          <text x="60" y="250" fill="#94a3b8" font-size="11">Idempotent script: -i</text>
+          <text x="60" y="275" fill="#38bdf8" font-size="11">Checks __EFMigrationsHistory</text>
+
+          <!-- Phase 2: Backfill -->
+          <rect x="325" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#8b5cf6"/>
+          <text x="345" y="95" fill="#c084fc" font-size="14" font-weight="bold">Phase 2: Backfill</text>
+          <rect x="340" y="115" width="220" height="50" rx="4" fill="#0f172a"/><text x="350" y="137" fill="#cbd5e1" font-size="11">Async Background Job</text><text x="350" y="155" fill="#94a3b8" font-size="10">Batch 5,000 rows / tx</text>
+          <rect x="340" y="175" width="220" height="50" rx="4" fill="#0f172a"/><text x="350" y="197" fill="#fbbf24" font-size="11">Advisory Lock Sync</text><text x="350" y="215" fill="#94a3b8" font-size="10">Prevents concurrent DDL</text>
+          <text x="345" y="260" fill="#c084fc" font-size="11">No table lock escalation</text>
+          <text x="345" y="285" fill="#94a3b8" font-size="10">Zero impact on read traffic</text>
+
+          <!-- Phase 3: Contract -->
+          <rect x="610" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="630" y="95" fill="#34d399" font-size="14" font-weight="bold">Phase 3: Contract</text>
+          <rect x="625" y="115" width="220" height="50" rx="4" fill="#0f172a"/><text x="635" y="137" fill="#34d399" font-size="11">App V2: Reads New Col</text><text x="635" y="155" fill="#94a3b8" font-size="10">All V1 pods terminated</text>
+          <rect x="625" y="175" width="220" height="50" rx="4" fill="#0f172a"/><text x="635" y="197" fill="#ef4444" font-size="11">Drop Old Column</text><text x="635" y="215" fill="#94a3b8" font-size="10">Metadata lock safe</text>
+          <text x="630" y="260" fill="#34d399" font-size="11">Zero-Downtime achieved</text>
+          <text x="630" y="285" fill="#94a3b8" font-size="10">Clean final schema</text>
+        </svg>
+        """
+    elif day_num == 15:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">System.Threading.Channels: Bounded Producer-Consumer Pipeline</text>
+          
+          <!-- Producers -->
+          <rect x="40" y="65" width="220" height="250" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="60" y="95" fill="#60a5fa" font-size="14" font-weight="bold">Concurrent Producers</text>
+          <rect x="55" y="115" width="190" height="40" rx="4" fill="#0f172a"/><text x="65" y="140" fill="#cbd5e1" font-size="11">Producer #1 (API)</text>
+          <rect x="55" y="165" width="190" height="40" rx="4" fill="#0f172a"/><text x="65" y="190" fill="#cbd5e1" font-size="11">Producer #2 (Worker)</text>
+          <rect x="55" y="215" width="190" height="40" rx="4" fill="#0f172a"/><text x="65" y="240" fill="#cbd5e1" font-size="11">Producer #N (Event)</text>
+          <text x="60" y="285" fill="#38bdf8" font-size="11">channel.Writer.WriteAsync()</text>
+
+          <!-- Bounded Queue -->
+          <rect x="290" y="65" width="320" height="250" rx="8" fill="#1e293b" stroke="#f59e0b"/>
+          <text x="310" y="95" fill="#fbbf24" font-size="14" font-weight="bold">Bounded Channel Buffer</text>
+          <text x="310" y="120" fill="#94a3b8" font-size="11">Capacity: N | Lock-Free Ring Buffer</text>
+          
+          <rect x="310" y="140" width="50" height="50" rx="6" fill="#0f172a" stroke="#10b981"/><text x="325" y="170" fill="#34d399" font-size="12">Item 1</text>
+          <rect x="370" y="140" width="50" height="50" rx="6" fill="#0f172a" stroke="#10b981"/><text x="385" y="170" fill="#34d399" font-size="12">Item 2</text>
+          <rect x="430" y="140" width="50" height="50" rx="6" fill="#0f172a" stroke="#10b981"/><text x="445" y="170" fill="#34d399" font-size="12">Item 3</text>
+          <rect x="490" y="140" width="50" height="50" rx="6" fill="#0f172a" stroke="#3b82f6"/><text x="505" y="170" fill="#60a5fa" font-size="12">Wait...</text>
+          <rect x="550" y="140" width="45" height="50" rx="6" fill="#0f172a" stroke="#64748b"/><text x="560" y="170" fill="#94a3b8" font-size="12">Free</text>
+
+          <rect x="310" y="210" width="280" height="50" rx="4" fill="#0f172a"/>
+          <text x="320" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Backpressure FullMode:</text>
+          <text x="320" y="248" fill="#94a3b8" font-size="10">Wait | DropOldest | DropWrite</text>
+          <text x="310" y="290" fill="#fbbf24" font-size="11">Zero Allocation on reader handoff</text>
+
+          <!-- Consumers -->
+          <rect x="640" y="65" width="220" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="660" y="95" fill="#34d399" font-size="14" font-weight="bold">Concurrent Consumers</text>
+          <rect x="655" y="115" width="190" height="40" rx="4" fill="#0f172a"/><text x="665" y="140" fill="#cbd5e1" font-size="11">Consumer #1</text>
+          <rect x="655" y="165" width="190" height="40" rx="4" fill="#0f172a"/><text x="665" y="190" fill="#cbd5e1" font-size="11">Consumer #2</text>
+          <rect x="655" y="215" width="190" height="40" rx="4" fill="#0f172a"/><text x="665" y="240" fill="#cbd5e1" font-size="11">Consumer #M</text>
+          <text x="660" y="285" fill="#34d399" font-size="11">channel.Reader.ReadAllAsync()</text>
+        </svg>
+        """
+    elif day_num == 16:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Synchronization Primitives &amp; Distributed Locking Hierarchy</text>
+          
+          <!-- In-Process Lock-Free -->
+          <rect x="40" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="60" y="95" fill="#60a5fa" font-size="14" font-weight="bold">1. Interlocked (Hardware)</text>
+          <rect x="55" y="115" width="220" height="45" rx="4" fill="#0f172a"/><text x="65" y="137" fill="#cbd5e1" font-size="11">CPU Bus Lock (CMPXCHG)</text><text x="65" y="152" fill="#94a3b8" font-size="10">Latency: ~5-10 ns</text>
+          <rect x="55" y="170" width="220" height="45" rx="4" fill="#0f172a"/><text x="65" y="192" fill="#34d399" font-size="11">CompareExchange Loop</text><text x="65" y="207" fill="#94a3b8" font-size="10">Optimistic state updates</text>
+          <text x="60" y="250" fill="#38bdf8" font-size="11">Lock-free atomic counters</text>
+          <text x="60" y="275" fill="#94a3b8" font-size="10">Zero thread suspension</text>
+
+          <!-- In-Process Async Throttle -->
+          <rect x="325" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#8b5cf6"/>
+          <text x="345" y="95" fill="#c084fc" font-size="14" font-weight="bold">2. SemaphoreSlim &amp; RWLock</text>
+          <rect x="340" y="115" width="220" height="45" rx="4" fill="#0f172a"/><text x="350" y="137" fill="#c084fc" font-size="11">SemaphoreSlim.WaitAsync()</text><text x="350" y="152" fill="#94a3b8" font-size="10">Cooperative async waiter queue</text>
+          <rect x="340" y="170" width="220" height="45" rx="4" fill="#0f172a"/><text x="350" y="192" fill="#fbbf24" font-size="11">ReaderWriterLockSlim</text><text x="350" y="207" fill="#94a3b8" font-size="10">Shared read, exclusive write</text>
+          <text x="345" y="250" fill="#c084fc" font-size="11">Disposable Lease Pattern</text>
+          <text x="345" y="275" fill="#94a3b8" font-size="10">Prevents permit leakage</text>
+
+          <!-- Distributed Lock -->
+          <rect x="610" y="65" width="250" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="630" y="95" fill="#34d399" font-size="14" font-weight="bold">3. Distributed Lock &amp; Fencing</text>
+          <rect x="625" y="115" width="220" height="45" rx="4" fill="#0f172a"/><text x="635" y="137" fill="#34d399" font-size="11">Redis Redlock Quorum</text><text x="635" y="152" fill="#94a3b8" font-size="10">SET resource token NX PX ttl</text>
+          <rect x="625" y="170" width="220" height="45" rx="4" fill="#0f172a"/><text x="635" y="192" fill="#ef4444" font-size="11">Fencing Token (Monotonic)</text><text x="635" y="207" fill="#94a3b8" font-size="10">Rejects GC-paused zombie writes</text>
+          <text x="630" y="250" fill="#34d399" font-size="11">Multi-pod mutual exclusion</text>
+          <text x="630" y="275" fill="#94a3b8" font-size="10">Guarantees distributed safety</text>
+        </svg>
+        """
+    elif day_num == 17:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Redis Architecture, Caching Topologies &amp; Stampede Protection</text>
+          
+          <!-- Topologies -->
+          <rect x="40" y="65" width="260" height="250" rx="8" fill="#1e293b" stroke="#3b82f6"/>
+          <text x="60" y="95" fill="#60a5fa" font-size="14" font-weight="bold">Cache Topologies</text>
+          <rect x="55" y="115" width="230" height="40" rx="4" fill="#0f172a"/><text x="65" y="135" fill="#38bdf8" font-size="11">Cache-Aside (Lazy)</text><text x="65" y="148" fill="#94a3b8" font-size="9">Read cache; on miss query DB</text>
+          <rect x="55" y="165" width="230" height="40" rx="4" fill="#0f172a"/><text x="65" y="185" fill="#34d399" font-size="11">Write-Through</text><text x="65" y="198" fill="#94a3b8" font-size="9">Sync write cache + DB together</text>
+          <rect x="55" y="215" width="230" height="40" rx="4" fill="#0f172a"/><text x="65" y="235" fill="#c084fc" font-size="11">Write-Behind (Write-Back)</text><text x="65" y="248" fill="#94a3b8" font-size="9">Async queue batch DB flush</text>
+          <text x="60" y="285" fill="#94a3b8" font-size="11">Singleton ConnectionMultiplexer</text>
+
+          <!-- Cache Stampede / Thundering Herd -->
+          <rect x="330" y="65" width="270" height="250" rx="8" fill="#1e293b" stroke="#ef4444"/>
+          <text x="350" y="95" fill="#f87171" font-size="14" font-weight="bold">Cache Stampede Hazards</text>
+          <rect x="345" y="115" width="240" height="60" rx="4" fill="#0f172a"/>
+          <text x="355" y="135" fill="#ef4444" font-size="11" font-weight="bold">Key Expiration under Load</text>
+          <text x="355" y="152" fill="#cbd5e1" font-size="10">5,000 req/sec hit DB simultaneously</text>
+          <text x="355" y="167" fill="#94a3b8" font-size="10">DB CPU spikes to 100%, cascading outage</text>
+          
+          <rect x="345" y="185" width="240" height="60" rx="4" fill="#0f172a"/>
+          <text x="355" y="205" fill="#fbbf24" font-size="11" font-weight="bold">Cache Avalanche &amp; Jitter</text>
+          <text x="355" y="222" fill="#cbd5e1" font-size="10">All keys expire at midnight</text>
+          <text x="355" y="237" fill="#94a3b8" font-size="10">Mitigate: TTL +/- random jitter</text>
+          <text x="350" y="285" fill="#f87171" font-size="11">Prevent single-point failure</text>
+
+          <!-- Mitigation: Mutex & XFetch -->
+          <rect x="630" y="65" width="230" height="250" rx="8" fill="#1e293b" stroke="#10b981"/>
+          <text x="650" y="95" fill="#34d399" font-size="14" font-weight="bold">Mitigation Solutions</text>
+          <rect x="645" y="115" width="200" height="55" rx="4" fill="#0f172a"/>
+          <text x="655" y="135" fill="#60a5fa" font-size="11" font-weight="bold">1. Mutex (Single-Flight)</text>
+          <text x="655" y="155" fill="#94a3b8" font-size="10">1 worker loads DB; others await</text>
+          
+          <rect x="645" y="180" width="200" height="55" rx="4" fill="#0f172a"/>
+          <text x="655" y="200" fill="#34d399" font-size="11" font-weight="bold">2. XFetch Algorithm</text>
+          <text x="655" y="215" fill="#cbd5e1" font-size="9">delta * beta * -ln(rand) &gt; expiry</text>
+          <text x="655" y="228" fill="#94a3b8" font-size="9">Probabilistic background refresh</text>
+          <text x="650" y="275" fill="#34d399" font-size="11">Zero DB stampede guaranteed</text>
+        </svg>
+        """
     return ""
 
 def format_interview_qa(interview_md):

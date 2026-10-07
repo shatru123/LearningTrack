@@ -18,6 +18,11 @@ DAYS_INFO = [
     {"num": 11, "dir": "Day11-EFCore-ChangeTracking", "title": "EF Core Change Tracking Mechanics & Optimization", "category": "EF Core & ORM"},
     {"num": 12, "dir": "Day12-EFCore-SplitQueries-Interceptors", "title": "EF Core Split Queries & DbCommandInterceptor", "category": "EF Core & ORM"},
     {"num": 13, "dir": "Day13-Dapper-Performance", "title": "High-Performance Data Access with Dapper & Rotated Array Search", "category": "Dapper & Performance"},
+    {"num": 14, "dir": "Day14-EFCore-Migrations-Production", "title": "EF Core Migrations & Production Strategy", "category": "EF Core & DevOps"},
+    {"num": 15, "dir": "Day15-Channels-Concurrency", "title": "Channels & High-Throughput Concurrency in C#", "category": ".NET & Concurrency"},
+    {"num": 16, "dir": "Day16-Synchronization-Locks", "title": "Distributed Locking & Concurrency Primitives", "category": "Architecture & Systems"},
+    {"num": 17, "dir": "Day17-Redis-Cache-Patterns", "title": "Introduction to Redis & Cache Patterns", "category": "Redis & Distributed Systems"},
+    {"num": 18, "dir": "Day18-Redis-DataStructures-Eviction", "title": "Redis Data Structures & Memory Eviction Policies", "category": "Redis & Distributed Systems"},
 ]
 
 def get_day_svg(day_num):
@@ -541,6 +546,100 @@ def get_day_svg(day_num):
           <text x="655" y="215" fill="#cbd5e1" font-size="9">delta * beta * -ln(rand) &gt; expiry</text>
           <text x="655" y="228" fill="#94a3b8" font-size="9">Probabilistic background refresh</text>
           <text x="650" y="275" fill="#34d399" font-size="11">Zero DB stampede guaranteed</text>
+        </svg>
+        """
+    elif day_num == 18:
+        return """
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d18GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d18GradDS" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d18GradEvict" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#31101b"/><stop offset="100%" stop-color="#180c14"/>
+            </linearGradient>
+            <linearGradient id="d18GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+            <filter id="d18Glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d18GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Redis Data Structures Architecture &amp; Memory Eviction Mechanics</text>
+
+          <!-- 1. Six Core Data Structures Column -->
+          <rect x="30" y="60" width="280" height="300" rx="10" fill="url(#d18GradDS)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Core Data Structures</text>
+          
+          <rect x="45" y="105" width="250" height="34" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="122" fill="#60a5fa" font-size="11" font-weight="bold">Strings (SDS)</text>
+          <text x="55" y="133" fill="#94a3b8" font-size="9">len, alloc, buf[] | INCRBY atomic counters</text>
+
+          <rect x="45" y="145" width="250" height="34" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="162" fill="#34d399" font-size="11" font-weight="bold">Hashes (ListPack / Dict)</text>
+          <text x="55" y="173" fill="#94a3b8" font-size="9">Field granularity | Zero full JSON deserialize</text>
+
+          <rect x="45" y="185" width="250" height="34" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="202" fill="#c084fc" font-size="11" font-weight="bold">Sets (IntSet / HashTable)</text>
+          <text x="55" y="213" fill="#94a3b8" font-size="9">O(1) deduplication | SINTER mutual tags</text>
+
+          <rect x="45" y="225" width="250" height="34" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="242" fill="#fbbf24" font-size="11" font-weight="bold">Sorted Sets (SkipList)</text>
+          <text x="55" y="253" fill="#94a3b8" font-size="9">O(log N) Leaderboards &amp; Sliding-window rate limit</text>
+
+          <rect x="45" y="265" width="250" height="34" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="282" fill="#f472b6" font-size="11" font-weight="bold">Bitmaps (Bit Operations)</text>
+          <text x="55" y="293" fill="#94a3b8" font-size="9">1 bit per user | Ultra-compact DAU tracking</text>
+
+          <rect x="45" y="305" width="250" height="42" rx="5" fill="#0f172a" stroke="#38bdf8"/>
+          <text x="55" y="322" fill="#38bdf8" font-size="11" font-weight="bold">HyperLogLog (16,384 Registers)</text>
+          <text x="55" y="337" fill="#cbd5e1" font-size="9">Fixed 12 KB RAM | 0.81% error unique visitors</text>
+
+          <!-- 2. Memory Eviction Engine Column -->
+          <rect x="330" y="60" width="300" height="300" rx="10" fill="url(#d18GradEvict)" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="350" y="88" fill="#f87171" font-size="14" font-weight="bold">Eviction Under Memory Pressure</text>
+
+          <rect x="345" y="105" width="270" height="45" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="355" y="123" fill="#fbbf24" font-size="11" font-weight="bold">Memory Limit Trigger</text>
+          <text x="355" y="138" fill="#94a3b8" font-size="9">used_memory &gt;= maxmemory &#8594; Run Eviction Policy</text>
+
+          <rect x="345" y="157" width="270" height="50" rx="5" fill="#0f172a" stroke="#ef4444"/>
+          <text x="355" y="175" fill="#f87171" font-size="11" font-weight="bold">Approximate LRU (16-Key Pool)</text>
+          <text x="355" y="189" fill="#cbd5e1" font-size="9">Sample K keys (default 5-10) &#8594; Order by idle time</text>
+          <text x="355" y="200" fill="#94a3b8" font-size="8">Saves 1.2 GB pointer RAM vs true doubly linked list</text>
+
+          <rect x="345" y="214" width="270" height="50" rx="5" fill="#0f172a" stroke="#c084fc"/>
+          <text x="355" y="232" fill="#c084fc" font-size="11" font-weight="bold">LFU: Morris Counter + Time Decay</text>
+          <text x="355" y="246" fill="#cbd5e1" font-size="9">16-bit time decay + 8-bit log frequency (0-255)</text>
+          <text x="355" y="257" fill="#94a3b8" font-size="8">Prevents cache pollution from burst scans</text>
+
+          <rect x="345" y="271" width="270" height="40" rx="5" fill="#0f172a" stroke="#34d399"/>
+          <text x="355" y="289" fill="#34d399" font-size="11" font-weight="bold">Volatile-TTL &amp; NoEviction</text>
+          <text x="355" y="302" fill="#94a3b8" font-size="9">Volatile: Evict shortest TTL | NoEvict: Return OOM error</text>
+
+          <text x="350" y="345" fill="#f87171" font-size="11" font-weight="bold">&#9888; Volatile hazard: OOM if persistent keys fill RAM</text>
+
+          <!-- 3. DSA Tree Recursion Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d18GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">DSA Tree Metrics O(N)</text>
+
+          <rect x="665" y="105" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #543: Tree Diameter</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Longest path between any nodes</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">At each node in post-order ascent:</text>
+          <text x="675" y="173" fill="#38bdf8" font-size="10" font-weight="bold">diam = max(diam, h_L + h_R)</text>
+          <text x="675" y="188" fill="#94a3b8" font-size="9">return 1 + max(h_L, h_R)</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">O(N) Time | O(H) Stack</text>
+
+          <rect x="665" y="225" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="245" fill="#fbbf24" font-size="11" font-weight="bold">LC #110: Balanced Tree</text>
+          <text x="675" y="262" fill="#94a3b8" font-size="9">|h_L - h_R| &lt;= 1 for all nodes</text>
+          <text x="675" y="278" fill="#cbd5e1" font-size="9">Bottom-up short circuit:</text>
+          <text x="675" y="294" fill="#ef4444" font-size="10" font-weight="bold">if |h_L - h_R| &gt; 1 return -1;</text>
+          <text x="675" y="309" fill="#94a3b8" font-size="9">Aborts redundant tree traversal</text>
+          <text x="675" y="323" fill="#34d399" font-size="9">O(N) vs Top-down O(N^2)</text>
         </svg>
         """
     return ""

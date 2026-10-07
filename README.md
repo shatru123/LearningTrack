@@ -1,8 +1,8 @@
 # 100-Day .NET + AI Engineering Track
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
-[![Status](https://img.shields.io/badge/Roadmap-Days%201--17%20Completed-brightgreen.svg)](#completed-curriculum-days-117)
-[![Tests](https://img.shields.io/badge/Tests-189%20Passed-brightgreen.svg)](#running-builds-and-tests)
+[![Status](https://img.shields.io/badge/Roadmap-Days%201--18%20Completed-brightgreen.svg)](#completed-curriculum-days-118)
+[![Tests](https://img.shields.io/badge/Tests-206%20Passed-brightgreen.svg)](#running-builds-and-tests)
 
 Practical engineering implementations, performance benchmarks, systems architecture labs, and Data Structures & Algorithms (DSA) exercises across the 100-Day .NET + AI Engineering journey.
 
@@ -17,7 +17,7 @@ Practical engineering implementations, performance benchmarks, systems architect
 
 ## Status
 
-**Days 1–17: Completed**
+**Days 1–18: Completed**
 
 Detailed status table: [roadmap/progress.md](roadmap/progress.md)  
 Roadmap overview: [roadmap/100-day-roadmap.md](roadmap/100-day-roadmap.md)
@@ -33,7 +33,7 @@ Read complete daily guides, deep architectural notes, interview questions, and c
 
 ---
 
-## Completed Curriculum (Days 1–17)
+## Completed Curriculum (Days 1–18)
 
 Each day includes complete practical implementations, xUnit test suites, comprehensive engineering notes, and practical scenarios.
 
@@ -56,6 +56,7 @@ Each day includes complete practical implementations, xUnit test suites, compreh
 | **Day 15** | Channels & Concurrency in C# | `System.Threading.Channels` producer-consumer pipeline, bounded buffer backpressure policies, graceful shutdown, DSA (LeetCode #206 Reverse Linked List & #21 Merge Two Sorted Lists) | [Day15-Channels-Concurrency](Day15-Channels-Concurrency/) • [README](Day15-Channels-Concurrency/README.md) • [Notes](Day15-Channels-Concurrency/notes.md) • [Interview Qs](Day15-Channels-Concurrency/interview-questions.md) |
 | **Day 16** | Distributed Locking & Synchronization | `Interlocked` lock-free atomic CAS, `SemaphoreSlim` async throttled leases, `ReaderWriterLockSlim`, Redlock distributed consensus & fencing tokens, DSA (LeetCode #143 Reorder List & #19 Remove Nth From End) | [Day16-Synchronization-Locks](Day16-Synchronization-Locks/) • [README](Day16-Synchronization-Locks/README.md) • [Notes](Day16-Synchronization-Locks/notes.md) • [Interview Qs](Day16-Synchronization-Locks/interview-questions.md) |
 | **Day 17** | Introduction to Redis & Cache Patterns | Redis connection resilience, Cache-Aside, Write-Through, Write-Behind batch flushing, Cache Stampede (Mutex & XFetch algorithm), DSA (LeetCode #226 Invert Binary Tree & #104 Maximum Depth) | [Day17-Redis-Cache-Patterns](Day17-Redis-Cache-Patterns/) • [README](Day17-Redis-Cache-Patterns/README.md) • [Notes](Day17-Redis-Cache-Patterns/notes.md) • [Interview Qs](Day17-Redis-Cache-Patterns/interview-questions.md) |
+| **Day 18** | Redis Data Structures & Memory Eviction Policies | Strings (SDS), Hashes, Sets (SINTER), Sorted Sets (ZSET leaderboards & rate limiting), Bitmaps (DAU), HyperLogLog (12KB cardinality), LRU/LFU/Volatile-TTL eviction simulator, DSA (LeetCode #543 Diameter of Binary Tree & #110 Balanced Binary Tree) | [Day18-Redis-DataStructures-Eviction](Day18-Redis-DataStructures-Eviction/) • [README](Day18-Redis-DataStructures-Eviction/README.md) • [Notes](Day18-Redis-DataStructures-Eviction/notes.md) • [Interview Qs](Day18-Redis-DataStructures-Eviction/interview-questions.md) |
 
 ---
 
@@ -69,4 +70,4 @@ dotnet build
 dotnet test LearningTrack.sln
 ```
 
-All 149 automated unit and integration tests validate the implementations across Days 1–13.
+All 206 automated unit and integration tests validate the implementations across Days 1–18.

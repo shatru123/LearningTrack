@@ -26,7 +26,8 @@
 | Day 15 | Channels & High-Throughput Concurrency in C# (LC #206 & #21) | ✅ Completed |
 | Day 16 | Distributed Locking & Concurrency Primitives (LC #143 & #19) | ✅ Completed |
 | Day 17 | Introduction to Redis & Cache Patterns (LC #226 & #104) | ✅ Completed |
+| Day 18 | Redis Data Structures & Memory Eviction Policies (LC #543 & #110) | ✅ Completed |
 
 ## Next
 
-Day 18 — Continue the original 100-day LearningOS roadmap.
+Day 19 — Continue the original 100-day LearningOS roadmap.

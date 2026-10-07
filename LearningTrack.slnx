@@ -118,4 +118,11 @@
   <Folder Name="/Day17-Redis-Cache-Patterns/tests/">
     <Project Path="Day17-Redis-Cache-Patterns/tests/Day17.RedisCachePatterns.Tests/Day17.RedisCachePatterns.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day18-Redis-DataStructures-Eviction/" />
+  <Folder Name="/Day18-Redis-DataStructures-Eviction/src/">
+    <Project Path="Day18-Redis-DataStructures-Eviction/src/Day18.RedisDataStructures/Day18.RedisDataStructures.csproj" />
+  </Folder>
+  <Folder Name="/Day18-Redis-DataStructures-Eviction/tests/">
+    <Project Path="Day18-Redis-DataStructures-Eviction/tests/Day18.RedisDataStructures.Tests/Day18.RedisDataStructures.Tests.csproj" />
+  </Folder>
 </Solution>

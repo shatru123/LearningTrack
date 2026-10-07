@@ -1,0 +1,3598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 18: Redis Data Structures &amp; Memory Eviction Policies | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 18</span>
+        <span class="badge badge-category">Redis &amp; Distributed Systems</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day17-Redis-Cache-Patterns/index.html" class="nav-btn">← Day 17</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+
+        </select>
+        <span class="nav-btn" style="opacity:0.4; cursor:default;">Next Day →</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 18: Redis Data Structures &amp; Memory Eviction Policies</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 4 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d18GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d18GradDS" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d18GradEvict" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#31101b"/><stop offset="100%" stop-color="#180c14"/>
+            </linearGradient>
+            <linearGradient id="d18GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+            <filter id="d18Glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d18GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Redis Data Structures Architecture &amp; Memory Eviction Mechanics</text>
+
+          <!-- 1. Six Core Data Structures Column -->
+          <rect x="30" y="60" width="280" height="300" rx="10" fill="url(#d18GradDS)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Core Data Structures</text>
+          
+          <rect x="45" y="105" width="250" height="34" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="122" fill="#60a5fa" font-size="11" font-weight="bold">Strings (SDS)</text>
+          <text x="55" y="133" fill="#94a3b8" font-size="9">len, alloc, buf[] | INCRBY atomic counters</text>
+
+          <rect x="45" y="145" width="250" height="34" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="162" fill="#34d399" font-size="11" font-weight="bold">Hashes (ListPack / Dict)</text>
+          <text x="55" y="173" fill="#94a3b8" font-size="9">Field granularity | Zero full JSON deserialize</text>
+
+          <rect x="45" y="185" width="250" height="34" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="202" fill="#c084fc" font-size="11" font-weight="bold">Sets (IntSet / HashTable)</text>
+          <text x="55" y="213" fill="#94a3b8" font-size="9">O(1) deduplication | SINTER mutual tags</text>
+
+          <rect x="45" y="225" width="250" height="34" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="242" fill="#fbbf24" font-size="11" font-weight="bold">Sorted Sets (SkipList)</text>
+          <text x="55" y="253" fill="#94a3b8" font-size="9">O(log N) Leaderboards &amp; Sliding-window rate limit</text>
+
+          <rect x="45" y="265" width="250" height="34" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="282" fill="#f472b6" font-size="11" font-weight="bold">Bitmaps (Bit Operations)</text>
+          <text x="55" y="293" fill="#94a3b8" font-size="9">1 bit per user | Ultra-compact DAU tracking</text>
+
+          <rect x="45" y="305" width="250" height="42" rx="5" fill="#0f172a" stroke="#38bdf8"/>
+          <text x="55" y="322" fill="#38bdf8" font-size="11" font-weight="bold">HyperLogLog (16,384 Registers)</text>
+          <text x="55" y="337" fill="#cbd5e1" font-size="9">Fixed 12 KB RAM | 0.81% error unique visitors</text>
+
+          <!-- 2. Memory Eviction Engine Column -->
+          <rect x="330" y="60" width="300" height="300" rx="10" fill="url(#d18GradEvict)" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="350" y="88" fill="#f87171" font-size="14" font-weight="bold">Eviction Under Memory Pressure</text>
+
+          <rect x="345" y="105" width="270" height="45" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="355" y="123" fill="#fbbf24" font-size="11" font-weight="bold">Memory Limit Trigger</text>
+          <text x="355" y="138" fill="#94a3b8" font-size="9">used_memory &gt;= maxmemory &#8594; Run Eviction Policy</text>
+
+          <rect x="345" y="157" width="270" height="50" rx="5" fill="#0f172a" stroke="#ef4444"/>
+          <text x="355" y="175" fill="#f87171" font-size="11" font-weight="bold">Approximate LRU (16-Key Pool)</text>
+          <text x="355" y="189" fill="#cbd5e1" font-size="9">Sample K keys (default 5-10) &#8594; Order by idle time</text>
+          <text x="355" y="200" fill="#94a3b8" font-size="8">Saves 1.2 GB pointer RAM vs true doubly linked list</text>
+
+          <rect x="345" y="214" width="270" height="50" rx="5" fill="#0f172a" stroke="#c084fc"/>
+          <text x="355" y="232" fill="#c084fc" font-size="11" font-weight="bold">LFU: Morris Counter + Time Decay</text>
+          <text x="355" y="246" fill="#cbd5e1" font-size="9">16-bit time decay + 8-bit log frequency (0-255)</text>
+          <text x="355" y="257" fill="#94a3b8" font-size="8">Prevents cache pollution from burst scans</text>
+
+          <rect x="345" y="271" width="270" height="40" rx="5" fill="#0f172a" stroke="#34d399"/>
+          <text x="355" y="289" fill="#34d399" font-size="11" font-weight="bold">Volatile-TTL &amp; NoEviction</text>
+          <text x="355" y="302" fill="#94a3b8" font-size="9">Volatile: Evict shortest TTL | NoEvict: Return OOM error</text>
+
+          <text x="350" y="345" fill="#f87171" font-size="11" font-weight="bold">&#9888; Volatile hazard: OOM if persistent keys fill RAM</text>
+
+          <!-- 3. DSA Tree Recursion Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d18GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">DSA Tree Metrics O(N)</text>
+
+          <rect x="665" y="105" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #543: Tree Diameter</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Longest path between any nodes</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">At each node in post-order ascent:</text>
+          <text x="675" y="173" fill="#38bdf8" font-size="10" font-weight="bold">diam = max(diam, h_L + h_R)</text>
+          <text x="675" y="188" fill="#94a3b8" font-size="9">return 1 + max(h_L, h_R)</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">O(N) Time | O(H) Stack</text>
+
+          <rect x="665" y="225" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="245" fill="#fbbf24" font-size="11" font-weight="bold">LC #110: Balanced Tree</text>
+          <text x="675" y="262" fill="#94a3b8" font-size="9">|h_L - h_R| &lt;= 1 for all nodes</text>
+          <text x="675" y="278" fill="#cbd5e1" font-size="9">Bottom-up short circuit:</text>
+          <text x="675" y="294" fill="#ef4444" font-size="10" font-weight="bold">if |h_L - h_R| &gt; 1 return -1;</text>
+          <text x="675" y="309" fill="#94a3b8" font-size="9">Aborts redundant tree traversal</text>
+          <text x="675" y="323" fill="#34d399" font-size="9">O(N) vs Top-down O(N^2)</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (4 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 18 - Engineering Notes: Redis Memory Internals & Eviction Architectures</h1>
+<h2>1. Redis Internal Data Structure Implementations</h2>
+<h3>SDS (Simple Dynamic String)</h3>
+<p>Redis strings are backed by SDS rather than raw C null-terminated strings (<code>char*</code>):</p>
+<ul>
+<li><strong>Structure</strong>: Header contains <code>len</code> (current length), <code>alloc</code> (allocated capacity), <code>flags</code> (header type: <code>sdshdr8</code>, <code>sdshdr16</code>, <code>sdshdr32</code>), and <code>buf[]</code>.</li>
+<li><strong>Advantages</strong>:</li>
+</ul>
+<ol>
+<li><strong>$O(1)$ Length Lookups</strong>: Returns <code>len</code> in constant time without scanning for <code>\0</code>.</li>
+<li><strong>Binary Safe</strong>: Can store arbitrary binary data (images, Protobuf, gzipped bytes) containing embedded null characters (<code>\0</code>).</li>
+<li><strong>Zero Buffer Overflows</strong>: SDS automatically reallocates memory via buffer pre-allocation (<code>alloc</code> doubled up to 1 MB).</li>
+<li><strong>Memory Optimization (<code>embstr</code> vs <code>raw</code>)</strong>: For strings $\le 44$ bytes, Redis allocates the <code>redisObject</code> header and SDS buffer in a single contiguous memory chunk (<code>embstr</code>), reducing memory fragmentation and CPU cache misses.</li>
+</ol>
+<h3>Redis Hashes: ListPack / ZipList vs Hash Table (Dict)</h3>
+<ul>
+<li>When a hash has few fields ($\le 512$) and small values ($\le 64$ bytes), Redis stores it as an encoded <strong>ListPack</strong> (or legacy <strong>ZipList</strong>): a single contiguous block of memory without pointers.</li>
+<li>Once limits (<code>hash-max-ziplist-entries</code> or <code>hash-max-ziplist-value</code>) are exceeded, Redis automatically converts it to a standard <strong>Dict</strong> (two hash tables supporting progressive re-hashing).</li>
+<li>Memory savings: ListPack eliminates 64-bit forward/backward pointers, reducing RAM consumption by up to 80% for small objects.</li>
+</ul>
+<h3>Sorted Sets (ZSET): SkipList vs Red-Black Trees</h3>
+<p>Redis implements ZSETs using a combination of a <strong>SkipList</strong> and a <strong>Hash Table</strong>:</p>
+<ul>
+<li><strong>Why SkipList over Red-Black Tree?</strong>:</li>
+</ul>
+<ol>
+<li><strong>Range Queries</strong>: SkipLists support range scans (<code>ZRANGEBYSCORE</code>) with trivial pointer traversals along level 0 forward pointers.</li>
+<li><strong>Simpler Implementation & Concurrency</strong>: SkipLists require no complex tree rotations or node rebalancing.</li>
+<li><strong>Memory Tunability</strong>: Node level distribution follows a geometric distribution with probability $p = 0.25$, yielding an average of only 1.33 pointers per node.</li>
+</ol>
+<h3>HyperLogLog: 12 KB Fixed-Memory Cardinality Estimation</h3>
+<ul>
+<li><strong>Problem</strong>: Counting millions of unique IP addresses with a Redis Set of 100,000,000 strings requires $\approx 4\text{ GB}$ of RAM.</li>
+<li><strong>HyperLogLog Solution</strong>: Requires exactly <strong>12 KB</strong> of memory regardless of whether counting 1,000 or 1,000,000,000 unique elements.</li>
+<li><strong>Algorithm</strong>:</li>
+</ul>
+<ol>
+<li>Hash incoming element with a 64-bit uniform hash function (MurmurHash64A).</li>
+<li>Use first 14 bits as the register index ($2^{14} = 16,384$ registers).</li>
+<li>Count leading zeros in the remaining 50 bits ($\rho$).</li>
+<li>Store $\max(\rho, \text{current\_register\_value})$ in an 6-bit register ($2^6 = 64$ max value).</li>
+<li>Estimate cardinality via the harmonic mean of all 16,384 registers:</li>
+</ol>
+<p>$$E = \alpha_m \cdot m^2 \cdot \left(\sum_{j=1}^{m} 2^{-M[j]}\right)^{-1}$$</p>
+<ol>
+<li>Standard error is bounded at $\frac{1.04}{\sqrt{m}} = \frac{1.04}{\sqrt{16384}} \approx 0.81\%$.</li>
+</ol>
+<hr/>
+<h2>2. Memory Eviction Algorithms Under the Hood</h2>
+<h3>Approximate LRU (Sample Pool Algorithm)</h3>
+<ul>
+<li>Redis does <strong>NOT</strong> maintain a global doubly-linked list of all keys. In a database with 50,000,000 keys, maintaining linked list pointers would consume over <strong>1.2 GB</strong> of RAM purely for LRU metadata.</li>
+<li><strong>Redis Approximation</strong>:</li>
+</ul>
+<ol>
+<li>Each <code>redisObject</code> contains a 24-bit field storing the current LRU clock timestamp.</li>
+<li>When memory exceeds <code>maxmemory</code>, Redis randomly samples $K$ keys (default <code>maxmemory-samples 5</code>, or 10 in high-precision mode).</li>
+<li>Keys are inserted into an <strong>Eviction Pool</strong> of size 16, kept sorted by idle time (<code>idle = current_clock - lru_clock</code>).</li>
+<li>The key with the highest idle time is evicted.</li>
+<li>With <code>maxmemory-samples 10</code>, Redis LRU approximation matches true LRU behavior within 99.5% accuracy.</li>
+</ol>
+<h3>LFU (Least Frequently Used) with Morris Counter</h3>
+<p>In LFU mode, the 24-bit <code>lru</code> field is split into:</p>
+<ul>
+<li><strong>16 bits</strong>: Last Decrement Time (<code>ldt</code>) in minutes modulo $2^{16}$.</li>
+<li><strong>8 bits</strong>: Logistic Counter (<code>log_cnt</code>), initialized to 5.</li>
+<li><strong>Decay Phase</strong>: If elapsed minutes $> 0$, decrement counter by <code>minutes_passed * lfu_decay_time</code>.</li>
+<li><strong>Increment Phase</strong>: Increment is probabilistic using Morris logarithmic counting:</li>
+</ul>
+<p>$$P = \frac{1}{\text{counter} \cdot \text{lfu\_log\_factor} + 1}$$</p>
+<p>This allows an 8-bit counter (0–255) to represent frequencies up to 1,000,000+ requests.</p>
+<hr/>
+<h2>3. High-Throughput Sliding Window Rate Limiting Pattern</h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">// Distributed sliding window rate limiter via Redis ZSET
+public async Task&lt;bool&gt; IsRateLimitedAsync(IDatabase db, string clientKey, int maxRequests, TimeSpan window)
+{
+    var key = $&quot;ratelimit:{clientKey}&quot;;
+    long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    long windowStartMs = nowMs - (long)window.TotalMilliseconds;
+    string memberId = Guid.NewGuid().ToString(&quot;N&quot;);
+
+    var tran = db.CreateTransaction();
+    // 1. Remove expired timestamps outside the rolling window
+    _ = tran.SortedSetRemoveRangeByScoreAsync(key, double.NegativeInfinity, windowStartMs);
+    // 2. Count requests remaining in current window
+    var countTask = tran.SortedSetLengthAsync(key);
+    // 3. Add current request timestamp
+    _ = tran.SortedSetAddAsync(key, memberId, nowMs);
+    // 4. Reset TTL so inactive keys expire
+    _ = tran.KeyExpireAsync(key, window);
+
+    bool committed = await tran.ExecuteAsync();
+    if (!committed) return true;
+
+    long requestCount = await countTask;
+    return requestCount &gt;= maxRequests;
+}</code></pre></div>
+<hr/>
+<h2>4. DSA Tree Algorithms: Top-Down vs Bottom-Up</h2>
+<h3>Why Top-Down is $O(N^2)$ (Anti-Pattern)</h3>
+<p>Evaluating tree balance by calling a standalone <code>GetDepth(node)</code> on each node recursively visits descendants repeatedly:</p>
+<p>$$T(N) = 2 \cdot T(N/2) + O(N) \implies O(N \log N) \text{ (best case)}, \quad O(N^2) \text{ (worst case degenerate)}$$</p>
+<h3>Optimal Bottom-Up Post-Order DFS ($O(N)$)</h3>
+<p>By computing height and detecting balance/diameter during the <strong>post-order return path</strong> (ascent), each node is visited exactly once:</p>
+<ul>
+<li><strong>Balanced Tree (LeetCode #110)</strong>: Returns <code>-1</code> as soon as $|height_{left} - height_{right}| > 1$, immediately terminating remaining recursion.</li>
+<li><strong>Diameter (LeetCode #543)</strong>: Tracks max diameter across all subtrees while returning standard height $1 + \max(h_{left}, h_{right})$.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 18: Redis Data Structures & Memory Eviction Policies</h1>
+<h2>Overview</h2>
+<p>Comprehensive deep-dive into advanced Redis data structures and memory eviction architectures in high-scale distributed systems. This module covers production patterns across Redis Strings, Hashes, Sets, Sorted Sets (ZSET), Bitmaps, and HyperLogLogs, paired with in-depth analysis of Redis memory management and eviction policies (<code>allkeys-lru</code>, <code>volatile-lru</code>, <code>allkeys-lfu</code>, <code>volatile-lfu</code>, <code>volatile-ttl</code>, and <code>noeviction</code>). Additionally, we solve tree metric algorithms: Diameter of Binary Tree (LeetCode #543) and Balanced Binary Tree (LeetCode #110) in optimal $O(N)$ time.</p>
+<hr/>
+<h2>Architectural Breakdown</h2>
+<h3>1. Redis Core Data Structures & Production Use Cases</h3>
+<div class="table-container"><table><thead><tr>
+<th>Data Structure</th>
+<th>Internal Representation</th>
+<th>Primary Use Case</th>
+<th>Time Complexity</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Strings</strong></td>
+<td>SDS (Simple Dynamic String), <code>raw</code> or <code>embstr</code></td>
+<td>Distributed Atomic Counters (<code>INCRBY</code>), Session Caches</td>
+<td>$O(1)$</td>
+</tr>
+<tr>
+<td><strong>Hashes</strong></td>
+<td><code>ziplist</code>/<code>listpack</code> or <code>hashtable</code> (dict)</td>
+<td>User Profiles, Discrete Field Updates without Full Serialization</td>
+<td>$O(1)$ field access</td>
+</tr>
+<tr>
+<td><strong>Sets</strong></td>
+<td><code>intset</code> or <code>hashtable</code></td>
+<td>Unique Tags, Mutual Friends (<code>SINTER</code>), Deduplication</td>
+<td>$O(1)$ add/check, $O(N \cdot M)$ intersect</td>
+</tr>
+<tr>
+<td><strong>Sorted Sets (ZSET)</strong></td>
+<td><code>ziplist</code>/<code>listpack</code> or <code>skiplist</code> + <code>dict</code></td>
+<td>Real-time Leaderboards, Sliding-Window Rate Limiters</td>
+<td>$O(\log N)$ add/rank, $O(\log N + M)$ range</td>
+</tr>
+<tr>
+<td><strong>Bitmaps</strong></td>
+<td>String offsets manipulated at bit level</td>
+<td>Daily Active Users (DAU), Feature Flag Presence, Compact Flags</td>
+<td>$O(1)$ get/set bit, $O(N)$ <code>BITCOUNT</code></td>
+</tr>
+<tr>
+<td><strong>HyperLogLog</strong></td>
+<td>16,384 6-bit registers (Dense/Sparse SDS)</td>
+<td>Unique Visitor Cardinality Estimation with fixed 12 KB RAM</td>
+<td>$O(1)$ add, $O(1)$ count ($\approx 0.81\%$ standard error)</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h3>2. Redis Memory Eviction Policies Under Memory Pressure</h3>
+<p>When <code>used_memory</code> reaches <code>maxmemory</code>, Redis executes its configured eviction policy on write operations:</p>
+<ol>
+<li><strong><code>noeviction</code></strong>:</li>
+</ol>
+<ul>
+<li>Redis refuses writes and returns an <code>OOM command not allowed when used memory &gt; &#x27;maxmemory&#x27;</code> error.</li>
+<li>Read and delete commands continue to function normally. Essential for systems where Redis functions as a persistent primary database.</li>
+</ul>
+<ol>
+<li><strong><code>allkeys-lru</code></strong>:</li>
+</ol>
+<ul>
+<li>Evicts least recently used keys across the entire keyspace using Redis's 24-bit approximated LRU clock sample pool.</li>
+<li>Ideal when key access follows a Power-Law (80/20 rule) distribution.</li>
+</ul>
+<ol>
+<li><strong><code>volatile-lru</code></strong>:</li>
+</ol>
+<ul>
+<li>Evicts least recently used keys only among keys with an active TTL (<code>expire</code> set).</li>
+</ul>
+<ol>
+<li><strong><code>allkeys-lfu</code></strong>:</li>
+</ol>
+<ul>
+<li>Evicts least frequently used keys across the entire keyspace using an 8-bit Morris logarithmic frequency counter and time decay.</li>
+<li>Prevents cache pollution where a newly added key is evicted despite high long-term utility.</li>
+</ul>
+<ol>
+<li><strong><code>volatile-lfu</code></strong>:</li>
+</ol>
+<ul>
+<li>Evicts least frequently used keys only among keys configured with a TTL.</li>
+</ul>
+<ol>
+<li><strong><code>volatile-ttl</code></strong>:</li>
+</ol>
+<ul>
+<li>Evaluates a random sample of keys with TTL and evicts the key with the shortest remaining time-to-live.</li>
+</ul>
+<hr/>
+<h3>3. Tree Recursion Algorithms Solved</h3>
+<h4>LeetCode #543: Diameter of Binary Tree</h4>
+<ul>
+<li><strong>Problem</strong>: Find the length of the longest path between any two nodes in a tree (counted in edges).</li>
+<li><strong>Algorithm</strong>: Bottom-up post-order DFS. At each node, compute left and right subtree heights, update global diameter <code>max(diameter, leftHeight + rightHeight)</code>, and return <code>1 + max(leftHeight, rightHeight)</code>.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$ recursion stack space.</li>
+</ul>
+<h4>LeetCode #110: Balanced Binary Tree</h4>
+<ul>
+<li><strong>Problem</strong>: Determine if a binary tree is height-balanced (subtree heights differ by no more than 1 for all nodes).</li>
+<li><strong>Algorithm</strong>: Bottom-up DFS returning subtree height. If any subtree is unbalanced, it immediately bubbles up <code>-1</code> to short-circuit redundant traversals.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$.</li>
+</ul>
+<hr/>
+<h2>Running Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day18-Redis-DataStructures-Eviction/tests/Day18.RedisDataStructures.Tests/Day18.RedisDataStructures.Tests.csproj</code></pre></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How does Redis achieve $O(1)$ operations on Strings and prevent buffer overflows internally compared to standard C strings?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Redis uses SDS (Simple Dynamic String) headers containing length, capacity, and flags, providing constant-time length lookups, automatic buffer reallocation, and binary safety.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In standard C, strings are null-terminated (<code>\0</code>), meaning <code>strlen()</code> runs in $O(N)$ time and functions like <code>strcat()</code> are prone to buffer overflows.</p>
+<p>Redis wraps strings in SDS structures (<code>sdshdr8</code>, <code>sdshdr16</code>, <code>sdshdr32</code>):</p>
+<ul>
+<li><strong><code>len</code></strong>: Current byte length, allowing $O(1)$ length queries without scanning.</li>
+<li><strong><code>alloc</code></strong>: Total buffer capacity, allowing Redis to verify free space before appending and dynamically reallocate buffer memory (buffer preallocation doubles size up to 1 MB).</li>
+<li><strong>Binary safety</strong>: Because length is determined by <code>len</code> rather than <code>\0</code>, Redis can safely store arbitrary binary payloads like JPEG images, Gzip streams, or Protobuf blobs containing null bytes.</li>
+<li><strong><code>embstr</code> optimization</strong>: For strings under 44 bytes, Redis allocates the <code>redisObject</code> metadata and the SDS payload within a single contiguous <code>malloc</code> block, eliminating a second memory allocation and maximizing CPU L1/L2 cache locality.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why does Redis use SkipLists instead of Red-Black Trees or AVL trees for Sorted Sets (ZSET)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: SkipLists provide simpler range query traversals, easier lock-free / low-overhead concurrent implementations, and tuneable memory usage without complex tree rebalancing rotations.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Redis creator Salvatore Sanfilippo chose SkipLists over balanced BSTs for three critical engineering reasons:</p>
+<ol>
+<li><strong>Range Scans (<code>ZRANGEBYSCORE</code>)</strong>: In a SkipList, finding the lower bound takes $O(\log N)$, after which scanning subsequent items simply traverses the level-0 linked list pointers ($O(1)$ per subsequent element). In a BST, in-order traversal requires stack allocation or parent pointer reversals.</li>
+<li><strong>Rebalancing Overhead</strong>: Red-Black trees require complex rotations and color flips upon insertion or deletion, which can cascade across multiple levels. A SkipList only modifies local pointer references of adjacent nodes.</li>
+<li><strong>Memory Tunability</strong>: The probability $p$ of a node being elevated to the next level is parameterized. With $p = 0.25$, nodes average only 1.33 pointers each, consuming less memory than a 3-pointer binary tree node (left, right, parent + color bit).</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How does HyperLogLog estimate unique cardinalities up to billions of elements using only 12 KB of memory?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: By hashing elements into 16,384 registers and recording the maximum number of leading zeros in the hash values, cardinality is probabilistically estimated using the harmonic mean with ~0.81% standard error.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>HyperLogLog exploits the mathematical property that in a uniformly distributed binary stream, a sequence of $k$ consecutive leading zeros occurs with probability $2^{-k}$.</p>
+<ol>
+<li>Incoming elements are hashed with 64-bit MurmurHash.</li>
+<li>The first 14 bits determine the register index ($2^{14} = 16,384$ registers).</li>
+<li>The remaining 50 bits are analyzed for leading zeros ($\rho$).</li>
+<li>Each register stores $\max(\text{existing\_val}, \rho)$ in a 6-bit integer ($16384 \times 6 \text{ bits} / 8 = 12,288 \text{ bytes} = 12 \text{ KB}$).</li>
+<li>Redis calculates the harmonic mean across all registers to prevent statistical skew from single high-value outliers:</li>
+</ol>
+<p>$$E = \alpha_m \cdot m^2 \cdot \left(\sum_{j=1}^{m} 2^{-M[j]}\right)^{-1}$$</p>
+<ol>
+<li>For low cardinalities ($E < 2.5 \cdot m$), Redis applies Linear Counting bias correction based on the number of zero registers.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does Redis approximate LRU eviction without the prohibitive memory overhead of a true doubly linked list?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Instead of maintaining a global linked list of all keys (which would waste 24+ bytes of pointer RAM per key), Redis stores a 24-bit clock in each object header and samples a configurable pool of keys to evict the oldest.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a database with 50 million keys, maintaining an exact LRU doubly linked list would require 24 bytes per key in pointer overhead (1.2 GB of RAM solely for eviction pointers).</p>
+<p><strong>Redis Approximated LRU</strong>:</p>
+<ul>
+<li>Each <code>redisObject</code> header contains a 24-bit <code>lru</code> field recording the system clock timestamp (in seconds, wrapping every 194 days).</li>
+<li>When <code>maxmemory</code> is reached, Redis randomly selects $K$ keys (default <code>maxmemory-samples 5</code>, configurable to 10).</li>
+<li>Redis populates an internal 16-key <strong>Eviction Pool</strong> sorted by idle time (<code>current_timestamp - lru_timestamp</code>).</li>
+<li>The key with the highest idle time is evicted.</li>
+<li>Benchmarks demonstrate that with <code>maxmemory-samples 10</code>, the approximate LRU curve is virtually indistinguishable from a strict mathematical LRU list while consuming zero pointer memory.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">Explain how Redis implements LFU (Least Frequently Used) using an 8-bit Morris counter and time decay.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The 24-bit <code>lru</code> field is partitioned into a 16-bit decay timestamp and an 8-bit logarithmic Morris counter that increments probabilistically and decays per elapsed minute.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>LRU suffers from cache pollution: a one-time batch scan can flush hot items that have been accessed thousands of times. LFU solves this.</p>
+<p>Redis splits the 24-bit field into:</p>
+<ol>
+<li><strong>16-bit Last Decrement Time (<code>ldt</code>)</strong>: Unix timestamp in minutes modulo $2^{16}$.</li>
+<li><strong>8-bit Logistic Counter (<code>log_cnt</code>)</strong>: Initialized to 5 to protect newly created keys.</li>
+</ol>
+<ul>
+<li><strong>Decay Step</strong>: When accessed, if $(now - ldt) > 0$, the counter is decremented by $(now - ldt) \times \text{lfu-decay-time}$.</li>
+<li><strong>Probabilistic Increment Step</strong>: An 8-bit counter can only count to 255. Redis uses Morris logarithmic counting where the probability of increment is:</li>
+</ul>
+<p>$$P = \frac{1}{\text{counter} \cdot \text{lfu\_log\_factor} + 1}$$</p>
+<p>With default factor 10, a counter value of 255 represents approximately 1,000,000 accesses, enabling wide dynamic range within a single byte.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">Compare `volatile-*` vs `allkeys-*` eviction policies. Under what architectural circumstances can `volatile-lru` or `volatile-ttl` cause an Out-Of-Memory (OOM) error?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>volatile-*</code> policies only evict keys configured with an explicit TTL; if memory is saturated by persistent keys without TTL, Redis cannot evict anything and throws an OOM exception.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><code>allkeys-lru</code> / <code>allkeys-lfu</code>: Treats every key as eligible for eviction. Recommended for pure caching tiers.</li>
+<li><code>volatile-lru</code> / <code>volatile-lfu</code> / <code>volatile-ttl</code>: Restricts eviction candidates to keys with an expiration (<code>EXPIRE</code>, <code>SETEX</code>).</li>
+</ul>
+<p><strong>The OOM Failure Scenario</strong>:</p>
+<p>If an application uses Redis both for caching (with TTL) and for persistent state (e.g., user sessions or background job queues without TTL), and persistent data grows until <code>maxmemory</code> is reached while all volatile keys have already been evicted, Redis cannot free any memory.</p>
+<p>Any subsequent write command returns:</p>
+<p><code>(error) OOM command not allowed when used memory &gt; &#x27;maxmemory&#x27;</code>.</p>
+<p><strong>Rule of Thumb</strong>: Use <code>allkeys-lru</code> when Redis is a dedicated cache; use <code>volatile-lru</code> only when persistent keys are guaranteed to stay strictly within a known memory budget.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How do you implement a scalable Sliding Window Rate Limiter using Redis Sorted Sets (ZSET), and what is its time and space complexity?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Use a ZSET where both the score and member represent unix millisecond timestamps; prune expired elements with <code>ZREMRANGEBYSCORE</code>, check <code>ZCARD</code>, and add the current request with <code>ZADD</code>.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-redis"><code class="language-redis">  MULTI
+  ZREMRANGEBYSCORE ratelimit:user_123 -inf (now - window_size)
+  ZCARD ratelimit:user_123
+  ZADD ratelimit:user_123 now now:uuid
+  EXPIRE ratelimit:user_123 window_size
+  EXEC</code></pre></div>
+<ul>
+<li><strong>Precision</strong>: Provides exact sliding window protection with zero boundary reset spikes (unlike fixed-window counters).</li>
+<li><strong>Time Complexity</strong>: $O(\log N + M)$ where $N$ is the number of requests in the window and $M$ is the number of removed old entries.</li>
+<li><strong>Space Complexity</strong>: $O(R)$ where $R$ is the number of requests in the active window. For ultra-high volume APIs (millions of req/sec), ZSET memory can grow high, making a sliding-window counter or token bucket preferable.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">When would you use Redis Hashes over serializing a JSON string into a Redis String key?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Hashes are superior when you need to read or mutate individual fields (<code>HGET</code>, <code>HSET</code>, <code>HINCRBY</code>) without deserializing and transferring the entire payload over the network.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<ol>
+<li><strong>Bandwidth & CPU</strong>: Mutating a user's <code>last_active</code> timestamp in a 20 KB user profile JSON string requires downloading 20 KB, deserializing in C#, updating the property, re-serializing, and uploading 20 KB. With Redis Hashes: <code>HSET user:1 last_active 1728392000</code> transfers $< 50$ bytes.</li>
+<li><strong>Race Conditions</strong>: Two microservices updating different fields of a JSON string concurrently will overwrite each other's changes (lost updates). With Hashes, field updates are atomic and independent.</li>
+<li><strong>Memory Optimization</strong>: Small Hashes are stored as contiguous ListPacks, which can be more compact in RAM than JSON string keys.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #543 (Diameter of Binary Tree), why does the longest path not necessarily pass through the root node, and how does the bottom-up algorithm handle this?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The longest path can exist entirely within a dense, deep subtree; bottom-up recursion computes and updates the global maximum path at every sub-root while returning height upwards.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Consider a tree where the root has a right child with depth 1, but its left child is the root of two very deep subtrees of depth 10 each. The diameter of the left subtree is $10 + 10 = 20$ edges, whereas any path passing through the root node has length at most $10 + 1 = 11$ edges.</p>
+<p><strong>Bottom-Up Handling</strong>:</p>
+<p>The recursive post-order helper returns the <strong>height</strong> of the current subtree: $1 + \max(h_{left}, h_{right})$.</p>
+<p>Concurrently, at each node, it computes the diameter of the path pivoting at that node: $h_{left} + h_{right}$, updating a global tracker <code>maxDiameter = max(maxDiameter, left + right)</code>.</p>
+<p>This guarantees that every possible path apex is evaluated in $O(N)$ time.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does LeetCode #110 (Balanced Binary Tree) optimize from $O(N^2)$ to $O(N)$ time complexity?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Top-down recursion re-computes heights repeatedly for subtrees ($O(N^2)$ worst-case); bottom-up checks balance during height calculation and immediately propagates <code>-1</code> to short-circuit.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><strong>Top-Down ($O(N^2)$)</strong>:</li>
+</ul>
+<p><code>IsBalanced(node)</code> calls <code>Height(node.left)</code> and <code>Height(node.right)</code>, then recursively calls <code>IsBalanced(node.left)</code> and <code>IsBalanced(node.right)</code>. On a degenerate linked-list tree, each level recounts all children, resulting in $\sum_{i=1}^N i = O(N^2)$ operations.</p>
+<ul>
+<li><strong>Bottom-Up ($O(N)$)</strong>:</li>
+</ul>
+<p>In post-order DFS, the function returns the subtree height if balanced, or <code>-1</code> if unbalanced.</p>
+<p>As soon as <code>CheckHeight(left)</code> returns <code>-1</code> or <code>|left - right| &gt; 1</code>, the function immediately returns <code>-1</code> up the call stack without traversing the rest of the tree. Each node is visited at most once, achieving strict $O(N)$ time and $O(H)$ stack space.</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day18.RedisDataStructures/BinaryTreeMetricsSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd18-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d18-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day18.RedisDataStructures;
+
+/// &lt;summary&gt;
+/// Definition for a binary tree node.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// High-performance tree metric algorithms:
+/// - LeetCode #543: Diameter of Binary Tree
+/// - LeetCode #110: Balanced Binary Tree
+/// Both solved in optimal O(N) time and O(H) auxiliary stack space using bottom-up post-order traversal.
+/// &lt;/summary&gt;
+public class BinaryTreeMetricsSolvers
+{
+    /// &lt;summary&gt;
+    /// Computes the diameter of a binary tree (LeetCode #543).
+    /// The diameter is the length of the longest path between any two nodes in a tree (measured in edges).
+    /// Time Complexity: O(N) visiting each node exactly once.
+    /// Space Complexity: O(H) recursion stack where H is the height of the tree.
+    /// &lt;/summary&gt;
+    public int DiameterOfBinaryTree(TreeNode? root)
+    {
+        int maxDiameter = 0;
+
+        int GetHeight(TreeNode? node)
+        {
+            if (node == null) return 0;
+
+            int leftHeight = GetHeight(node.left);
+            int rightHeight = GetHeight(node.right);
+
+            // Path through this node in edges is leftHeight + rightHeight
+            maxDiameter = Math.Max(maxDiameter, leftHeight + rightHeight);
+
+            // Height is 1 + max child height
+            return 1 + Math.Max(leftHeight, rightHeight);
+        }
+
+        GetHeight(root);
+        return maxDiameter;
+    }
+
+    /// &lt;summary&gt;
+    /// Determines if a binary tree is height-balanced (LeetCode #110).
+    /// A binary tree is balanced if the depth of the two subtrees of every node never differs by more than 1.
+    /// Uses bottom-up post-order recursion returning -1 early if any subtree is unbalanced.
+    /// Time Complexity: O(N) - short circuits immediately upon detecting imbalance.
+    /// Space Complexity: O(H) recursion stack space.
+    /// &lt;/summary&gt;
+    public bool IsBalanced(TreeNode? root)
+    {
+        return CheckHeight(root) != -1;
+    }
+
+    private static int CheckHeight(TreeNode? node)
+    {
+        if (node == null) return 0;
+
+        int leftHeight = CheckHeight(node.left);
+        if (leftHeight == -1) return -1; // Left subtree is already unbalanced
+
+        int rightHeight = CheckHeight(node.right);
+        if (rightHeight == -1) return -1; // Right subtree is already unbalanced
+
+        if (Math.Abs(leftHeight - rightHeight) &gt; 1)
+        {
+            return -1; // Current node violates balance property
+        }
+
+        return 1 + Math.Max(leftHeight, rightHeight);
+    }
+
+    /// &lt;summary&gt;
+    /// Helper to construct a binary tree from level-order array representation (LeetCode test format).
+    /// &lt;/summary&gt;
+    public static TreeNode? BuildTree(int?[] values)
+    {
+        if (values == null || values.Length == 0 || values[0] == null) return null;
+
+        var root = new TreeNode(values[0]!.Value);
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int i = 1;
+        while (queue.Count &gt; 0 &amp;&amp; i &lt; values.Length)
+        {
+            var current = queue.Dequeue();
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                current.left = new TreeNode(values[i]!.Value);
+                queue.Enqueue(current.left);
+            }
+            i++;
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                current.right = new TreeNode(values[i]!.Value);
+                queue.Enqueue(current.right);
+            }
+            i++;
+        }
+
+        return root;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day18.RedisDataStructures/MemoryEvictionSimulator.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd18-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d18-src-code-1" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day18.RedisDataStructures;
+
+public class MemoryEvictionSimulator
+{
+    private readonly int _maxSizeBytes;
+    private readonly EvictionPolicy _policy;
+    private readonly ConcurrentDictionary&lt;string, CacheItemMetadata&gt; _store = new();
+    private int _currentSizeBytes = 0;
+    private int _evictedCount = 0;
+
+    public int CurrentSizeBytes =&gt; _currentSizeBytes;
+    public int EvictedCount =&gt; _evictedCount;
+    public int KeyCount =&gt; _store.Count;
+
+    public MemoryEvictionSimulator(int maxSizeBytes, EvictionPolicy policy)
+    {
+        _maxSizeBytes = maxSizeBytes;
+        _policy = policy;
+    }
+
+    public void Put(string key, object value, int sizeBytes, TimeSpan? ttl = null, DateTime? customAccessTime = null)
+    {
+        var now = customAccessTime ?? DateTime.UtcNow;
+
+        lock (_store)
+        {
+            // If key already exists, deduct old size
+            if (_store.TryGetValue(key, out var oldItem))
+            {
+                _currentSizeBytes -= oldItem.SizeBytes;
+            }
+
+            // Evict if over budget
+            while (_currentSizeBytes + sizeBytes &gt; _maxSizeBytes)
+            {
+                var victim = SelectEvictionVictim(now);
+                if (victim == null)
+                {
+                    if (_policy == EvictionPolicy.NoEviction)
+                    {
+                        throw new InvalidOperationException(&quot;OOM command not allowed when used memory &gt; &#x27;maxmemory&#x27; under noeviction policy.&quot;);
+                    }
+                    // Cannot evict further (e.g. volatile policy with no volatile keys left)
+                    throw new InvalidOperationException(&quot;Memory full: No suitable keys available for eviction under current policy.&quot;);
+                }
+
+                _store.TryRemove(victim.Key, out _);
+                _currentSizeBytes -= victim.SizeBytes;
+                _evictedCount++;
+            }
+
+            // Insert new item
+            var metadata = new CacheItemMetadata
+            {
+                Key = key,
+                Value = value,
+                SizeBytes = sizeBytes,
+                ExpiresAtUtc = ttl.HasValue ? now.Add(ttl.Value) : null,
+                LastAccessedUtc = now,
+                LfuCounter = 5,
+                LastDecayTimeUtc = now
+            };
+
+            _store[key] = metadata;
+            _currentSizeBytes += sizeBytes;
+        }
+    }
+
+    public object? Get(string key, DateTime? accessTime = null)
+    {
+        lock (_store)
+        {
+            if (!_store.TryGetValue(key, out var item)) return null;
+
+            var now = accessTime ?? DateTime.UtcNow;
+            if (item.ExpiresAtUtc.HasValue &amp;&amp; now &gt;= item.ExpiresAtUtc.Value)
+            {
+                _store.TryRemove(key, out _);
+                _currentSizeBytes -= item.SizeBytes;
+                return null;
+            }
+
+            // Update LRU access timestamp
+            item.LastAccessedUtc = now;
+
+            // Update LFU Morris counter with logarithmic increment and decay
+            UpdateLfuCounter(item, now);
+
+            return item.Value;
+        }
+    }
+
+    private CacheItemMetadata? SelectEvictionVictim(DateTime now)
+    {
+        IEnumerable&lt;CacheItemMetadata&gt; pool = _store.Values;
+
+        // Filter volatile keys if volatile policy
+        if (_policy is EvictionPolicy.VolatileLru or EvictionPolicy.VolatileLfu or EvictionPolicy.VolatileTtl)
+        {
+            pool = pool.Where(x =&gt; x.ExpiresAtUtc.HasValue);
+        }
+
+        var candidateList = pool.ToList();
+        if (candidateList.Count == 0) return null;
+
+        return _policy switch
+        {
+            EvictionPolicy.AllKeysLru or EvictionPolicy.VolatileLru =&gt;
+                candidateList.OrderBy(x =&gt; x.LastAccessedUtc).FirstOrDefault(),
+
+            EvictionPolicy.AllKeysLfu or EvictionPolicy.VolatileLfu =&gt;
+                candidateList.OrderBy(x =&gt; x.LfuCounter).ThenBy(x =&gt; x.LastAccessedUtc).FirstOrDefault(),
+
+            EvictionPolicy.VolatileTtl =&gt;
+                candidateList.Where(x =&gt; x.ExpiresAtUtc.HasValue)
+                             .OrderBy(x =&gt; x.ExpiresAtUtc!.Value)
+                             .FirstOrDefault(),
+
+            _ =&gt; null
+        };
+    }
+
+    private static void UpdateLfuCounter(CacheItemMetadata item, DateTime now)
+    {
+        // 1. Decay: Redis decays 1 point per elapsed minute (lfu-decay-time)
+        var minutesPassed = (int)(now - item.LastDecayTimeUtc).TotalMinutes;
+        if (minutesPassed &gt; 0)
+        {
+            item.LfuCounter = (byte)Math.Max(0, item.LfuCounter - minutesPassed);
+            item.LastDecayTimeUtc = now;
+        }
+
+        // 2. Morris Logarithmic increment
+        // Probability = 1 / (base + counter * factor)
+        double r = Random.Shared.NextDouble();
+        double p = 1.0 / (item.LfuCounter + 1);
+        if (r &lt; p &amp;&amp; item.LfuCounter &lt; 255)
+        {
+            item.LfuCounter++;
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day18.RedisDataStructures/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd18-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d18-src-code-2" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day18.RedisDataStructures;
+
+public record UserProfileHash(
+    string UserId,
+    string Username,
+    string Email,
+    int LoginCount,
+    DateTime LastLoginUtc);
+
+public record LeaderboardScore(
+    string PlayerId,
+    double Score,
+    long Rank);
+
+public enum EvictionPolicy
+{
+    NoEviction,
+    AllKeysLru,
+    VolatileLru,
+    AllKeysLfu,
+    VolatileLfu,
+    VolatileTtl
+}
+
+public class CacheItemMetadata
+{
+    public string Key { get; set; } = string.Empty;
+    public object Value { get; set; } = string.Empty;
+    public int SizeBytes { get; set; }
+    public DateTime? ExpiresAtUtc { get; set; }
+    public DateTime LastAccessedUtc { get; set; } = DateTime.UtcNow;
+    
+    // Morris Logarithmic Counter for LFU emulation (0-255)
+    public byte LfuCounter { get; set; } = 5; // Initial counter
+    public DateTime LastDecayTimeUtc { get; set; } = DateTime.UtcNow;
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day18.RedisDataStructures/RedisDataStructuresService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd18-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d18-src-code-3" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day18.RedisDataStructures;
+
+public class RedisDataStructuresService
+{
+    // In-memory representations of Redis data structures
+    private readonly ConcurrentDictionary&lt;string, string&gt; _strings = new();
+    private readonly ConcurrentDictionary&lt;string, ConcurrentDictionary&lt;string, string&gt;&gt; _hashes = new();
+    private readonly ConcurrentDictionary&lt;string, HashSet&lt;string&gt;&gt; _sets = new();
+    private readonly ConcurrentDictionary&lt;string, SortedSet&lt;(double Score, string Member)&gt;&gt; _zsets = new();
+    private readonly ConcurrentDictionary&lt;string, byte[]&gt; _bitmaps = new();
+    private readonly ConcurrentDictionary&lt;string, byte[]&gt; _hyperLogLogs = new();
+
+    // 1. Strings: Atomic Counter &amp; Value Cache
+    public long StringIncrement(string key, long delta = 1)
+    {
+        while (true)
+        {
+            if (_strings.TryGetValue(key, out var currentStr))
+            {
+                long currentVal = long.Parse(currentStr);
+                long newVal = currentVal + delta;
+                if (_strings.TryUpdate(key, newVal.ToString(), currentStr))
+                {
+                    return newVal;
+                }
+            }
+            else
+            {
+                if (_strings.TryAdd(key, delta.ToString()))
+                {
+                    return delta;
+                }
+            }
+        }
+    }
+
+    public string? StringGet(string key) =&gt; _strings.TryGetValue(key, out var val) ? val : null;
+    public void StringSet(string key, string value) =&gt; _strings[key] = value;
+
+    // 2. Hashes: Field-Level Granular Storage
+    public void HashSetField(string key, string field, string value)
+    {
+        var hash = _hashes.GetOrAdd(key, _ =&gt; new ConcurrentDictionary&lt;string, string&gt;());
+        hash[field] = value;
+    }
+
+    public string? HashGetField(string key, string field)
+    {
+        if (_hashes.TryGetValue(key, out var hash) &amp;&amp; hash.TryGetValue(field, out var val))
+        {
+            return val;
+        }
+        return null;
+    }
+
+    public long HashIncrementField(string key, string field, long delta = 1)
+    {
+        var hash = _hashes.GetOrAdd(key, _ =&gt; new ConcurrentDictionary&lt;string, string&gt;());
+        while (true)
+        {
+            if (hash.TryGetValue(field, out var currentStr))
+            {
+                long currentVal = long.Parse(currentStr);
+                long newVal = currentVal + delta;
+                if (hash.TryUpdate(field, newVal.ToString(), currentStr))
+                {
+                    return newVal;
+                }
+            }
+            else
+            {
+                if (hash.TryAdd(field, delta.ToString()))
+                {
+                    return delta;
+                }
+            }
+        }
+    }
+
+    public IReadOnlyDictionary&lt;string, string&gt;? HashGetAll(string key)
+    {
+        return _hashes.TryGetValue(key, out var hash) ? hash : null;
+    }
+
+    // 3. Sets: Unordered Deduplicated Collections &amp; Set Operations
+    public bool SetAdd(string key, string member)
+    {
+        var set = _sets.GetOrAdd(key, _ =&gt; new HashSet&lt;string&gt;());
+        lock (set)
+        {
+            return set.Add(member);
+        }
+    }
+
+    public bool SetIsMember(string key, string member)
+    {
+        if (_sets.TryGetValue(key, out var set))
+        {
+            lock (set)
+            {
+                return set.Contains(member);
+            }
+        }
+        return false;
+    }
+
+    public HashSet&lt;string&gt; SetIntersect(string key1, string key2)
+    {
+        var res = new HashSet&lt;string&gt;();
+        if (_sets.TryGetValue(key1, out var s1) &amp;&amp; _sets.TryGetValue(key2, out var s2))
+        {
+            lock (s1)
+            lock (s2)
+            {
+                res = new HashSet&lt;string&gt;(s1);
+                res.IntersectWith(s2);
+            }
+        }
+        return res;
+    }
+
+    // 4. Sorted Sets (ZSET): Priority Queues, Leaderboards &amp; Rate Limiting
+    public bool ZSetAdd(string key, string member, double score)
+    {
+        var comparer = Comparer&lt;(double Score, string Member)&gt;.Create((a, b) =&gt;
+        {
+            int cmp = a.Score.CompareTo(b.Score);
+            return cmp != 0 ? cmp : string.Compare(a.Member, b.Member, StringComparison.Ordinal);
+        });
+
+        var zset = _zsets.GetOrAdd(key, _ =&gt; new SortedSet&lt;(double Score, string Member)&gt;(comparer));
+        lock (zset)
+        {
+            // Remove existing member with different score
+            var existing = zset.FirstOrDefault(x =&gt; x.Member == member);
+            if (existing != default)
+            {
+                zset.Remove(existing);
+            }
+            return zset.Add((score, member));
+        }
+    }
+
+    public IReadOnlyList&lt;LeaderboardScore&gt; ZSetGetTop(string key, int topN)
+    {
+        if (!_zsets.TryGetValue(key, out var zset)) return Array.Empty&lt;LeaderboardScore&gt;();
+
+        lock (zset)
+        {
+            return zset.Reverse()
+                .Take(topN)
+                .Select((item, idx) =&gt; new LeaderboardScore(item.Member, item.Score, idx + 1))
+                .ToList();
+        }
+    }
+
+    // Sliding Window Rate Limiter using ZSET
+    public bool IsRateLimited(string clientKey, int maxRequests, TimeSpan window, DateTime nowUtc)
+    {
+        string key = $&quot;ratelimit:{clientKey}&quot;;
+        double nowMs = nowUtc.Subtract(DateTime.UnixEpoch).TotalMilliseconds;
+        double windowStartMs = nowMs - window.TotalMilliseconds;
+
+        var comparer = Comparer&lt;(double Score, string Member)&gt;.Create((a, b) =&gt;
+        {
+            int cmp = a.Score.CompareTo(b.Score);
+            return cmp != 0 ? cmp : string.Compare(a.Member, b.Member, StringComparison.Ordinal);
+        });
+
+        var zset = _zsets.GetOrAdd(key, _ =&gt; new SortedSet&lt;(double Score, string Member)&gt;(comparer));
+        lock (zset)
+        {
+            // 1. Remove entries older than windowStartMs
+            zset.RemoveWhere(x =&gt; x.Score &lt; windowStartMs);
+
+            // 2. Count requests in current window
+            if (zset.Count &gt;= maxRequests)
+            {
+                return true; // Rate limited!
+            }
+
+            // 3. Add current timestamp
+            zset.Add((nowMs, Guid.NewGuid().ToString(&quot;N&quot;)));
+            return false;
+        }
+    }
+
+    // 5. Bitmaps: Ultra-Compact User Presence / Daily Active Users
+    public bool SetBit(string key, long offset, bool value)
+    {
+        int byteIndex = (int)(offset / 8);
+        int bitOffset = (int)(offset % 8);
+
+        var bytes = _bitmaps.GetOrAdd(key, _ =&gt; new byte[1024]);
+        if (byteIndex &gt;= bytes.Length)
+        {
+            Array.Resize(ref bytes, Math.Max(bytes.Length * 2, byteIndex + 128));
+            _bitmaps[key] = bytes;
+        }
+
+        byte oldByte = bytes[byteIndex];
+        bool oldBit = (oldByte &amp; (1 &lt;&lt; (7 - bitOffset))) != 0;
+
+        if (value)
+            bytes[byteIndex] |= (byte)(1 &lt;&lt; (7 - bitOffset));
+        else
+            bytes[byteIndex] &amp;= (byte)~(1 &lt;&lt; (7 - bitOffset));
+
+        return oldBit;
+    }
+
+    public bool GetBit(string key, long offset)
+    {
+        if (!_bitmaps.TryGetValue(key, out var bytes)) return false;
+        int byteIndex = (int)(offset / 8);
+        int bitOffset = (int)(offset % 8);
+
+        if (byteIndex &gt;= bytes.Length) return false;
+        return (bytes[byteIndex] &amp; (1 &lt;&lt; (7 - bitOffset))) != 0;
+    }
+
+    public long BitCount(string key)
+    {
+        if (!_bitmaps.TryGetValue(key, out var bytes)) return 0;
+        long count = 0;
+        foreach (byte b in bytes)
+        {
+            count += System.Numerics.BitOperations.PopCount(b);
+        }
+        return count;
+    }
+
+    // 6. HyperLogLog: 12KB Fixed Memory Approximate Unique Cardinality
+    private const int HllRegistersCount = 16384; // 2^14 registers (standard Redis HyperLogLog)
+    private const double AlphaM = 0.7213 / (1 + 1.079 / HllRegistersCount);
+
+    public bool HyperLogLogAdd(string key, string element)
+    {
+        var registers = _hyperLogLogs.GetOrAdd(key, _ =&gt; new byte[HllRegistersCount]);
+
+        // Hash element using 64-bit Murmur/SHA256 simulation
+        byte[] hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(element));
+        ulong hashVal = BitConverter.ToUInt64(hash, 0);
+
+        int registerIndex = (int)(hashVal &amp; (HllRegistersCount - 1));
+        ulong remainingBits = hashVal &gt;&gt; 14;
+
+        // Count leading zeros + 1 (rho)
+        byte rho = (byte)(System.Numerics.BitOperations.LeadingZeroCount(remainingBits | 1UL) - (64 - 50) + 1);
+        if (rho &gt; 64) rho = 64;
+
+        lock (registers)
+        {
+            if (rho &gt; registers[registerIndex])
+            {
+                registers[registerIndex] = rho;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public long HyperLogLogCount(string key)
+    {
+        if (!_hyperLogLogs.TryGetValue(key, out var registers)) return 0;
+
+        double sum = 0.0;
+        int zeroCount = 0;
+
+        lock (registers)
+        {
+            for (int i = 0; i &lt; HllRegistersCount; i++)
+            {
+                sum += Math.Pow(2.0, -registers[i]);
+                if (registers[i] == 0) zeroCount++;
+            }
+        }
+
+        // Raw harmonic mean estimate
+        double estimate = AlphaM * HllRegistersCount * HllRegistersCount / sum;
+
+        // Linear counting for small cardinalities
+        if (estimate &lt;= 2.5 * HllRegistersCount &amp;&amp; zeroCount &gt; 0)
+        {
+            estimate = HllRegistersCount * Math.Log((double)HllRegistersCount / zeroCount);
+        }
+
+        return (long)Math.Round(estimate);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day18.RedisDataStructures.Tests/Day18Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd18-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d18-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day18.RedisDataStructures.Tests;
+
+public class Day18Tests
+{
+    // ==========================================
+    // 1. REDIS DATA STRUCTURES TESTS
+    // ==========================================
+
+    [Fact]
+    public void RedisStrings_AtomicIncrement_IncrementsConcurrentlyAndAccurately()
+    {
+        var service = new RedisDataStructuresService();
+        service.StringSet(&quot;views:article:101&quot;, &quot;100&quot;);
+
+        var val1 = service.StringIncrement(&quot;views:article:101&quot;, 5);
+        val1.Should().Be(105);
+
+        // Concurrent atomic increments
+        Parallel.For(0, 50, _ =&gt;
+        {
+            service.StringIncrement(&quot;views:article:101&quot;, 1);
+        });
+
+        long finalVal = long.Parse(service.StringGet(&quot;views:article:101&quot;)!);
+        finalVal.Should().Be(155);
+    }
+
+    [Fact]
+    public void RedisHashes_FieldGranularity_AllowsDiscreteFieldMutation()
+    {
+        var service = new RedisDataStructuresService();
+        service.HashSetField(&quot;user:42&quot;, &quot;name&quot;, &quot;Alice&quot;);
+        service.HashSetField(&quot;user:42&quot;, &quot;email&quot;, &quot;alice@example.com&quot;);
+        service.HashSetField(&quot;user:42&quot;, &quot;logins&quot;, &quot;3&quot;);
+
+        service.HashGetField(&quot;user:42&quot;, &quot;name&quot;).Should().Be(&quot;Alice&quot;);
+        service.HashGetField(&quot;user:42&quot;, &quot;email&quot;).Should().Be(&quot;alice@example.com&quot;);
+
+        var newLogins = service.HashIncrementField(&quot;user:42&quot;, &quot;logins&quot;, 1);
+        newLogins.Should().Be(4);
+
+        var allFields = service.HashGetAll(&quot;user:42&quot;);
+        allFields.Should().NotBeNull();
+        allFields![&quot;name&quot;].Should().Be(&quot;Alice&quot;);
+        allFields[&quot;logins&quot;].Should().Be(&quot;4&quot;);
+    }
+
+    [Fact]
+    public void RedisSets_UnorderedDeduplicationAndIntersection_CalculatesCorrectOverlap()
+    {
+        var service = new RedisDataStructuresService();
+        service.SetAdd(&quot;user:1:interests&quot;, &quot;dotnet&quot;);
+        service.SetAdd(&quot;user:1:interests&quot;, &quot;distributed_systems&quot;);
+        service.SetAdd(&quot;user:1:interests&quot;, &quot;redis&quot;);
+
+        service.SetAdd(&quot;user:2:interests&quot;, &quot;redis&quot;);
+        service.SetAdd(&quot;user:2:interests&quot;, &quot;golang&quot;);
+        service.SetAdd(&quot;user:2:interests&quot;, &quot;dotnet&quot;);
+
+        service.SetIsMember(&quot;user:1:interests&quot;, &quot;dotnet&quot;).Should().BeTrue();
+        service.SetIsMember(&quot;user:1:interests&quot;, &quot;python&quot;).Should().BeFalse();
+
+        var common = service.SetIntersect(&quot;user:1:interests&quot;, &quot;user:2:interests&quot;);
+        common.Should().BeEquivalentTo(new[] { &quot;dotnet&quot;, &quot;redis&quot; });
+    }
+
+    [Fact]
+    public void RedisZSet_LeaderboardRanking_MaintainsSortedOrder()
+    {
+        var service = new RedisDataStructuresService();
+        service.ZSetAdd(&quot;leaderboard:season1&quot;, &quot;PlayerAlice&quot;, 1500.0);
+        service.ZSetAdd(&quot;leaderboard:season1&quot;, &quot;PlayerBob&quot;, 2200.5);
+        service.ZSetAdd(&quot;leaderboard:season1&quot;, &quot;PlayerCharlie&quot;, 1850.0);
+        service.ZSetAdd(&quot;leaderboard:season1&quot;, &quot;PlayerDavid&quot;, 900.0);
+
+        var top3 = service.ZSetGetTop(&quot;leaderboard:season1&quot;, 3);
+        top3.Should().HaveCount(3);
+        top3[0].PlayerId.Should().Be(&quot;PlayerBob&quot;);
+        top3[0].Score.Should().Be(2200.5);
+        top3[0].Rank.Should().Be(1);
+
+        top3[1].PlayerId.Should().Be(&quot;PlayerCharlie&quot;);
+        top3[1].Score.Should().Be(1850.0);
+        top3[1].Rank.Should().Be(2);
+
+        top3[2].PlayerId.Should().Be(&quot;PlayerAlice&quot;);
+        top3[2].Score.Should().Be(1500.0);
+        top3[2].Rank.Should().Be(3);
+    }
+
+    [Fact]
+    public void RedisZSet_SlidingWindowRateLimiter_ThrottlesExcessiveRequests()
+    {
+        var service = new RedisDataStructuresService();
+        var clientIp = &quot;192.168.1.100&quot;;
+        var window = TimeSpan.FromSeconds(10);
+        var baseTime = DateTime.UtcNow;
+
+        // Allow up to 3 requests per 10-second window
+        service.IsRateLimited(clientIp, 3, window, baseTime.AddSeconds(1)).Should().BeFalse();
+        service.IsRateLimited(clientIp, 3, window, baseTime.AddSeconds(2)).Should().BeFalse();
+        service.IsRateLimited(clientIp, 3, window, baseTime.AddSeconds(3)).Should().BeFalse();
+
+        // 4th request inside window should be rate-limited
+        service.IsRateLimited(clientIp, 3, window, baseTime.AddSeconds(4)).Should().BeTrue();
+
+        // 5th request 11 seconds later (outside sliding window) should be accepted
+        service.IsRateLimited(clientIp, 3, window, baseTime.AddSeconds(15)).Should().BeFalse();
+    }
+
+    [Fact]
+    public void RedisBitmaps_UserPresenceAndDau_TracksSingleBitsEfficiently()
+    {
+        var service = new RedisDataStructuresService();
+        string key = &quot;active_users:2026-10-08&quot;;
+
+        // Mark user IDs 5, 42, 100, 1023 as active
+        service.SetBit(key, 5, true);
+        service.SetBit(key, 42, true);
+        service.SetBit(key, 100, true);
+        service.SetBit(key, 1023, true);
+
+        service.GetBit(key, 5).Should().BeTrue();
+        service.GetBit(key, 42).Should().BeTrue();
+        service.GetBit(key, 7).Should().BeFalse();
+        service.GetBit(key, 1023).Should().BeTrue();
+
+        // BitCount should equal 4
+        service.BitCount(key).Should().Be(4);
+    }
+
+    [Fact]
+    public void RedisHyperLogLog_ApproximateUniqueVisitors_EstimatesCardinalityWithinBounds()
+    {
+        var service = new RedisDataStructuresService();
+        string key = &quot;unique_visitors:homepage&quot;;
+
+        // Add 1,000 distinct items with duplicates
+        for (int i = 0; i &lt; 1000; i++)
+        {
+            service.HyperLogLogAdd(key, $&quot;visitor_ip_{i}&quot;);
+            if (i % 2 == 0)
+            {
+                service.HyperLogLogAdd(key, $&quot;visitor_ip_{i}&quot;); // duplicate
+            }
+        }
+
+        long count = service.HyperLogLogCount(key);
+        // HLL standard error for 16384 registers is ~1.04% / sqrt(m)
+        // With 1000 items, estimate should be close to 1000 (+/- 5%)
+        count.Should().BeInRange(950, 1050);
+    }
+
+    // ==========================================
+    // 2. MEMORY EVICTION POLICIES TESTS
+    // ==========================================
+
+    [Fact]
+    public void Eviction_AllKeysLru_EvictsOldestAccessedKey()
+    {
+        // Max size 300 bytes
+        var cache = new MemoryEvictionSimulator(maxSizeBytes: 300, EvictionPolicy.AllKeysLru);
+        var t0 = new DateTime(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
+
+        cache.Put(&quot;key1&quot;, &quot;val1&quot;, sizeBytes: 100, customAccessTime: t0);
+        cache.Put(&quot;key2&quot;, &quot;val2&quot;, sizeBytes: 100, customAccessTime: t0.AddSeconds(1));
+        cache.Put(&quot;key3&quot;, &quot;val3&quot;, sizeBytes: 100, customAccessTime: t0.AddSeconds(2));
+
+        // Touch key1 at t0+3 so it becomes most recently used
+        cache.Get(&quot;key1&quot;, accessTime: t0.AddSeconds(3));
+
+        // Insert key4 (100 bytes) -&gt; Cache full (300). Must evict key2 (accessed at t0+1 vs key3 at t0+2 and key1 at t0+3)
+        cache.Put(&quot;key4&quot;, &quot;val4&quot;, sizeBytes: 100, customAccessTime: t0.AddSeconds(4));
+
+        cache.Get(&quot;key2&quot;).Should().BeNull(); // Evicted!
+        cache.Get(&quot;key1&quot;).Should().Be(&quot;val1&quot;);
+        cache.Get(&quot;key3&quot;).Should().Be(&quot;val3&quot;);
+        cache.Get(&quot;key4&quot;).Should().Be(&quot;val4&quot;);
+        cache.EvictedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void Eviction_VolatileTtl_EvictsKeyWithShortestRemainingTtl()
+    {
+        var cache = new MemoryEvictionSimulator(maxSizeBytes: 200, EvictionPolicy.VolatileTtl);
+        var t0 = new DateTime(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
+
+        // key1 expires in 60s, key2 expires in 10s
+        cache.Put(&quot;key1&quot;, &quot;val1&quot;, sizeBytes: 100, ttl: TimeSpan.FromSeconds(60), customAccessTime: t0);
+        cache.Put(&quot;key2&quot;, &quot;val2&quot;, sizeBytes: 100, ttl: TimeSpan.FromSeconds(10), customAccessTime: t0);
+
+        // Inserting key3 (100 bytes) requires evicting key2 (expires sooner)
+        cache.Put(&quot;key3&quot;, &quot;val3&quot;, sizeBytes: 100, ttl: TimeSpan.FromSeconds(120), customAccessTime: t0);
+
+        cache.Get(&quot;key2&quot;).Should().BeNull();
+        cache.Get(&quot;key1&quot;).Should().Be(&quot;val1&quot;);
+        cache.Get(&quot;key3&quot;).Should().Be(&quot;val3&quot;);
+    }
+
+    [Fact]
+    public void Eviction_NoEviction_ThrowsExceptionWhenMemoryExceeded()
+    {
+        var cache = new MemoryEvictionSimulator(maxSizeBytes: 150, EvictionPolicy.NoEviction);
+
+        cache.Put(&quot;k1&quot;, &quot;v1&quot;, sizeBytes: 100);
+        
+        Action act = () =&gt; cache.Put(&quot;k2&quot;, &quot;v2&quot;, sizeBytes: 100);
+        act.Should().Throw&lt;InvalidOperationException&gt;()
+           .WithMessage(&quot;*OOM command not allowed*&quot;);
+    }
+
+    [Fact]
+    public void Eviction_VolatileLru_LeavesNonVolatileKeysIntact()
+    {
+        var cache = new MemoryEvictionSimulator(maxSizeBytes: 200, EvictionPolicy.VolatileLru);
+        var t0 = new DateTime(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
+
+        // key1 has no TTL (persistent)
+        cache.Put(&quot;key1_persistent&quot;, &quot;v1&quot;, sizeBytes: 100, ttl: null, customAccessTime: t0);
+        // key2 has TTL (volatile)
+        cache.Put(&quot;key2_volatile&quot;, &quot;v2&quot;, sizeBytes: 100, ttl: TimeSpan.FromHours(1), customAccessTime: t0.AddSeconds(1));
+
+        // Inserting key3 should evict key2 (volatile), never key1 (persistent)
+        cache.Put(&quot;key3_volatile&quot;, &quot;v3&quot;, sizeBytes: 100, ttl: TimeSpan.FromHours(2), customAccessTime: t0.AddSeconds(2));
+
+        cache.Get(&quot;key1_persistent&quot;).Should().Be(&quot;v1&quot;);
+        cache.Get(&quot;key2_volatile&quot;).Should().BeNull(); // Evicted!
+        cache.Get(&quot;key3_volatile&quot;).Should().Be(&quot;v3&quot;);
+    }
+
+    // ==========================================
+    // 3. DSA TREE METRICS TESTS (LC #543 &amp; LC #110)
+    // ==========================================
+
+    [Fact]
+    public void LC543_DiameterOfBinaryTree_StandardTree_ReturnsCorrectEdgeCount()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        // Tree: [1, 2, 3, 4, 5]
+        //        1
+        //       / \
+        //      2   3
+        //     / \
+        //    4   5
+        // Longest path: 4 -&gt; 2 -&gt; 1 -&gt; 3 or 5 -&gt; 2 -&gt; 1 -&gt; 3 (length 3 edges)
+        var root = BinaryTreeMetricsSolvers.BuildTree(new int?[] { 1, 2, 3, 4, 5 });
+        solvers.DiameterOfBinaryTree(root).Should().Be(3);
+    }
+
+    [Fact]
+    public void LC543_DiameterOfBinaryTree_PathNotPassingThroughRoot_ReturnsSubtreeDiameter()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        // Construct tree where deepest path is completely in left subtree:
+        //        1
+        //       /
+        //      2
+        //     / \
+        //    3   4
+        //   /     \
+        //  5       6
+        // Longest path: 5 -&gt; 3 -&gt; 2 -&gt; 4 -&gt; 6 (length 4 edges), not passing through 1.
+        var root = new TreeNode(1)
+        {
+            left = new TreeNode(2)
+            {
+                left = new TreeNode(3) { left = new TreeNode(5) },
+                right = new TreeNode(4) { right = new TreeNode(6) }
+            }
+        };
+
+        solvers.DiameterOfBinaryTree(root).Should().Be(4);
+    }
+
+    [Fact]
+    public void LC543_DiameterOfBinaryTree_SingleNodeAndEmpty_ReturnsZero()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        solvers.DiameterOfBinaryTree(null).Should().Be(0);
+        solvers.DiameterOfBinaryTree(new TreeNode(42)).Should().Be(0);
+    }
+
+    [Fact]
+    public void LC110_IsBalanced_BalancedTree_ReturnsTrue()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        // Tree: [3, 9, 20, null, null, 15, 7]
+        //        3
+        //       / \
+        //      9   20
+        //         /  \
+        //        15   7
+        var root = BinaryTreeMetricsSolvers.BuildTree(new int?[] { 3, 9, 20, null, null, 15, 7 });
+        solvers.IsBalanced(root).Should().BeTrue();
+    }
+
+    [Fact]
+    public void LC110_IsBalanced_UnbalancedTree_ReturnsFalse()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        // Tree: [1, 2, 2, 3, 3, null, null, 4, 4]
+        // Left subtree has depth 4, right subtree has depth 2 -&gt; Imbalance &gt; 1
+        var root = BinaryTreeMetricsSolvers.BuildTree(new int?[] { 1, 2, 2, 3, 3, null, null, 4, 4 });
+        solvers.IsBalanced(root).Should().BeFalse();
+    }
+
+    [Fact]
+    public void LC110_IsBalanced_SingleNodeAndNull_ReturnsTrue()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        solvers.IsBalanced(null).Should().BeTrue();
+        solvers.IsBalanced(new TreeNode(10)).Should().BeTrue();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 18 - Engineering Notes: Redis Memory Internals & Eviction Architectures</h1>
+<h2>1. Redis Internal Data Structure Implementations</h2>
+<h3>SDS (Simple Dynamic String)</h3>
+<p>Redis strings are backed by SDS rather than raw C null-terminated strings (<code>char*</code>):</p>
+<ul>
+<li><strong>Structure</strong>: Header contains <code>len</code> (current length), <code>alloc</code> (allocated capacity), <code>flags</code> (header type: <code>sdshdr8</code>, <code>sdshdr16</code>, <code>sdshdr32</code>), and <code>buf[]</code>.</li>
+<li><strong>Advantages</strong>:</li>
+</ul>
+<ol>
+<li><strong>$O(1)$ Length Lookups</strong>: Returns <code>len</code> in constant time without scanning for <code>\0</code>.</li>
+<li><strong>Binary Safe</strong>: Can store arbitrary binary data (images, Protobuf, gzipped bytes) containing embedded null characters (<code>\0</code>).</li>
+<li><strong>Zero Buffer Overflows</strong>: SDS automatically reallocates memory via buffer pre-allocation (<code>alloc</code> doubled up to 1 MB).</li>
+<li><strong>Memory Optimization (<code>embstr</code> vs <code>raw</code>)</strong>: For strings $\le 44$ bytes, Redis allocates the <code>redisObject</code> header and SDS buffer in a single contiguous memory chunk (<code>embstr</code>), reducing memory fragmentation and CPU cache misses.</li>
+</ol>
+<h3>Redis Hashes: ListPack / ZipList vs Hash Table (Dict)</h3>
+<ul>
+<li>When a hash has few fields ($\le 512$) and small values ($\le 64$ bytes), Redis stores it as an encoded <strong>ListPack</strong> (or legacy <strong>ZipList</strong>): a single contiguous block of memory without pointers.</li>
+<li>Once limits (<code>hash-max-ziplist-entries</code> or <code>hash-max-ziplist-value</code>) are exceeded, Redis automatically converts it to a standard <strong>Dict</strong> (two hash tables supporting progressive re-hashing).</li>
+<li>Memory savings: ListPack eliminates 64-bit forward/backward pointers, reducing RAM consumption by up to 80% for small objects.</li>
+</ul>
+<h3>Sorted Sets (ZSET): SkipList vs Red-Black Trees</h3>
+<p>Redis implements ZSETs using a combination of a <strong>SkipList</strong> and a <strong>Hash Table</strong>:</p>
+<ul>
+<li><strong>Why SkipList over Red-Black Tree?</strong>:</li>
+</ul>
+<ol>
+<li><strong>Range Queries</strong>: SkipLists support range scans (<code>ZRANGEBYSCORE</code>) with trivial pointer traversals along level 0 forward pointers.</li>
+<li><strong>Simpler Implementation & Concurrency</strong>: SkipLists require no complex tree rotations or node rebalancing.</li>
+<li><strong>Memory Tunability</strong>: Node level distribution follows a geometric distribution with probability $p = 0.25$, yielding an average of only 1.33 pointers per node.</li>
+</ol>
+<h3>HyperLogLog: 12 KB Fixed-Memory Cardinality Estimation</h3>
+<ul>
+<li><strong>Problem</strong>: Counting millions of unique IP addresses with a Redis Set of 100,000,000 strings requires $\approx 4\text{ GB}$ of RAM.</li>
+<li><strong>HyperLogLog Solution</strong>: Requires exactly <strong>12 KB</strong> of memory regardless of whether counting 1,000 or 1,000,000,000 unique elements.</li>
+<li><strong>Algorithm</strong>:</li>
+</ul>
+<ol>
+<li>Hash incoming element with a 64-bit uniform hash function (MurmurHash64A).</li>
+<li>Use first 14 bits as the register index ($2^{14} = 16,384$ registers).</li>
+<li>Count leading zeros in the remaining 50 bits ($\rho$).</li>
+<li>Store $\max(\rho, \text{current\_register\_value})$ in an 6-bit register ($2^6 = 64$ max value).</li>
+<li>Estimate cardinality via the harmonic mean of all 16,384 registers:</li>
+</ol>
+<p>$$E = \alpha_m \cdot m^2 \cdot \left(\sum_{j=1}^{m} 2^{-M[j]}\right)^{-1}$$</p>
+<ol>
+<li>Standard error is bounded at $\frac{1.04}{\sqrt{m}} = \frac{1.04}{\sqrt{16384}} \approx 0.81\%$.</li>
+</ol>
+<hr/>
+<h2>2. Memory Eviction Algorithms Under the Hood</h2>
+<h3>Approximate LRU (Sample Pool Algorithm)</h3>
+<ul>
+<li>Redis does <strong>NOT</strong> maintain a global doubly-linked list of all keys. In a database with 50,000,000 keys, maintaining linked list pointers would consume over <strong>1.2 GB</strong> of RAM purely for LRU metadata.</li>
+<li><strong>Redis Approximation</strong>:</li>
+</ul>
+<ol>
+<li>Each <code>redisObject</code> contains a 24-bit field storing the current LRU clock timestamp.</li>
+<li>When memory exceeds <code>maxmemory</code>, Redis randomly samples $K$ keys (default <code>maxmemory-samples 5</code>, or 10 in high-precision mode).</li>
+<li>Keys are inserted into an <strong>Eviction Pool</strong> of size 16, kept sorted by idle time (<code>idle = current_clock - lru_clock</code>).</li>
+<li>The key with the highest idle time is evicted.</li>
+<li>With <code>maxmemory-samples 10</code>, Redis LRU approximation matches true LRU behavior within 99.5% accuracy.</li>
+</ol>
+<h3>LFU (Least Frequently Used) with Morris Counter</h3>
+<p>In LFU mode, the 24-bit <code>lru</code> field is split into:</p>
+<ul>
+<li><strong>16 bits</strong>: Last Decrement Time (<code>ldt</code>) in minutes modulo $2^{16}$.</li>
+<li><strong>8 bits</strong>: Logistic Counter (<code>log_cnt</code>), initialized to 5.</li>
+<li><strong>Decay Phase</strong>: If elapsed minutes $> 0$, decrement counter by <code>minutes_passed * lfu_decay_time</code>.</li>
+<li><strong>Increment Phase</strong>: Increment is probabilistic using Morris logarithmic counting:</li>
+</ul>
+<p>$$P = \frac{1}{\text{counter} \cdot \text{lfu\_log\_factor} + 1}$$</p>
+<p>This allows an 8-bit counter (0–255) to represent frequencies up to 1,000,000+ requests.</p>
+<hr/>
+<h2>3. High-Throughput Sliding Window Rate Limiting Pattern</h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">// Distributed sliding window rate limiter via Redis ZSET
+public async Task&lt;bool&gt; IsRateLimitedAsync(IDatabase db, string clientKey, int maxRequests, TimeSpan window)
+{
+    var key = $&quot;ratelimit:{clientKey}&quot;;
+    long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    long windowStartMs = nowMs - (long)window.TotalMilliseconds;
+    string memberId = Guid.NewGuid().ToString(&quot;N&quot;);
+
+    var tran = db.CreateTransaction();
+    // 1. Remove expired timestamps outside the rolling window
+    _ = tran.SortedSetRemoveRangeByScoreAsync(key, double.NegativeInfinity, windowStartMs);
+    // 2. Count requests remaining in current window
+    var countTask = tran.SortedSetLengthAsync(key);
+    // 3. Add current request timestamp
+    _ = tran.SortedSetAddAsync(key, memberId, nowMs);
+    // 4. Reset TTL so inactive keys expire
+    _ = tran.KeyExpireAsync(key, window);
+
+    bool committed = await tran.ExecuteAsync();
+    if (!committed) return true;
+
+    long requestCount = await countTask;
+    return requestCount &gt;= maxRequests;
+}</code></pre></div>
+<hr/>
+<h2>4. DSA Tree Algorithms: Top-Down vs Bottom-Up</h2>
+<h3>Why Top-Down is $O(N^2)$ (Anti-Pattern)</h3>
+<p>Evaluating tree balance by calling a standalone <code>GetDepth(node)</code> on each node recursively visits descendants repeatedly:</p>
+<p>$$T(N) = 2 \cdot T(N/2) + O(N) \implies O(N \log N) \text{ (best case)}, \quad O(N^2) \text{ (worst case degenerate)}$$</p>
+<h3>Optimal Bottom-Up Post-Order DFS ($O(N)$)</h3>
+<p>By computing height and detecting balance/diameter during the <strong>post-order return path</strong> (ascent), each node is visited exactly once:</p>
+<ul>
+<li><strong>Balanced Tree (LeetCode #110)</strong>: Returns <code>-1</code> as soon as $|height_{left} - height_{right}| > 1$, immediately terminating remaining recursion.</li>
+<li><strong>Diameter (LeetCode #543)</strong>: Tracks max diameter across all subtrees while returning standard height $1 + \max(h_{left}, h_{right})$.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 18: Redis Data Structures & Memory Eviction Policies</h1>
+<h2>Overview</h2>
+<p>Comprehensive deep-dive into advanced Redis data structures and memory eviction architectures in high-scale distributed systems. This module covers production patterns across Redis Strings, Hashes, Sets, Sorted Sets (ZSET), Bitmaps, and HyperLogLogs, paired with in-depth analysis of Redis memory management and eviction policies (<code>allkeys-lru</code>, <code>volatile-lru</code>, <code>allkeys-lfu</code>, <code>volatile-lfu</code>, <code>volatile-ttl</code>, and <code>noeviction</code>). Additionally, we solve tree metric algorithms: Diameter of Binary Tree (LeetCode #543) and Balanced Binary Tree (LeetCode #110) in optimal $O(N)$ time.</p>
+<hr/>
+<h2>Architectural Breakdown</h2>
+<h3>1. Redis Core Data Structures & Production Use Cases</h3>
+<div class="table-container"><table><thead><tr>
+<th>Data Structure</th>
+<th>Internal Representation</th>
+<th>Primary Use Case</th>
+<th>Time Complexity</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Strings</strong></td>
+<td>SDS (Simple Dynamic String), <code>raw</code> or <code>embstr</code></td>
+<td>Distributed Atomic Counters (<code>INCRBY</code>), Session Caches</td>
+<td>$O(1)$</td>
+</tr>
+<tr>
+<td><strong>Hashes</strong></td>
+<td><code>ziplist</code>/<code>listpack</code> or <code>hashtable</code> (dict)</td>
+<td>User Profiles, Discrete Field Updates without Full Serialization</td>
+<td>$O(1)$ field access</td>
+</tr>
+<tr>
+<td><strong>Sets</strong></td>
+<td><code>intset</code> or <code>hashtable</code></td>
+<td>Unique Tags, Mutual Friends (<code>SINTER</code>), Deduplication</td>
+<td>$O(1)$ add/check, $O(N \cdot M)$ intersect</td>
+</tr>
+<tr>
+<td><strong>Sorted Sets (ZSET)</strong></td>
+<td><code>ziplist</code>/<code>listpack</code> or <code>skiplist</code> + <code>dict</code></td>
+<td>Real-time Leaderboards, Sliding-Window Rate Limiters</td>
+<td>$O(\log N)$ add/rank, $O(\log N + M)$ range</td>
+</tr>
+<tr>
+<td><strong>Bitmaps</strong></td>
+<td>String offsets manipulated at bit level</td>
+<td>Daily Active Users (DAU), Feature Flag Presence, Compact Flags</td>
+<td>$O(1)$ get/set bit, $O(N)$ <code>BITCOUNT</code></td>
+</tr>
+<tr>
+<td><strong>HyperLogLog</strong></td>
+<td>16,384 6-bit registers (Dense/Sparse SDS)</td>
+<td>Unique Visitor Cardinality Estimation with fixed 12 KB RAM</td>
+<td>$O(1)$ add, $O(1)$ count ($\approx 0.81\%$ standard error)</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h3>2. Redis Memory Eviction Policies Under Memory Pressure</h3>
+<p>When <code>used_memory</code> reaches <code>maxmemory</code>, Redis executes its configured eviction policy on write operations:</p>
+<ol>
+<li><strong><code>noeviction</code></strong>:</li>
+</ol>
+<ul>
+<li>Redis refuses writes and returns an <code>OOM command not allowed when used memory &gt; &#x27;maxmemory&#x27;</code> error.</li>
+<li>Read and delete commands continue to function normally. Essential for systems where Redis functions as a persistent primary database.</li>
+</ul>
+<ol>
+<li><strong><code>allkeys-lru</code></strong>:</li>
+</ol>
+<ul>
+<li>Evicts least recently used keys across the entire keyspace using Redis's 24-bit approximated LRU clock sample pool.</li>
+<li>Ideal when key access follows a Power-Law (80/20 rule) distribution.</li>
+</ul>
+<ol>
+<li><strong><code>volatile-lru</code></strong>:</li>
+</ol>
+<ul>
+<li>Evicts least recently used keys only among keys with an active TTL (<code>expire</code> set).</li>
+</ul>
+<ol>
+<li><strong><code>allkeys-lfu</code></strong>:</li>
+</ol>
+<ul>
+<li>Evicts least frequently used keys across the entire keyspace using an 8-bit Morris logarithmic frequency counter and time decay.</li>
+<li>Prevents cache pollution where a newly added key is evicted despite high long-term utility.</li>
+</ul>
+<ol>
+<li><strong><code>volatile-lfu</code></strong>:</li>
+</ol>
+<ul>
+<li>Evicts least frequently used keys only among keys configured with a TTL.</li>
+</ul>
+<ol>
+<li><strong><code>volatile-ttl</code></strong>:</li>
+</ol>
+<ul>
+<li>Evaluates a random sample of keys with TTL and evicts the key with the shortest remaining time-to-live.</li>
+</ul>
+<hr/>
+<h3>3. Tree Recursion Algorithms Solved</h3>
+<h4>LeetCode #543: Diameter of Binary Tree</h4>
+<ul>
+<li><strong>Problem</strong>: Find the length of the longest path between any two nodes in a tree (counted in edges).</li>
+<li><strong>Algorithm</strong>: Bottom-up post-order DFS. At each node, compute left and right subtree heights, update global diameter <code>max(diameter, leftHeight + rightHeight)</code>, and return <code>1 + max(leftHeight, rightHeight)</code>.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$ recursion stack space.</li>
+</ul>
+<h4>LeetCode #110: Balanced Binary Tree</h4>
+<ul>
+<li><strong>Problem</strong>: Determine if a binary tree is height-balanced (subtree heights differ by no more than 1 for all nodes).</li>
+<li><strong>Algorithm</strong>: Bottom-up DFS returning subtree height. If any subtree is unbalanced, it immediately bubbles up <code>-1</code> to short-circuit redundant traversals.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$.</li>
+</ul>
+<hr/>
+<h2>Running Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day18-Redis-DataStructures-Eviction/tests/Day18.RedisDataStructures.Tests/Day18.RedisDataStructures.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How does Redis achieve $O(1)$ operations on Strings and prevent buffer overflows internally compared to standard C strings?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Redis uses SDS (Simple Dynamic String) headers containing length, capacity, and flags, providing constant-time length lookups, automatic buffer reallocation, and binary safety.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In standard C, strings are null-terminated (<code>\0</code>), meaning <code>strlen()</code> runs in $O(N)$ time and functions like <code>strcat()</code> are prone to buffer overflows.</p>
+<p>Redis wraps strings in SDS structures (<code>sdshdr8</code>, <code>sdshdr16</code>, <code>sdshdr32</code>):</p>
+<ul>
+<li><strong><code>len</code></strong>: Current byte length, allowing $O(1)$ length queries without scanning.</li>
+<li><strong><code>alloc</code></strong>: Total buffer capacity, allowing Redis to verify free space before appending and dynamically reallocate buffer memory (buffer preallocation doubles size up to 1 MB).</li>
+<li><strong>Binary safety</strong>: Because length is determined by <code>len</code> rather than <code>\0</code>, Redis can safely store arbitrary binary payloads like JPEG images, Gzip streams, or Protobuf blobs containing null bytes.</li>
+<li><strong><code>embstr</code> optimization</strong>: For strings under 44 bytes, Redis allocates the <code>redisObject</code> metadata and the SDS payload within a single contiguous <code>malloc</code> block, eliminating a second memory allocation and maximizing CPU L1/L2 cache locality.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why does Redis use SkipLists instead of Red-Black Trees or AVL trees for Sorted Sets (ZSET)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: SkipLists provide simpler range query traversals, easier lock-free / low-overhead concurrent implementations, and tuneable memory usage without complex tree rebalancing rotations.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Redis creator Salvatore Sanfilippo chose SkipLists over balanced BSTs for three critical engineering reasons:</p>
+<ol>
+<li><strong>Range Scans (<code>ZRANGEBYSCORE</code>)</strong>: In a SkipList, finding the lower bound takes $O(\log N)$, after which scanning subsequent items simply traverses the level-0 linked list pointers ($O(1)$ per subsequent element). In a BST, in-order traversal requires stack allocation or parent pointer reversals.</li>
+<li><strong>Rebalancing Overhead</strong>: Red-Black trees require complex rotations and color flips upon insertion or deletion, which can cascade across multiple levels. A SkipList only modifies local pointer references of adjacent nodes.</li>
+<li><strong>Memory Tunability</strong>: The probability $p$ of a node being elevated to the next level is parameterized. With $p = 0.25$, nodes average only 1.33 pointers each, consuming less memory than a 3-pointer binary tree node (left, right, parent + color bit).</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How does HyperLogLog estimate unique cardinalities up to billions of elements using only 12 KB of memory?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: By hashing elements into 16,384 registers and recording the maximum number of leading zeros in the hash values, cardinality is probabilistically estimated using the harmonic mean with ~0.81% standard error.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>HyperLogLog exploits the mathematical property that in a uniformly distributed binary stream, a sequence of $k$ consecutive leading zeros occurs with probability $2^{-k}$.</p>
+<ol>
+<li>Incoming elements are hashed with 64-bit MurmurHash.</li>
+<li>The first 14 bits determine the register index ($2^{14} = 16,384$ registers).</li>
+<li>The remaining 50 bits are analyzed for leading zeros ($\rho$).</li>
+<li>Each register stores $\max(\text{existing\_val}, \rho)$ in a 6-bit integer ($16384 \times 6 \text{ bits} / 8 = 12,288 \text{ bytes} = 12 \text{ KB}$).</li>
+<li>Redis calculates the harmonic mean across all registers to prevent statistical skew from single high-value outliers:</li>
+</ol>
+<p>$$E = \alpha_m \cdot m^2 \cdot \left(\sum_{j=1}^{m} 2^{-M[j]}\right)^{-1}$$</p>
+<ol>
+<li>For low cardinalities ($E < 2.5 \cdot m$), Redis applies Linear Counting bias correction based on the number of zero registers.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does Redis approximate LRU eviction without the prohibitive memory overhead of a true doubly linked list?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Instead of maintaining a global linked list of all keys (which would waste 24+ bytes of pointer RAM per key), Redis stores a 24-bit clock in each object header and samples a configurable pool of keys to evict the oldest.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a database with 50 million keys, maintaining an exact LRU doubly linked list would require 24 bytes per key in pointer overhead (1.2 GB of RAM solely for eviction pointers).</p>
+<p><strong>Redis Approximated LRU</strong>:</p>
+<ul>
+<li>Each <code>redisObject</code> header contains a 24-bit <code>lru</code> field recording the system clock timestamp (in seconds, wrapping every 194 days).</li>
+<li>When <code>maxmemory</code> is reached, Redis randomly selects $K$ keys (default <code>maxmemory-samples 5</code>, configurable to 10).</li>
+<li>Redis populates an internal 16-key <strong>Eviction Pool</strong> sorted by idle time (<code>current_timestamp - lru_timestamp</code>).</li>
+<li>The key with the highest idle time is evicted.</li>
+<li>Benchmarks demonstrate that with <code>maxmemory-samples 10</code>, the approximate LRU curve is virtually indistinguishable from a strict mathematical LRU list while consuming zero pointer memory.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">Explain how Redis implements LFU (Least Frequently Used) using an 8-bit Morris counter and time decay.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The 24-bit <code>lru</code> field is partitioned into a 16-bit decay timestamp and an 8-bit logarithmic Morris counter that increments probabilistically and decays per elapsed minute.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>LRU suffers from cache pollution: a one-time batch scan can flush hot items that have been accessed thousands of times. LFU solves this.</p>
+<p>Redis splits the 24-bit field into:</p>
+<ol>
+<li><strong>16-bit Last Decrement Time (<code>ldt</code>)</strong>: Unix timestamp in minutes modulo $2^{16}$.</li>
+<li><strong>8-bit Logistic Counter (<code>log_cnt</code>)</strong>: Initialized to 5 to protect newly created keys.</li>
+</ol>
+<ul>
+<li><strong>Decay Step</strong>: When accessed, if $(now - ldt) > 0$, the counter is decremented by $(now - ldt) \times \text{lfu-decay-time}$.</li>
+<li><strong>Probabilistic Increment Step</strong>: An 8-bit counter can only count to 255. Redis uses Morris logarithmic counting where the probability of increment is:</li>
+</ul>
+<p>$$P = \frac{1}{\text{counter} \cdot \text{lfu\_log\_factor} + 1}$$</p>
+<p>With default factor 10, a counter value of 255 represents approximately 1,000,000 accesses, enabling wide dynamic range within a single byte.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">Compare `volatile-*` vs `allkeys-*` eviction policies. Under what architectural circumstances can `volatile-lru` or `volatile-ttl` cause an Out-Of-Memory (OOM) error?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: <code>volatile-*</code> policies only evict keys configured with an explicit TTL; if memory is saturated by persistent keys without TTL, Redis cannot evict anything and throws an OOM exception.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><code>allkeys-lru</code> / <code>allkeys-lfu</code>: Treats every key as eligible for eviction. Recommended for pure caching tiers.</li>
+<li><code>volatile-lru</code> / <code>volatile-lfu</code> / <code>volatile-ttl</code>: Restricts eviction candidates to keys with an expiration (<code>EXPIRE</code>, <code>SETEX</code>).</li>
+</ul>
+<p><strong>The OOM Failure Scenario</strong>:</p>
+<p>If an application uses Redis both for caching (with TTL) and for persistent state (e.g., user sessions or background job queues without TTL), and persistent data grows until <code>maxmemory</code> is reached while all volatile keys have already been evicted, Redis cannot free any memory.</p>
+<p>Any subsequent write command returns:</p>
+<p><code>(error) OOM command not allowed when used memory &gt; &#x27;maxmemory&#x27;</code>.</p>
+<p><strong>Rule of Thumb</strong>: Use <code>allkeys-lru</code> when Redis is a dedicated cache; use <code>volatile-lru</code> only when persistent keys are guaranteed to stay strictly within a known memory budget.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How do you implement a scalable Sliding Window Rate Limiter using Redis Sorted Sets (ZSET), and what is its time and space complexity?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Use a ZSET where both the score and member represent unix millisecond timestamps; prune expired elements with <code>ZREMRANGEBYSCORE</code>, check <code>ZCARD</code>, and add the current request with <code>ZADD</code>.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-redis"><code class="language-redis">  MULTI
+  ZREMRANGEBYSCORE ratelimit:user_123 -inf (now - window_size)
+  ZCARD ratelimit:user_123
+  ZADD ratelimit:user_123 now now:uuid
+  EXPIRE ratelimit:user_123 window_size
+  EXEC</code></pre></div>
+<ul>
+<li><strong>Precision</strong>: Provides exact sliding window protection with zero boundary reset spikes (unlike fixed-window counters).</li>
+<li><strong>Time Complexity</strong>: $O(\log N + M)$ where $N$ is the number of requests in the window and $M$ is the number of removed old entries.</li>
+<li><strong>Space Complexity</strong>: $O(R)$ where $R$ is the number of requests in the active window. For ultra-high volume APIs (millions of req/sec), ZSET memory can grow high, making a sliding-window counter or token bucket preferable.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">When would you use Redis Hashes over serializing a JSON string into a Redis String key?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Hashes are superior when you need to read or mutate individual fields (<code>HGET</code>, <code>HSET</code>, <code>HINCRBY</code>) without deserializing and transferring the entire payload over the network.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<ol>
+<li><strong>Bandwidth & CPU</strong>: Mutating a user's <code>last_active</code> timestamp in a 20 KB user profile JSON string requires downloading 20 KB, deserializing in C#, updating the property, re-serializing, and uploading 20 KB. With Redis Hashes: <code>HSET user:1 last_active 1728392000</code> transfers $< 50$ bytes.</li>
+<li><strong>Race Conditions</strong>: Two microservices updating different fields of a JSON string concurrently will overwrite each other's changes (lost updates). With Hashes, field updates are atomic and independent.</li>
+<li><strong>Memory Optimization</strong>: Small Hashes are stored as contiguous ListPacks, which can be more compact in RAM than JSON string keys.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #543 (Diameter of Binary Tree), why does the longest path not necessarily pass through the root node, and how does the bottom-up algorithm handle this?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The longest path can exist entirely within a dense, deep subtree; bottom-up recursion computes and updates the global maximum path at every sub-root while returning height upwards.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Consider a tree where the root has a right child with depth 1, but its left child is the root of two very deep subtrees of depth 10 each. The diameter of the left subtree is $10 + 10 = 20$ edges, whereas any path passing through the root node has length at most $10 + 1 = 11$ edges.</p>
+<p><strong>Bottom-Up Handling</strong>:</p>
+<p>The recursive post-order helper returns the <strong>height</strong> of the current subtree: $1 + \max(h_{left}, h_{right})$.</p>
+<p>Concurrently, at each node, it computes the diameter of the path pivoting at that node: $h_{left} + h_{right}$, updating a global tracker <code>maxDiameter = max(maxDiameter, left + right)</code>.</p>
+<p>This guarantees that every possible path apex is evaluated in $O(N)$ time.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does LeetCode #110 (Balanced Binary Tree) optimize from $O(N^2)$ to $O(N)$ time complexity?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Top-down recursion re-computes heights repeatedly for subtrees ($O(N^2)$ worst-case); bottom-up checks balance during height calculation and immediately propagates <code>-1</code> to short-circuit.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><strong>Top-Down ($O(N^2)$)</strong>:</li>
+</ul>
+<p><code>IsBalanced(node)</code> calls <code>Height(node.left)</code> and <code>Height(node.right)</code>, then recursively calls <code>IsBalanced(node.left)</code> and <code>IsBalanced(node.right)</code>. On a degenerate linked-list tree, each level recounts all children, resulting in $\sum_{i=1}^N i = O(N^2)$ operations.</p>
+<ul>
+<li><strong>Bottom-Up ($O(N)$)</strong>:</li>
+</ul>
+<p>In post-order DFS, the function returns the subtree height if balanced, or <code>-1</code> if unbalanced.</p>
+<p>As soon as <code>CheckHeight(left)</code> returns <code>-1</code> or <code>|left - right| &gt; 1</code>, the function immediately returns <code>-1</code> up the call stack without traversing the rest of the tree. Each node is visited at most once, achieving strict $O(N)$ time and $O(H)$ stack space.</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day18.RedisDataStructures/BinaryTreeMetricsSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd18-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d18-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day18.RedisDataStructures;
+
+/// &lt;summary&gt;
+/// Definition for a binary tree node.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// High-performance tree metric algorithms:
+/// - LeetCode #543: Diameter of Binary Tree
+/// - LeetCode #110: Balanced Binary Tree
+/// Both solved in optimal O(N) time and O(H) auxiliary stack space using bottom-up post-order traversal.
+/// &lt;/summary&gt;
+public class BinaryTreeMetricsSolvers
+{
+    /// &lt;summary&gt;
+    /// Computes the diameter of a binary tree (LeetCode #543).
+    /// The diameter is the length of the longest path between any two nodes in a tree (measured in edges).
+    /// Time Complexity: O(N) visiting each node exactly once.
+    /// Space Complexity: O(H) recursion stack where H is the height of the tree.
+    /// &lt;/summary&gt;
+    public int DiameterOfBinaryTree(TreeNode? root)
+    {
+        int maxDiameter = 0;
+
+        int GetHeight(TreeNode? node)
+        {
+            if (node == null) return 0;
+
+            int leftHeight = GetHeight(node.left);
+            int rightHeight = GetHeight(node.right);
+
+            // Path through this node in edges is leftHeight + rightHeight
+            maxDiameter = Math.Max(maxDiameter, leftHeight + rightHeight);
+
+            // Height is 1 + max child height
+            return 1 + Math.Max(leftHeight, rightHeight);
+        }
+
+        GetHeight(root);
+        return maxDiameter;
+    }
+
+    /// &lt;summary&gt;
+    /// Determines if a binary tree is height-balanced (LeetCode #110).
+    /// A binary tree is balanced if the depth of the two subtrees of every node never differs by more than 1.
+    /// Uses bottom-up post-order recursion returning -1 early if any subtree is unbalanced.
+    /// Time Complexity: O(N) - short circuits immediately upon detecting imbalance.
+    /// Space Complexity: O(H) recursion stack space.
+    /// &lt;/summary&gt;
+    public bool IsBalanced(TreeNode? root)
+    {
+        return CheckHeight(root) != -1;
+    }
+
+    private static int CheckHeight(TreeNode? node)
+    {
+        if (node == null) return 0;
+
+        int leftHeight = CheckHeight(node.left);
+        if (leftHeight == -1) return -1; // Left subtree is already unbalanced
+
+        int rightHeight = CheckHeight(node.right);
+        if (rightHeight == -1) return -1; // Right subtree is already unbalanced
+
+        if (Math.Abs(leftHeight - rightHeight) &gt; 1)
+        {
+            return -1; // Current node violates balance property
+        }
+
+        return 1 + Math.Max(leftHeight, rightHeight);
+    }
+
+    /// &lt;summary&gt;
+    /// Helper to construct a binary tree from level-order array representation (LeetCode test format).
+    /// &lt;/summary&gt;
+    public static TreeNode? BuildTree(int?[] values)
+    {
+        if (values == null || values.Length == 0 || values[0] == null) return null;
+
+        var root = new TreeNode(values[0]!.Value);
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int i = 1;
+        while (queue.Count &gt; 0 &amp;&amp; i &lt; values.Length)
+        {
+            var current = queue.Dequeue();
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                current.left = new TreeNode(values[i]!.Value);
+                queue.Enqueue(current.left);
+            }
+            i++;
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                current.right = new TreeNode(values[i]!.Value);
+                queue.Enqueue(current.right);
+            }
+            i++;
+        }
+
+        return root;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day18.RedisDataStructures/MemoryEvictionSimulator.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd18-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d18-src-code-1" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day18.RedisDataStructures;
+
+public class MemoryEvictionSimulator
+{
+    private readonly int _maxSizeBytes;
+    private readonly EvictionPolicy _policy;
+    private readonly ConcurrentDictionary&lt;string, CacheItemMetadata&gt; _store = new();
+    private int _currentSizeBytes = 0;
+    private int _evictedCount = 0;
+
+    public int CurrentSizeBytes =&gt; _currentSizeBytes;
+    public int EvictedCount =&gt; _evictedCount;
+    public int KeyCount =&gt; _store.Count;
+
+    public MemoryEvictionSimulator(int maxSizeBytes, EvictionPolicy policy)
+    {
+        _maxSizeBytes = maxSizeBytes;
+        _policy = policy;
+    }
+
+    public void Put(string key, object value, int sizeBytes, TimeSpan? ttl = null, DateTime? customAccessTime = null)
+    {
+        var now = customAccessTime ?? DateTime.UtcNow;
+
+        lock (_store)
+        {
+            // If key already exists, deduct old size
+            if (_store.TryGetValue(key, out var oldItem))
+            {
+                _currentSizeBytes -= oldItem.SizeBytes;
+            }
+
+            // Evict if over budget
+            while (_currentSizeBytes + sizeBytes &gt; _maxSizeBytes)
+            {
+                var victim = SelectEvictionVictim(now);
+                if (victim == null)
+                {
+                    if (_policy == EvictionPolicy.NoEviction)
+                    {
+                        throw new InvalidOperationException(&quot;OOM command not allowed when used memory &gt; &#x27;maxmemory&#x27; under noeviction policy.&quot;);
+                    }
+                    // Cannot evict further (e.g. volatile policy with no volatile keys left)
+                    throw new InvalidOperationException(&quot;Memory full: No suitable keys available for eviction under current policy.&quot;);
+                }
+
+                _store.TryRemove(victim.Key, out _);
+                _currentSizeBytes -= victim.SizeBytes;
+                _evictedCount++;
+            }
+
+            // Insert new item
+            var metadata = new CacheItemMetadata
+            {
+                Key = key,
+                Value = value,
+                SizeBytes = sizeBytes,
+                ExpiresAtUtc = ttl.HasValue ? now.Add(ttl.Value) : null,
+                LastAccessedUtc = now,
+                LfuCounter = 5,
+                LastDecayTimeUtc = now
+            };
+
+            _store[key] = metadata;
+            _currentSizeBytes += sizeBytes;
+        }
+    }
+
+    public object? Get(string key, DateTime? accessTime = null)
+    {
+        lock (_store)
+        {
+            if (!_store.TryGetValue(key, out var item)) return null;
+
+            var now = accessTime ?? DateTime.UtcNow;
+            if (item.ExpiresAtUtc.HasValue &amp;&amp; now &gt;= item.ExpiresAtUtc.Value)
+            {
+                _store.TryRemove(key, out _);
+                _currentSizeBytes -= item.SizeBytes;
+                return null;
+            }
+
+            // Update LRU access timestamp
+            item.LastAccessedUtc = now;
+
+            // Update LFU Morris counter with logarithmic increment and decay
+            UpdateLfuCounter(item, now);
+
+            return item.Value;
+        }
+    }
+
+    private CacheItemMetadata? SelectEvictionVictim(DateTime now)
+    {
+        IEnumerable&lt;CacheItemMetadata&gt; pool = _store.Values;
+
+        // Filter volatile keys if volatile policy
+        if (_policy is EvictionPolicy.VolatileLru or EvictionPolicy.VolatileLfu or EvictionPolicy.VolatileTtl)
+        {
+            pool = pool.Where(x =&gt; x.ExpiresAtUtc.HasValue);
+        }
+
+        var candidateList = pool.ToList();
+        if (candidateList.Count == 0) return null;
+
+        return _policy switch
+        {
+            EvictionPolicy.AllKeysLru or EvictionPolicy.VolatileLru =&gt;
+                candidateList.OrderBy(x =&gt; x.LastAccessedUtc).FirstOrDefault(),
+
+            EvictionPolicy.AllKeysLfu or EvictionPolicy.VolatileLfu =&gt;
+                candidateList.OrderBy(x =&gt; x.LfuCounter).ThenBy(x =&gt; x.LastAccessedUtc).FirstOrDefault(),
+
+            EvictionPolicy.VolatileTtl =&gt;
+                candidateList.Where(x =&gt; x.ExpiresAtUtc.HasValue)
+                             .OrderBy(x =&gt; x.ExpiresAtUtc!.Value)
+                             .FirstOrDefault(),
+
+            _ =&gt; null
+        };
+    }
+
+    private static void UpdateLfuCounter(CacheItemMetadata item, DateTime now)
+    {
+        // 1. Decay: Redis decays 1 point per elapsed minute (lfu-decay-time)
+        var minutesPassed = (int)(now - item.LastDecayTimeUtc).TotalMinutes;
+        if (minutesPassed &gt; 0)
+        {
+            item.LfuCounter = (byte)Math.Max(0, item.LfuCounter - minutesPassed);
+            item.LastDecayTimeUtc = now;
+        }
+
+        // 2. Morris Logarithmic increment
+        // Probability = 1 / (base + counter * factor)
+        double r = Random.Shared.NextDouble();
+        double p = 1.0 / (item.LfuCounter + 1);
+        if (r &lt; p &amp;&amp; item.LfuCounter &lt; 255)
+        {
+            item.LfuCounter++;
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day18.RedisDataStructures/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd18-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d18-src-code-2" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day18.RedisDataStructures;
+
+public record UserProfileHash(
+    string UserId,
+    string Username,
+    string Email,
+    int LoginCount,
+    DateTime LastLoginUtc);
+
+public record LeaderboardScore(
+    string PlayerId,
+    double Score,
+    long Rank);
+
+public enum EvictionPolicy
+{
+    NoEviction,
+    AllKeysLru,
+    VolatileLru,
+    AllKeysLfu,
+    VolatileLfu,
+    VolatileTtl
+}
+
+public class CacheItemMetadata
+{
+    public string Key { get; set; } = string.Empty;
+    public object Value { get; set; } = string.Empty;
+    public int SizeBytes { get; set; }
+    public DateTime? ExpiresAtUtc { get; set; }
+    public DateTime LastAccessedUtc { get; set; } = DateTime.UtcNow;
+    
+    // Morris Logarithmic Counter for LFU emulation (0-255)
+    public byte LfuCounter { get; set; } = 5; // Initial counter
+    public DateTime LastDecayTimeUtc { get; set; } = DateTime.UtcNow;
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day18.RedisDataStructures/RedisDataStructuresService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd18-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d18-src-code-3" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day18.RedisDataStructures;
+
+public class RedisDataStructuresService
+{
+    // In-memory representations of Redis data structures
+    private readonly ConcurrentDictionary&lt;string, string&gt; _strings = new();
+    private readonly ConcurrentDictionary&lt;string, ConcurrentDictionary&lt;string, string&gt;&gt; _hashes = new();
+    private readonly ConcurrentDictionary&lt;string, HashSet&lt;string&gt;&gt; _sets = new();
+    private readonly ConcurrentDictionary&lt;string, SortedSet&lt;(double Score, string Member)&gt;&gt; _zsets = new();
+    private readonly ConcurrentDictionary&lt;string, byte[]&gt; _bitmaps = new();
+    private readonly ConcurrentDictionary&lt;string, byte[]&gt; _hyperLogLogs = new();
+
+    // 1. Strings: Atomic Counter &amp; Value Cache
+    public long StringIncrement(string key, long delta = 1)
+    {
+        while (true)
+        {
+            if (_strings.TryGetValue(key, out var currentStr))
+            {
+                long currentVal = long.Parse(currentStr);
+                long newVal = currentVal + delta;
+                if (_strings.TryUpdate(key, newVal.ToString(), currentStr))
+                {
+                    return newVal;
+                }
+            }
+            else
+            {
+                if (_strings.TryAdd(key, delta.ToString()))
+                {
+                    return delta;
+                }
+            }
+        }
+    }
+
+    public string? StringGet(string key) =&gt; _strings.TryGetValue(key, out var val) ? val : null;
+    public void StringSet(string key, string value) =&gt; _strings[key] = value;
+
+    // 2. Hashes: Field-Level Granular Storage
+    public void HashSetField(string key, string field, string value)
+    {
+        var hash = _hashes.GetOrAdd(key, _ =&gt; new ConcurrentDictionary&lt;string, string&gt;());
+        hash[field] = value;
+    }
+
+    public string? HashGetField(string key, string field)
+    {
+        if (_hashes.TryGetValue(key, out var hash) &amp;&amp; hash.TryGetValue(field, out var val))
+        {
+            return val;
+        }
+        return null;
+    }
+
+    public long HashIncrementField(string key, string field, long delta = 1)
+    {
+        var hash = _hashes.GetOrAdd(key, _ =&gt; new ConcurrentDictionary&lt;string, string&gt;());
+        while (true)
+        {
+            if (hash.TryGetValue(field, out var currentStr))
+            {
+                long currentVal = long.Parse(currentStr);
+                long newVal = currentVal + delta;
+                if (hash.TryUpdate(field, newVal.ToString(), currentStr))
+                {
+                    return newVal;
+                }
+            }
+            else
+            {
+                if (hash.TryAdd(field, delta.ToString()))
+                {
+                    return delta;
+                }
+            }
+        }
+    }
+
+    public IReadOnlyDictionary&lt;string, string&gt;? HashGetAll(string key)
+    {
+        return _hashes.TryGetValue(key, out var hash) ? hash : null;
+    }
+
+    // 3. Sets: Unordered Deduplicated Collections &amp; Set Operations
+    public bool SetAdd(string key, string member)
+    {
+        var set = _sets.GetOrAdd(key, _ =&gt; new HashSet&lt;string&gt;());
+        lock (set)
+        {
+            return set.Add(member);
+        }
+    }
+
+    public bool SetIsMember(string key, string member)
+    {
+        if (_sets.TryGetValue(key, out var set))
+        {
+            lock (set)
+            {
+                return set.Contains(member);
+            }
+        }
+        return false;
+    }
+
+    public HashSet&lt;string&gt; SetIntersect(string key1, string key2)
+    {
+        var res = new HashSet&lt;string&gt;();
+        if (_sets.TryGetValue(key1, out var s1) &amp;&amp; _sets.TryGetValue(key2, out var s2))
+        {
+            lock (s1)
+            lock (s2)
+            {
+                res = new HashSet&lt;string&gt;(s1);
+                res.IntersectWith(s2);
+            }
+        }
+        return res;
+    }
+
+    // 4. Sorted Sets (ZSET): Priority Queues, Leaderboards &amp; Rate Limiting
+    public bool ZSetAdd(string key, string member, double score)
+    {
+        var comparer = Comparer&lt;(double Score, string Member)&gt;.Create((a, b) =&gt;
+        {
+            int cmp = a.Score.CompareTo(b.Score);
+            return cmp != 0 ? cmp : string.Compare(a.Member, b.Member, StringComparison.Ordinal);
+        });
+
+        var zset = _zsets.GetOrAdd(key, _ =&gt; new SortedSet&lt;(double Score, string Member)&gt;(comparer));
+        lock (zset)
+        {
+            // Remove existing member with different score
+            var existing = zset.FirstOrDefault(x =&gt; x.Member == member);
+            if (existing != default)
+            {
+                zset.Remove(existing);
+            }
+            return zset.Add((score, member));
+        }
+    }
+
+    public IReadOnlyList&lt;LeaderboardScore&gt; ZSetGetTop(string key, int topN)
+    {
+        if (!_zsets.TryGetValue(key, out var zset)) return Array.Empty&lt;LeaderboardScore&gt;();
+
+        lock (zset)
+        {
+            return zset.Reverse()
+                .Take(topN)
+                .Select((item, idx) =&gt; new LeaderboardScore(item.Member, item.Score, idx + 1))
+                .ToList();
+        }
+    }
+
+    // Sliding Window Rate Limiter using ZSET
+    public bool IsRateLimited(string clientKey, int maxRequests, TimeSpan window, DateTime nowUtc)
+    {
+        string key = $&quot;ratelimit:{clientKey}&quot;;
+        double nowMs = nowUtc.Subtract(DateTime.UnixEpoch).TotalMilliseconds;
+        double windowStartMs = nowMs - window.TotalMilliseconds;
+
+        var comparer = Comparer&lt;(double Score, string Member)&gt;.Create((a, b) =&gt;
+        {
+            int cmp = a.Score.CompareTo(b.Score);
+            return cmp != 0 ? cmp : string.Compare(a.Member, b.Member, StringComparison.Ordinal);
+        });
+
+        var zset = _zsets.GetOrAdd(key, _ =&gt; new SortedSet&lt;(double Score, string Member)&gt;(comparer));
+        lock (zset)
+        {
+            // 1. Remove entries older than windowStartMs
+            zset.RemoveWhere(x =&gt; x.Score &lt; windowStartMs);
+
+            // 2. Count requests in current window
+            if (zset.Count &gt;= maxRequests)
+            {
+                return true; // Rate limited!
+            }
+
+            // 3. Add current timestamp
+            zset.Add((nowMs, Guid.NewGuid().ToString(&quot;N&quot;)));
+            return false;
+        }
+    }
+
+    // 5. Bitmaps: Ultra-Compact User Presence / Daily Active Users
+    public bool SetBit(string key, long offset, bool value)
+    {
+        int byteIndex = (int)(offset / 8);
+        int bitOffset = (int)(offset % 8);
+
+        var bytes = _bitmaps.GetOrAdd(key, _ =&gt; new byte[1024]);
+        if (byteIndex &gt;= bytes.Length)
+        {
+            Array.Resize(ref bytes, Math.Max(bytes.Length * 2, byteIndex + 128));
+            _bitmaps[key] = bytes;
+        }
+
+        byte oldByte = bytes[byteIndex];
+        bool oldBit = (oldByte &amp; (1 &lt;&lt; (7 - bitOffset))) != 0;
+
+        if (value)
+            bytes[byteIndex] |= (byte)(1 &lt;&lt; (7 - bitOffset));
+        else
+            bytes[byteIndex] &amp;= (byte)~(1 &lt;&lt; (7 - bitOffset));
+
+        return oldBit;
+    }
+
+    public bool GetBit(string key, long offset)
+    {
+        if (!_bitmaps.TryGetValue(key, out var bytes)) return false;
+        int byteIndex = (int)(offset / 8);
+        int bitOffset = (int)(offset % 8);
+
+        if (byteIndex &gt;= bytes.Length) return false;
+        return (bytes[byteIndex] &amp; (1 &lt;&lt; (7 - bitOffset))) != 0;
+    }
+
+    public long BitCount(string key)
+    {
+        if (!_bitmaps.TryGetValue(key, out var bytes)) return 0;
+        long count = 0;
+        foreach (byte b in bytes)
+        {
+            count += System.Numerics.BitOperations.PopCount(b);
+        }
+        return count;
+    }
+
+    // 6. HyperLogLog: 12KB Fixed Memory Approximate Unique Cardinality
+    private const int HllRegistersCount = 16384; // 2^14 registers (standard Redis HyperLogLog)
+    private const double AlphaM = 0.7213 / (1 + 1.079 / HllRegistersCount);
+
+    public bool HyperLogLogAdd(string key, string element)
+    {
+        var registers = _hyperLogLogs.GetOrAdd(key, _ =&gt; new byte[HllRegistersCount]);
+
+        // Hash element using 64-bit Murmur/SHA256 simulation
+        byte[] hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(element));
+        ulong hashVal = BitConverter.ToUInt64(hash, 0);
+
+        int registerIndex = (int)(hashVal &amp; (HllRegistersCount - 1));
+        ulong remainingBits = hashVal &gt;&gt; 14;
+
+        // Count leading zeros + 1 (rho)
+        byte rho = (byte)(System.Numerics.BitOperations.LeadingZeroCount(remainingBits | 1UL) - (64 - 50) + 1);
+        if (rho &gt; 64) rho = 64;
+
+        lock (registers)
+        {
+            if (rho &gt; registers[registerIndex])
+            {
+                registers[registerIndex] = rho;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public long HyperLogLogCount(string key)
+    {
+        if (!_hyperLogLogs.TryGetValue(key, out var registers)) return 0;
+
+        double sum = 0.0;
+        int zeroCount = 0;
+
+        lock (registers)
+        {
+            for (int i = 0; i &lt; HllRegistersCount; i++)
+            {
+                sum += Math.Pow(2.0, -registers[i]);
+                if (registers[i] == 0) zeroCount++;
+            }
+        }
+
+        // Raw harmonic mean estimate
+        double estimate = AlphaM * HllRegistersCount * HllRegistersCount / sum;
+
+        // Linear counting for small cardinalities
+        if (estimate &lt;= 2.5 * HllRegistersCount &amp;&amp; zeroCount &gt; 0)
+        {
+            estimate = HllRegistersCount * Math.Log((double)HllRegistersCount / zeroCount);
+        }
+
+        return (long)Math.Round(estimate);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day18.RedisDataStructures.Tests/Day18Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd18-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d18-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day18.RedisDataStructures.Tests;
+
+public class Day18Tests
+{
+    // ==========================================
+    // 1. REDIS DATA STRUCTURES TESTS
+    // ==========================================
+
+    [Fact]
+    public void RedisStrings_AtomicIncrement_IncrementsConcurrentlyAndAccurately()
+    {
+        var service = new RedisDataStructuresService();
+        service.StringSet(&quot;views:article:101&quot;, &quot;100&quot;);
+
+        var val1 = service.StringIncrement(&quot;views:article:101&quot;, 5);
+        val1.Should().Be(105);
+
+        // Concurrent atomic increments
+        Parallel.For(0, 50, _ =&gt;
+        {
+            service.StringIncrement(&quot;views:article:101&quot;, 1);
+        });
+
+        long finalVal = long.Parse(service.StringGet(&quot;views:article:101&quot;)!);
+        finalVal.Should().Be(155);
+    }
+
+    [Fact]
+    public void RedisHashes_FieldGranularity_AllowsDiscreteFieldMutation()
+    {
+        var service = new RedisDataStructuresService();
+        service.HashSetField(&quot;user:42&quot;, &quot;name&quot;, &quot;Alice&quot;);
+        service.HashSetField(&quot;user:42&quot;, &quot;email&quot;, &quot;alice@example.com&quot;);
+        service.HashSetField(&quot;user:42&quot;, &quot;logins&quot;, &quot;3&quot;);
+
+        service.HashGetField(&quot;user:42&quot;, &quot;name&quot;).Should().Be(&quot;Alice&quot;);
+        service.HashGetField(&quot;user:42&quot;, &quot;email&quot;).Should().Be(&quot;alice@example.com&quot;);
+
+        var newLogins = service.HashIncrementField(&quot;user:42&quot;, &quot;logins&quot;, 1);
+        newLogins.Should().Be(4);
+
+        var allFields = service.HashGetAll(&quot;user:42&quot;);
+        allFields.Should().NotBeNull();
+        allFields![&quot;name&quot;].Should().Be(&quot;Alice&quot;);
+        allFields[&quot;logins&quot;].Should().Be(&quot;4&quot;);
+    }
+
+    [Fact]
+    public void RedisSets_UnorderedDeduplicationAndIntersection_CalculatesCorrectOverlap()
+    {
+        var service = new RedisDataStructuresService();
+        service.SetAdd(&quot;user:1:interests&quot;, &quot;dotnet&quot;);
+        service.SetAdd(&quot;user:1:interests&quot;, &quot;distributed_systems&quot;);
+        service.SetAdd(&quot;user:1:interests&quot;, &quot;redis&quot;);
+
+        service.SetAdd(&quot;user:2:interests&quot;, &quot;redis&quot;);
+        service.SetAdd(&quot;user:2:interests&quot;, &quot;golang&quot;);
+        service.SetAdd(&quot;user:2:interests&quot;, &quot;dotnet&quot;);
+
+        service.SetIsMember(&quot;user:1:interests&quot;, &quot;dotnet&quot;).Should().BeTrue();
+        service.SetIsMember(&quot;user:1:interests&quot;, &quot;python&quot;).Should().BeFalse();
+
+        var common = service.SetIntersect(&quot;user:1:interests&quot;, &quot;user:2:interests&quot;);
+        common.Should().BeEquivalentTo(new[] { &quot;dotnet&quot;, &quot;redis&quot; });
+    }
+
+    [Fact]
+    public void RedisZSet_LeaderboardRanking_MaintainsSortedOrder()
+    {
+        var service = new RedisDataStructuresService();
+        service.ZSetAdd(&quot;leaderboard:season1&quot;, &quot;PlayerAlice&quot;, 1500.0);
+        service.ZSetAdd(&quot;leaderboard:season1&quot;, &quot;PlayerBob&quot;, 2200.5);
+        service.ZSetAdd(&quot;leaderboard:season1&quot;, &quot;PlayerCharlie&quot;, 1850.0);
+        service.ZSetAdd(&quot;leaderboard:season1&quot;, &quot;PlayerDavid&quot;, 900.0);
+
+        var top3 = service.ZSetGetTop(&quot;leaderboard:season1&quot;, 3);
+        top3.Should().HaveCount(3);
+        top3[0].PlayerId.Should().Be(&quot;PlayerBob&quot;);
+        top3[0].Score.Should().Be(2200.5);
+        top3[0].Rank.Should().Be(1);
+
+        top3[1].PlayerId.Should().Be(&quot;PlayerCharlie&quot;);
+        top3[1].Score.Should().Be(1850.0);
+        top3[1].Rank.Should().Be(2);
+
+        top3[2].PlayerId.Should().Be(&quot;PlayerAlice&quot;);
+        top3[2].Score.Should().Be(1500.0);
+        top3[2].Rank.Should().Be(3);
+    }
+
+    [Fact]
+    public void RedisZSet_SlidingWindowRateLimiter_ThrottlesExcessiveRequests()
+    {
+        var service = new RedisDataStructuresService();
+        var clientIp = &quot;192.168.1.100&quot;;
+        var window = TimeSpan.FromSeconds(10);
+        var baseTime = DateTime.UtcNow;
+
+        // Allow up to 3 requests per 10-second window
+        service.IsRateLimited(clientIp, 3, window, baseTime.AddSeconds(1)).Should().BeFalse();
+        service.IsRateLimited(clientIp, 3, window, baseTime.AddSeconds(2)).Should().BeFalse();
+        service.IsRateLimited(clientIp, 3, window, baseTime.AddSeconds(3)).Should().BeFalse();
+
+        // 4th request inside window should be rate-limited
+        service.IsRateLimited(clientIp, 3, window, baseTime.AddSeconds(4)).Should().BeTrue();
+
+        // 5th request 11 seconds later (outside sliding window) should be accepted
+        service.IsRateLimited(clientIp, 3, window, baseTime.AddSeconds(15)).Should().BeFalse();
+    }
+
+    [Fact]
+    public void RedisBitmaps_UserPresenceAndDau_TracksSingleBitsEfficiently()
+    {
+        var service = new RedisDataStructuresService();
+        string key = &quot;active_users:2026-10-08&quot;;
+
+        // Mark user IDs 5, 42, 100, 1023 as active
+        service.SetBit(key, 5, true);
+        service.SetBit(key, 42, true);
+        service.SetBit(key, 100, true);
+        service.SetBit(key, 1023, true);
+
+        service.GetBit(key, 5).Should().BeTrue();
+        service.GetBit(key, 42).Should().BeTrue();
+        service.GetBit(key, 7).Should().BeFalse();
+        service.GetBit(key, 1023).Should().BeTrue();
+
+        // BitCount should equal 4
+        service.BitCount(key).Should().Be(4);
+    }
+
+    [Fact]
+    public void RedisHyperLogLog_ApproximateUniqueVisitors_EstimatesCardinalityWithinBounds()
+    {
+        var service = new RedisDataStructuresService();
+        string key = &quot;unique_visitors:homepage&quot;;
+
+        // Add 1,000 distinct items with duplicates
+        for (int i = 0; i &lt; 1000; i++)
+        {
+            service.HyperLogLogAdd(key, $&quot;visitor_ip_{i}&quot;);
+            if (i % 2 == 0)
+            {
+                service.HyperLogLogAdd(key, $&quot;visitor_ip_{i}&quot;); // duplicate
+            }
+        }
+
+        long count = service.HyperLogLogCount(key);
+        // HLL standard error for 16384 registers is ~1.04% / sqrt(m)
+        // With 1000 items, estimate should be close to 1000 (+/- 5%)
+        count.Should().BeInRange(950, 1050);
+    }
+
+    // ==========================================
+    // 2. MEMORY EVICTION POLICIES TESTS
+    // ==========================================
+
+    [Fact]
+    public void Eviction_AllKeysLru_EvictsOldestAccessedKey()
+    {
+        // Max size 300 bytes
+        var cache = new MemoryEvictionSimulator(maxSizeBytes: 300, EvictionPolicy.AllKeysLru);
+        var t0 = new DateTime(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
+
+        cache.Put(&quot;key1&quot;, &quot;val1&quot;, sizeBytes: 100, customAccessTime: t0);
+        cache.Put(&quot;key2&quot;, &quot;val2&quot;, sizeBytes: 100, customAccessTime: t0.AddSeconds(1));
+        cache.Put(&quot;key3&quot;, &quot;val3&quot;, sizeBytes: 100, customAccessTime: t0.AddSeconds(2));
+
+        // Touch key1 at t0+3 so it becomes most recently used
+        cache.Get(&quot;key1&quot;, accessTime: t0.AddSeconds(3));
+
+        // Insert key4 (100 bytes) -&gt; Cache full (300). Must evict key2 (accessed at t0+1 vs key3 at t0+2 and key1 at t0+3)
+        cache.Put(&quot;key4&quot;, &quot;val4&quot;, sizeBytes: 100, customAccessTime: t0.AddSeconds(4));
+
+        cache.Get(&quot;key2&quot;).Should().BeNull(); // Evicted!
+        cache.Get(&quot;key1&quot;).Should().Be(&quot;val1&quot;);
+        cache.Get(&quot;key3&quot;).Should().Be(&quot;val3&quot;);
+        cache.Get(&quot;key4&quot;).Should().Be(&quot;val4&quot;);
+        cache.EvictedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void Eviction_VolatileTtl_EvictsKeyWithShortestRemainingTtl()
+    {
+        var cache = new MemoryEvictionSimulator(maxSizeBytes: 200, EvictionPolicy.VolatileTtl);
+        var t0 = new DateTime(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
+
+        // key1 expires in 60s, key2 expires in 10s
+        cache.Put(&quot;key1&quot;, &quot;val1&quot;, sizeBytes: 100, ttl: TimeSpan.FromSeconds(60), customAccessTime: t0);
+        cache.Put(&quot;key2&quot;, &quot;val2&quot;, sizeBytes: 100, ttl: TimeSpan.FromSeconds(10), customAccessTime: t0);
+
+        // Inserting key3 (100 bytes) requires evicting key2 (expires sooner)
+        cache.Put(&quot;key3&quot;, &quot;val3&quot;, sizeBytes: 100, ttl: TimeSpan.FromSeconds(120), customAccessTime: t0);
+
+        cache.Get(&quot;key2&quot;).Should().BeNull();
+        cache.Get(&quot;key1&quot;).Should().Be(&quot;val1&quot;);
+        cache.Get(&quot;key3&quot;).Should().Be(&quot;val3&quot;);
+    }
+
+    [Fact]
+    public void Eviction_NoEviction_ThrowsExceptionWhenMemoryExceeded()
+    {
+        var cache = new MemoryEvictionSimulator(maxSizeBytes: 150, EvictionPolicy.NoEviction);
+
+        cache.Put(&quot;k1&quot;, &quot;v1&quot;, sizeBytes: 100);
+        
+        Action act = () =&gt; cache.Put(&quot;k2&quot;, &quot;v2&quot;, sizeBytes: 100);
+        act.Should().Throw&lt;InvalidOperationException&gt;()
+           .WithMessage(&quot;*OOM command not allowed*&quot;);
+    }
+
+    [Fact]
+    public void Eviction_VolatileLru_LeavesNonVolatileKeysIntact()
+    {
+        var cache = new MemoryEvictionSimulator(maxSizeBytes: 200, EvictionPolicy.VolatileLru);
+        var t0 = new DateTime(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
+
+        // key1 has no TTL (persistent)
+        cache.Put(&quot;key1_persistent&quot;, &quot;v1&quot;, sizeBytes: 100, ttl: null, customAccessTime: t0);
+        // key2 has TTL (volatile)
+        cache.Put(&quot;key2_volatile&quot;, &quot;v2&quot;, sizeBytes: 100, ttl: TimeSpan.FromHours(1), customAccessTime: t0.AddSeconds(1));
+
+        // Inserting key3 should evict key2 (volatile), never key1 (persistent)
+        cache.Put(&quot;key3_volatile&quot;, &quot;v3&quot;, sizeBytes: 100, ttl: TimeSpan.FromHours(2), customAccessTime: t0.AddSeconds(2));
+
+        cache.Get(&quot;key1_persistent&quot;).Should().Be(&quot;v1&quot;);
+        cache.Get(&quot;key2_volatile&quot;).Should().BeNull(); // Evicted!
+        cache.Get(&quot;key3_volatile&quot;).Should().Be(&quot;v3&quot;);
+    }
+
+    // ==========================================
+    // 3. DSA TREE METRICS TESTS (LC #543 &amp; LC #110)
+    // ==========================================
+
+    [Fact]
+    public void LC543_DiameterOfBinaryTree_StandardTree_ReturnsCorrectEdgeCount()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        // Tree: [1, 2, 3, 4, 5]
+        //        1
+        //       / \
+        //      2   3
+        //     / \
+        //    4   5
+        // Longest path: 4 -&gt; 2 -&gt; 1 -&gt; 3 or 5 -&gt; 2 -&gt; 1 -&gt; 3 (length 3 edges)
+        var root = BinaryTreeMetricsSolvers.BuildTree(new int?[] { 1, 2, 3, 4, 5 });
+        solvers.DiameterOfBinaryTree(root).Should().Be(3);
+    }
+
+    [Fact]
+    public void LC543_DiameterOfBinaryTree_PathNotPassingThroughRoot_ReturnsSubtreeDiameter()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        // Construct tree where deepest path is completely in left subtree:
+        //        1
+        //       /
+        //      2
+        //     / \
+        //    3   4
+        //   /     \
+        //  5       6
+        // Longest path: 5 -&gt; 3 -&gt; 2 -&gt; 4 -&gt; 6 (length 4 edges), not passing through 1.
+        var root = new TreeNode(1)
+        {
+            left = new TreeNode(2)
+            {
+                left = new TreeNode(3) { left = new TreeNode(5) },
+                right = new TreeNode(4) { right = new TreeNode(6) }
+            }
+        };
+
+        solvers.DiameterOfBinaryTree(root).Should().Be(4);
+    }
+
+    [Fact]
+    public void LC543_DiameterOfBinaryTree_SingleNodeAndEmpty_ReturnsZero()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        solvers.DiameterOfBinaryTree(null).Should().Be(0);
+        solvers.DiameterOfBinaryTree(new TreeNode(42)).Should().Be(0);
+    }
+
+    [Fact]
+    public void LC110_IsBalanced_BalancedTree_ReturnsTrue()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        // Tree: [3, 9, 20, null, null, 15, 7]
+        //        3
+        //       / \
+        //      9   20
+        //         /  \
+        //        15   7
+        var root = BinaryTreeMetricsSolvers.BuildTree(new int?[] { 3, 9, 20, null, null, 15, 7 });
+        solvers.IsBalanced(root).Should().BeTrue();
+    }
+
+    [Fact]
+    public void LC110_IsBalanced_UnbalancedTree_ReturnsFalse()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        // Tree: [1, 2, 2, 3, 3, null, null, 4, 4]
+        // Left subtree has depth 4, right subtree has depth 2 -&gt; Imbalance &gt; 1
+        var root = BinaryTreeMetricsSolvers.BuildTree(new int?[] { 1, 2, 2, 3, 3, null, null, 4, 4 });
+        solvers.IsBalanced(root).Should().BeFalse();
+    }
+
+    [Fact]
+    public void LC110_IsBalanced_SingleNodeAndNull_ReturnsTrue()
+    {
+        var solvers = new BinaryTreeMetricsSolvers();
+        solvers.IsBalanced(null).Should().BeTrue();
+        solvers.IsBalanced(new TreeNode(10)).Should().BeTrue();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 18 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

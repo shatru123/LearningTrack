@@ -27,7 +27,8 @@
 | Day 16 | Distributed Locking & Concurrency Primitives (LC #143 & #19) | ✅ Completed |
 | Day 17 | Introduction to Redis & Cache Patterns (LC #226 & #104) | ✅ Completed |
 | Day 18 | Redis Data Structures & Memory Eviction Policies (LC #543 & #110) | ✅ Completed |
+| Day 19 | Redis Distributed Locking with RedLock (LC #100 & #572) | ✅ Completed |
 
 ## Next
 
-Day 19 — Continue the original 100-day LearningOS roadmap.
+Day 20 — Continue the original 100-day LearningOS roadmap.

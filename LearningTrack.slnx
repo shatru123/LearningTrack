@@ -125,4 +125,11 @@
   <Folder Name="/Day18-Redis-DataStructures-Eviction/tests/">
     <Project Path="Day18-Redis-DataStructures-Eviction/tests/Day18.RedisDataStructures.Tests/Day18.RedisDataStructures.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day19-Redis-RedLock-DistributedLocking/" />
+  <Folder Name="/Day19-Redis-RedLock-DistributedLocking/src/">
+    <Project Path="Day19-Redis-RedLock-DistributedLocking/src/Day19.RedisRedLock/Day19.RedisRedLock.csproj" />
+  </Folder>
+  <Folder Name="/Day19-Redis-RedLock-DistributedLocking/tests/">
+    <Project Path="Day19-Redis-RedLock-DistributedLocking/tests/Day19.RedisRedLock.Tests/Day19.RedisRedLock.Tests.csproj" />
+  </Folder>
 </Solution>

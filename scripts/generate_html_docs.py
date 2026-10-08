@@ -23,6 +23,7 @@ DAYS_INFO = [
     {"num": 16, "dir": "Day16-Synchronization-Locks", "title": "Distributed Locking & Concurrency Primitives", "category": "Architecture & Systems"},
     {"num": 17, "dir": "Day17-Redis-Cache-Patterns", "title": "Introduction to Redis & Cache Patterns", "category": "Redis & Distributed Systems"},
     {"num": 18, "dir": "Day18-Redis-DataStructures-Eviction", "title": "Redis Data Structures & Memory Eviction Policies", "category": "Redis & Distributed Systems"},
+    {"num": 19, "dir": "Day19-Redis-RedLock-DistributedLocking", "title": "Redis Distributed Locking with RedLock", "category": "Redis & Distributed Systems"},
 ]
 
 from diagram_helpers import get_day_svg
@@ -790,12 +791,12 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
   <div class="container">
     <header>
       <h1>100-Day .NET + AI Engineering Track</h1>
-      <p class="lead">Interactive Knowledge Hub containing all 18 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
+      <p class="lead">Interactive Knowledge Hub containing all 19 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
       <div class="stats-bar">
-        <div class="stat-pill">Completed: <span>18 / 100 Days</span></div>
-        <div class="stat-pill">Deep Notes: <span>18 Architectural Guides</span></div>
-        <div class="stat-pill">Interview Q&amp;A: <span>180 Senior Scenarios &amp; Answers</span></div>
-        <div class="stat-pill">Test Suite: <span>206 / 206 Passed (100%)</span></div>
+        <div class="stat-pill">Completed: <span>19 / 100 Days</span></div>
+        <div class="stat-pill">Deep Notes: <span>19 Architectural Guides</span></div>
+        <div class="stat-pill">Interview Q&amp;A: <span>190 Senior Scenarios &amp; Answers</span></div>
+        <div class="stat-pill">Test Suite: <span>220 / 220 Passed (100%)</span></div>
         <div class="stat-pill">Platform: <span>.NET 8 / C# 12</span></div>
       </div>
     </header>

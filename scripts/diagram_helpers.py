@@ -23,6 +23,7 @@ DAYS_INFO = [
     {"num": 16, "dir": "Day16-Synchronization-Locks", "title": "Distributed Locking & Concurrency Primitives", "category": "Architecture & Systems"},
     {"num": 17, "dir": "Day17-Redis-Cache-Patterns", "title": "Introduction to Redis & Cache Patterns", "category": "Redis & Distributed Systems"},
     {"num": 18, "dir": "Day18-Redis-DataStructures-Eviction", "title": "Redis Data Structures & Memory Eviction Policies", "category": "Redis & Distributed Systems"},
+    {"num": 19, "dir": "Day19-Redis-RedLock-DistributedLocking", "title": "Redis Distributed Locking with RedLock", "category": "Redis & Distributed Systems"},
 ]
 
 def get_day_svg(day_num):
@@ -640,6 +641,95 @@ def get_day_svg(day_num):
           <text x="675" y="294" fill="#ef4444" font-size="10" font-weight="bold">if |h_L - h_R| &gt; 1 return -1;</text>
           <text x="675" y="309" fill="#94a3b8" font-size="9">Aborts redundant tree traversal</text>
           <text x="675" y="323" fill="#34d399" font-size="9">O(N) vs Top-down O(N^2)</text>
+        </svg>
+        """
+    elif day_num == 19:
+        return """
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d19GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d19GradQuorum" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d19GradFence" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2d1537"/><stop offset="100%" stop-color="#150a1c"/>
+            </linearGradient>
+            <linearGradient id="d19GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d19GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">RedLock Multi-Instance Consensus Architecture &amp; Tree Isomorphism</text>
+
+          <!-- 1. RedLock Quorum Consensus Column -->
+          <rect x="30" y="60" width="300" height="300" rx="10" fill="url(#d19GradQuorum)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">5-Node RedLock Consensus</text>
+
+          <!-- Client Coordinator -->
+          <rect x="45" y="105" width="270" height="38" rx="6" fill="#0284c7" stroke="#38bdf8"/>
+          <text x="180" y="128" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">Client Lock Coordinator</text>
+
+          <!-- 5 Node Pills -->
+          <g transform="translate(45, 155)">
+            <rect x="0" y="0" width="48" height="40" rx="4" fill="#0f172a" stroke="#10b981"/><text x="24" y="24" fill="#34d399" font-size="10" font-weight="bold" text-anchor="middle">N1: OK</text>
+            <rect x="55" y="0" width="48" height="40" rx="4" fill="#0f172a" stroke="#10b981"/><text x="79" y="24" fill="#34d399" font-size="10" font-weight="bold">N2: OK</text>
+            <rect x="110" y="0" width="48" height="40" rx="4" fill="#0f172a" stroke="#10b981"/><text x="134" y="24" fill="#34d399" font-size="10" font-weight="bold">N3: OK</text>
+            <rect x="165" y="0" width="48" height="40" rx="4" fill="#0f172a" stroke="#ef4444"/><text x="189" y="24" fill="#f87171" font-size="9" text-anchor="middle">N4: FAIL</text>
+            <rect x="220" y="0" width="50" height="40" rx="4" fill="#0f172a" stroke="#64748b"/><text x="245" y="24" fill="#94a3b8" font-size="9" text-anchor="middle">N5: TIMEOUT</text>
+          </g>
+
+          <rect x="45" y="208" width="270" height="45" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="226" fill="#34d399" font-size="11" font-weight="bold">Quorum Achieved: 3 / 5 Nodes</text>
+          <text x="55" y="241" fill="#94a3b8" font-size="9">Required: floor(5/2) + 1 = 3 instances</text>
+
+          <rect x="45" y="260" width="270" height="48" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="278" fill="#fbbf24" font-size="11" font-weight="bold">Validity Time Window</text>
+          <text x="55" y="293" fill="#cbd5e1" font-size="9">ValTime = TTL - Delta_T - ClockDrift</text>
+          <text x="55" y="303" fill="#94a3b8" font-size="8">Must be &gt; 0, otherwise compensation rollback</text>
+
+          <text x="50" y="335" fill="#38bdf8" font-size="10">&#10003; No single point of failure (Zero Master-Replica risk)</text>
+
+          <!-- 2. Safety Guarantees & Fencing Tokens Column -->
+          <rect x="350" y="60" width="280" height="300" rx="10" fill="url(#d19GradFence)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="370" y="88" fill="#c084fc" font-size="14" font-weight="bold">Safety &amp; Zombie Mitigation</text>
+
+          <rect x="365" y="105" width="250" height="65" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="125" fill="#60a5fa" font-size="11" font-weight="bold">1. Atomic Lua Script Release</text>
+          <text x="375" y="142" fill="#cbd5e1" font-size="9">if get(key) == token then del(key)</text>
+          <text x="375" y="157" fill="#94a3b8" font-size="9">Guarantees client never deletes foreign lock</text>
+
+          <rect x="365" y="180" width="250" height="65" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="200" fill="#34d399" font-size="11" font-weight="bold">2. Lease Watchdog Heartbeat</text>
+          <text x="375" y="217" fill="#cbd5e1" font-size="9">Auto-extends lease via PEXPIRE at TTL/3</text>
+          <text x="375" y="232" fill="#94a3b8" font-size="9">Cancels immediately on IAsyncDisposable</text>
+
+          <rect x="365" y="255" width="250" height="85" rx="5" fill="#0f172a" stroke="#ef4444"/>
+          <text x="375" y="275" fill="#f87171" font-size="11" font-weight="bold">3. Monotonic Fencing Tokens</text>
+          <text x="375" y="292" fill="#fbbf24" font-size="10">Kleppmann GC Pause Defense</text>
+          <text x="375" y="309" fill="#cbd5e1" font-size="9">Tokens strictly increment: 33 &#8594; 34 &#8594; 35</text>
+          <text x="375" y="324" fill="#94a3b8" font-size="9">Storage rejects write if token &lt;= last seen</text>
+
+          <!-- 3. DSA Tree Isomorphism Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d19GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">Tree Isomorphism</text>
+
+          <rect x="665" y="105" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #100: Same Tree</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Structural &amp; value equality</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">Recursive DFS check:</text>
+          <text x="675" y="173" fill="#38bdf8" font-size="10" font-weight="bold">p.val == q.val &amp;&amp; L &amp;&amp; R</text>
+          <text x="675" y="188" fill="#94a3b8" font-size="9">Base: (null, null) &#8594; true</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">O(min(N, M)) Time | O(H) Stack</text>
+
+          <rect x="665" y="225" width="210" height="120" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="245" fill="#fbbf24" font-size="11" font-weight="bold">LC #572: Subtree Match</text>
+          <text x="675" y="262" fill="#94a3b8" font-size="9">Classic DFS: O(N * M)</text>
+          <text x="675" y="278" fill="#34d399" font-size="10" font-weight="bold">Merkle Hashing: O(N + M)</text>
+          <text x="675" y="295" fill="#cbd5e1" font-size="9">H(u) = Mix(val, H_L, H_R)</text>
+          <text x="675" y="310" fill="#94a3b8" font-size="9">64-bit polynomial hash set</text>
+          <text x="675" y="325" fill="#34d399" font-size="9">Linear time subtree fingerprint</text>
         </svg>
         """
     return ""

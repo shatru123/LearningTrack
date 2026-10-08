@@ -1,0 +1,3352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 19: Redis Distributed Locking with RedLock | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 19</span>
+        <span class="badge badge-category">Redis &amp; Distributed Systems</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day18-Redis-DataStructures-Eviction/index.html" class="nav-btn">← Day 18</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+
+        </select>
+        <span class="nav-btn" style="opacity:0.4; cursor:default;">Next Day →</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 19: Redis Distributed Locking with RedLock</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 3 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d19GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d19GradQuorum" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d19GradFence" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2d1537"/><stop offset="100%" stop-color="#150a1c"/>
+            </linearGradient>
+            <linearGradient id="d19GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d19GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">RedLock Multi-Instance Consensus Architecture &amp; Tree Isomorphism</text>
+
+          <!-- 1. RedLock Quorum Consensus Column -->
+          <rect x="30" y="60" width="300" height="300" rx="10" fill="url(#d19GradQuorum)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">5-Node RedLock Consensus</text>
+
+          <!-- Client Coordinator -->
+          <rect x="45" y="105" width="270" height="38" rx="6" fill="#0284c7" stroke="#38bdf8"/>
+          <text x="180" y="128" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">Client Lock Coordinator</text>
+
+          <!-- 5 Node Pills -->
+          <g transform="translate(45, 155)">
+            <rect x="0" y="0" width="48" height="40" rx="4" fill="#0f172a" stroke="#10b981"/><text x="24" y="24" fill="#34d399" font-size="10" font-weight="bold" text-anchor="middle">N1: OK</text>
+            <rect x="55" y="0" width="48" height="40" rx="4" fill="#0f172a" stroke="#10b981"/><text x="79" y="24" fill="#34d399" font-size="10" font-weight="bold">N2: OK</text>
+            <rect x="110" y="0" width="48" height="40" rx="4" fill="#0f172a" stroke="#10b981"/><text x="134" y="24" fill="#34d399" font-size="10" font-weight="bold">N3: OK</text>
+            <rect x="165" y="0" width="48" height="40" rx="4" fill="#0f172a" stroke="#ef4444"/><text x="189" y="24" fill="#f87171" font-size="9" text-anchor="middle">N4: FAIL</text>
+            <rect x="220" y="0" width="50" height="40" rx="4" fill="#0f172a" stroke="#64748b"/><text x="245" y="24" fill="#94a3b8" font-size="9" text-anchor="middle">N5: TIMEOUT</text>
+          </g>
+
+          <rect x="45" y="208" width="270" height="45" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="226" fill="#34d399" font-size="11" font-weight="bold">Quorum Achieved: 3 / 5 Nodes</text>
+          <text x="55" y="241" fill="#94a3b8" font-size="9">Required: floor(5/2) + 1 = 3 instances</text>
+
+          <rect x="45" y="260" width="270" height="48" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="278" fill="#fbbf24" font-size="11" font-weight="bold">Validity Time Window</text>
+          <text x="55" y="293" fill="#cbd5e1" font-size="9">ValTime = TTL - Delta_T - ClockDrift</text>
+          <text x="55" y="303" fill="#94a3b8" font-size="8">Must be &gt; 0, otherwise compensation rollback</text>
+
+          <text x="50" y="335" fill="#38bdf8" font-size="10">&#10003; No single point of failure (Zero Master-Replica risk)</text>
+
+          <!-- 2. Safety Guarantees & Fencing Tokens Column -->
+          <rect x="350" y="60" width="280" height="300" rx="10" fill="url(#d19GradFence)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="370" y="88" fill="#c084fc" font-size="14" font-weight="bold">Safety &amp; Zombie Mitigation</text>
+
+          <rect x="365" y="105" width="250" height="65" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="125" fill="#60a5fa" font-size="11" font-weight="bold">1. Atomic Lua Script Release</text>
+          <text x="375" y="142" fill="#cbd5e1" font-size="9">if get(key) == token then del(key)</text>
+          <text x="375" y="157" fill="#94a3b8" font-size="9">Guarantees client never deletes foreign lock</text>
+
+          <rect x="365" y="180" width="250" height="65" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="200" fill="#34d399" font-size="11" font-weight="bold">2. Lease Watchdog Heartbeat</text>
+          <text x="375" y="217" fill="#cbd5e1" font-size="9">Auto-extends lease via PEXPIRE at TTL/3</text>
+          <text x="375" y="232" fill="#94a3b8" font-size="9">Cancels immediately on IAsyncDisposable</text>
+
+          <rect x="365" y="255" width="250" height="85" rx="5" fill="#0f172a" stroke="#ef4444"/>
+          <text x="375" y="275" fill="#f87171" font-size="11" font-weight="bold">3. Monotonic Fencing Tokens</text>
+          <text x="375" y="292" fill="#fbbf24" font-size="10">Kleppmann GC Pause Defense</text>
+          <text x="375" y="309" fill="#cbd5e1" font-size="9">Tokens strictly increment: 33 &#8594; 34 &#8594; 35</text>
+          <text x="375" y="324" fill="#94a3b8" font-size="9">Storage rejects write if token &lt;= last seen</text>
+
+          <!-- 3. DSA Tree Isomorphism Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d19GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">Tree Isomorphism</text>
+
+          <rect x="665" y="105" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #100: Same Tree</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Structural &amp; value equality</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">Recursive DFS check:</text>
+          <text x="675" y="173" fill="#38bdf8" font-size="10" font-weight="bold">p.val == q.val &amp;&amp; L &amp;&amp; R</text>
+          <text x="675" y="188" fill="#94a3b8" font-size="9">Base: (null, null) &#8594; true</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">O(min(N, M)) Time | O(H) Stack</text>
+
+          <rect x="665" y="225" width="210" height="120" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="245" fill="#fbbf24" font-size="11" font-weight="bold">LC #572: Subtree Match</text>
+          <text x="675" y="262" fill="#94a3b8" font-size="9">Classic DFS: O(N * M)</text>
+          <text x="675" y="278" fill="#34d399" font-size="10" font-weight="bold">Merkle Hashing: O(N + M)</text>
+          <text x="675" y="295" fill="#cbd5e1" font-size="9">H(u) = Mix(val, H_L, H_R)</text>
+          <text x="675" y="310" fill="#94a3b8" font-size="9">64-bit polynomial hash set</text>
+          <text x="675" y="325" fill="#34d399" font-size="9">Linear time subtree fingerprint</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 19 - Engineering Notes: RedLock Distributed Locking & Consensus</h1>
+<h2>1. The Great RedLock Debate: Martin Kleppmann vs Salvatore Sanfilippo (antirez)</h2>
+<p>In 2016, distributed systems researcher Martin Kleppmann published a critique of the RedLock algorithm, prompting an extensive architectural debate with Redis creator Salvatore Sanfilippo.</p>
+<h3>Kleppmann's Critique ("How to do distributed locking"):</h3>
+<ol>
+<li><strong>Asynchronous Network & Process Pauses</strong>:</li>
+</ol>
+<ul>
+<li>In an asynchronous distributed system with unbounded network delays and process pauses (such as .NET garbage collection stop-the-world pauses), no algorithm relying purely on wall-clock time can guarantee mutual exclusion.</li>
+<li><em>The GC Pause Scenario</em>: Client 1 acquires RedLock with a 10s TTL. Client 1 immediately hits a 15-second Gen 2 GC pause. The lock expires on Redis. Client 2 acquires the lock and begins writing to storage. Client 1 resumes, unaware that its lock expired, and also writes to storage, causing silent data corruption.</li>
+</ul>
+<ol>
+<li><strong>Clock Skew & NTP Jumps</strong>:</li>
+</ol>
+<ul>
+<li>If one of the 5 Redis nodes experiences an unsynchronized NTP step forward, its keys will expire prematurely, breaking quorum assumptions.</li>
+</ul>
+<ol>
+<li><strong>Kleppmann's Solution</strong>:</li>
+</ol>
+<ul>
+<li>Locks are insufficient for correctness without <strong>Fencing Tokens</strong>: monotonically increasing numbers issued with each lock acquisition that the storage tier verifies and rejects if out-of-order.</li>
+</ul>
+<h3>Antirez's Rebuttal ("Is Redlock safe?"):</h3>
+<ol>
+<li><strong>Monotonic Clocks Mitigate NTP Steps</strong>:</li>
+</ol>
+<ul>
+<li>RedLock does not use wall-clock time (<code>gettimeofday</code>); it uses monotonic clocks (<code>CLOCK_MONOTONIC</code>), which never jump backwards or forwards due to NTP adjustments.</li>
+</ul>
+<ol>
+<li><strong>Bounded Drift Model</strong>:</li>
+</ol>
+<ul>
+<li>RedLock explicitly accounts for maximum clock drift by calculating:</li>
+</ul>
+<p>$$\text{validity\_time} = \text{TTL} - \Delta T - \text{drift}$$</p>
+<ul>
+<li>If elapsed time plus drift exceeds the TTL, the lock is immediately aborted.</li>
+</ul>
+<ol>
+<li><strong>Consensus in Practice</strong>:</li>
+</ol>
+<ul>
+<li>While Raft/Paxos-based systems (like etcd or ZooKeeper) provide strict CP consensus with formal leadership election, RedLock provides a pragmatic, highly available distributed locking layer across independent Redis instances without requiring complex consensus state machines.</li>
+</ul>
+<hr/>
+<h2>2. Clock Drift Mechanics in High-Performance .NET</h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">// Anti-Pattern: DateTime.UtcNow can jump due to NTP sync
+DateTime start = DateTime.UtcNow;
+...
+TimeSpan elapsed = DateTime.UtcNow - start; // Can be negative or skewed!
+
+// Production Standard: Monotonic Clock via Stopwatch
+long startTick = Stopwatch.GetTimestamp();
+...
+TimeSpan elapsed = Stopwatch.GetElapsedTime(startTick); // Guaranteed strictly monotonic</code></pre></div>
+<ul>
+<li>In .NET 8, <code>Stopwatch.GetTimestamp()</code> maps to <code>mach_absolute_time()</code> on macOS, <code>clock_gettime(CLOCK_MONOTONIC)</code> on Linux, and <code>QueryPerformanceCounter</code> on Windows.</li>
+<li>It operates at sub-microsecond precision and is completely unaffected by operating system clock corrections.</li>
+</ul>
+<hr/>
+<h2>3. Atomic Lua Scripts in Redis Distributed Locks</h2>
+<h3>Safe Unlock Script</h3>
+<div class="code-block-container"><pre class="language-lua"><code class="language-lua">if redis.call(&quot;get&quot;, KEYS[1]) == ARGV[1] then
+    return redis.call(&quot;del&quot;, KEYS[1])
+else
+    return 0
+end</code></pre></div>
+<ul>
+<li><strong>Why it matters</strong>: If client A acquired the lock and took 11 seconds on a 10s TTL, client B will acquire the lock after second 10. If client A blindly called <code>DEL lock_key</code>, it would delete client B's active lock! The Lua script guarantees that client A only deletes the lock if the stored UUID still matches client A's token.</li>
+</ul>
+<h3>Safe Extend (Heartbeat) Script</h3>
+<div class="code-block-container"><pre class="language-lua"><code class="language-lua">if redis.call(&quot;get&quot;, KEYS[1]) == ARGV[1] then
+    return redis.call(&quot;pexpire&quot;, KEYS[1], ARGV[2])
+else
+    return 0
+end</code></pre></div>
+<ul>
+<li>Extends the lease only if the current client remains the rightful lock holder.</li>
+</ul>
+<hr/>
+<h2>4. DSA: Merkle Tree Hashing vs Recursive Isomorphism</h2>
+<div class="table-container"><table><thead><tr>
+<th>Metric</th>
+<th>Classic Recursive DFS</th>
+<th>Merkle Tree Hashing</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Time Complexity</strong></td>
+<td>$O(N \cdot M)$ worst-case</td>
+<td>$O(N + M)$ linear time</td>
+</tr>
+<tr>
+<td><strong>Space Complexity</strong></td>
+<td>$O(H)$ recursion stack</td>
+<td>$O(N + M)$ hash set storage</td>
+</tr>
+<tr>
+<td><strong>Algorithmic Idea</strong></td>
+<td>Brute force check at each node</td>
+<td>Bottom-up subtree hash fingerprinting</td>
+</tr>
+<tr>
+<td><strong>Collision Probability</strong></td>
+<td>0% (Exact comparison)</td>
+<td>$< 10^{-9}$ with 64-bit hash mixing</td>
+</tr>
+</tbody></table></div>
+<h3>Merkle Tree Hashing Formula</h3>
+<p>$$H(node) = \text{SplitMix64}(node.val \times 31 + H(left) \times 1000003 + H(right) \times 1000033)$$</p>
+<p>By encoding both the node value and child structural hashes into a 64-bit integer, two subtrees produce the identical hash if and only if they are isomorphic.</p>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 19: Redis Distributed Locking with RedLock & Tree Isomorphism</h1>
+<h2>Overview</h2>
+<p>Comprehensive implementation of multi-instance distributed mutual exclusion using the <strong>RedLock algorithm</strong> across independent Redis nodes, paired with tree isomorphism and recursive subtree matching algorithms: <strong>LeetCode #100 (Same Tree)</strong> and <strong>LeetCode #572 (Subtree of Another Tree)</strong>.</p>
+<hr/>
+<h2>Architectural Breakdown</h2>
+<h3>1. The RedLock Consensus Algorithm</h3>
+<p>Traditional Redis distributed locking (<code>SET lock_name my_random_value NX PX 30000</code>) on a single master node suffers from a fatal single point of failure: if the master crashes before asynchronous replication flushes to replicas, a newly elected master will grant the same lock to another client, causing dual-master split-brain writes.</p>
+<p>RedLock solves this by using <strong>$N$ completely independent Redis master nodes</strong> (typically $N = 5$):</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">       +---------------------------------------------+
+       |         Client Lock Coordinator             |
+       +---------------------------------------------+
+          /         |         |         \          \
+         v          v         v          v          v
+     [Node 1]   [Node 2]  [Node 3]   [Node 4]   [Node 5]
+     (Redis)    (Redis)   (Redis)    (Redis)    (Redis)
+         \          |         |          /
+          +---------+---------+---------+
+                         |
+           Quorum Achieved (&gt;= 3 / 5)</code></pre></div>
+<h4>Step-by-Step Acquisition Lifecycle:</h4>
+<ol>
+<li><strong>Timestamp Recording</strong>: Client captures start time $T_1$ using a monotonic clock.</li>
+<li><strong>Concurrent Multi-Node Requests</strong>: Attempts to acquire lock on all $N$ instances using <code>SET key value NX PX ttl</code> with a small per-node timeout (5–50 ms) to prevent slow/hung nodes from delaying the overall attempt.</li>
+<li><strong>Elapsed Time & Clock Drift Calculation</strong>:</li>
+</ol>
+<p>$$\Delta T = T_2 - T_1$$</p>
+<p>$$\text{Drift} = (\text{TTL} \times \text{DriftFactor}) + \text{ClockSkewTolerance}$$</p>
+<p>$$\text{ValidityTime} = \text{TTL} - \Delta T - \text{Drift}$$</p>
+<ol>
+<li><strong>Quorum Evaluation</strong>:</li>
+</ol>
+<ul>
+<li>The lock is acquired <strong>if and only if</strong> the client successfully sets the key in at least $\lfloor N/2 \rfloor + 1$ nodes (3 out of 5) <strong>AND</strong> $\text{ValidityTime} > 0$.</li>
+</ul>
+<ol>
+<li><strong>Compensation / Rollback</strong>:</li>
+</ol>
+<ul>
+<li>If quorum fails or validity time expires, the client dispatches an unlock command to <strong>all $N$ nodes</strong> (including nodes where the acquisition request timed out or was not received).</li>
+</ul>
+<hr/>
+<h3>2. Auto-Renewal Heartbeats & Fencing Tokens</h3>
+<h4>Lease Auto-Renewal (<code>RedLockLeaseHandle</code>)</h4>
+<ul>
+<li>For long-running operations, setting a static TTL risks premature lock expiration if task execution takes longer than anticipated.</li>
+<li>The <code>RedLockLeaseHandle</code> runs a periodic background heartbeat timer extending the lease across quorum nodes at $\frac{\text{TTL}}{3}$ intervals until explicitly disposed.</li>
+</ul>
+<h4>Monotonic Fencing Tokens</h4>
+<ul>
+<li>Defends against Martin Kleppmann's critique of distributed locks: if a process experiences a stop-the-world GC pause or network partition, its lock may expire while it is paused. When it resumes, it might perform a zombie write over another client's data.</li>
+<li>The storage tier enforces monotonically increasing fencing tokens: any write presenting a token $\le$ the highest token observed so far is rejected.</li>
+</ul>
+<hr/>
+<h3>3. Tree Isomorphism & Subtree Solvers</h3>
+<h4>LeetCode #100: Same Tree</h4>
+<ul>
+<li><strong>Problem</strong>: Check whether two binary trees $p$ and $q$ are structurally identical and have the same node values.</li>
+<li><strong>Algorithm</strong>: Recursive DFS checking base cases and verifying <code>p.val == q.val &amp;&amp; IsSameTree(p.left, q.left) &amp;&amp; IsSameTree(p.right, q.right)</code>.</li>
+<li><strong>Complexity</strong>: Time: $O(\min(N, M))$, Space: $O(\min(H_p, H_q))$.</li>
+</ul>
+<h4>LeetCode #572: Subtree of Another Tree</h4>
+<ul>
+<li><strong>Approach 1 (Classic DFS)</strong>: Traverses each node in <code>root</code> and invokes <code>IsSameTree(curr, subRoot)</code>. Time: $O(N \cdot M)$.</li>
+<li><strong>Approach 2 (Merkle Tree Hashing)</strong>: Computes a 64-bit cryptographic/polynomial subtree hash for each sub-root during a single post-order pass. Subtree matching is reduced to a set lookup in $O(N + M)$ time.</li>
+</ul>
+<hr/>
+<h2>Running Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day19-Redis-RedLock-DistributedLocking/tests/Day19.RedisRedLock.Tests/Day19.RedisRedLock.Tests.csproj</code></pre></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why is a single Redis master node with asynchronous replication inadequate for strong distributed locking?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Asynchronous replication creates a race condition during master failure; if the master crashes before replicating the lock to replicas, a newly promoted replica will grant the same lock to a second client, resulting in dual-master concurrent execution.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a standard Redis master-replica topology, writes to the master are acknowledged immediately before being asynchronously sent to the replication stream.</p>
+<p>Consider this timeline:</p>
+<ol>
+<li>Client A acquires lock <code>SET lock:order 123 NX PX 10000</code> on the Master.</li>
+<li>The Master acknowledges success to Client A, but crashes before the write reaches Replica 1.</li>
+<li>Sentinel or Redis Cluster promotes Replica 1 to be the new Master.</li>
+<li>Client B attempts to acquire <code>SET lock:order 456 NX PX 10000</code> on the new Master. Because the key does not exist on Replica 1, the lock is granted.</li>
+<li>Both Client A and Client B now concurrently hold the exact same lock and execute mutating operations, violating mutual exclusion.</li>
+</ol>
+<p>RedLock eliminates this failure mode by removing master-replica replication dependencies entirely and operating across $N$ independent, un-replicated master instances.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Walk through the RedLock algorithm step-by-step. How does it determine if a lock was successfully acquired?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A client attempts to acquire the lock across $N$ independent nodes in parallel with a short timeout; it succeeds if at least $\lfloor N/2 \rfloor + 1$ nodes respond successfully and the total elapsed time plus clock drift is less than the lock TTL.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>For an $N = 5$ cluster:</p>
+<ol>
+<li>Record the current monotonic timestamp $T_1$.</li>
+<li>Concurrently attempt <code>SET resource random_token NX PX ttl</code> on all 5 nodes with a per-node timeout of 5–50 ms.</li>
+<li>Record completion monotonic timestamp $T_2$ and compute elapsed time $\Delta T = T_2 - T_1$.</li>
+<li>Calculate clock drift: $\text{Drift} = (\text{TTL} \times 0.01) + \text{ClockSkewTolerance}$.</li>
+<li>Compute remaining validity time: $\text{ValidityTime} = \text{TTL} - \Delta T - \text{Drift}$.</li>
+<li><strong>Quorum check</strong>: If at least 3 nodes accepted the lock AND $\text{ValidityTime} > 0$, the lock is successfully acquired.</li>
+<li><strong>Rollback</strong>: If quorum is not met (e.g. only 2 nodes responded) or $\text{ValidityTime} \le 0$, the client sends an unlock command to all 5 nodes, ensuring partially acquired keys are cleaned up.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What was Martin Kleppmann&#x27;s critique of RedLock, and what is the engineering takeaway?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Kleppmann argued that in asynchronous systems with stop-the-world GC pauses and clock jumps, RedLock cannot guarantee mutual exclusion without fencing tokens; antirez clarified that RedLock uses monotonic clocks and bounded drift, but agreed fencing tokens provide storage-level safety.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Kleppmann pointed out that physical clocks and process execution in managed runtimes (.NET, JVM) are unpredictable:</p>
+<ul>
+<li>If a .NET thread acquires a 10-second lock and immediately experiences a 12-second Gen 2 GC pause, its lock expires on Redis. Another client acquires the lock. When the GC pause completes, the first thread resumes execution unaware that its lock has expired and writes to storage, corrupting data.</li>
+<li><strong>Engineering takeaway</strong>: A distributed lock cannot guarantee safety on its own if the protected resource allows unvalidated writes. Strict safety requires that the downstream storage engine (e.g., PostgreSQL or S3) validates a monotonically increasing <strong>Fencing Token</strong> or version number.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is a Fencing Token and how does it prevent zombie writes from GC-paused clients?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A fencing token is a strictly monotonically increasing number issued with each lock lease; downstream data stores reject any write whose token is less than or equal to the highest token previously seen.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When Client 1 acquires the lock, it receives fencing token 33.</p>
+<p>If Client 1 pauses for 15 seconds during a GC pause, the lock expires.</p>
+<p>Client 2 acquires the lock and receives fencing token 34. Client 2 writes to the database: <code>UPDATE accounts SET balance = balance + 100, lock_token = 34 WHERE id = 1 AND lock_token &lt; 34;</code> (Success).</p>
+<p>Client 1 wakes up and attempts its delayed write with token 33:</p>
+<p><code>UPDATE accounts SET balance = balance + 50, lock_token = 33 WHERE id = 1 AND lock_token &lt; 33;</code></p>
+<p>Because the database already recorded token 34, the conditional check fails and 0 rows are affected. The zombie write is safely rejected.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">Why is releasing a Redis distributed lock without a Lua script considered a severe bug?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A simple <code>DEL</code> command can accidentally delete another client's active lock if the current client's TTL expired while executing.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Suppose Client A acquires <code>lock:user_123</code> with token <code>uuid_A</code> and a 5-second TTL.</p>
+<p>Client A's operation encounters unexpected database latency and takes 7 seconds.</p>
+<p>At second 5, the key expires in Redis.</p>
+<p>At second 6, Client B acquires <code>lock:user_123</code> with token <code>uuid_B</code>.</p>
+<p>At second 7, Client A finishes and executes <code>DEL lock:user_123</code>.</p>
+<p>Client A just deleted Client B's lock! Client C can now acquire the lock, causing concurrent execution between B and C.</p>
+<p>Using an atomic Lua script:</p>
+<p><code>if redis.call(&#x27;get&#x27;, KEYS[1]) == ARGV[1] then return redis.call(&#x27;del&#x27;, KEYS[1]) else return 0 end</code></p>
+<p>ensures Client A only deletes the lock if the stored token still equals <code>uuid_A</code>.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does the RedLock lease auto-renewal (watchdog) pattern work in high-throughput .NET services?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A background timer runs periodically (e.g., at $\frac{\text{TTL}}{3}$) and executes an atomic Lua script (<code>PEXPIRE</code>) across quorum nodes to extend the lock duration as long as the workload task is still running.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In systems with variable task runtimes, developers often set unnecessarily long static TTLs (e.g., 5 minutes) to avoid timeouts. However, if the process crashes, the resource remains locked for the full 5 minutes.</p>
+<p><strong>Watchdog Pattern</strong>:</p>
+<ol>
+<li>Acquire lock with a short TTL (e.g., 3 seconds).</li>
+<li>Spawn a background <code>PeriodicTimer</code> firing every 1 second.</li>
+<li>Each tick executes <code>PEXPIRE</code> if the client token still matches.</li>
+<li>If the process crashes or hangs, the heartbeat stops, and Redis naturally frees the lock within 3 seconds.</li>
+<li>The lease handle implements <code>IAsyncDisposable</code> to cancel the heartbeat loop and immediately unlock when work finishes.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is clock drift and why must it be accounted for in the RedLock validity calculation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Clock drift is the rate difference between hardware clocks on different servers; RedLock deducts maximum possible drift from the TTL to guarantee the lock is released on the client before it expires on the server.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Even without NTP steps, hardware quartz crystals experience clock drift due to temperature and voltage fluctuations, typically around 1 millisecond per second (0.1%).</p>
+<p>Over a 10-second TTL, two servers can drift apart by tens of milliseconds.</p>
+<p>If Server A's clock runs 20ms faster than Server B's, Server A will expire the key 20ms before the client expects.</p>
+<p>RedLock guards against this by subtracting a drift allowance:</p>
+<p>$$\text{Drift} = (\text{TTL} \times \text{factor}) + \text{skewTolerance}$$</p>
+<p>This ensures that when the client considers the lock valid, it is guaranteed to still be held on all quorum Redis nodes.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How does RedLock maintain mutual exclusion during network partitions (split-brain scenarios)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Because acquiring the lock requires a majority quorum ($\lfloor N/2 \rfloor + 1$), at most one network partition can ever accumulate enough nodes to grant a lock.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a 5-node cluster, suppose a network partition splits the nodes into two partitions:</p>
+<ul>
+<li>Partition 1: 3 nodes</li>
+<li>Partition 2: 2 nodes</li>
+</ul>
+<p>A client communicating with Partition 2 can only acquire at most 2 nodes. Since the quorum requirement is $\lfloor 5/2 \rfloor + 1 = 3$, Partition 2 will reject the lock and trigger an immediate compensation rollback.</p>
+<p>Only clients able to communicate with the majority partition (Partition 1) can achieve quorum. It is mathematically impossible for two clients to both acquire a quorum of nodes simultaneously.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #100 (Same Tree), what are the edge cases and recursive mechanics?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: If both nodes are null, return true; if exactly one is null or values differ, return false; otherwise recursively verify that both left subtrees and right subtrees match.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  public bool IsSameTree(TreeNode? p, TreeNode? q) {
+      if (p == null &amp;&amp; q == null) return true;
+      if (p == null || q == null || p.val != q.val) return false;
+      return IsSameTree(p.left, q.left) &amp;&amp; IsSameTree(p.right, q.right);
+  }</code></pre></div>
+<ul>
+<li><strong>Time Complexity</strong>: $O(\min(N, M))$ because the traversal short-circuits at the first mismatch.</li>
+<li><strong>Space Complexity</strong>: $O(\min(H_p, H_q))$ auxiliary stack space.</li>
+<li>Edge cases include asymmetrical tree branches, negative node values, and trees of differing heights.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does Merkle Tree Hashing achieve $O(N + M)$ linear time for LeetCode #572 (Subtree of Another Tree)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Rather than re-running recursive subtree checks at every node ($O(N \cdot M)$), Merkle tree hashing computes a unique 64-bit cryptographic hash for each subtree bottom-up, reducing subtree matching to a $O(1)$ set lookup.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li>In classic DFS, if both trees are degenerately skewed with identical node values (e.g. chains of 1s), checking whether <code>subRoot</code> matches at each node of <code>root</code> takes $M$ operations for each of the $N$ nodes, resulting in $O(N \cdot M)$ worst-case time.</li>
+<li>With <strong>Merkle Hashing</strong>:</li>
+</ul>
+<ol>
+<li>During a single post-order traversal of <code>root</code>, compute:</li>
+</ol>
+<p>$$H(u) = \text{Mix}(u.val, H(u.left), H(u.right))$$</p>
+<ol>
+<li>Store all computed hashes in a <code>HashSet&lt;long&gt;</code>.</li>
+<li>Compute $H(subRoot)$ using the same mixing function.</li>
+<li>If $H(subRoot)$ exists in the HashSet, <code>subRoot</code> is isomorphic to a subtree of <code>root</code>.</li>
+<li>Visiting each node once yields strictly $O(N + M)$ time and $O(N + M)$ space.</li>
+</ol>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day19.RedisRedLock/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd19-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d19-src-code-0" class="language-csharp">using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day19.RedisRedLock;
+
+/// &lt;summary&gt;
+/// Configuration options for the RedLock distributed algorithm.
+/// &lt;/summary&gt;
+public record RedLockOptions
+{
+    public TimeSpan LockTtl { get; init; } = TimeSpan.FromSeconds(10);
+    public TimeSpan NodeTimeout { get; init; } = TimeSpan.FromMilliseconds(50);
+    public double DriftFactor { get; init; } = 0.01; // 1% clock drift factor
+    public TimeSpan ClockSkewTolerance { get; init; } = TimeSpan.FromMilliseconds(2);
+    public TimeSpan AutoRenewalInterval { get; init; } = TimeSpan.FromSeconds(3);
+    public int RetryCount { get; init; } = 3;
+    public TimeSpan RetryDelay { get; init; } = TimeSpan.FromMilliseconds(50);
+}
+
+/// &lt;summary&gt;
+/// Result of a RedLock acquisition attempt.
+/// &lt;/summary&gt;
+public record RedLockAcquireResult(
+    bool Success,
+    string ResourceKey,
+    string LockValue,
+    TimeSpan ValidityTime,
+    int AcquiredNodes,
+    int TotalNodes,
+    long FencingToken,
+    string? ErrorMessage = null);
+
+/// &lt;summary&gt;
+/// Interface representing an independent Redis node in the multi-instance cluster.
+/// Can be backed by StackExchange.Redis or simulated in-memory instances.
+/// &lt;/summary&gt;
+public interface IRedisNodeInstance
+{
+    string NodeId { get; }
+    bool IsHealthy { get; set; }
+    TimeSpan SimulatedLatency { get; set; }
+
+    Task&lt;bool&gt; TrySetLockAsync(string resource, string value, TimeSpan ttl, CancellationToken ct = default);
+    Task&lt;bool&gt; TryReleaseLockAsync(string resource, string value, CancellationToken ct = default);
+    Task&lt;bool&gt; TryExtendLockAsync(string resource, string value, TimeSpan ttl, CancellationToken ct = default);
+    Task&lt;string?&gt; GetLockValueAsync(string resource, CancellationToken ct = default);
+}
+
+/// &lt;summary&gt;
+/// Monotonically increasing fencing token generator to defend against zombie writes.
+/// &lt;/summary&gt;
+public class FencingTokenGenerator
+{
+    private long _counter = 0;
+
+    public long Next() =&gt; Interlocked.Increment(ref _counter);
+    public long Current =&gt; Volatile.Read(ref _counter);
+}
+
+/// &lt;summary&gt;
+/// Represents an active acquired lock lease handle with automated background heartbeat renewal.
+/// Disposing this handle stops renewal and safely releases the multi-instance lock.
+/// &lt;/summary&gt;
+public sealed class RedLockLeaseHandle : IAsyncDisposable
+{
+    private readonly RedLockEngine _engine;
+    private readonly CancellationTokenSource _cts = new();
+    private readonly Task? _renewalTask;
+    private int _disposed = 0;
+
+    public RedLockAcquireResult LockInfo { get; }
+    public bool IsActive =&gt; _disposed == 0 &amp;&amp; !_cts.IsCancellationRequested;
+
+    public RedLockLeaseHandle(RedLockEngine engine, RedLockAcquireResult lockInfo, TimeSpan renewalInterval)
+    {
+        _engine = engine;
+        LockInfo = lockInfo;
+
+        if (lockInfo.Success &amp;&amp; renewalInterval &gt; TimeSpan.Zero)
+        {
+            _renewalTask = StartRenewalLoopAsync(renewalInterval, _cts.Token);
+        }
+    }
+
+    private async Task StartRenewalLoopAsync(TimeSpan interval, CancellationToken ct)
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(interval);
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                if (ct.IsCancellationRequested) break;
+
+                bool renewed = await _engine.ExtendLockAsync(LockInfo.ResourceKey, LockInfo.LockValue, _engine.Options.LockTtl, ct);
+                if (!renewed)
+                {
+                    // Failed to achieve quorum renewal; abort lease
+                    break;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected upon disposal
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+
+        _cts.Cancel();
+        if (_renewalTask != null)
+        {
+            try { await _renewalTask; } catch { /* Ignore task cancellation */ }
+        }
+        _cts.Dispose();
+
+        await _engine.ReleaseLockAsync(LockInfo.ResourceKey, LockInfo.LockValue);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day19.RedisRedLock/RedLockEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd19-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d19-src-code-1" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day19.RedisRedLock;
+
+/// &lt;summary&gt;
+/// In-memory simulated Redis node implementation for deterministic testing of distributed edge cases:
+/// network latency, node crashes, split-brain, and lease expiry.
+/// &lt;/summary&gt;
+public class SimulatedRedisNode : IRedisNodeInstance
+{
+    private record LockEntry(string Value, DateTime ExpiresAtUtc);
+
+    private readonly ConcurrentDictionary&lt;string, LockEntry&gt; _store = new();
+    private readonly object _syncLock = new();
+
+    public string NodeId { get; }
+    public bool IsHealthy { get; set; } = true;
+    public TimeSpan SimulatedLatency { get; set; } = TimeSpan.Zero;
+
+    public SimulatedRedisNode(string nodeId)
+    {
+        NodeId = nodeId;
+    }
+
+    public async Task&lt;bool&gt; TrySetLockAsync(string resource, string value, TimeSpan ttl, CancellationToken ct = default)
+    {
+        if (SimulatedLatency &gt; TimeSpan.Zero)
+        {
+            await Task.Delay(SimulatedLatency, ct);
+        }
+
+        if (!IsHealthy) return false;
+
+        var now = DateTime.UtcNow;
+        lock (_syncLock)
+        {
+            // Clean expired key if any
+            if (_store.TryGetValue(resource, out var existing))
+            {
+                if (now &gt;= existing.ExpiresAtUtc)
+                {
+                    _store.TryRemove(resource, out _);
+                }
+                else
+                {
+                    return false; // Key already locked by another client
+                }
+            }
+
+            var entry = new LockEntry(value, now.Add(ttl));
+            return _store.TryAdd(resource, entry);
+        }
+    }
+
+    public async Task&lt;bool&gt; TryReleaseLockAsync(string resource, string value, CancellationToken ct = default)
+    {
+        if (SimulatedLatency &gt; TimeSpan.Zero)
+        {
+            await Task.Delay(SimulatedLatency, ct);
+        }
+
+        if (!IsHealthy) return false;
+
+        // Atomic Lua script emulation:
+        // if redis.call(&#x27;get&#x27;, KEYS[1]) == ARGV[1] then return redis.call(&#x27;del&#x27;, KEYS[1]) else return 0 end
+        lock (_syncLock)
+        {
+            if (_store.TryGetValue(resource, out var existing))
+            {
+                if (existing.Value == value)
+                {
+                    _store.TryRemove(resource, out _);
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public async Task&lt;bool&gt; TryExtendLockAsync(string resource, string value, TimeSpan ttl, CancellationToken ct = default)
+    {
+        if (SimulatedLatency &gt; TimeSpan.Zero)
+        {
+            await Task.Delay(SimulatedLatency, ct);
+        }
+
+        if (!IsHealthy) return false;
+
+        // Atomic Lua script emulation for lease extension:
+        // if redis.call(&#x27;get&#x27;, KEYS[1]) == ARGV[1] then return redis.call(&#x27;pexpire&#x27;, KEYS[1], ARGV[2]) else return 0 end
+        var now = DateTime.UtcNow;
+        lock (_syncLock)
+        {
+            if (_store.TryGetValue(resource, out var existing))
+            {
+                if (existing.Value == value &amp;&amp; now &lt; existing.ExpiresAtUtc)
+                {
+                    _store[resource] = new LockEntry(value, now.Add(ttl));
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public async Task&lt;string?&gt; GetLockValueAsync(string resource, CancellationToken ct = default)
+    {
+        if (!IsHealthy) return null;
+        var now = DateTime.UtcNow;
+        lock (_syncLock)
+        {
+            if (_store.TryGetValue(resource, out var existing))
+            {
+                if (now &lt; existing.ExpiresAtUtc)
+                {
+                    return existing.Value;
+                }
+                _store.TryRemove(resource, out _);
+            }
+            return null;
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Implementation of the RedLock multi-instance distributed locking algorithm.
+/// Coordinates mutual exclusion across N independent Redis nodes without single points of failure.
+/// &lt;/summary&gt;
+public class RedLockEngine
+{
+    private readonly IReadOnlyList&lt;IRedisNodeInstance&gt; _nodes;
+    private readonly RedLockOptions _options;
+    private readonly FencingTokenGenerator _fencing = new();
+
+    public RedLockOptions Options =&gt; _options;
+    public IReadOnlyList&lt;IRedisNodeInstance&gt; Nodes =&gt; _nodes;
+    public int Quorum =&gt; (_nodes.Count / 2) + 1;
+
+    public RedLockEngine(IEnumerable&lt;IRedisNodeInstance&gt; nodes, RedLockOptions? options = null)
+    {
+        _nodes = nodes.ToList();
+        if (_nodes.Count &lt; 1)
+        {
+            throw new ArgumentException(&quot;RedLock requires at least 1 node instance (recommended 3 or 5).&quot;, nameof(nodes));
+        }
+
+        _options = options ?? new RedLockOptions();
+    }
+
+    /// &lt;summary&gt;
+    /// Calculates clock drift: (TTL * factor) + clockSkewTolerance.
+    /// &lt;/summary&gt;
+    public TimeSpan CalculateClockDrift(TimeSpan ttl)
+    {
+        double driftMs = (ttl.TotalMilliseconds * _options.DriftFactor) + _options.ClockSkewTolerance.TotalMilliseconds;
+        return TimeSpan.FromMilliseconds(driftMs);
+    }
+
+    /// &lt;summary&gt;
+    /// Attempts to acquire a distributed lock across the multi-instance cluster.
+    /// &lt;/summary&gt;
+    public async Task&lt;RedLockAcquireResult&gt; TryAcquireLockAsync(
+        string resourceKey,
+        TimeSpan? customTtl = null,
+        string? customLockValue = null,
+        CancellationToken ct = default)
+    {
+        var ttl = customTtl ?? _options.LockTtl;
+        var lockValue = customLockValue ?? Guid.NewGuid().ToString(&quot;N&quot;);
+        var drift = CalculateClockDrift(ttl);
+
+        var startTimestamp = Stopwatch.GetTimestamp();
+
+        // 1. Attempt to acquire lock on all N instances concurrently with node timeout
+        var tasks = _nodes.Select(async node =&gt;
+        {
+            try
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                cts.CancelAfter(_options.NodeTimeout);
+                bool success = await node.TrySetLockAsync(resourceKey, lockValue, ttl, cts.Token);
+                return (Node: node, Success: success);
+            }
+            catch
+            {
+                return (Node: node, Success: false);
+            }
+        });
+
+        var results = await Task.WhenAll(tasks);
+        int acquiredCount = results.Count(r =&gt; r.Success);
+
+        // 2. Measure elapsed time and remaining validity time
+        var elapsed = Stopwatch.GetElapsedTime(startTimestamp);
+        var validityTime = ttl - elapsed - drift;
+
+        // 3. Quorum check: requires &gt;= Quorum nodes AND positive validity time
+        if (acquiredCount &gt;= Quorum &amp;&amp; validityTime &gt; TimeSpan.Zero)
+        {
+            long fencingToken = _fencing.Next();
+            return new RedLockAcquireResult(
+                Success: true,
+                ResourceKey: resourceKey,
+                LockValue: lockValue,
+                ValidityTime: validityTime,
+                AcquiredNodes: acquiredCount,
+                TotalNodes: _nodes.Count,
+                FencingToken: fencingToken);
+        }
+
+        // 4. Compensation / Rollback: Quorum not met or lock took too long; unlock all nodes
+        await ReleaseLockInternalAsync(resourceKey, lockValue);
+
+        string reason = acquiredCount &lt; Quorum
+            ? $&quot;Quorum not met (acquired {acquiredCount}/{_nodes.Count}, required {Quorum}).&quot;
+            : $&quot;Lock validity expired during acquisition (elapsed: {elapsed.TotalMilliseconds:F1}ms, drift: {drift.TotalMilliseconds:F1}ms).&quot;;
+
+        return new RedLockAcquireResult(
+            Success: false,
+            ResourceKey: resourceKey,
+            LockValue: lockValue,
+            ValidityTime: TimeSpan.Zero,
+            AcquiredNodes: acquiredCount,
+            TotalNodes: _nodes.Count,
+            FencingToken: 0,
+            ErrorMessage: reason);
+    }
+
+    /// &lt;summary&gt;
+    /// Acquires a managed RedLock lease with background auto-renewal heartbeat.
+    /// &lt;/summary&gt;
+    public async Task&lt;RedLockLeaseHandle?&gt; AcquireLeaseAsync(
+        string resourceKey,
+        TimeSpan? customTtl = null,
+        CancellationToken ct = default)
+    {
+        var result = await TryAcquireLockAsync(resourceKey, customTtl, ct: ct);
+        if (!result.Success) return null;
+
+        return new RedLockLeaseHandle(this, result, _options.AutoRenewalInterval);
+    }
+
+    /// &lt;summary&gt;
+    /// Extends an active lock lease across the cluster.
+    /// &lt;/summary&gt;
+    public async Task&lt;bool&gt; ExtendLockAsync(string resourceKey, string lockValue, TimeSpan ttl, CancellationToken ct = default)
+    {
+        var tasks = _nodes.Select(async node =&gt;
+        {
+            try
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                cts.CancelAfter(_options.NodeTimeout);
+                return await node.TryExtendLockAsync(resourceKey, lockValue, ttl, cts.Token);
+            }
+            catch
+            {
+                return false;
+            }
+        });
+
+        var results = await Task.WhenAll(tasks);
+        int successCount = results.Count(s =&gt; s);
+        return successCount &gt;= Quorum;
+    }
+
+    /// &lt;summary&gt;
+    /// Releases the lock from all instances using atomic Lua scripts.
+    /// &lt;/summary&gt;
+    public async Task&lt;int&gt; ReleaseLockAsync(string resourceKey, string lockValue)
+    {
+        return await ReleaseLockInternalAsync(resourceKey, lockValue);
+    }
+
+    private async Task&lt;int&gt; ReleaseLockInternalAsync(string resourceKey, string lockValue)
+    {
+        var tasks = _nodes.Select(async node =&gt;
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(_options.NodeTimeout);
+                return await node.TryReleaseLockAsync(resourceKey, lockValue, cts.Token);
+            }
+            catch
+            {
+                return false;
+            }
+        });
+
+        var results = await Task.WhenAll(tasks);
+        return results.Count(r =&gt; r);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day19.RedisRedLock/TreeIsomorphismSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd19-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d19-src-code-2" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day19.RedisRedLock;
+
+/// &lt;summary&gt;
+/// Definition for a binary tree node.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// Tree isomorphism and subtree matching algorithms:
+/// - LeetCode #100: Same Tree
+/// - LeetCode #572: Subtree of Another Tree (Standard DFS &amp; O(N+M) Merkle Tree Hashing)
+/// &lt;/summary&gt;
+public class TreeIsomorphismSolvers
+{
+    /// &lt;summary&gt;
+    /// Checks if two binary trees are structurally identical and have identical node values (LeetCode #100).
+    /// Time Complexity: O(min(N, M))
+    /// Space Complexity: O(min(Hp, Hq)) recursion stack space.
+    /// &lt;/summary&gt;
+    public bool IsSameTree(TreeNode? p, TreeNode? q)
+    {
+        if (p == null &amp;&amp; q == null) return true;
+        if (p == null || q == null) return false;
+        if (p.val != q.val) return false;
+
+        return IsSameTree(p.left, q.left) &amp;&amp; IsSameTree(p.right, q.right);
+    }
+
+    /// &lt;summary&gt;
+    /// Determines whether &#x27;subRoot&#x27; is a subtree of &#x27;root&#x27; using classic recursive DFS (LeetCode #572).
+    /// Time Complexity: O(N * M) worst-case (e.g. skewed repetitive trees).
+    /// Space Complexity: O(H_root) recursion stack space.
+    /// &lt;/summary&gt;
+    public bool IsSubtree(TreeNode? root, TreeNode? subRoot)
+    {
+        if (subRoot == null) return true;
+        if (root == null) return false;
+
+        if (IsSameTree(root, subRoot)) return true;
+
+        return IsSubtree(root.left, subRoot) || IsSubtree(root.right, subRoot);
+    }
+
+    /// &lt;summary&gt;
+    /// Staff-level linear-time solution for LeetCode #572 using Merkle Tree Hashing.
+    /// Assigns a unique cryptographic/polynomial hash to every subtree during a single bottom-up pass.
+    /// Time Complexity: O(N + M)
+    /// Space Complexity: O(N + M)
+    /// &lt;/summary&gt;
+    public bool IsSubtreeMerkle(TreeNode? root, TreeNode? subRoot)
+    {
+        if (subRoot == null) return true;
+        if (root == null) return false;
+
+        var subtreeHashes = new HashSet&lt;long&gt;();
+
+        // 1. Compute target subRoot hash
+        long targetHash = ComputeMerkleHash(subRoot, null);
+
+        // 2. Compute all subtree hashes in root
+        ComputeMerkleHash(root, subtreeHashes);
+
+        return subtreeHashes.Contains(targetHash);
+    }
+
+    private static long ComputeMerkleHash(TreeNode? node, HashSet&lt;long&gt;? collectedHashes)
+    {
+        if (node == null)
+        {
+            // Sentinel null marker hash
+            return unchecked((long)0x9e3779b97f4a7c15UL);
+        }
+
+        long leftHash = ComputeMerkleHash(node.left, collectedHashes);
+        long rightHash = ComputeMerkleHash(node.right, collectedHashes);
+
+        // Murmur/SplitMix64-style mixing function:
+        // Hash = Mix(node.val, leftHash, rightHash)
+        long h = unchecked(node.val * 31L + leftHash * 1000003L + rightHash * 1000033L);
+        h ^= (h &gt;&gt; 33);
+        h = unchecked(h * -49064778989728563L);
+        h ^= (h &gt;&gt; 33);
+
+        collectedHashes?.Add(h);
+        return h;
+    }
+
+    /// &lt;summary&gt;
+    /// Helper to deserialize a tree from a level-order array representation.
+    /// &lt;/summary&gt;
+    public static TreeNode? BuildTree(int?[] values)
+    {
+        if (values == null || values.Length == 0 || values[0] == null) return null;
+
+        var root = new TreeNode(values[0]!.Value);
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int i = 1;
+        while (queue.Count &gt; 0 &amp;&amp; i &lt; values.Length)
+        {
+            var curr = queue.Dequeue();
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.left = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.left);
+            }
+            i++;
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.right = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.right);
+            }
+            i++;
+        }
+
+        return root;
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day19.RedisRedLock.Tests/Day19Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd19-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d19-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day19.RedisRedLock.Tests;
+
+public class Day19Tests
+{
+    // ==========================================
+    // 1. REDLOCK DISTRIBUTED LOCKING TESTS
+    // ==========================================
+
+    [Fact]
+    public async Task RedLock_FullClusterQuorum_AcquiresLockWithHighValidityTime()
+    {
+        var nodes = Enumerable.Range(1, 5)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        var engine = new RedLockEngine(nodes, new RedLockOptions
+        {
+            LockTtl = TimeSpan.FromSeconds(5),
+            NodeTimeout = TimeSpan.FromMilliseconds(50)
+        });
+
+        var result = await engine.TryAcquireLockAsync(&quot;order:checkout:1001&quot;);
+
+        result.Success.Should().BeTrue();
+        result.AcquiredNodes.Should().Be(5);
+        result.TotalNodes.Should().Be(5);
+        result.ValidityTime.Should().BeGreaterThan(TimeSpan.FromSeconds(4.5));
+        result.FencingToken.Should().BeGreaterThan(0);
+
+        // Verify keys exist on all 5 nodes with same lock value
+        foreach (var node in nodes)
+        {
+            var storedVal = await node.GetLockValueAsync(&quot;order:checkout:1001&quot;);
+            storedVal.Should().Be(result.LockValue);
+        }
+
+        // Release
+        int released = await engine.ReleaseLockAsync(&quot;order:checkout:1001&quot;, result.LockValue);
+        released.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task RedLock_PartialClusterFault_AcquiresLockWhenQuorumIsMet()
+    {
+        var nodes = Enumerable.Range(1, 5)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        // Simulate 2 failed/offline nodes out of 5
+        nodes[0].IsHealthy = false;
+        nodes[1].IsHealthy = false;
+
+        var engine = new RedLockEngine(nodes, new RedLockOptions
+        {
+            LockTtl = TimeSpan.FromSeconds(5),
+            NodeTimeout = TimeSpan.FromMilliseconds(50)
+        });
+
+        // 3 of 5 nodes available =&gt; Quorum (5/2 + 1 = 3) is met
+        var result = await engine.TryAcquireLockAsync(&quot;inventory:sku:404&quot;);
+
+        result.Success.Should().BeTrue();
+        result.AcquiredNodes.Should().Be(3);
+        result.TotalNodes.Should().Be(5);
+        result.ValidityTime.Should().BeGreaterThan(TimeSpan.Zero);
+
+        // Cleanup
+        int released = await engine.ReleaseLockAsync(&quot;inventory:sku:404&quot;, result.LockValue);
+        released.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task RedLock_QuorumFailure_CompensatesAndRollsBackAllAcquiredNodes()
+    {
+        var nodes = Enumerable.Range(1, 5)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        // 3 nodes offline =&gt; only 2 can acquire, failing quorum of 3
+        nodes[0].IsHealthy = false;
+        nodes[1].IsHealthy = false;
+        nodes[2].IsHealthy = false;
+
+        var engine = new RedLockEngine(nodes, new RedLockOptions
+        {
+            LockTtl = TimeSpan.FromSeconds(5),
+            NodeTimeout = TimeSpan.FromMilliseconds(50)
+        });
+
+        var result = await engine.TryAcquireLockAsync(&quot;account:transfer:99&quot;);
+
+        result.Success.Should().BeFalse();
+        result.AcquiredNodes.Should().Be(2);
+        result.ErrorMessage.Should().Contain(&quot;Quorum not met&quot;);
+
+        // Verify rollback: even nodes 3 and 4 that succeeded have been released
+        (await nodes[3].GetLockValueAsync(&quot;account:transfer:99&quot;)).Should().BeNull();
+        (await nodes[4].GetLockValueAsync(&quot;account:transfer:99&quot;)).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RedLock_ClockDriftAndTimeout_RejectsLockWhenValidityExpires()
+    {
+        var nodes = Enumerable.Range(1, 5)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;)
+            {
+                // Inject 80ms latency on each node
+                SimulatedLatency = TimeSpan.FromMilliseconds(80)
+            })
+            .ToList();
+
+        // Short TTL of 50ms with high latency =&gt; validity will be negative
+        var engine = new RedLockEngine(nodes, new RedLockOptions
+        {
+            LockTtl = TimeSpan.FromMilliseconds(50),
+            NodeTimeout = TimeSpan.FromMilliseconds(150),
+            DriftFactor = 0.05
+        });
+
+        var result = await engine.TryAcquireLockAsync(&quot;rate:job:sync&quot;);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain(&quot;validity expired&quot;);
+    }
+
+    [Fact]
+    public async Task RedLock_SafeRelease_ForeignTokenCannotReleaseLock()
+    {
+        var nodes = Enumerable.Range(1, 3)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        var engine = new RedLockEngine(nodes, new RedLockOptions { LockTtl = TimeSpan.FromSeconds(5) });
+
+        var result = await engine.TryAcquireLockAsync(&quot;batch:process:1&quot;);
+        result.Success.Should().BeTrue();
+
+        // Another client attempts to release with different token
+        int releasedFraudulent = await engine.ReleaseLockAsync(&quot;batch:process:1&quot;, &quot;wrong-random-token&quot;);
+        releasedFraudulent.Should().Be(0);
+
+        // Lock should still be held
+        (await nodes[0].GetLockValueAsync(&quot;batch:process:1&quot;)).Should().Be(result.LockValue);
+
+        // Authorized client releases with valid token
+        int releasedLegit = await engine.ReleaseLockAsync(&quot;batch:process:1&quot;, result.LockValue);
+        releasedLegit.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task RedLock_AutoRenewalLease_ExtendsLockAndReleasesOnDispose()
+    {
+        var nodes = Enumerable.Range(1, 3)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        var engine = new RedLockEngine(nodes, new RedLockOptions
+        {
+            LockTtl = TimeSpan.FromMilliseconds(400),
+            AutoRenewalInterval = TimeSpan.FromMilliseconds(150)
+        });
+
+        var lease = await engine.AcquireLeaseAsync(&quot;long:computation&quot;);
+        lease.Should().NotBeNull();
+        lease!.IsActive.Should().BeTrue();
+
+        // Wait 350ms (normally expired if not renewed at 150ms)
+        await Task.Delay(350);
+
+        // Lock should still be held on node-1 due to auto-renewal heartbeat
+        var val = await nodes[0].GetLockValueAsync(&quot;long:computation&quot;);
+        val.Should().Be(lease.LockInfo.LockValue);
+
+        // Dispose lease
+        await lease.DisposeAsync();
+        lease.IsActive.Should().BeFalse();
+
+        // Lock is now released
+        (await nodes[0].GetLockValueAsync(&quot;long:computation&quot;)).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RedLock_FencingTokens_ProduceStrictlyIncreasingSequence()
+    {
+        var nodes = Enumerable.Range(1, 3)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        var engine = new RedLockEngine(nodes);
+
+        var r1 = await engine.TryAcquireLockAsync(&quot;doc:edit&quot;);
+        await engine.ReleaseLockAsync(&quot;doc:edit&quot;, r1.LockValue);
+
+        var r2 = await engine.TryAcquireLockAsync(&quot;doc:edit&quot;);
+        await engine.ReleaseLockAsync(&quot;doc:edit&quot;, r2.LockValue);
+
+        var r3 = await engine.TryAcquireLockAsync(&quot;doc:edit&quot;);
+        await engine.ReleaseLockAsync(&quot;doc:edit&quot;, r3.LockValue);
+
+        r1.FencingToken.Should().BeLessThan(r2.FencingToken);
+        r2.FencingToken.Should().BeLessThan(r3.FencingToken);
+    }
+
+    // ==========================================
+    // 2. DSA TREE ISOMORPHISM TESTS (LC #100 &amp; #572)
+    // ==========================================
+
+    [Fact]
+    public void LC100_IsSameTree_IdenticalTrees_ReturnsTrue()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        var p = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2, 3 });
+        var q = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2, 3 });
+
+        solvers.IsSameTree(p, q).Should().BeTrue();
+    }
+
+    [Fact]
+    public void LC100_IsSameTree_StructuralMismatch_ReturnsFalse()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        // p = [1, 2], q = [1, null, 2]
+        var p = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2 });
+        var q = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, null, 2 });
+
+        solvers.IsSameTree(p, q).Should().BeFalse();
+    }
+
+    [Fact]
+    public void LC100_IsSameTree_ValueMismatch_ReturnsFalse()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        // p = [1, 2, 1], q = [1, 1, 2]
+        var p = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2, 1 });
+        var q = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 1, 2 });
+
+        solvers.IsSameTree(p, q).Should().BeFalse();
+    }
+
+    [Fact]
+    public void LC100_IsSameTree_EmptyAndNullTrees_ReturnsCorrectly()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        solvers.IsSameTree(null, null).Should().BeTrue();
+        solvers.IsSameTree(new TreeNode(1), null).Should().BeFalse();
+        solvers.IsSameTree(null, new TreeNode(1)).Should().BeFalse();
+    }
+
+    [Fact]
+    public void LC572_IsSubtree_ValidSubtree_ReturnsTrueForBothDfsAndMerkle()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        // root = [3, 4, 5, 1, 2], subRoot = [4, 1, 2]
+        var root = TreeIsomorphismSolvers.BuildTree(new int?[] { 3, 4, 5, 1, 2 });
+        var subRoot = TreeIsomorphismSolvers.BuildTree(new int?[] { 4, 1, 2 });
+
+        solvers.IsSubtree(root, subRoot).Should().BeTrue();
+        solvers.IsSubtreeMerkle(root, subRoot).Should().BeTrue();
+    }
+
+    [Fact]
+    public void LC572_IsSubtree_SubtreeHasExtraLeaf_ReturnsFalseForBothDfsAndMerkle()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        // root = [3, 4, 5, 1, 2, null, null, null, null, 0]
+        // subRoot = [4, 1, 2] -&gt; 2 in root has child 0, so it is NOT an exact subtree match
+        var root = TreeIsomorphismSolvers.BuildTree(new int?[] { 3, 4, 5, 1, 2, null, null, null, null, 0 });
+        var subRoot = TreeIsomorphismSolvers.BuildTree(new int?[] { 4, 1, 2 });
+
+        solvers.IsSubtree(root, subRoot).Should().BeFalse();
+        solvers.IsSubtreeMerkle(root, subRoot).Should().BeFalse();
+    }
+
+    [Fact]
+    public void LC572_IsSubtree_IdenticalTree_ReturnsTrue()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        var root = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2, 3 });
+        var subRoot = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2, 3 });
+
+        solvers.IsSubtree(root, subRoot).Should().BeTrue();
+        solvers.IsSubtreeMerkle(root, subRoot).Should().BeTrue();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 19 - Engineering Notes: RedLock Distributed Locking & Consensus</h1>
+<h2>1. The Great RedLock Debate: Martin Kleppmann vs Salvatore Sanfilippo (antirez)</h2>
+<p>In 2016, distributed systems researcher Martin Kleppmann published a critique of the RedLock algorithm, prompting an extensive architectural debate with Redis creator Salvatore Sanfilippo.</p>
+<h3>Kleppmann's Critique ("How to do distributed locking"):</h3>
+<ol>
+<li><strong>Asynchronous Network & Process Pauses</strong>:</li>
+</ol>
+<ul>
+<li>In an asynchronous distributed system with unbounded network delays and process pauses (such as .NET garbage collection stop-the-world pauses), no algorithm relying purely on wall-clock time can guarantee mutual exclusion.</li>
+<li><em>The GC Pause Scenario</em>: Client 1 acquires RedLock with a 10s TTL. Client 1 immediately hits a 15-second Gen 2 GC pause. The lock expires on Redis. Client 2 acquires the lock and begins writing to storage. Client 1 resumes, unaware that its lock expired, and also writes to storage, causing silent data corruption.</li>
+</ul>
+<ol>
+<li><strong>Clock Skew & NTP Jumps</strong>:</li>
+</ol>
+<ul>
+<li>If one of the 5 Redis nodes experiences an unsynchronized NTP step forward, its keys will expire prematurely, breaking quorum assumptions.</li>
+</ul>
+<ol>
+<li><strong>Kleppmann's Solution</strong>:</li>
+</ol>
+<ul>
+<li>Locks are insufficient for correctness without <strong>Fencing Tokens</strong>: monotonically increasing numbers issued with each lock acquisition that the storage tier verifies and rejects if out-of-order.</li>
+</ul>
+<h3>Antirez's Rebuttal ("Is Redlock safe?"):</h3>
+<ol>
+<li><strong>Monotonic Clocks Mitigate NTP Steps</strong>:</li>
+</ol>
+<ul>
+<li>RedLock does not use wall-clock time (<code>gettimeofday</code>); it uses monotonic clocks (<code>CLOCK_MONOTONIC</code>), which never jump backwards or forwards due to NTP adjustments.</li>
+</ul>
+<ol>
+<li><strong>Bounded Drift Model</strong>:</li>
+</ol>
+<ul>
+<li>RedLock explicitly accounts for maximum clock drift by calculating:</li>
+</ul>
+<p>$$\text{validity\_time} = \text{TTL} - \Delta T - \text{drift}$$</p>
+<ul>
+<li>If elapsed time plus drift exceeds the TTL, the lock is immediately aborted.</li>
+</ul>
+<ol>
+<li><strong>Consensus in Practice</strong>:</li>
+</ol>
+<ul>
+<li>While Raft/Paxos-based systems (like etcd or ZooKeeper) provide strict CP consensus with formal leadership election, RedLock provides a pragmatic, highly available distributed locking layer across independent Redis instances without requiring complex consensus state machines.</li>
+</ul>
+<hr/>
+<h2>2. Clock Drift Mechanics in High-Performance .NET</h2>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">// Anti-Pattern: DateTime.UtcNow can jump due to NTP sync
+DateTime start = DateTime.UtcNow;
+...
+TimeSpan elapsed = DateTime.UtcNow - start; // Can be negative or skewed!
+
+// Production Standard: Monotonic Clock via Stopwatch
+long startTick = Stopwatch.GetTimestamp();
+...
+TimeSpan elapsed = Stopwatch.GetElapsedTime(startTick); // Guaranteed strictly monotonic</code></pre></div>
+<ul>
+<li>In .NET 8, <code>Stopwatch.GetTimestamp()</code> maps to <code>mach_absolute_time()</code> on macOS, <code>clock_gettime(CLOCK_MONOTONIC)</code> on Linux, and <code>QueryPerformanceCounter</code> on Windows.</li>
+<li>It operates at sub-microsecond precision and is completely unaffected by operating system clock corrections.</li>
+</ul>
+<hr/>
+<h2>3. Atomic Lua Scripts in Redis Distributed Locks</h2>
+<h3>Safe Unlock Script</h3>
+<div class="code-block-container"><pre class="language-lua"><code class="language-lua">if redis.call(&quot;get&quot;, KEYS[1]) == ARGV[1] then
+    return redis.call(&quot;del&quot;, KEYS[1])
+else
+    return 0
+end</code></pre></div>
+<ul>
+<li><strong>Why it matters</strong>: If client A acquired the lock and took 11 seconds on a 10s TTL, client B will acquire the lock after second 10. If client A blindly called <code>DEL lock_key</code>, it would delete client B's active lock! The Lua script guarantees that client A only deletes the lock if the stored UUID still matches client A's token.</li>
+</ul>
+<h3>Safe Extend (Heartbeat) Script</h3>
+<div class="code-block-container"><pre class="language-lua"><code class="language-lua">if redis.call(&quot;get&quot;, KEYS[1]) == ARGV[1] then
+    return redis.call(&quot;pexpire&quot;, KEYS[1], ARGV[2])
+else
+    return 0
+end</code></pre></div>
+<ul>
+<li>Extends the lease only if the current client remains the rightful lock holder.</li>
+</ul>
+<hr/>
+<h2>4. DSA: Merkle Tree Hashing vs Recursive Isomorphism</h2>
+<div class="table-container"><table><thead><tr>
+<th>Metric</th>
+<th>Classic Recursive DFS</th>
+<th>Merkle Tree Hashing</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Time Complexity</strong></td>
+<td>$O(N \cdot M)$ worst-case</td>
+<td>$O(N + M)$ linear time</td>
+</tr>
+<tr>
+<td><strong>Space Complexity</strong></td>
+<td>$O(H)$ recursion stack</td>
+<td>$O(N + M)$ hash set storage</td>
+</tr>
+<tr>
+<td><strong>Algorithmic Idea</strong></td>
+<td>Brute force check at each node</td>
+<td>Bottom-up subtree hash fingerprinting</td>
+</tr>
+<tr>
+<td><strong>Collision Probability</strong></td>
+<td>0% (Exact comparison)</td>
+<td>$< 10^{-9}$ with 64-bit hash mixing</td>
+</tr>
+</tbody></table></div>
+<h3>Merkle Tree Hashing Formula</h3>
+<p>$$H(node) = \text{SplitMix64}(node.val \times 31 + H(left) \times 1000003 + H(right) \times 1000033)$$</p>
+<p>By encoding both the node value and child structural hashes into a 64-bit integer, two subtrees produce the identical hash if and only if they are isomorphic.</p>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 19: Redis Distributed Locking with RedLock & Tree Isomorphism</h1>
+<h2>Overview</h2>
+<p>Comprehensive implementation of multi-instance distributed mutual exclusion using the <strong>RedLock algorithm</strong> across independent Redis nodes, paired with tree isomorphism and recursive subtree matching algorithms: <strong>LeetCode #100 (Same Tree)</strong> and <strong>LeetCode #572 (Subtree of Another Tree)</strong>.</p>
+<hr/>
+<h2>Architectural Breakdown</h2>
+<h3>1. The RedLock Consensus Algorithm</h3>
+<p>Traditional Redis distributed locking (<code>SET lock_name my_random_value NX PX 30000</code>) on a single master node suffers from a fatal single point of failure: if the master crashes before asynchronous replication flushes to replicas, a newly elected master will grant the same lock to another client, causing dual-master split-brain writes.</p>
+<p>RedLock solves this by using <strong>$N$ completely independent Redis master nodes</strong> (typically $N = 5$):</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">       +---------------------------------------------+
+       |         Client Lock Coordinator             |
+       +---------------------------------------------+
+          /         |         |         \          \
+         v          v         v          v          v
+     [Node 1]   [Node 2]  [Node 3]   [Node 4]   [Node 5]
+     (Redis)    (Redis)   (Redis)    (Redis)    (Redis)
+         \          |         |          /
+          +---------+---------+---------+
+                         |
+           Quorum Achieved (&gt;= 3 / 5)</code></pre></div>
+<h4>Step-by-Step Acquisition Lifecycle:</h4>
+<ol>
+<li><strong>Timestamp Recording</strong>: Client captures start time $T_1$ using a monotonic clock.</li>
+<li><strong>Concurrent Multi-Node Requests</strong>: Attempts to acquire lock on all $N$ instances using <code>SET key value NX PX ttl</code> with a small per-node timeout (5–50 ms) to prevent slow/hung nodes from delaying the overall attempt.</li>
+<li><strong>Elapsed Time & Clock Drift Calculation</strong>:</li>
+</ol>
+<p>$$\Delta T = T_2 - T_1$$</p>
+<p>$$\text{Drift} = (\text{TTL} \times \text{DriftFactor}) + \text{ClockSkewTolerance}$$</p>
+<p>$$\text{ValidityTime} = \text{TTL} - \Delta T - \text{Drift}$$</p>
+<ol>
+<li><strong>Quorum Evaluation</strong>:</li>
+</ol>
+<ul>
+<li>The lock is acquired <strong>if and only if</strong> the client successfully sets the key in at least $\lfloor N/2 \rfloor + 1$ nodes (3 out of 5) <strong>AND</strong> $\text{ValidityTime} > 0$.</li>
+</ul>
+<ol>
+<li><strong>Compensation / Rollback</strong>:</li>
+</ol>
+<ul>
+<li>If quorum fails or validity time expires, the client dispatches an unlock command to <strong>all $N$ nodes</strong> (including nodes where the acquisition request timed out or was not received).</li>
+</ul>
+<hr/>
+<h3>2. Auto-Renewal Heartbeats & Fencing Tokens</h3>
+<h4>Lease Auto-Renewal (<code>RedLockLeaseHandle</code>)</h4>
+<ul>
+<li>For long-running operations, setting a static TTL risks premature lock expiration if task execution takes longer than anticipated.</li>
+<li>The <code>RedLockLeaseHandle</code> runs a periodic background heartbeat timer extending the lease across quorum nodes at $\frac{\text{TTL}}{3}$ intervals until explicitly disposed.</li>
+</ul>
+<h4>Monotonic Fencing Tokens</h4>
+<ul>
+<li>Defends against Martin Kleppmann's critique of distributed locks: if a process experiences a stop-the-world GC pause or network partition, its lock may expire while it is paused. When it resumes, it might perform a zombie write over another client's data.</li>
+<li>The storage tier enforces monotonically increasing fencing tokens: any write presenting a token $\le$ the highest token observed so far is rejected.</li>
+</ul>
+<hr/>
+<h3>3. Tree Isomorphism & Subtree Solvers</h3>
+<h4>LeetCode #100: Same Tree</h4>
+<ul>
+<li><strong>Problem</strong>: Check whether two binary trees $p$ and $q$ are structurally identical and have the same node values.</li>
+<li><strong>Algorithm</strong>: Recursive DFS checking base cases and verifying <code>p.val == q.val &amp;&amp; IsSameTree(p.left, q.left) &amp;&amp; IsSameTree(p.right, q.right)</code>.</li>
+<li><strong>Complexity</strong>: Time: $O(\min(N, M))$, Space: $O(\min(H_p, H_q))$.</li>
+</ul>
+<h4>LeetCode #572: Subtree of Another Tree</h4>
+<ul>
+<li><strong>Approach 1 (Classic DFS)</strong>: Traverses each node in <code>root</code> and invokes <code>IsSameTree(curr, subRoot)</code>. Time: $O(N \cdot M)$.</li>
+<li><strong>Approach 2 (Merkle Tree Hashing)</strong>: Computes a 64-bit cryptographic/polynomial subtree hash for each sub-root during a single post-order pass. Subtree matching is reduced to a set lookup in $O(N + M)$ time.</li>
+</ul>
+<hr/>
+<h2>Running Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day19-Redis-RedLock-DistributedLocking/tests/Day19.RedisRedLock.Tests/Day19.RedisRedLock.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why is a single Redis master node with asynchronous replication inadequate for strong distributed locking?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Asynchronous replication creates a race condition during master failure; if the master crashes before replicating the lock to replicas, a newly promoted replica will grant the same lock to a second client, resulting in dual-master concurrent execution.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a standard Redis master-replica topology, writes to the master are acknowledged immediately before being asynchronously sent to the replication stream.</p>
+<p>Consider this timeline:</p>
+<ol>
+<li>Client A acquires lock <code>SET lock:order 123 NX PX 10000</code> on the Master.</li>
+<li>The Master acknowledges success to Client A, but crashes before the write reaches Replica 1.</li>
+<li>Sentinel or Redis Cluster promotes Replica 1 to be the new Master.</li>
+<li>Client B attempts to acquire <code>SET lock:order 456 NX PX 10000</code> on the new Master. Because the key does not exist on Replica 1, the lock is granted.</li>
+<li>Both Client A and Client B now concurrently hold the exact same lock and execute mutating operations, violating mutual exclusion.</li>
+</ol>
+<p>RedLock eliminates this failure mode by removing master-replica replication dependencies entirely and operating across $N$ independent, un-replicated master instances.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Walk through the RedLock algorithm step-by-step. How does it determine if a lock was successfully acquired?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A client attempts to acquire the lock across $N$ independent nodes in parallel with a short timeout; it succeeds if at least $\lfloor N/2 \rfloor + 1$ nodes respond successfully and the total elapsed time plus clock drift is less than the lock TTL.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>For an $N = 5$ cluster:</p>
+<ol>
+<li>Record the current monotonic timestamp $T_1$.</li>
+<li>Concurrently attempt <code>SET resource random_token NX PX ttl</code> on all 5 nodes with a per-node timeout of 5–50 ms.</li>
+<li>Record completion monotonic timestamp $T_2$ and compute elapsed time $\Delta T = T_2 - T_1$.</li>
+<li>Calculate clock drift: $\text{Drift} = (\text{TTL} \times 0.01) + \text{ClockSkewTolerance}$.</li>
+<li>Compute remaining validity time: $\text{ValidityTime} = \text{TTL} - \Delta T - \text{Drift}$.</li>
+<li><strong>Quorum check</strong>: If at least 3 nodes accepted the lock AND $\text{ValidityTime} > 0$, the lock is successfully acquired.</li>
+<li><strong>Rollback</strong>: If quorum is not met (e.g. only 2 nodes responded) or $\text{ValidityTime} \le 0$, the client sends an unlock command to all 5 nodes, ensuring partially acquired keys are cleaned up.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What was Martin Kleppmann&#x27;s critique of RedLock, and what is the engineering takeaway?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Kleppmann argued that in asynchronous systems with stop-the-world GC pauses and clock jumps, RedLock cannot guarantee mutual exclusion without fencing tokens; antirez clarified that RedLock uses monotonic clocks and bounded drift, but agreed fencing tokens provide storage-level safety.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Kleppmann pointed out that physical clocks and process execution in managed runtimes (.NET, JVM) are unpredictable:</p>
+<ul>
+<li>If a .NET thread acquires a 10-second lock and immediately experiences a 12-second Gen 2 GC pause, its lock expires on Redis. Another client acquires the lock. When the GC pause completes, the first thread resumes execution unaware that its lock has expired and writes to storage, corrupting data.</li>
+<li><strong>Engineering takeaway</strong>: A distributed lock cannot guarantee safety on its own if the protected resource allows unvalidated writes. Strict safety requires that the downstream storage engine (e.g., PostgreSQL or S3) validates a monotonically increasing <strong>Fencing Token</strong> or version number.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is a Fencing Token and how does it prevent zombie writes from GC-paused clients?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A fencing token is a strictly monotonically increasing number issued with each lock lease; downstream data stores reject any write whose token is less than or equal to the highest token previously seen.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When Client 1 acquires the lock, it receives fencing token 33.</p>
+<p>If Client 1 pauses for 15 seconds during a GC pause, the lock expires.</p>
+<p>Client 2 acquires the lock and receives fencing token 34. Client 2 writes to the database: <code>UPDATE accounts SET balance = balance + 100, lock_token = 34 WHERE id = 1 AND lock_token &lt; 34;</code> (Success).</p>
+<p>Client 1 wakes up and attempts its delayed write with token 33:</p>
+<p><code>UPDATE accounts SET balance = balance + 50, lock_token = 33 WHERE id = 1 AND lock_token &lt; 33;</code></p>
+<p>Because the database already recorded token 34, the conditional check fails and 0 rows are affected. The zombie write is safely rejected.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">Why is releasing a Redis distributed lock without a Lua script considered a severe bug?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A simple <code>DEL</code> command can accidentally delete another client's active lock if the current client's TTL expired while executing.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Suppose Client A acquires <code>lock:user_123</code> with token <code>uuid_A</code> and a 5-second TTL.</p>
+<p>Client A's operation encounters unexpected database latency and takes 7 seconds.</p>
+<p>At second 5, the key expires in Redis.</p>
+<p>At second 6, Client B acquires <code>lock:user_123</code> with token <code>uuid_B</code>.</p>
+<p>At second 7, Client A finishes and executes <code>DEL lock:user_123</code>.</p>
+<p>Client A just deleted Client B's lock! Client C can now acquire the lock, causing concurrent execution between B and C.</p>
+<p>Using an atomic Lua script:</p>
+<p><code>if redis.call(&#x27;get&#x27;, KEYS[1]) == ARGV[1] then return redis.call(&#x27;del&#x27;, KEYS[1]) else return 0 end</code></p>
+<p>ensures Client A only deletes the lock if the stored token still equals <code>uuid_A</code>.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does the RedLock lease auto-renewal (watchdog) pattern work in high-throughput .NET services?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A background timer runs periodically (e.g., at $\frac{\text{TTL}}{3}$) and executes an atomic Lua script (<code>PEXPIRE</code>) across quorum nodes to extend the lock duration as long as the workload task is still running.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In systems with variable task runtimes, developers often set unnecessarily long static TTLs (e.g., 5 minutes) to avoid timeouts. However, if the process crashes, the resource remains locked for the full 5 minutes.</p>
+<p><strong>Watchdog Pattern</strong>:</p>
+<ol>
+<li>Acquire lock with a short TTL (e.g., 3 seconds).</li>
+<li>Spawn a background <code>PeriodicTimer</code> firing every 1 second.</li>
+<li>Each tick executes <code>PEXPIRE</code> if the client token still matches.</li>
+<li>If the process crashes or hangs, the heartbeat stops, and Redis naturally frees the lock within 3 seconds.</li>
+<li>The lease handle implements <code>IAsyncDisposable</code> to cancel the heartbeat loop and immediately unlock when work finishes.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is clock drift and why must it be accounted for in the RedLock validity calculation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Clock drift is the rate difference between hardware clocks on different servers; RedLock deducts maximum possible drift from the TTL to guarantee the lock is released on the client before it expires on the server.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Even without NTP steps, hardware quartz crystals experience clock drift due to temperature and voltage fluctuations, typically around 1 millisecond per second (0.1%).</p>
+<p>Over a 10-second TTL, two servers can drift apart by tens of milliseconds.</p>
+<p>If Server A's clock runs 20ms faster than Server B's, Server A will expire the key 20ms before the client expects.</p>
+<p>RedLock guards against this by subtracting a drift allowance:</p>
+<p>$$\text{Drift} = (\text{TTL} \times \text{factor}) + \text{skewTolerance}$$</p>
+<p>This ensures that when the client considers the lock valid, it is guaranteed to still be held on all quorum Redis nodes.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How does RedLock maintain mutual exclusion during network partitions (split-brain scenarios)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Because acquiring the lock requires a majority quorum ($\lfloor N/2 \rfloor + 1$), at most one network partition can ever accumulate enough nodes to grant a lock.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a 5-node cluster, suppose a network partition splits the nodes into two partitions:</p>
+<ul>
+<li>Partition 1: 3 nodes</li>
+<li>Partition 2: 2 nodes</li>
+</ul>
+<p>A client communicating with Partition 2 can only acquire at most 2 nodes. Since the quorum requirement is $\lfloor 5/2 \rfloor + 1 = 3$, Partition 2 will reject the lock and trigger an immediate compensation rollback.</p>
+<p>Only clients able to communicate with the majority partition (Partition 1) can achieve quorum. It is mathematically impossible for two clients to both acquire a quorum of nodes simultaneously.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #100 (Same Tree), what are the edge cases and recursive mechanics?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: If both nodes are null, return true; if exactly one is null or values differ, return false; otherwise recursively verify that both left subtrees and right subtrees match.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  public bool IsSameTree(TreeNode? p, TreeNode? q) {
+      if (p == null &amp;&amp; q == null) return true;
+      if (p == null || q == null || p.val != q.val) return false;
+      return IsSameTree(p.left, q.left) &amp;&amp; IsSameTree(p.right, q.right);
+  }</code></pre></div>
+<ul>
+<li><strong>Time Complexity</strong>: $O(\min(N, M))$ because the traversal short-circuits at the first mismatch.</li>
+<li><strong>Space Complexity</strong>: $O(\min(H_p, H_q))$ auxiliary stack space.</li>
+<li>Edge cases include asymmetrical tree branches, negative node values, and trees of differing heights.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does Merkle Tree Hashing achieve $O(N + M)$ linear time for LeetCode #572 (Subtree of Another Tree)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Rather than re-running recursive subtree checks at every node ($O(N \cdot M)$), Merkle tree hashing computes a unique 64-bit cryptographic hash for each subtree bottom-up, reducing subtree matching to a $O(1)$ set lookup.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li>In classic DFS, if both trees are degenerately skewed with identical node values (e.g. chains of 1s), checking whether <code>subRoot</code> matches at each node of <code>root</code> takes $M$ operations for each of the $N$ nodes, resulting in $O(N \cdot M)$ worst-case time.</li>
+<li>With <strong>Merkle Hashing</strong>:</li>
+</ul>
+<ol>
+<li>During a single post-order traversal of <code>root</code>, compute:</li>
+</ol>
+<p>$$H(u) = \text{Mix}(u.val, H(u.left), H(u.right))$$</p>
+<ol>
+<li>Store all computed hashes in a <code>HashSet&lt;long&gt;</code>.</li>
+<li>Compute $H(subRoot)$ using the same mixing function.</li>
+<li>If $H(subRoot)$ exists in the HashSet, <code>subRoot</code> is isomorphic to a subtree of <code>root</code>.</li>
+<li>Visiting each node once yields strictly $O(N + M)$ time and $O(N + M)$ space.</li>
+</ol>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day19.RedisRedLock/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd19-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d19-src-code-0" class="language-csharp">using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day19.RedisRedLock;
+
+/// &lt;summary&gt;
+/// Configuration options for the RedLock distributed algorithm.
+/// &lt;/summary&gt;
+public record RedLockOptions
+{
+    public TimeSpan LockTtl { get; init; } = TimeSpan.FromSeconds(10);
+    public TimeSpan NodeTimeout { get; init; } = TimeSpan.FromMilliseconds(50);
+    public double DriftFactor { get; init; } = 0.01; // 1% clock drift factor
+    public TimeSpan ClockSkewTolerance { get; init; } = TimeSpan.FromMilliseconds(2);
+    public TimeSpan AutoRenewalInterval { get; init; } = TimeSpan.FromSeconds(3);
+    public int RetryCount { get; init; } = 3;
+    public TimeSpan RetryDelay { get; init; } = TimeSpan.FromMilliseconds(50);
+}
+
+/// &lt;summary&gt;
+/// Result of a RedLock acquisition attempt.
+/// &lt;/summary&gt;
+public record RedLockAcquireResult(
+    bool Success,
+    string ResourceKey,
+    string LockValue,
+    TimeSpan ValidityTime,
+    int AcquiredNodes,
+    int TotalNodes,
+    long FencingToken,
+    string? ErrorMessage = null);
+
+/// &lt;summary&gt;
+/// Interface representing an independent Redis node in the multi-instance cluster.
+/// Can be backed by StackExchange.Redis or simulated in-memory instances.
+/// &lt;/summary&gt;
+public interface IRedisNodeInstance
+{
+    string NodeId { get; }
+    bool IsHealthy { get; set; }
+    TimeSpan SimulatedLatency { get; set; }
+
+    Task&lt;bool&gt; TrySetLockAsync(string resource, string value, TimeSpan ttl, CancellationToken ct = default);
+    Task&lt;bool&gt; TryReleaseLockAsync(string resource, string value, CancellationToken ct = default);
+    Task&lt;bool&gt; TryExtendLockAsync(string resource, string value, TimeSpan ttl, CancellationToken ct = default);
+    Task&lt;string?&gt; GetLockValueAsync(string resource, CancellationToken ct = default);
+}
+
+/// &lt;summary&gt;
+/// Monotonically increasing fencing token generator to defend against zombie writes.
+/// &lt;/summary&gt;
+public class FencingTokenGenerator
+{
+    private long _counter = 0;
+
+    public long Next() =&gt; Interlocked.Increment(ref _counter);
+    public long Current =&gt; Volatile.Read(ref _counter);
+}
+
+/// &lt;summary&gt;
+/// Represents an active acquired lock lease handle with automated background heartbeat renewal.
+/// Disposing this handle stops renewal and safely releases the multi-instance lock.
+/// &lt;/summary&gt;
+public sealed class RedLockLeaseHandle : IAsyncDisposable
+{
+    private readonly RedLockEngine _engine;
+    private readonly CancellationTokenSource _cts = new();
+    private readonly Task? _renewalTask;
+    private int _disposed = 0;
+
+    public RedLockAcquireResult LockInfo { get; }
+    public bool IsActive =&gt; _disposed == 0 &amp;&amp; !_cts.IsCancellationRequested;
+
+    public RedLockLeaseHandle(RedLockEngine engine, RedLockAcquireResult lockInfo, TimeSpan renewalInterval)
+    {
+        _engine = engine;
+        LockInfo = lockInfo;
+
+        if (lockInfo.Success &amp;&amp; renewalInterval &gt; TimeSpan.Zero)
+        {
+            _renewalTask = StartRenewalLoopAsync(renewalInterval, _cts.Token);
+        }
+    }
+
+    private async Task StartRenewalLoopAsync(TimeSpan interval, CancellationToken ct)
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(interval);
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                if (ct.IsCancellationRequested) break;
+
+                bool renewed = await _engine.ExtendLockAsync(LockInfo.ResourceKey, LockInfo.LockValue, _engine.Options.LockTtl, ct);
+                if (!renewed)
+                {
+                    // Failed to achieve quorum renewal; abort lease
+                    break;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected upon disposal
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+
+        _cts.Cancel();
+        if (_renewalTask != null)
+        {
+            try { await _renewalTask; } catch { /* Ignore task cancellation */ }
+        }
+        _cts.Dispose();
+
+        await _engine.ReleaseLockAsync(LockInfo.ResourceKey, LockInfo.LockValue);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day19.RedisRedLock/RedLockEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd19-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d19-src-code-1" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day19.RedisRedLock;
+
+/// &lt;summary&gt;
+/// In-memory simulated Redis node implementation for deterministic testing of distributed edge cases:
+/// network latency, node crashes, split-brain, and lease expiry.
+/// &lt;/summary&gt;
+public class SimulatedRedisNode : IRedisNodeInstance
+{
+    private record LockEntry(string Value, DateTime ExpiresAtUtc);
+
+    private readonly ConcurrentDictionary&lt;string, LockEntry&gt; _store = new();
+    private readonly object _syncLock = new();
+
+    public string NodeId { get; }
+    public bool IsHealthy { get; set; } = true;
+    public TimeSpan SimulatedLatency { get; set; } = TimeSpan.Zero;
+
+    public SimulatedRedisNode(string nodeId)
+    {
+        NodeId = nodeId;
+    }
+
+    public async Task&lt;bool&gt; TrySetLockAsync(string resource, string value, TimeSpan ttl, CancellationToken ct = default)
+    {
+        if (SimulatedLatency &gt; TimeSpan.Zero)
+        {
+            await Task.Delay(SimulatedLatency, ct);
+        }
+
+        if (!IsHealthy) return false;
+
+        var now = DateTime.UtcNow;
+        lock (_syncLock)
+        {
+            // Clean expired key if any
+            if (_store.TryGetValue(resource, out var existing))
+            {
+                if (now &gt;= existing.ExpiresAtUtc)
+                {
+                    _store.TryRemove(resource, out _);
+                }
+                else
+                {
+                    return false; // Key already locked by another client
+                }
+            }
+
+            var entry = new LockEntry(value, now.Add(ttl));
+            return _store.TryAdd(resource, entry);
+        }
+    }
+
+    public async Task&lt;bool&gt; TryReleaseLockAsync(string resource, string value, CancellationToken ct = default)
+    {
+        if (SimulatedLatency &gt; TimeSpan.Zero)
+        {
+            await Task.Delay(SimulatedLatency, ct);
+        }
+
+        if (!IsHealthy) return false;
+
+        // Atomic Lua script emulation:
+        // if redis.call(&#x27;get&#x27;, KEYS[1]) == ARGV[1] then return redis.call(&#x27;del&#x27;, KEYS[1]) else return 0 end
+        lock (_syncLock)
+        {
+            if (_store.TryGetValue(resource, out var existing))
+            {
+                if (existing.Value == value)
+                {
+                    _store.TryRemove(resource, out _);
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public async Task&lt;bool&gt; TryExtendLockAsync(string resource, string value, TimeSpan ttl, CancellationToken ct = default)
+    {
+        if (SimulatedLatency &gt; TimeSpan.Zero)
+        {
+            await Task.Delay(SimulatedLatency, ct);
+        }
+
+        if (!IsHealthy) return false;
+
+        // Atomic Lua script emulation for lease extension:
+        // if redis.call(&#x27;get&#x27;, KEYS[1]) == ARGV[1] then return redis.call(&#x27;pexpire&#x27;, KEYS[1], ARGV[2]) else return 0 end
+        var now = DateTime.UtcNow;
+        lock (_syncLock)
+        {
+            if (_store.TryGetValue(resource, out var existing))
+            {
+                if (existing.Value == value &amp;&amp; now &lt; existing.ExpiresAtUtc)
+                {
+                    _store[resource] = new LockEntry(value, now.Add(ttl));
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public async Task&lt;string?&gt; GetLockValueAsync(string resource, CancellationToken ct = default)
+    {
+        if (!IsHealthy) return null;
+        var now = DateTime.UtcNow;
+        lock (_syncLock)
+        {
+            if (_store.TryGetValue(resource, out var existing))
+            {
+                if (now &lt; existing.ExpiresAtUtc)
+                {
+                    return existing.Value;
+                }
+                _store.TryRemove(resource, out _);
+            }
+            return null;
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Implementation of the RedLock multi-instance distributed locking algorithm.
+/// Coordinates mutual exclusion across N independent Redis nodes without single points of failure.
+/// &lt;/summary&gt;
+public class RedLockEngine
+{
+    private readonly IReadOnlyList&lt;IRedisNodeInstance&gt; _nodes;
+    private readonly RedLockOptions _options;
+    private readonly FencingTokenGenerator _fencing = new();
+
+    public RedLockOptions Options =&gt; _options;
+    public IReadOnlyList&lt;IRedisNodeInstance&gt; Nodes =&gt; _nodes;
+    public int Quorum =&gt; (_nodes.Count / 2) + 1;
+
+    public RedLockEngine(IEnumerable&lt;IRedisNodeInstance&gt; nodes, RedLockOptions? options = null)
+    {
+        _nodes = nodes.ToList();
+        if (_nodes.Count &lt; 1)
+        {
+            throw new ArgumentException(&quot;RedLock requires at least 1 node instance (recommended 3 or 5).&quot;, nameof(nodes));
+        }
+
+        _options = options ?? new RedLockOptions();
+    }
+
+    /// &lt;summary&gt;
+    /// Calculates clock drift: (TTL * factor) + clockSkewTolerance.
+    /// &lt;/summary&gt;
+    public TimeSpan CalculateClockDrift(TimeSpan ttl)
+    {
+        double driftMs = (ttl.TotalMilliseconds * _options.DriftFactor) + _options.ClockSkewTolerance.TotalMilliseconds;
+        return TimeSpan.FromMilliseconds(driftMs);
+    }
+
+    /// &lt;summary&gt;
+    /// Attempts to acquire a distributed lock across the multi-instance cluster.
+    /// &lt;/summary&gt;
+    public async Task&lt;RedLockAcquireResult&gt; TryAcquireLockAsync(
+        string resourceKey,
+        TimeSpan? customTtl = null,
+        string? customLockValue = null,
+        CancellationToken ct = default)
+    {
+        var ttl = customTtl ?? _options.LockTtl;
+        var lockValue = customLockValue ?? Guid.NewGuid().ToString(&quot;N&quot;);
+        var drift = CalculateClockDrift(ttl);
+
+        var startTimestamp = Stopwatch.GetTimestamp();
+
+        // 1. Attempt to acquire lock on all N instances concurrently with node timeout
+        var tasks = _nodes.Select(async node =&gt;
+        {
+            try
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                cts.CancelAfter(_options.NodeTimeout);
+                bool success = await node.TrySetLockAsync(resourceKey, lockValue, ttl, cts.Token);
+                return (Node: node, Success: success);
+            }
+            catch
+            {
+                return (Node: node, Success: false);
+            }
+        });
+
+        var results = await Task.WhenAll(tasks);
+        int acquiredCount = results.Count(r =&gt; r.Success);
+
+        // 2. Measure elapsed time and remaining validity time
+        var elapsed = Stopwatch.GetElapsedTime(startTimestamp);
+        var validityTime = ttl - elapsed - drift;
+
+        // 3. Quorum check: requires &gt;= Quorum nodes AND positive validity time
+        if (acquiredCount &gt;= Quorum &amp;&amp; validityTime &gt; TimeSpan.Zero)
+        {
+            long fencingToken = _fencing.Next();
+            return new RedLockAcquireResult(
+                Success: true,
+                ResourceKey: resourceKey,
+                LockValue: lockValue,
+                ValidityTime: validityTime,
+                AcquiredNodes: acquiredCount,
+                TotalNodes: _nodes.Count,
+                FencingToken: fencingToken);
+        }
+
+        // 4. Compensation / Rollback: Quorum not met or lock took too long; unlock all nodes
+        await ReleaseLockInternalAsync(resourceKey, lockValue);
+
+        string reason = acquiredCount &lt; Quorum
+            ? $&quot;Quorum not met (acquired {acquiredCount}/{_nodes.Count}, required {Quorum}).&quot;
+            : $&quot;Lock validity expired during acquisition (elapsed: {elapsed.TotalMilliseconds:F1}ms, drift: {drift.TotalMilliseconds:F1}ms).&quot;;
+
+        return new RedLockAcquireResult(
+            Success: false,
+            ResourceKey: resourceKey,
+            LockValue: lockValue,
+            ValidityTime: TimeSpan.Zero,
+            AcquiredNodes: acquiredCount,
+            TotalNodes: _nodes.Count,
+            FencingToken: 0,
+            ErrorMessage: reason);
+    }
+
+    /// &lt;summary&gt;
+    /// Acquires a managed RedLock lease with background auto-renewal heartbeat.
+    /// &lt;/summary&gt;
+    public async Task&lt;RedLockLeaseHandle?&gt; AcquireLeaseAsync(
+        string resourceKey,
+        TimeSpan? customTtl = null,
+        CancellationToken ct = default)
+    {
+        var result = await TryAcquireLockAsync(resourceKey, customTtl, ct: ct);
+        if (!result.Success) return null;
+
+        return new RedLockLeaseHandle(this, result, _options.AutoRenewalInterval);
+    }
+
+    /// &lt;summary&gt;
+    /// Extends an active lock lease across the cluster.
+    /// &lt;/summary&gt;
+    public async Task&lt;bool&gt; ExtendLockAsync(string resourceKey, string lockValue, TimeSpan ttl, CancellationToken ct = default)
+    {
+        var tasks = _nodes.Select(async node =&gt;
+        {
+            try
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                cts.CancelAfter(_options.NodeTimeout);
+                return await node.TryExtendLockAsync(resourceKey, lockValue, ttl, cts.Token);
+            }
+            catch
+            {
+                return false;
+            }
+        });
+
+        var results = await Task.WhenAll(tasks);
+        int successCount = results.Count(s =&gt; s);
+        return successCount &gt;= Quorum;
+    }
+
+    /// &lt;summary&gt;
+    /// Releases the lock from all instances using atomic Lua scripts.
+    /// &lt;/summary&gt;
+    public async Task&lt;int&gt; ReleaseLockAsync(string resourceKey, string lockValue)
+    {
+        return await ReleaseLockInternalAsync(resourceKey, lockValue);
+    }
+
+    private async Task&lt;int&gt; ReleaseLockInternalAsync(string resourceKey, string lockValue)
+    {
+        var tasks = _nodes.Select(async node =&gt;
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(_options.NodeTimeout);
+                return await node.TryReleaseLockAsync(resourceKey, lockValue, cts.Token);
+            }
+            catch
+            {
+                return false;
+            }
+        });
+
+        var results = await Task.WhenAll(tasks);
+        return results.Count(r =&gt; r);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day19.RedisRedLock/TreeIsomorphismSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd19-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d19-src-code-2" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day19.RedisRedLock;
+
+/// &lt;summary&gt;
+/// Definition for a binary tree node.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// Tree isomorphism and subtree matching algorithms:
+/// - LeetCode #100: Same Tree
+/// - LeetCode #572: Subtree of Another Tree (Standard DFS &amp; O(N+M) Merkle Tree Hashing)
+/// &lt;/summary&gt;
+public class TreeIsomorphismSolvers
+{
+    /// &lt;summary&gt;
+    /// Checks if two binary trees are structurally identical and have identical node values (LeetCode #100).
+    /// Time Complexity: O(min(N, M))
+    /// Space Complexity: O(min(Hp, Hq)) recursion stack space.
+    /// &lt;/summary&gt;
+    public bool IsSameTree(TreeNode? p, TreeNode? q)
+    {
+        if (p == null &amp;&amp; q == null) return true;
+        if (p == null || q == null) return false;
+        if (p.val != q.val) return false;
+
+        return IsSameTree(p.left, q.left) &amp;&amp; IsSameTree(p.right, q.right);
+    }
+
+    /// &lt;summary&gt;
+    /// Determines whether &#x27;subRoot&#x27; is a subtree of &#x27;root&#x27; using classic recursive DFS (LeetCode #572).
+    /// Time Complexity: O(N * M) worst-case (e.g. skewed repetitive trees).
+    /// Space Complexity: O(H_root) recursion stack space.
+    /// &lt;/summary&gt;
+    public bool IsSubtree(TreeNode? root, TreeNode? subRoot)
+    {
+        if (subRoot == null) return true;
+        if (root == null) return false;
+
+        if (IsSameTree(root, subRoot)) return true;
+
+        return IsSubtree(root.left, subRoot) || IsSubtree(root.right, subRoot);
+    }
+
+    /// &lt;summary&gt;
+    /// Staff-level linear-time solution for LeetCode #572 using Merkle Tree Hashing.
+    /// Assigns a unique cryptographic/polynomial hash to every subtree during a single bottom-up pass.
+    /// Time Complexity: O(N + M)
+    /// Space Complexity: O(N + M)
+    /// &lt;/summary&gt;
+    public bool IsSubtreeMerkle(TreeNode? root, TreeNode? subRoot)
+    {
+        if (subRoot == null) return true;
+        if (root == null) return false;
+
+        var subtreeHashes = new HashSet&lt;long&gt;();
+
+        // 1. Compute target subRoot hash
+        long targetHash = ComputeMerkleHash(subRoot, null);
+
+        // 2. Compute all subtree hashes in root
+        ComputeMerkleHash(root, subtreeHashes);
+
+        return subtreeHashes.Contains(targetHash);
+    }
+
+    private static long ComputeMerkleHash(TreeNode? node, HashSet&lt;long&gt;? collectedHashes)
+    {
+        if (node == null)
+        {
+            // Sentinel null marker hash
+            return unchecked((long)0x9e3779b97f4a7c15UL);
+        }
+
+        long leftHash = ComputeMerkleHash(node.left, collectedHashes);
+        long rightHash = ComputeMerkleHash(node.right, collectedHashes);
+
+        // Murmur/SplitMix64-style mixing function:
+        // Hash = Mix(node.val, leftHash, rightHash)
+        long h = unchecked(node.val * 31L + leftHash * 1000003L + rightHash * 1000033L);
+        h ^= (h &gt;&gt; 33);
+        h = unchecked(h * -49064778989728563L);
+        h ^= (h &gt;&gt; 33);
+
+        collectedHashes?.Add(h);
+        return h;
+    }
+
+    /// &lt;summary&gt;
+    /// Helper to deserialize a tree from a level-order array representation.
+    /// &lt;/summary&gt;
+    public static TreeNode? BuildTree(int?[] values)
+    {
+        if (values == null || values.Length == 0 || values[0] == null) return null;
+
+        var root = new TreeNode(values[0]!.Value);
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int i = 1;
+        while (queue.Count &gt; 0 &amp;&amp; i &lt; values.Length)
+        {
+            var curr = queue.Dequeue();
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.left = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.left);
+            }
+            i++;
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.right = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.right);
+            }
+            i++;
+        }
+
+        return root;
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day19.RedisRedLock.Tests/Day19Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd19-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d19-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day19.RedisRedLock.Tests;
+
+public class Day19Tests
+{
+    // ==========================================
+    // 1. REDLOCK DISTRIBUTED LOCKING TESTS
+    // ==========================================
+
+    [Fact]
+    public async Task RedLock_FullClusterQuorum_AcquiresLockWithHighValidityTime()
+    {
+        var nodes = Enumerable.Range(1, 5)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        var engine = new RedLockEngine(nodes, new RedLockOptions
+        {
+            LockTtl = TimeSpan.FromSeconds(5),
+            NodeTimeout = TimeSpan.FromMilliseconds(50)
+        });
+
+        var result = await engine.TryAcquireLockAsync(&quot;order:checkout:1001&quot;);
+
+        result.Success.Should().BeTrue();
+        result.AcquiredNodes.Should().Be(5);
+        result.TotalNodes.Should().Be(5);
+        result.ValidityTime.Should().BeGreaterThan(TimeSpan.FromSeconds(4.5));
+        result.FencingToken.Should().BeGreaterThan(0);
+
+        // Verify keys exist on all 5 nodes with same lock value
+        foreach (var node in nodes)
+        {
+            var storedVal = await node.GetLockValueAsync(&quot;order:checkout:1001&quot;);
+            storedVal.Should().Be(result.LockValue);
+        }
+
+        // Release
+        int released = await engine.ReleaseLockAsync(&quot;order:checkout:1001&quot;, result.LockValue);
+        released.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task RedLock_PartialClusterFault_AcquiresLockWhenQuorumIsMet()
+    {
+        var nodes = Enumerable.Range(1, 5)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        // Simulate 2 failed/offline nodes out of 5
+        nodes[0].IsHealthy = false;
+        nodes[1].IsHealthy = false;
+
+        var engine = new RedLockEngine(nodes, new RedLockOptions
+        {
+            LockTtl = TimeSpan.FromSeconds(5),
+            NodeTimeout = TimeSpan.FromMilliseconds(50)
+        });
+
+        // 3 of 5 nodes available =&gt; Quorum (5/2 + 1 = 3) is met
+        var result = await engine.TryAcquireLockAsync(&quot;inventory:sku:404&quot;);
+
+        result.Success.Should().BeTrue();
+        result.AcquiredNodes.Should().Be(3);
+        result.TotalNodes.Should().Be(5);
+        result.ValidityTime.Should().BeGreaterThan(TimeSpan.Zero);
+
+        // Cleanup
+        int released = await engine.ReleaseLockAsync(&quot;inventory:sku:404&quot;, result.LockValue);
+        released.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task RedLock_QuorumFailure_CompensatesAndRollsBackAllAcquiredNodes()
+    {
+        var nodes = Enumerable.Range(1, 5)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        // 3 nodes offline =&gt; only 2 can acquire, failing quorum of 3
+        nodes[0].IsHealthy = false;
+        nodes[1].IsHealthy = false;
+        nodes[2].IsHealthy = false;
+
+        var engine = new RedLockEngine(nodes, new RedLockOptions
+        {
+            LockTtl = TimeSpan.FromSeconds(5),
+            NodeTimeout = TimeSpan.FromMilliseconds(50)
+        });
+
+        var result = await engine.TryAcquireLockAsync(&quot;account:transfer:99&quot;);
+
+        result.Success.Should().BeFalse();
+        result.AcquiredNodes.Should().Be(2);
+        result.ErrorMessage.Should().Contain(&quot;Quorum not met&quot;);
+
+        // Verify rollback: even nodes 3 and 4 that succeeded have been released
+        (await nodes[3].GetLockValueAsync(&quot;account:transfer:99&quot;)).Should().BeNull();
+        (await nodes[4].GetLockValueAsync(&quot;account:transfer:99&quot;)).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RedLock_ClockDriftAndTimeout_RejectsLockWhenValidityExpires()
+    {
+        var nodes = Enumerable.Range(1, 5)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;)
+            {
+                // Inject 80ms latency on each node
+                SimulatedLatency = TimeSpan.FromMilliseconds(80)
+            })
+            .ToList();
+
+        // Short TTL of 50ms with high latency =&gt; validity will be negative
+        var engine = new RedLockEngine(nodes, new RedLockOptions
+        {
+            LockTtl = TimeSpan.FromMilliseconds(50),
+            NodeTimeout = TimeSpan.FromMilliseconds(150),
+            DriftFactor = 0.05
+        });
+
+        var result = await engine.TryAcquireLockAsync(&quot;rate:job:sync&quot;);
+
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain(&quot;validity expired&quot;);
+    }
+
+    [Fact]
+    public async Task RedLock_SafeRelease_ForeignTokenCannotReleaseLock()
+    {
+        var nodes = Enumerable.Range(1, 3)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        var engine = new RedLockEngine(nodes, new RedLockOptions { LockTtl = TimeSpan.FromSeconds(5) });
+
+        var result = await engine.TryAcquireLockAsync(&quot;batch:process:1&quot;);
+        result.Success.Should().BeTrue();
+
+        // Another client attempts to release with different token
+        int releasedFraudulent = await engine.ReleaseLockAsync(&quot;batch:process:1&quot;, &quot;wrong-random-token&quot;);
+        releasedFraudulent.Should().Be(0);
+
+        // Lock should still be held
+        (await nodes[0].GetLockValueAsync(&quot;batch:process:1&quot;)).Should().Be(result.LockValue);
+
+        // Authorized client releases with valid token
+        int releasedLegit = await engine.ReleaseLockAsync(&quot;batch:process:1&quot;, result.LockValue);
+        releasedLegit.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task RedLock_AutoRenewalLease_ExtendsLockAndReleasesOnDispose()
+    {
+        var nodes = Enumerable.Range(1, 3)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        var engine = new RedLockEngine(nodes, new RedLockOptions
+        {
+            LockTtl = TimeSpan.FromMilliseconds(400),
+            AutoRenewalInterval = TimeSpan.FromMilliseconds(150)
+        });
+
+        var lease = await engine.AcquireLeaseAsync(&quot;long:computation&quot;);
+        lease.Should().NotBeNull();
+        lease!.IsActive.Should().BeTrue();
+
+        // Wait 350ms (normally expired if not renewed at 150ms)
+        await Task.Delay(350);
+
+        // Lock should still be held on node-1 due to auto-renewal heartbeat
+        var val = await nodes[0].GetLockValueAsync(&quot;long:computation&quot;);
+        val.Should().Be(lease.LockInfo.LockValue);
+
+        // Dispose lease
+        await lease.DisposeAsync();
+        lease.IsActive.Should().BeFalse();
+
+        // Lock is now released
+        (await nodes[0].GetLockValueAsync(&quot;long:computation&quot;)).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RedLock_FencingTokens_ProduceStrictlyIncreasingSequence()
+    {
+        var nodes = Enumerable.Range(1, 3)
+            .Select(i =&gt; new SimulatedRedisNode($&quot;node-{i}&quot;))
+            .ToList();
+
+        var engine = new RedLockEngine(nodes);
+
+        var r1 = await engine.TryAcquireLockAsync(&quot;doc:edit&quot;);
+        await engine.ReleaseLockAsync(&quot;doc:edit&quot;, r1.LockValue);
+
+        var r2 = await engine.TryAcquireLockAsync(&quot;doc:edit&quot;);
+        await engine.ReleaseLockAsync(&quot;doc:edit&quot;, r2.LockValue);
+
+        var r3 = await engine.TryAcquireLockAsync(&quot;doc:edit&quot;);
+        await engine.ReleaseLockAsync(&quot;doc:edit&quot;, r3.LockValue);
+
+        r1.FencingToken.Should().BeLessThan(r2.FencingToken);
+        r2.FencingToken.Should().BeLessThan(r3.FencingToken);
+    }
+
+    // ==========================================
+    // 2. DSA TREE ISOMORPHISM TESTS (LC #100 &amp; #572)
+    // ==========================================
+
+    [Fact]
+    public void LC100_IsSameTree_IdenticalTrees_ReturnsTrue()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        var p = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2, 3 });
+        var q = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2, 3 });
+
+        solvers.IsSameTree(p, q).Should().BeTrue();
+    }
+
+    [Fact]
+    public void LC100_IsSameTree_StructuralMismatch_ReturnsFalse()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        // p = [1, 2], q = [1, null, 2]
+        var p = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2 });
+        var q = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, null, 2 });
+
+        solvers.IsSameTree(p, q).Should().BeFalse();
+    }
+
+    [Fact]
+    public void LC100_IsSameTree_ValueMismatch_ReturnsFalse()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        // p = [1, 2, 1], q = [1, 1, 2]
+        var p = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2, 1 });
+        var q = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 1, 2 });
+
+        solvers.IsSameTree(p, q).Should().BeFalse();
+    }
+
+    [Fact]
+    public void LC100_IsSameTree_EmptyAndNullTrees_ReturnsCorrectly()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        solvers.IsSameTree(null, null).Should().BeTrue();
+        solvers.IsSameTree(new TreeNode(1), null).Should().BeFalse();
+        solvers.IsSameTree(null, new TreeNode(1)).Should().BeFalse();
+    }
+
+    [Fact]
+    public void LC572_IsSubtree_ValidSubtree_ReturnsTrueForBothDfsAndMerkle()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        // root = [3, 4, 5, 1, 2], subRoot = [4, 1, 2]
+        var root = TreeIsomorphismSolvers.BuildTree(new int?[] { 3, 4, 5, 1, 2 });
+        var subRoot = TreeIsomorphismSolvers.BuildTree(new int?[] { 4, 1, 2 });
+
+        solvers.IsSubtree(root, subRoot).Should().BeTrue();
+        solvers.IsSubtreeMerkle(root, subRoot).Should().BeTrue();
+    }
+
+    [Fact]
+    public void LC572_IsSubtree_SubtreeHasExtraLeaf_ReturnsFalseForBothDfsAndMerkle()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        // root = [3, 4, 5, 1, 2, null, null, null, null, 0]
+        // subRoot = [4, 1, 2] -&gt; 2 in root has child 0, so it is NOT an exact subtree match
+        var root = TreeIsomorphismSolvers.BuildTree(new int?[] { 3, 4, 5, 1, 2, null, null, null, null, 0 });
+        var subRoot = TreeIsomorphismSolvers.BuildTree(new int?[] { 4, 1, 2 });
+
+        solvers.IsSubtree(root, subRoot).Should().BeFalse();
+        solvers.IsSubtreeMerkle(root, subRoot).Should().BeFalse();
+    }
+
+    [Fact]
+    public void LC572_IsSubtree_IdenticalTree_ReturnsTrue()
+    {
+        var solvers = new TreeIsomorphismSolvers();
+        var root = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2, 3 });
+        var subRoot = TreeIsomorphismSolvers.BuildTree(new int?[] { 1, 2, 3 });
+
+        solvers.IsSubtree(root, subRoot).Should().BeTrue();
+        solvers.IsSubtreeMerkle(root, subRoot).Should().BeTrue();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 19 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

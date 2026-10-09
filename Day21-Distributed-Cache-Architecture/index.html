@@ -1,0 +1,2921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 21: System Design: Distributed Cache Architecture | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 21</span>
+        <span class="badge badge-category">System Design &amp; DSA</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day20-Redis-Streams-PubSub/index.html" class="nav-btn">← Day 20</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+
+        </select>
+        <span class="nav-btn" style="opacity:0.4; cursor:default;">Next Day →</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 21: System Design: Distributed Cache Architecture</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 3 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d21GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d21GradRing" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d21GradCache" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2e1065"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d21GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d21GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Distributed Cache Architecture: Ketama Consistent Hashing, Stampede Shield &amp; Tree Views</text>
+
+          <!-- 1. Ketama Consistent Hash Ring Column -->
+          <rect x="30" y="60" width="300" height="300" rx="10" fill="url(#d21GradRing)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Ketama Consistent Hash Ring</text>
+
+          <rect x="45" y="105" width="270" height="60" rx="6" fill="#0284c7" stroke="#38bdf8"/>
+          <text x="55" y="125" fill="#ffffff" font-size="11" font-weight="bold">Ring Space: [0, 2^32 - 1]</text>
+          <text x="55" y="142" fill="#e0f2fe" font-size="9">Virtual Nodes (150/server) prevent hot spots</text>
+          <text x="55" y="155" fill="#bae6fd" font-size="9">BinarySearch O(log(N * V)) nearest clockwise node</text>
+
+          <rect x="45" y="175" width="270" height="75" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="195" fill="#fbbf24" font-size="11" font-weight="bold">Minimal Cluster Disruption</text>
+          <text x="55" y="212" fill="#cbd5e1" font-size="9">Hash(key) &#8594; Node A#42 &#8594; Physical Server A</text>
+          <text x="55" y="227" fill="#34d399" font-size="9">Node scale up/down: Only 1/N keys remapped</text>
+          <text x="55" y="242" fill="#ef4444" font-size="8">vs Traditional Hash(k) % N: Remaps 100% of keys!</text>
+
+          <rect x="45" y="260" width="270" height="85" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="280" fill="#38bdf8" font-size="11" font-weight="bold">Hot-Key Suffix Scattering</text>
+          <text x="55" y="297" fill="#cbd5e1" font-size="9">Scatter key: &quot;celebrity_feed_#&quot; + rand(0..10)</text>
+          <text x="55" y="312" fill="#cbd5e1" font-size="9">Spreads 100k QPS across 10 independent shards</text>
+          <text x="55" y="327" fill="#94a3b8" font-size="8">Writes fan-out or write to primary with background sync</text>
+
+          <!-- 2. Two-Tier Cache & Stampede Shield Column -->
+          <rect x="350" y="60" width="280" height="300" rx="10" fill="url(#d21GradCache)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="370" y="88" fill="#c084fc" font-size="14" font-weight="bold">Cache Stampede &amp; 2-Tier Shield</text>
+
+          <rect x="365" y="105" width="250" height="70" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="125" fill="#60a5fa" font-size="11" font-weight="bold">Two-Tier Architecture</text>
+          <text x="375" y="142" fill="#cbd5e1" font-size="9">L1: MemoryCache (in-proc, &lt; 100ns)</text>
+          <text x="375" y="157" fill="#cbd5e1" font-size="9">L2: Redis Sharded Cluster (remote, ~1ms)</text>
+          <text x="375" y="170" fill="#94a3b8" font-size="8">L1 shields network roundtrips for hottest 5% keys</text>
+
+          <rect x="365" y="185" width="250" height="75" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="205" fill="#fbbf24" font-size="11" font-weight="bold">Single-Flight Mutex</text>
+          <text x="375" y="222" fill="#cbd5e1" font-size="9">Concurrent requests for expired key</text>
+          <text x="375" y="237" fill="#34d399" font-size="9">1 thread acquires semaphore &#8594; fetches DB</text>
+          <text x="375" y="252" fill="#94a3b8" font-size="8">Remaining N-1 threads await Task without DB hit</text>
+
+          <rect x="365" y="270" width="250" height="75" rx="5" fill="#0f172a" stroke="#10b981"/>
+          <text x="375" y="290" fill="#34d399" font-size="11" font-weight="bold">XFetch Probabilistic Refresh</text>
+          <text x="375" y="307" fill="#cbd5e1" font-size="9">-delta * beta * ln(rand()) &gt; rem_ttl</text>
+          <text x="375" y="322" fill="#cbd5e1" font-size="9">Background asynchronous DB pre-computation</text>
+          <text x="375" y="337" fill="#94a3b8" font-size="8">Guarantees zero-downtime cache misses under load</text>
+
+          <!-- 3. DSA Tree Inspection Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d21GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">Tree Inspection</text>
+
+          <rect x="665" y="105" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #199: Right Side View</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Right-First Preorder DFS:</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">if (depth == result.Count)</text>
+          <text x="675" y="172" fill="#fbbf24" font-size="9">  result.Add(node.val);</text>
+          <text x="675" y="187" fill="#cbd5e1" font-size="9">DFS(node.right); DFS(node.left);</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">O(N) Time | O(H) Call Stack</text>
+
+          <rect x="665" y="225" width="210" height="120" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="245" fill="#fbbf24" font-size="11" font-weight="bold">LC #1448: Good Nodes</text>
+          <text x="675" y="262" fill="#94a3b8" font-size="9">Path Maximum Invariant:</text>
+          <text x="675" y="278" fill="#cbd5e1" font-size="9">if (node.val &gt;= maxSoFar)</text>
+          <text x="675" y="293" fill="#34d399" font-size="9">  count++;</text>
+          <text x="675" y="308" fill="#cbd5e1" font-size="9">newMax = max(maxSoFar, val)</text>
+          <text x="675" y="325" fill="#34d399" font-size="9">O(N) Time | O(H) Depth-First Stack</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 21 - Engineering Notes: Consistent Hashing & Distributed Cache Design</h1>
+<h2>1. Mathematical Foundations of Consistent Hashing (Karger et al., 1997)</h2>
+<p>Traditional modular hashing determines node placement via:</p>
+<p>$$\text{NodeIndex} = \text{Hash}(key) \pmod N$$</p>
+<ul>
+<li>When $N$ changes to $N+1$, nearly <strong>every</strong> key maps to a new index because $\text{Hash}(key) \pmod N \ne \text{Hash}(key) \pmod{N+1}$.</li>
+<li>In a cluster storing 10,000,000 keys, adding 1 node invalidates up to 9,000,000 cached records simultaneously, causing an instantaneous database outage.</li>
+</ul>
+<h3>The Consistent Hashing Ring</h3>
+<p>Consistent Hashing maps both keys and servers to points on a circle $[0, 2^{32}-1]$:</p>
+<ol>
+<li><strong>Smoothness Property</strong>: When a node is added, it only acquires keys from its clockwise predecessor. The fraction of keys reassigned is mathematically bounded at:</li>
+</ol>
+<p>$$E[\text{Reassigned Keys}] = \frac{K}{N+1}$$</p>
+<ol>
+<li><strong>Balance via Virtual Nodes (Ketama)</strong>:</li>
+</ol>
+<ul>
+<li>If physical nodes are simply placed at 1 hash location, random variance causes severe imbalance (one node can receive 60% of all traffic while another gets 5%).</li>
+<li>By creating $V = 100\text{--}200$ virtual points per physical machine (<code>host:port#vn_0</code> to <code>host:port#vn_199</code>), the law of large numbers guarantees that each physical machine receives within $\pm 5\%$ of its fair share: $\frac{K}{N}$.</li>
+</ul>
+<hr/>
+<h2>2. Hot-Key Scaling Patterns in Distributed Systems</h2>
+<p>A "hot key" is a single resource that experiences an extreme traffic anomaly (e.g. 500,000 requests/sec for a breaking news article). Even in a 50-node cluster, 100% of that traffic routes to a single shard, causing CPU saturation and packet drops.</p>
+<h3>Mitigation Strategies:</h3>
+<ol>
+<li><strong>L1 Local In-Memory Cache (Multi-Tier)</strong>:</li>
+</ol>
+<ul>
+<li>Keep a tiny, short-lived L1 cache (1–3 seconds TTL) inside the client process memory (<code>IMemoryCache</code>).</li>
+<li>If 10,000 HTTP requests hit the same web server pod in 1 second, only 1 request goes over the network to the Redis shard; 9,999 requests are served directly from RAM in 10 nanoseconds.</li>
+</ul>
+<ol>
+<li><strong>Read Suffix Scattering (Key Replication)</strong>:</li>
+</ol>
+<ul>
+<li>For known hot keys, the publisher writes $M$ copies: <code>key:#0</code>, <code>key:#1</code>, <code>key:#2</code>, <code>key:#3</code>.</li>
+<li>Each copy lands on a different consistent hash shard.</li>
+<li>Readers pick a random shard index: <code>key:#{rand(0, 3)}</code>.</li>
+<li>Divides network bandwidth and CPU consumption across $M$ distinct machines.</li>
+</ul>
+<ol>
+<li><strong>Dynamic Hot-Key Detection (Heavy Hitters)</strong>:</li>
+</ol>
+<ul>
+<li>Use a streaming <strong>Count-Min Sketch</strong> or Redis LFU tracking to detect keys whose access rate exceeds 1,000 req/sec, automatically promoting them to L1 or applying suffix scattering dynamically.</li>
+</ul>
+<hr/>
+<h2>3. Tree Traversal Mechanics: DFS Right-First vs BFS Level Order</h2>
+<h3>LeetCode #199: Binary Tree Right Side View</h3>
+<ul>
+<li><strong>BFS Approach</strong>:</li>
+<li>Traverses the entire tree with a FIFO queue.</li>
+<li>At each level, appends the last dequeued element to the result.</li>
+<li>Memory: $O(W)$ where $W = \frac{N}{2}$ at the leaf level for a complete tree.</li>
+<li><strong>Right-First DFS Approach (Optimal)</strong>:</li>
+<li>Recursion order: <code>Right</code> child <strong>before</strong> <code>Left</code> child.</li>
+<li>Pass <code>depth</code> down the recursion.</li>
+<li>Invariant: At any depth, the very first node visited is mathematically guaranteed to be the rightmost visible node.</li>
+<li>If <code>depth == result.Count</code>, add <code>node.val</code> to result.</li>
+<li>Memory: $O(H)$ call stack space ($O(\log N)$ balanced). Zero queue object allocations.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 21: System Design: Distributed Cache Architecture</h1>
+<h2>Overview</h2>
+<p>Comprehensive system design and high-performance implementation of a distributed caching cluster in .NET. Covers <strong>Consistent Hashing with Virtual Nodes</strong> (Ketama-style ring topology), <strong>Hot-Key Read Scattering</strong>, <strong>2-Tier (L1 Local + L2 Sharded) Caching</strong>, and <strong>Cache Stampede Protection</strong> (Single-Flight Mutex + XFetch probabilistic early refresh). Additionally, solves binary tree visibility algorithms: <strong>LeetCode #199 (Binary Tree Right Side View)</strong> and <strong>LeetCode #1448 (Count Good Nodes in Binary Tree)</strong>.</p>
+<hr/>
+<h2>Architectural Breakdown</h2>
+<h3>1. Consistent Hashing Ring with Virtual Nodes</h3>
+<p>Traditional modular hashing (<code>node = hash(key) % N</code>) causes a catastrophic <strong>Cache Storm</strong> when nodes are added or removed, because almost all keys ($1 - \frac{1}{N} \approx 80\text{–}90\%$) are abruptly remapped to different servers, crashing the underlying database.</p>
+<p><strong>Consistent Hashing Solution</strong>:</p>
+<ul>
+<li>Maps both keys and cache nodes onto a continuous 32-bit circular hash ring $[0, 2^{32}-1]$.</li>
+<li>A key is owned by the first cache node encountered walking clockwise along the ring.</li>
+<li><strong>Virtual Nodes (VNodes)</strong>: Each physical node is duplicated across $V = 100\text{–}200$ positions (<code>nodeId#vn_0</code>, <code>nodeId#vn_1</code>, etc.).</li>
+<li>Prevents non-uniform clustering and hash hotspots.</li>
+<li>Adding a new node redistributes only $\approx \frac{1}{N_{\text{new}}}$ of keys, which are taken smoothly from all existing nodes.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                  [Node A #vn1] (Hash: 0x1200)
+                     /                   \
+      [Node C #vn2]                         [Node B #vn0]
+            |                                     |
+      key:order:42                                |
+      (Hash: 0x6400)                              |
+            |                                     |
+      [Node B #vn1] &lt;----------------------- [Node A #vn0]
+                     \                   /
+                  [Node C #vn0] (Hash: 0x9000)</code></pre></div>
+<hr/>
+<h3>2. Hot-Key Mitigation: Suffix Scattering</h3>
+<p>When a single key receives millions of requests per second (e.g., viral social post, flash sale inventory), a single cache shard machine saturates its network interface card (NIC).</p>
+<ul>
+<li><strong>Suffix Scattering Pattern</strong>:</li>
+</ul>
+<ol>
+<li>The key is logically replicated across $M$ suffixes: <code>key:#hk_0</code>, <code>key:#hk_1</code>, ... <code>key:#hk_M-1</code>.</li>
+<li>Because each suffix hashes to a different ring position, the replicas are distributed across different physical shard machines.</li>
+<li>Readers randomly query <code>key:#hk_{random(0, M-1)}</code>, spreading network I/O and CPU load across $M$ distinct cluster nodes.</li>
+</ol>
+<hr/>
+<h3>3. Multi-Tier & Stampede Protection</h3>
+<ul>
+<li><strong>Tier 1 (L1 In-Process MemoryCache)</strong>: Sub-microsecond local RAM access with short TTLs (1–5 seconds). Bypasses cluster network hops for ultra-hot keys.</li>
+<li><strong>Tier 2 (L2 Distributed Shards)</strong>: Consistent hash-routed distributed cluster nodes.</li>
+<li><strong>Single-Flight Lock</strong>: Only one thread acquires the lock to compute a missing key from the database; all other concurrent callers await the result.</li>
+</ul>
+<hr/>
+<h3>4. Tree Visibility Algorithms</h3>
+<h4>LeetCode #199: Binary Tree Right Side View</h4>
+<ul>
+<li><strong>Problem</strong>: Return values of nodes visible when looking at the tree from the right side.</li>
+<li><strong>Algorithm</strong>: Right-first recursive DFS (<code>dfs(node.right, depth + 1)</code> before <code>dfs(node.left, depth + 1)</code>). If <code>depth == result.Count</code>, the current node is the rightmost at that depth.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$ recursion stack.</li>
+</ul>
+<h4>LeetCode #1448: Count Good Nodes in Binary Tree</h4>
+<ul>
+<li><strong>Problem</strong>: Node $X$ is good if on the path from root to $X$, no node has a value greater than $X$.</li>
+<li><strong>Algorithm</strong>: Pre-order DFS tracking running ancestor maximum: <code>isGood = (node.val &gt;= maxSoFar) ? 1 : 0</code>, update <code>newMax = max(maxSoFar, node.val)</code>, recurse left and right.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$.</li>
+</ul>
+<hr/>
+<h2>Running Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day21-Distributed-Cache-Architecture/tests/Day21.DistributedCache.Tests/Day21.DistributedCache.Tests.csproj</code></pre></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the fatal flaw of traditional modular hashing (`key % N`) in distributed caching, and how does Consistent Hashing solve it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Modular hashing redistributes almost all keys ($1 - \frac{1}{N} \approx 80\text{--}90\%$) whenever a node is added or removed, causing a massive cache storm; consistent hashing restricts key movement to only $\approx \frac{1}{N}$ keys.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a cluster of $N = 10$ nodes, a key's destination is given by $\text{hash}(key) \pmod{10}$.</p>
+<p>If one node fails and the cluster drops to $N = 9$, the formula becomes $\text{hash}(key) \pmod 9$. Because modulo arithmetic produces entirely different remainders for different divisors, roughly $90\%$ of keys immediately map to wrong machines. The entire cache tier effectively misses at the same second, overwhelming the primary database.</p>
+<p>Consistent Hashing maps both keys and nodes to a fixed circular ring ($[0, 2^{32}-1]$). When a node is removed, only the keys previously owned by that specific node are reassigned to its immediate clockwise neighbor. All other keys on all other nodes remain completely undisturbed.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why are Virtual Nodes (VNodes) essential in a consistent hash ring, and what happens if you omit them?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Without virtual nodes, physical servers end up clustered non-uniformly on the ring, causing severe load imbalance (hotspots); virtual nodes distribute physical capacity evenly across hundreds of points.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>If 5 physical machines are hashed once onto a circle, the distance between adjacent nodes varies wildly by chance. One node might be responsible for $60\%$ of the ring arc, while another owns only $5\%$.</p>
+<p>Furthermore, if a node fails, its entire load cascades onto a single neighbor, creating a domino effect of server crashes.</p>
+<p>By assigning 100–200 virtual nodes per physical machine (e.g., <code>server1#vn_0</code> ... <code>server1#vn_199</code>), each server owns hundreds of small arcs dispersed throughout the ring.</p>
+<p>When a node fails, its virtual nodes are scattered across the ring, distributing its load evenly across all surviving machines.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the &quot;Hot Key&quot; problem in distributed caching, and how do you mitigate it when a key receives 1,000,000 requests/sec?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Consistent hashing routes all requests for a single key to the same shard node, which saturates its CPU and NIC; mitigation requires L1 local in-process memory caching and suffix scattering.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Even in a 1,000-node cluster, a single viral key (e.g. world cup score, celebrity post) hashes to exactly one shard. That shard node crashes from network interface card (NIC) saturation.</p>
+<p><strong>Mitigations</strong>:</p>
+<ol>
+<li><strong>L1 In-Process Caching</strong>: The client application stores the hot key in process RAM (<code>IMemoryCache</code>) with a 2-second TTL. 99.9% of reads are served in nanoseconds without leaving the web server.</li>
+<li><strong>Read Suffix Scattering</strong>: Replicate the key across $M$ suffixes: <code>key:#0</code>, <code>key:#1</code>, <code>key:#2</code>, <code>key:#3</code>. The consistent hash ring maps each suffix to a different shard. Readers pick a random suffix, distributing the 1,000,000 req/sec evenly across $M$ physical machines.</li>
+<li><strong>Client-Side Caching (Redis 6+)</strong>: Redis invalidates local client copies over a sideband connection (<code>CLIENT TRACKING on</code>), guaranteeing sub-millisecond reads with immediate invalidation.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does Suffix Scattering work for hot keys, and what is its trade-off?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Replicating a key across $M$ suffixes scales read capacity by $M\times$, but increases write overhead ($M$ writes) and risks transient consistency windows between copies.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When storing a hot key:</p>
+<ul>
+<li>The writer computes $M$ keys: <code>product:101:#0</code>, <code>product:101:#1</code>, ... <code>product:101:#M-1</code>.</li>
+<li>The writer updates all $M$ keys concurrently across the cluster.</li>
+<li>Readers randomly choose a suffix: <code>product:101:#{rand(0, M-1)}</code>.</li>
+<li><strong>Trade-offs</strong>:</li>
+<li><strong>Write Amplification</strong>: Every update requires $M$ separate network operations.</li>
+<li><strong>Consistency Delays</strong>: If one shard update lags or fails, some readers may observe stale data until all replicas sync.</li>
+<li>Suffix scattering should therefore only be applied selectively to verified hot keys, not the entire keyspace.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you maintain cache coherency between an L1 in-process memory cache and an L2 distributed cluster cache?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Use very short L1 TTLs (1–3 seconds), pub/sub cache invalidation broadcasts, or Redis 6+ Client-Side Caching.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Multi-tier caching creates a coherence challenge: when Pod A updates a product price in the L2 Redis cluster, Pod B might still serve the old price from its local L1 memory.</p>
+<p><strong>Architectural patterns</strong>:</p>
+<ol>
+<li><strong>Short TTL + Eventual Consistency</strong>: Setting an L1 TTL of 1–2 seconds bounds stale reads to 2 seconds, which is acceptable for catalog reads.</li>
+<li><strong>Pub/Sub Invalidation</strong>: When any service mutates a record, it publishes an invalidation event (<code>PUBLISH cache:invalidations key</code>). All subscriber pods receive the message and evict the key from their local <code>IMemoryCache</code>.</li>
+<li><strong>Redis RESP3 Client Tracking</strong>: The Redis server tracks which keys the client has read and pushes an out-of-band invalidation message over the TCP connection when the key is mutated by any client.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">Compare Single-Flight Mutex vs Probabilistic Early Expiration (XFetch) for preventing cache stampedes.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Single-Flight locks concurrent requests on a cache miss so only one worker queries the database; XFetch probabilistically pre-refreshes hot keys before they expire so misses never occur.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><strong>Single-Flight (SingleFlight / Mutex)</strong>: When a key expires, 1,000 concurrent threads miss. The first thread acquires a lock and executes the SQL query. The remaining 999 threads await the result and receive the computed value. Downside: readers experience latency equal to the SQL query time.</li>
+<li><strong>XFetch Algorithm</strong>: Readers evaluate a probabilistic threshold: $\Delta \cdot \beta \cdot (-\ln(\text{rand})) > \text{timeRemaining}$. As expiration approaches, a single background task refreshes the value <em>while</em> returning the existing cached value to readers. Readers experience zero latency spikes and the key never expires under load.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How does a Consistent Hash Ring handle a dead or failing cache node?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Clockwise handoff naturally routes traffic to the dead node's clockwise successor; health checks formally remove the node and rebalance its virtual arcs.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When a node crashes:</p>
+<ol>
+<li><strong>Immediate Handoff</strong>: Any key previously mapped to the dead node's position will simply fall through to the next available virtual node clockwise along the ring.</li>
+<li><strong>Health Check Pruning</strong>: A cluster coordinator (or client-side heartbeat) detects the node outage, calls <code>ring.RemoveNode(deadNode)</code>, and removes all associated virtual node hashes from the sorted ring list via binary search.</li>
+<li><strong>Re-warming</strong>: Keys falling on the successor nodes will experience cold misses and re-populate from the database without impacting keys on unaffected nodes.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What hash functions should be chosen for consistent hashing rings?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Cryptographic hashes (MD5, SHA-256) or non-cryptographic hashes like MurmurHash3 and xxHash; never standard <code>string.GetHashCode()</code>.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In .NET, <code>string.GetHashCode()</code> uses randomized hash seeds per process instance for security against HashDoS attacks. This means two different application pods running the same code would produce different hash values for the same key, breaking ring consistency across the fleet!</p>
+<p>Furthermore, <code>string.GetHashCode()</code> lacks uniform distribution properties.</p>
+<p>Algorithms like <strong>MurmurHash3</strong>, <strong>xxHash</strong>, or <strong>MD5</strong> (used by Ketama) produce consistent, deterministic 32-bit or 128-bit integers with near-perfect uniform distribution across the entire ring circumference.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #199 (Binary Tree Right Side View), why is right-first DFS generally preferred over BFS?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Right-first DFS visits rightmost nodes first and uses $O(H)$ stack space without heap allocations; BFS uses $O(W)$ queue memory where tree width can reach $\frac{N}{2}$.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  void Dfs(TreeNode node, int depth) {
+      if (node == null) return;
+      if (depth == result.Count) result.Add(node.val);
+      Dfs(node.right, depth + 1);
+      Dfs(node.left, depth + 1);
+  }</code></pre></div>
+<p>By recursing <code>node.right</code> before <code>node.left</code>, the very first node encountered at any depth level is guaranteed to be the rightmost visible node.</p>
+<ul>
+<li>DFS space: Bounded by tree height $O(H)$ ($O(\log N)$ on balanced trees). Uses thread stack frames without heap queue node allocation.</li>
+<li>BFS space: Bounded by tree width $O(W)$. A complete tree with 1,000,000 nodes stores up to 500,000 node references in the queue at the leaf level.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does LeetCode #1448 (Count Good Nodes in Binary Tree) maintain the ancestor maximum invariant during pre-order DFS?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It passes the maximum value seen so far down the recursion tree; if the current node's value is greater than or equal to that maximum, it is counted and the maximum is updated for its subtrees.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  int Dfs(TreeNode node, int maxSoFar) {
+      if (node == null) return 0;
+      int isGood = node.val &gt;= maxSoFar ? 1 : 0;
+      int newMax = Math.Max(maxSoFar, node.val);
+      return isGood + Dfs(node.left, newMax) + Dfs(node.right, newMax);
+  }</code></pre></div>
+<p>Because the tree is traversed pre-order (root before children), each node compares its value against the absolute maximum of its ancestors along its unique path from the root.</p>
+<p>Left and right branches receive independent copies of <code>newMax</code> on the call stack, guaranteeing that sibling subtrees never interfere with each other's path histories in $O(N)$ time and $O(H)$ space.</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day21.DistributedCache/ConsistentHashRing.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd21-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d21-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace Day21.DistributedCache;
+
+/// &lt;summary&gt;
+/// Production Consistent Hash Ring with Virtual Nodes (Ketama-style).
+/// Distributes keys uniformly across cache nodes in a 32-bit circular hash space.
+/// &lt;/summary&gt;
+public class ConsistentHashRing&lt;TNode&gt; where TNode : notnull
+{
+    private readonly int _virtualNodeReplicas;
+    private readonly Func&lt;TNode, string&gt; _nodeKeySelector;
+    private readonly List&lt;uint&gt; _sortedRingKeys = new();
+    private readonly Dictionary&lt;uint, TNode&gt; _ring = new();
+    private readonly HashSet&lt;TNode&gt; _physicalNodes = new();
+    private readonly object _syncLock = new();
+
+    public int PhysicalNodeCount
+    {
+        get { lock (_syncLock) return _physicalNodes.Count; }
+    }
+
+    public int VirtualNodeCount
+    {
+        get { lock (_syncLock) return _sortedRingKeys.Count; }
+    }
+
+    public IReadOnlyCollection&lt;TNode&gt; PhysicalNodes
+    {
+        get { lock (_syncLock) return _physicalNodes.ToList(); }
+    }
+
+    public ConsistentHashRing(
+        Func&lt;TNode, string&gt; nodeKeySelector,
+        int virtualNodeReplicas = 100,
+        IEnumerable&lt;TNode&gt;? initialNodes = null)
+    {
+        _nodeKeySelector = nodeKeySelector ?? throw new ArgumentNullException(nameof(nodeKeySelector));
+        _virtualNodeReplicas = virtualNodeReplicas &gt; 0 ? virtualNodeReplicas : 100;
+
+        if (initialNodes != null)
+        {
+            foreach (var node in initialNodes)
+            {
+                AddNode(node);
+            }
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Adds a physical node to the ring, allocating _virtualNodeReplicas positions on the hash ring.
+    /// &lt;/summary&gt;
+    public bool AddNode(TNode node)
+    {
+        lock (_syncLock)
+        {
+            if (!_physicalNodes.Add(node)) return false;
+
+            string baseNodeKey = _nodeKeySelector(node);
+            for (int i = 0; i &lt; _virtualNodeReplicas; i++)
+            {
+                string vNodeKey = $&quot;{baseNodeKey}#vn_{i}&quot;;
+                uint hash = ComputeHash(vNodeKey);
+
+                _ring[hash] = node;
+                int idx = _sortedRingKeys.BinarySearch(hash);
+                if (idx &lt; 0)
+                {
+                    _sortedRingKeys.Insert(~idx, hash);
+                }
+            }
+
+            return true;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Removes a physical node and all its virtual nodes from the ring.
+    /// &lt;/summary&gt;
+    public bool RemoveNode(TNode node)
+    {
+        lock (_syncLock)
+        {
+            if (!_physicalNodes.Remove(node)) return false;
+
+            string baseNodeKey = _nodeKeySelector(node);
+            for (int i = 0; i &lt; _virtualNodeReplicas; i++)
+            {
+                string vNodeKey = $&quot;{baseNodeKey}#vn_{i}&quot;;
+                uint hash = ComputeHash(vNodeKey);
+
+                _ring.Remove(hash);
+                int idx = _sortedRingKeys.BinarySearch(hash);
+                if (idx &gt;= 0)
+                {
+                    _sortedRingKeys.RemoveAt(idx);
+                }
+            }
+
+            return true;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Finds the owning cache node for a given cache key by walking clockwise on the ring.
+    /// Complexity: O(log(N * V)) via binary search.
+    /// &lt;/summary&gt;
+    public TNode GetNode(string key)
+    {
+        lock (_syncLock)
+        {
+            if (_sortedRingKeys.Count == 0)
+            {
+                throw new InvalidOperationException(&quot;Cannot resolve key: Consistent hash ring is empty.&quot;);
+            }
+
+            uint hash = ComputeHash(key);
+            int idx = _sortedRingKeys.BinarySearch(hash);
+
+            if (idx &lt; 0)
+            {
+                idx = ~idx;
+                // If hash is greater than all points on the ring, wrap around to the first point (circular ring)
+                if (idx == _sortedRingKeys.Count)
+                {
+                    idx = 0;
+                }
+            }
+
+            uint ringHash = _sortedRingKeys[idx];
+            return _ring[ringHash];
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Computes a uniform 32-bit hash using MD5 bytes truncated to uint.
+    /// MD5 provides superior distribution uniformity over standard string.GetHashCode() across virtual nodes.
+    /// &lt;/summary&gt;
+    public static uint ComputeHash(string input)
+    {
+        byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+        byte[] hashBytes = MD5.HashData(inputBytes);
+
+        // Take first 4 bytes as 32-bit integer
+        return BitConverter.ToUInt32(hashBytes, 0);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day21.DistributedCache/DistributedCacheCluster.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd21-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d21-src-code-1" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day21.DistributedCache;
+
+/// &lt;summary&gt;
+/// An independent distributed cache shard node.
+/// &lt;/summary&gt;
+public class CacheShardNode
+{
+    private record CacheEntry(object Value, DateTime ExpiresAtUtc, DateTime CreatedUtc, TimeSpan ComputeDuration);
+
+    private readonly ConcurrentDictionary&lt;string, CacheEntry&gt; _storage = new();
+
+    public string NodeId { get; }
+    public int KeyCount =&gt; _storage.Count;
+
+    public CacheShardNode(string nodeId)
+    {
+        NodeId = nodeId;
+    }
+
+    public void Set(string key, object value, TimeSpan ttl, TimeSpan computeDuration = default)
+    {
+        var now = DateTime.UtcNow;
+        _storage[key] = new CacheEntry(value, now.Add(ttl), now, computeDuration);
+    }
+
+    public object? Get(string key)
+    {
+        var now = DateTime.UtcNow;
+        if (_storage.TryGetValue(key, out var entry))
+        {
+            if (now &lt; entry.ExpiresAtUtc)
+            {
+                return entry.Value;
+            }
+            _storage.TryRemove(key, out _);
+        }
+        return null;
+    }
+
+    public bool ShouldRefreshEarly(string key, double beta = 1.0)
+    {
+        var now = DateTime.UtcNow;
+        if (_storage.TryGetValue(key, out var entry))
+        {
+            double remainingSec = (entry.ExpiresAtUtc - now).TotalSeconds;
+            if (remainingSec &lt;= 0) return true;
+
+            double deltaSec = entry.ComputeDuration.TotalSeconds &gt; 0 ? entry.ComputeDuration.TotalSeconds : 0.1;
+            double rand = Random.Shared.NextDouble();
+            if (rand &lt;= 0.0) rand = 0.0001;
+
+            // XFetch probabilistic threshold
+            return (deltaSec * beta * -Math.Log(rand)) &gt; remainingSec;
+        }
+        return false;
+    }
+
+    public void Invalidate(string key) =&gt; _storage.TryRemove(key, out _);
+    public void Clear() =&gt; _storage.Clear();
+}
+
+/// &lt;summary&gt;
+/// Production Distributed Caching Cluster coordinating:
+/// - 2-Tier Caching: L1 Local In-Memory + L2 Sharded Cluster
+/// - Consistent Hashing Ring key partitioning with virtual nodes
+/// - Hot-Key Read Mitigation via Suffix Scattering
+/// - Cache Stampede Protection (Single-Flight Mutex + XFetch early refresh)
+/// &lt;/summary&gt;
+public class DistributedCacheCluster
+{
+    private readonly ConsistentHashRing&lt;CacheShardNode&gt; _hashRing;
+    private readonly ConcurrentDictionary&lt;string, (object Value, DateTime ExpiresAtUtc)&gt; _l1Cache = new();
+    private readonly ConcurrentDictionary&lt;string, SemaphoreSlim&gt; _locks = new();
+    private readonly TimeSpan _l1Ttl;
+
+    public ConsistentHashRing&lt;CacheShardNode&gt; HashRing =&gt; _hashRing;
+    public int L1CacheCount =&gt; _l1Cache.Count;
+
+    public DistributedCacheCluster(
+        IEnumerable&lt;CacheShardNode&gt; initialShards,
+        int virtualNodesPerShard = 100,
+        TimeSpan? l1Ttl = null)
+    {
+        _hashRing = new ConsistentHashRing&lt;CacheShardNode&gt;(s =&gt; s.NodeId, virtualNodesPerShard, initialShards);
+        _l1Ttl = l1Ttl ?? TimeSpan.FromSeconds(5);
+    }
+
+    /// &lt;summary&gt;
+    /// Multi-tier GetOrSet with Single-Flight Stampede Protection.
+    /// &lt;/summary&gt;
+    public async Task&lt;T&gt; GetOrSetAsync&lt;T&gt;(
+        string key,
+        Func&lt;Task&lt;T&gt;&gt; valueFactory,
+        TimeSpan ttl,
+        bool useL1 = true)
+    {
+        var now = DateTime.UtcNow;
+
+        // 1. Check L1 local in-process cache
+        if (useL1 &amp;&amp; _l1Cache.TryGetValue(key, out var l1Entry))
+        {
+            if (now &lt; l1Entry.ExpiresAtUtc)
+            {
+                return (T)l1Entry.Value;
+            }
+            _l1Cache.TryRemove(key, out _);
+        }
+
+        // 2. Resolve owning L2 shard via Consistent Hash Ring
+        var targetShard = _hashRing.GetNode(key);
+
+        // Check L2 shard
+        var l2Val = targetShard.Get(key);
+        if (l2Val != null)
+        {
+            if (useL1)
+            {
+                _l1Cache[key] = (l2Val, now.Add(_l1Ttl));
+            }
+            return (T)l2Val;
+        }
+
+        // 3. Single-Flight Lock: Only one worker queries factory; concurrent requests await
+        var gate = _locks.GetOrAdd(key, _ =&gt; new SemaphoreSlim(1, 1));
+        await gate.WaitAsync();
+
+        try
+        {
+            // Recheck inside lock
+            l2Val = targetShard.Get(key);
+            if (l2Val != null)
+            {
+                if (useL1) _l1Cache[key] = (l2Val, DateTime.UtcNow.Add(_l1Ttl));
+                return (T)l2Val;
+            }
+
+            var start = DateTime.UtcNow;
+            T computed = await valueFactory();
+            var duration = DateTime.UtcNow - start;
+
+            targetShard.Set(key, computed!, ttl, duration);
+
+            if (useL1)
+            {
+                _l1Cache[key] = (computed!, DateTime.UtcNow.Add(_l1Ttl));
+            }
+
+            return computed;
+        }
+        finally
+        {
+            gate.Release();
+            _locks.TryRemove(key, out _);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Hot-Key Mitigation: Scatters high-volume keys across M suffixes (e.g. key:#hk_0, key:#hk_1)
+    /// to distribute query throughput evenly across multiple physical shard machines.
+    /// &lt;/summary&gt;
+    public async Task&lt;T&gt; GetOrSetHotKeyAsync&lt;T&gt;(
+        string key,
+        Func&lt;Task&lt;T&gt;&gt; valueFactory,
+        TimeSpan ttl,
+        int scatterShards = 4)
+    {
+        // Read from randomly selected replica shard
+        int readIndex = Random.Shared.Next(scatterShards);
+        string shardKey = $&quot;{key}:#hk_{readIndex}&quot;;
+
+        return await GetOrSetAsync(shardKey, async () =&gt;
+        {
+            // On miss, compute once and populate all scatter replica shards
+            T computed = await valueFactory();
+            for (int i = 0; i &lt; scatterShards; i++)
+            {
+                string sk = $&quot;{key}:#hk_{i}&quot;;
+                var targetNode = _hashRing.GetNode(sk);
+                targetNode.Set(sk, computed!, ttl);
+            }
+            return computed;
+        }, ttl, useL1: true);
+    }
+
+    /// &lt;summary&gt;
+    /// Explicitly invalidates key across L1 and target L2 shard.
+    /// &lt;/summary&gt;
+    public void Invalidate(string key)
+    {
+        _l1Cache.TryRemove(key, out _);
+        var shard = _hashRing.GetNode(key);
+        shard.Invalidate(key);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day21.DistributedCache/TreeInspectionSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd21-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d21-src-code-2" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day21.DistributedCache;
+
+/// &lt;summary&gt;
+/// Definition for a binary tree node.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// Tree inspection and view algorithms:
+/// - LeetCode #199: Binary Tree Right Side View
+/// - LeetCode #1448: Count Good Nodes in Binary Tree
+/// &lt;/summary&gt;
+public class TreeInspectionSolvers
+{
+    /// &lt;summary&gt;
+    /// Computes the right-side view of a binary tree from top to bottom (LeetCode #199).
+    /// Uses right-first recursive DFS: visits right children before left children and records
+    /// the first node encountered at each depth level.
+    /// Time Complexity: O(N) visiting each node once.
+    /// Space Complexity: O(H) recursion stack space.
+    /// &lt;/summary&gt;
+    public IList&lt;int&gt; RightSideView(TreeNode? root)
+    {
+        var result = new List&lt;int&gt;();
+
+        void Dfs(TreeNode? node, int depth)
+        {
+            if (node == null) return;
+
+            // If this is the first node encountered at this depth level, it must be the rightmost
+            if (depth == result.Count)
+            {
+                result.Add(node.val);
+            }
+
+            // Prioritize right subtree
+            Dfs(node.right, depth + 1);
+            Dfs(node.left, depth + 1);
+        }
+
+        Dfs(root, 0);
+        return result;
+    }
+
+    /// &lt;summary&gt;
+    /// Counts the number of &quot;good&quot; nodes in a binary tree (LeetCode #1448).
+    /// A node X is good if in the path from the root to X there are no nodes with a value greater than X.
+    /// Time Complexity: O(N)
+    /// Space Complexity: O(H) recursion stack space.
+    /// &lt;/summary&gt;
+    public int GoodNodes(TreeNode? root)
+    {
+        if (root == null) return 0;
+
+        int Dfs(TreeNode? node, int maxSoFar)
+        {
+            if (node == null) return 0;
+
+            int isGood = node.val &gt;= maxSoFar ? 1 : 0;
+            int newMax = Math.Max(maxSoFar, node.val);
+
+            return isGood + Dfs(node.left, newMax) + Dfs(node.right, newMax);
+        }
+
+        return Dfs(root, root.val);
+    }
+
+    /// &lt;summary&gt;
+    /// Helper to deserialize a tree from a level-order array representation.
+    /// &lt;/summary&gt;
+    public static TreeNode? BuildTree(int?[] values)
+    {
+        if (values == null || values.Length == 0 || values[0] == null) return null;
+
+        var root = new TreeNode(values[0]!.Value);
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int i = 1;
+        while (queue.Count &gt; 0 &amp;&amp; i &lt; values.Length)
+        {
+            var curr = queue.Dequeue();
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.left = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.left);
+            }
+            i++;
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.right = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.right);
+            }
+            i++;
+        }
+
+        return root;
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day21.DistributedCache.Tests/Day21Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd21-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d21-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day21.DistributedCache.Tests;
+
+public class Day21Tests
+{
+    // ==========================================
+    // 1. CONSISTENT HASHING RING TESTS
+    // ==========================================
+
+    [Fact]
+    public void ConsistentHashRing_UniformDistribution_DistributesKeysEvenlyAcrossNodes()
+    {
+        var nodes = new[] { &quot;node-alpha&quot;, &quot;node-beta&quot;, &quot;node-gamma&quot;, &quot;node-delta&quot; };
+        var ring = new ConsistentHashRing&lt;string&gt;(s =&gt; s, virtualNodeReplicas: 150, initialNodes: nodes);
+
+        var counts = nodes.ToDictionary(n =&gt; n, _ =&gt; 0);
+        int totalKeys = 1000;
+
+        for (int i = 0; i &lt; totalKeys; i++)
+        {
+            var node = ring.GetNode($&quot;cache:user:{i}&quot;);
+            counts[node]++;
+        }
+
+        // Each node in a 4-node ring should ideally receive ~250 keys (+/- 10%)
+        foreach (var (node, count) in counts)
+        {
+            count.Should().BeInRange(170, 330, $&quot;Node {node} received {count} keys, which is within expected balanced range.&quot;);
+        }
+    }
+
+    [Fact]
+    public void ConsistentHashRing_NodeAddition_RedistributesMinimalKeyProportion()
+    {
+        var initialNodes = new[] { &quot;n1&quot;, &quot;n2&quot;, &quot;n3&quot;, &quot;n4&quot; };
+        var ring = new ConsistentHashRing&lt;string&gt;(s =&gt; s, virtualNodeReplicas: 150, initialNodes: initialNodes);
+
+        var originalMapping = new Dictionary&lt;string, string&gt;();
+        int totalKeys = 1000;
+
+        for (int i = 0; i &lt; totalKeys; i++)
+        {
+            string key = $&quot;entity:order:{i}&quot;;
+            originalMapping[key] = ring.GetNode(key);
+        }
+
+        // Add 5th node
+        ring.AddNode(&quot;n5&quot;);
+
+        int shiftedKeys = 0;
+        for (int i = 0; i &lt; totalKeys; i++)
+        {
+            string key = $&quot;entity:order:{i}&quot;;
+            string newNode = ring.GetNode(key);
+            if (newNode != originalMapping[key])
+            {
+                shiftedKeys++;
+                // Any shifted key MUST be reassigned to the newly added node n5
+                newNode.Should().Be(&quot;n5&quot;);
+            }
+        }
+
+        // Expected shift: ~1/5 = 20% of keys (e.g. 12% - 28%)
+        // Traditional modular hashing (K % N) shifts ~80% of keys!
+        double shiftRatio = (double)shiftedKeys / totalKeys;
+        shiftRatio.Should().BeInRange(0.12, 0.28, $&quot;Shifted {shiftedKeys}/{totalKeys} keys, which matches ~1/N redistribution.&quot;);
+    }
+
+    // ==========================================
+    // 2. DISTRIBUTED CACHE CLUSTER TESTS
+    // ==========================================
+
+    [Fact]
+    public async Task DistributedCacheCluster_MultiTier_UsesL1AndL2Efficiently()
+    {
+        var shards = new[]
+        {
+            new CacheShardNode(&quot;shard-1&quot;),
+            new CacheShardNode(&quot;shard-2&quot;),
+            new CacheShardNode(&quot;shard-3&quot;)
+        };
+
+        var cluster = new DistributedCacheCluster(shards, l1Ttl: TimeSpan.FromSeconds(2));
+        int factoryCalls = 0;
+
+        Func&lt;Task&lt;string&gt;&gt; factory = () =&gt;
+        {
+            Interlocked.Increment(ref factoryCalls);
+            return Task.FromResult(&quot;calculated-result&quot;);
+        };
+
+        // Call 1: Misses L1 and L2 -&gt; runs factory
+        var res1 = await cluster.GetOrSetAsync(&quot;product:101&quot;, factory, TimeSpan.FromSeconds(10));
+        res1.Should().Be(&quot;calculated-result&quot;);
+        factoryCalls.Should().Be(1);
+        cluster.L1CacheCount.Should().Be(1);
+
+        // Call 2: Hits L1 memory cache -&gt; factory NOT called
+        var res2 = await cluster.GetOrSetAsync(&quot;product:101&quot;, factory, TimeSpan.FromSeconds(10));
+        res2.Should().Be(&quot;calculated-result&quot;);
+        factoryCalls.Should().Be(1);
+
+        // Invalidate: removes from L1 and L2
+        cluster.Invalidate(&quot;product:101&quot;);
+        cluster.L1CacheCount.Should().Be(0);
+
+        // Call 3: Misses -&gt; runs factory again
+        var res3 = await cluster.GetOrSetAsync(&quot;product:101&quot;, factory, TimeSpan.FromSeconds(10));
+        res3.Should().Be(&quot;calculated-result&quot;);
+        factoryCalls.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task DistributedCacheCluster_SingleFlight_SuppressesThunderingHerd()
+    {
+        var shards = new[] { new CacheShardNode(&quot;s1&quot;), new CacheShardNode(&quot;s2&quot;) };
+        var cluster = new DistributedCacheCluster(shards);
+
+        int computationCount = 0;
+        Func&lt;Task&lt;string&gt;&gt; expensiveFactory = async () =&gt;
+        {
+            Interlocked.Increment(ref computationCount);
+            await Task.Delay(50); // Simulate expensive DB query
+            return &quot;db-payload-42&quot;;
+        };
+
+        // 20 concurrent threads request the exact same missing key simultaneously
+        var tasks = Enumerable.Range(0, 20)
+            .Select(_ =&gt; cluster.GetOrSetAsync(&quot;super-hot-record&quot;, expensiveFactory, TimeSpan.FromSeconds(10)))
+            .ToList();
+
+        var results = await Task.WhenAll(tasks);
+
+        // All 20 threads receive identical result
+        results.Should().AllBeEquivalentTo(&quot;db-payload-42&quot;);
+
+        // Factory was executed ONLY ONCE thanks to single-flight mutex lock!
+        computationCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task DistributedCacheCluster_HotKeyScatter_PopulatesMultipleReplicaShards()
+    {
+        var shards = new[]
+        {
+            new CacheShardNode(&quot;shard-A&quot;),
+            new CacheShardNode(&quot;shard-B&quot;),
+            new CacheShardNode(&quot;shard-C&quot;),
+            new CacheShardNode(&quot;shard-D&quot;)
+        };
+
+        var cluster = new DistributedCacheCluster(shards);
+        int factoryCount = 0;
+
+        var val = await cluster.GetOrSetHotKeyAsync(&quot;celebrity:live_tweet&quot;, () =&gt;
+        {
+            Interlocked.Increment(ref factoryCount);
+            return Task.FromResult(&quot;viral-announcement&quot;);
+        }, TimeSpan.FromSeconds(10), scatterShards: 4);
+
+        val.Should().Be(&quot;viral-announcement&quot;);
+        factoryCount.Should().Be(1);
+
+        // Verify across shards: all 4 scatter keys (0..3) are present in the cluster shards
+        int totalFound = 0;
+        for (int i = 0; i &lt; 4; i++)
+        {
+            string sk = $&quot;celebrity:live_tweet:#hk_{i}&quot;;
+            var node = cluster.HashRing.GetNode(sk);
+            if (node.Get(sk) != null) totalFound++;
+        }
+        totalFound.Should().Be(4);
+    }
+
+    // ==========================================
+    // 3. DSA TREE VIEW &amp; GOOD NODES TESTS (LC #199 &amp; #1448)
+    // ==========================================
+
+    [Fact]
+    public void LC199_RightSideView_StandardTree_ReturnsRightmostNodes()
+    {
+        var solvers = new TreeInspectionSolvers();
+        // Tree: [1, 2, 3, null, 5, null, 4]
+        //        1            &lt;-- 1
+        //       / \
+        //      2   3          &lt;-- 3
+        //       \   \
+        //        5   4        &lt;-- 4
+        var root = TreeInspectionSolvers.BuildTree(new int?[] { 1, 2, 3, null, 5, null, 4 });
+        var view = solvers.RightSideView(root);
+        view.Should().Equal(new[] { 1, 3, 4 });
+    }
+
+    [Fact]
+    public void LC199_RightSideView_LeftHeavyBranchVisible_IncludesLeftDescendant()
+    {
+        var solvers = new TreeInspectionSolvers();
+        // Tree: [1, 2, 3, 4]
+        //        1            &lt;-- 1
+        //       / \
+        //      2   3          &lt;-- 3
+        //     /
+        //    4                &lt;-- 4 (visible from right since 3 has no children!)
+        var root = TreeInspectionSolvers.BuildTree(new int?[] { 1, 2, 3, 4 });
+        var view = solvers.RightSideView(root);
+        view.Should().Equal(new[] { 1, 3, 4 });
+    }
+
+    [Fact]
+    public void LC199_RightSideView_EmptyAndSingleNode_ReturnsCorrectView()
+    {
+        var solvers = new TreeInspectionSolvers();
+        solvers.RightSideView(null).Should().BeEmpty();
+        solvers.RightSideView(new TreeNode(99)).Should().Equal(new[] { 99 });
+    }
+
+    [Fact]
+    public void LC1448_GoodNodes_StandardTree_CountsNodesCorrectly()
+    {
+        var solvers = new TreeInspectionSolvers();
+        // Tree: [3, 1, 4, 3, null, 1, 5]
+        // Root 3: good
+        // Node 1 (left of 3): max is 3 -&gt; bad
+        // Node 3 (left of 1): max is 3 -&gt; good (3 &gt;= 3)
+        // Node 4 (right of 3): max is 3 -&gt; good (4 &gt;= 3)
+        // Node 1 (left of 4): max is 4 -&gt; bad
+        // Node 5 (right of 4): max is 4 -&gt; good (5 &gt;= 4)
+        // Total good nodes = 4
+        var root = TreeInspectionSolvers.BuildTree(new int?[] { 3, 1, 4, 3, null, 1, 5 });
+        solvers.GoodNodes(root).Should().Be(4);
+    }
+
+    [Fact]
+    public void LC1448_GoodNodes_StrictlyIncreasingAndSingleNode_ReturnsCorrectCount()
+    {
+        var solvers = new TreeInspectionSolvers();
+        // Tree: [2, null, 4, 10, 8] -&gt; 2 is good, 4 is good, 10 is good, 8 is not (10 &gt; 8) -&gt; total 3
+        var root = TreeInspectionSolvers.BuildTree(new int?[] { 2, null, 4, null, null, 10, 8 });
+        solvers.GoodNodes(new TreeNode(7)).Should().Be(1);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 21 - Engineering Notes: Consistent Hashing & Distributed Cache Design</h1>
+<h2>1. Mathematical Foundations of Consistent Hashing (Karger et al., 1997)</h2>
+<p>Traditional modular hashing determines node placement via:</p>
+<p>$$\text{NodeIndex} = \text{Hash}(key) \pmod N$$</p>
+<ul>
+<li>When $N$ changes to $N+1$, nearly <strong>every</strong> key maps to a new index because $\text{Hash}(key) \pmod N \ne \text{Hash}(key) \pmod{N+1}$.</li>
+<li>In a cluster storing 10,000,000 keys, adding 1 node invalidates up to 9,000,000 cached records simultaneously, causing an instantaneous database outage.</li>
+</ul>
+<h3>The Consistent Hashing Ring</h3>
+<p>Consistent Hashing maps both keys and servers to points on a circle $[0, 2^{32}-1]$:</p>
+<ol>
+<li><strong>Smoothness Property</strong>: When a node is added, it only acquires keys from its clockwise predecessor. The fraction of keys reassigned is mathematically bounded at:</li>
+</ol>
+<p>$$E[\text{Reassigned Keys}] = \frac{K}{N+1}$$</p>
+<ol>
+<li><strong>Balance via Virtual Nodes (Ketama)</strong>:</li>
+</ol>
+<ul>
+<li>If physical nodes are simply placed at 1 hash location, random variance causes severe imbalance (one node can receive 60% of all traffic while another gets 5%).</li>
+<li>By creating $V = 100\text{--}200$ virtual points per physical machine (<code>host:port#vn_0</code> to <code>host:port#vn_199</code>), the law of large numbers guarantees that each physical machine receives within $\pm 5\%$ of its fair share: $\frac{K}{N}$.</li>
+</ul>
+<hr/>
+<h2>2. Hot-Key Scaling Patterns in Distributed Systems</h2>
+<p>A "hot key" is a single resource that experiences an extreme traffic anomaly (e.g. 500,000 requests/sec for a breaking news article). Even in a 50-node cluster, 100% of that traffic routes to a single shard, causing CPU saturation and packet drops.</p>
+<h3>Mitigation Strategies:</h3>
+<ol>
+<li><strong>L1 Local In-Memory Cache (Multi-Tier)</strong>:</li>
+</ol>
+<ul>
+<li>Keep a tiny, short-lived L1 cache (1–3 seconds TTL) inside the client process memory (<code>IMemoryCache</code>).</li>
+<li>If 10,000 HTTP requests hit the same web server pod in 1 second, only 1 request goes over the network to the Redis shard; 9,999 requests are served directly from RAM in 10 nanoseconds.</li>
+</ul>
+<ol>
+<li><strong>Read Suffix Scattering (Key Replication)</strong>:</li>
+</ol>
+<ul>
+<li>For known hot keys, the publisher writes $M$ copies: <code>key:#0</code>, <code>key:#1</code>, <code>key:#2</code>, <code>key:#3</code>.</li>
+<li>Each copy lands on a different consistent hash shard.</li>
+<li>Readers pick a random shard index: <code>key:#{rand(0, 3)}</code>.</li>
+<li>Divides network bandwidth and CPU consumption across $M$ distinct machines.</li>
+</ul>
+<ol>
+<li><strong>Dynamic Hot-Key Detection (Heavy Hitters)</strong>:</li>
+</ol>
+<ul>
+<li>Use a streaming <strong>Count-Min Sketch</strong> or Redis LFU tracking to detect keys whose access rate exceeds 1,000 req/sec, automatically promoting them to L1 or applying suffix scattering dynamically.</li>
+</ul>
+<hr/>
+<h2>3. Tree Traversal Mechanics: DFS Right-First vs BFS Level Order</h2>
+<h3>LeetCode #199: Binary Tree Right Side View</h3>
+<ul>
+<li><strong>BFS Approach</strong>:</li>
+<li>Traverses the entire tree with a FIFO queue.</li>
+<li>At each level, appends the last dequeued element to the result.</li>
+<li>Memory: $O(W)$ where $W = \frac{N}{2}$ at the leaf level for a complete tree.</li>
+<li><strong>Right-First DFS Approach (Optimal)</strong>:</li>
+<li>Recursion order: <code>Right</code> child <strong>before</strong> <code>Left</code> child.</li>
+<li>Pass <code>depth</code> down the recursion.</li>
+<li>Invariant: At any depth, the very first node visited is mathematically guaranteed to be the rightmost visible node.</li>
+<li>If <code>depth == result.Count</code>, add <code>node.val</code> to result.</li>
+<li>Memory: $O(H)$ call stack space ($O(\log N)$ balanced). Zero queue object allocations.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 21: System Design: Distributed Cache Architecture</h1>
+<h2>Overview</h2>
+<p>Comprehensive system design and high-performance implementation of a distributed caching cluster in .NET. Covers <strong>Consistent Hashing with Virtual Nodes</strong> (Ketama-style ring topology), <strong>Hot-Key Read Scattering</strong>, <strong>2-Tier (L1 Local + L2 Sharded) Caching</strong>, and <strong>Cache Stampede Protection</strong> (Single-Flight Mutex + XFetch probabilistic early refresh). Additionally, solves binary tree visibility algorithms: <strong>LeetCode #199 (Binary Tree Right Side View)</strong> and <strong>LeetCode #1448 (Count Good Nodes in Binary Tree)</strong>.</p>
+<hr/>
+<h2>Architectural Breakdown</h2>
+<h3>1. Consistent Hashing Ring with Virtual Nodes</h3>
+<p>Traditional modular hashing (<code>node = hash(key) % N</code>) causes a catastrophic <strong>Cache Storm</strong> when nodes are added or removed, because almost all keys ($1 - \frac{1}{N} \approx 80\text{–}90\%$) are abruptly remapped to different servers, crashing the underlying database.</p>
+<p><strong>Consistent Hashing Solution</strong>:</p>
+<ul>
+<li>Maps both keys and cache nodes onto a continuous 32-bit circular hash ring $[0, 2^{32}-1]$.</li>
+<li>A key is owned by the first cache node encountered walking clockwise along the ring.</li>
+<li><strong>Virtual Nodes (VNodes)</strong>: Each physical node is duplicated across $V = 100\text{–}200$ positions (<code>nodeId#vn_0</code>, <code>nodeId#vn_1</code>, etc.).</li>
+<li>Prevents non-uniform clustering and hash hotspots.</li>
+<li>Adding a new node redistributes only $\approx \frac{1}{N_{\text{new}}}$ of keys, which are taken smoothly from all existing nodes.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                  [Node A #vn1] (Hash: 0x1200)
+                     /                   \
+      [Node C #vn2]                         [Node B #vn0]
+            |                                     |
+      key:order:42                                |
+      (Hash: 0x6400)                              |
+            |                                     |
+      [Node B #vn1] &lt;----------------------- [Node A #vn0]
+                     \                   /
+                  [Node C #vn0] (Hash: 0x9000)</code></pre></div>
+<hr/>
+<h3>2. Hot-Key Mitigation: Suffix Scattering</h3>
+<p>When a single key receives millions of requests per second (e.g., viral social post, flash sale inventory), a single cache shard machine saturates its network interface card (NIC).</p>
+<ul>
+<li><strong>Suffix Scattering Pattern</strong>:</li>
+</ul>
+<ol>
+<li>The key is logically replicated across $M$ suffixes: <code>key:#hk_0</code>, <code>key:#hk_1</code>, ... <code>key:#hk_M-1</code>.</li>
+<li>Because each suffix hashes to a different ring position, the replicas are distributed across different physical shard machines.</li>
+<li>Readers randomly query <code>key:#hk_{random(0, M-1)}</code>, spreading network I/O and CPU load across $M$ distinct cluster nodes.</li>
+</ol>
+<hr/>
+<h3>3. Multi-Tier & Stampede Protection</h3>
+<ul>
+<li><strong>Tier 1 (L1 In-Process MemoryCache)</strong>: Sub-microsecond local RAM access with short TTLs (1–5 seconds). Bypasses cluster network hops for ultra-hot keys.</li>
+<li><strong>Tier 2 (L2 Distributed Shards)</strong>: Consistent hash-routed distributed cluster nodes.</li>
+<li><strong>Single-Flight Lock</strong>: Only one thread acquires the lock to compute a missing key from the database; all other concurrent callers await the result.</li>
+</ul>
+<hr/>
+<h3>4. Tree Visibility Algorithms</h3>
+<h4>LeetCode #199: Binary Tree Right Side View</h4>
+<ul>
+<li><strong>Problem</strong>: Return values of nodes visible when looking at the tree from the right side.</li>
+<li><strong>Algorithm</strong>: Right-first recursive DFS (<code>dfs(node.right, depth + 1)</code> before <code>dfs(node.left, depth + 1)</code>). If <code>depth == result.Count</code>, the current node is the rightmost at that depth.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$ recursion stack.</li>
+</ul>
+<h4>LeetCode #1448: Count Good Nodes in Binary Tree</h4>
+<ul>
+<li><strong>Problem</strong>: Node $X$ is good if on the path from root to $X$, no node has a value greater than $X$.</li>
+<li><strong>Algorithm</strong>: Pre-order DFS tracking running ancestor maximum: <code>isGood = (node.val &gt;= maxSoFar) ? 1 : 0</code>, update <code>newMax = max(maxSoFar, node.val)</code>, recurse left and right.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(H)$.</li>
+</ul>
+<hr/>
+<h2>Running Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day21-Distributed-Cache-Architecture/tests/Day21.DistributedCache.Tests/Day21.DistributedCache.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the fatal flaw of traditional modular hashing (`key % N`) in distributed caching, and how does Consistent Hashing solve it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Modular hashing redistributes almost all keys ($1 - \frac{1}{N} \approx 80\text{--}90\%$) whenever a node is added or removed, causing a massive cache storm; consistent hashing restricts key movement to only $\approx \frac{1}{N}$ keys.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In a cluster of $N = 10$ nodes, a key's destination is given by $\text{hash}(key) \pmod{10}$.</p>
+<p>If one node fails and the cluster drops to $N = 9$, the formula becomes $\text{hash}(key) \pmod 9$. Because modulo arithmetic produces entirely different remainders for different divisors, roughly $90\%$ of keys immediately map to wrong machines. The entire cache tier effectively misses at the same second, overwhelming the primary database.</p>
+<p>Consistent Hashing maps both keys and nodes to a fixed circular ring ($[0, 2^{32}-1]$). When a node is removed, only the keys previously owned by that specific node are reassigned to its immediate clockwise neighbor. All other keys on all other nodes remain completely undisturbed.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why are Virtual Nodes (VNodes) essential in a consistent hash ring, and what happens if you omit them?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Without virtual nodes, physical servers end up clustered non-uniformly on the ring, causing severe load imbalance (hotspots); virtual nodes distribute physical capacity evenly across hundreds of points.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>If 5 physical machines are hashed once onto a circle, the distance between adjacent nodes varies wildly by chance. One node might be responsible for $60\%$ of the ring arc, while another owns only $5\%$.</p>
+<p>Furthermore, if a node fails, its entire load cascades onto a single neighbor, creating a domino effect of server crashes.</p>
+<p>By assigning 100–200 virtual nodes per physical machine (e.g., <code>server1#vn_0</code> ... <code>server1#vn_199</code>), each server owns hundreds of small arcs dispersed throughout the ring.</p>
+<p>When a node fails, its virtual nodes are scattered across the ring, distributing its load evenly across all surviving machines.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the &quot;Hot Key&quot; problem in distributed caching, and how do you mitigate it when a key receives 1,000,000 requests/sec?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Consistent hashing routes all requests for a single key to the same shard node, which saturates its CPU and NIC; mitigation requires L1 local in-process memory caching and suffix scattering.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Even in a 1,000-node cluster, a single viral key (e.g. world cup score, celebrity post) hashes to exactly one shard. That shard node crashes from network interface card (NIC) saturation.</p>
+<p><strong>Mitigations</strong>:</p>
+<ol>
+<li><strong>L1 In-Process Caching</strong>: The client application stores the hot key in process RAM (<code>IMemoryCache</code>) with a 2-second TTL. 99.9% of reads are served in nanoseconds without leaving the web server.</li>
+<li><strong>Read Suffix Scattering</strong>: Replicate the key across $M$ suffixes: <code>key:#0</code>, <code>key:#1</code>, <code>key:#2</code>, <code>key:#3</code>. The consistent hash ring maps each suffix to a different shard. Readers pick a random suffix, distributing the 1,000,000 req/sec evenly across $M$ physical machines.</li>
+<li><strong>Client-Side Caching (Redis 6+)</strong>: Redis invalidates local client copies over a sideband connection (<code>CLIENT TRACKING on</code>), guaranteeing sub-millisecond reads with immediate invalidation.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does Suffix Scattering work for hot keys, and what is its trade-off?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Replicating a key across $M$ suffixes scales read capacity by $M\times$, but increases write overhead ($M$ writes) and risks transient consistency windows between copies.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When storing a hot key:</p>
+<ul>
+<li>The writer computes $M$ keys: <code>product:101:#0</code>, <code>product:101:#1</code>, ... <code>product:101:#M-1</code>.</li>
+<li>The writer updates all $M$ keys concurrently across the cluster.</li>
+<li>Readers randomly choose a suffix: <code>product:101:#{rand(0, M-1)}</code>.</li>
+<li><strong>Trade-offs</strong>:</li>
+<li><strong>Write Amplification</strong>: Every update requires $M$ separate network operations.</li>
+<li><strong>Consistency Delays</strong>: If one shard update lags or fails, some readers may observe stale data until all replicas sync.</li>
+<li>Suffix scattering should therefore only be applied selectively to verified hot keys, not the entire keyspace.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you maintain cache coherency between an L1 in-process memory cache and an L2 distributed cluster cache?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Use very short L1 TTLs (1–3 seconds), pub/sub cache invalidation broadcasts, or Redis 6+ Client-Side Caching.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Multi-tier caching creates a coherence challenge: when Pod A updates a product price in the L2 Redis cluster, Pod B might still serve the old price from its local L1 memory.</p>
+<p><strong>Architectural patterns</strong>:</p>
+<ol>
+<li><strong>Short TTL + Eventual Consistency</strong>: Setting an L1 TTL of 1–2 seconds bounds stale reads to 2 seconds, which is acceptable for catalog reads.</li>
+<li><strong>Pub/Sub Invalidation</strong>: When any service mutates a record, it publishes an invalidation event (<code>PUBLISH cache:invalidations key</code>). All subscriber pods receive the message and evict the key from their local <code>IMemoryCache</code>.</li>
+<li><strong>Redis RESP3 Client Tracking</strong>: The Redis server tracks which keys the client has read and pushes an out-of-band invalidation message over the TCP connection when the key is mutated by any client.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">Compare Single-Flight Mutex vs Probabilistic Early Expiration (XFetch) for preventing cache stampedes.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Single-Flight locks concurrent requests on a cache miss so only one worker queries the database; XFetch probabilistically pre-refreshes hot keys before they expire so misses never occur.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><strong>Single-Flight (SingleFlight / Mutex)</strong>: When a key expires, 1,000 concurrent threads miss. The first thread acquires a lock and executes the SQL query. The remaining 999 threads await the result and receive the computed value. Downside: readers experience latency equal to the SQL query time.</li>
+<li><strong>XFetch Algorithm</strong>: Readers evaluate a probabilistic threshold: $\Delta \cdot \beta \cdot (-\ln(\text{rand})) > \text{timeRemaining}$. As expiration approaches, a single background task refreshes the value <em>while</em> returning the existing cached value to readers. Readers experience zero latency spikes and the key never expires under load.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How does a Consistent Hash Ring handle a dead or failing cache node?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Clockwise handoff naturally routes traffic to the dead node's clockwise successor; health checks formally remove the node and rebalance its virtual arcs.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When a node crashes:</p>
+<ol>
+<li><strong>Immediate Handoff</strong>: Any key previously mapped to the dead node's position will simply fall through to the next available virtual node clockwise along the ring.</li>
+<li><strong>Health Check Pruning</strong>: A cluster coordinator (or client-side heartbeat) detects the node outage, calls <code>ring.RemoveNode(deadNode)</code>, and removes all associated virtual node hashes from the sorted ring list via binary search.</li>
+<li><strong>Re-warming</strong>: Keys falling on the successor nodes will experience cold misses and re-populate from the database without impacting keys on unaffected nodes.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What hash functions should be chosen for consistent hashing rings?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Cryptographic hashes (MD5, SHA-256) or non-cryptographic hashes like MurmurHash3 and xxHash; never standard <code>string.GetHashCode()</code>.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In .NET, <code>string.GetHashCode()</code> uses randomized hash seeds per process instance for security against HashDoS attacks. This means two different application pods running the same code would produce different hash values for the same key, breaking ring consistency across the fleet!</p>
+<p>Furthermore, <code>string.GetHashCode()</code> lacks uniform distribution properties.</p>
+<p>Algorithms like <strong>MurmurHash3</strong>, <strong>xxHash</strong>, or <strong>MD5</strong> (used by Ketama) produce consistent, deterministic 32-bit or 128-bit integers with near-perfect uniform distribution across the entire ring circumference.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #199 (Binary Tree Right Side View), why is right-first DFS generally preferred over BFS?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Right-first DFS visits rightmost nodes first and uses $O(H)$ stack space without heap allocations; BFS uses $O(W)$ queue memory where tree width can reach $\frac{N}{2}$.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  void Dfs(TreeNode node, int depth) {
+      if (node == null) return;
+      if (depth == result.Count) result.Add(node.val);
+      Dfs(node.right, depth + 1);
+      Dfs(node.left, depth + 1);
+  }</code></pre></div>
+<p>By recursing <code>node.right</code> before <code>node.left</code>, the very first node encountered at any depth level is guaranteed to be the rightmost visible node.</p>
+<ul>
+<li>DFS space: Bounded by tree height $O(H)$ ($O(\log N)$ on balanced trees). Uses thread stack frames without heap queue node allocation.</li>
+<li>BFS space: Bounded by tree width $O(W)$. A complete tree with 1,000,000 nodes stores up to 500,000 node references in the queue at the leaf level.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does LeetCode #1448 (Count Good Nodes in Binary Tree) maintain the ancestor maximum invariant during pre-order DFS?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: It passes the maximum value seen so far down the recursion tree; if the current node's value is greater than or equal to that maximum, it is counted and the maximum is updated for its subtrees.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  int Dfs(TreeNode node, int maxSoFar) {
+      if (node == null) return 0;
+      int isGood = node.val &gt;= maxSoFar ? 1 : 0;
+      int newMax = Math.Max(maxSoFar, node.val);
+      return isGood + Dfs(node.left, newMax) + Dfs(node.right, newMax);
+  }</code></pre></div>
+<p>Because the tree is traversed pre-order (root before children), each node compares its value against the absolute maximum of its ancestors along its unique path from the root.</p>
+<p>Left and right branches receive independent copies of <code>newMax</code> on the call stack, guaranteeing that sibling subtrees never interfere with each other's path histories in $O(N)$ time and $O(H)$ space.</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day21.DistributedCache/ConsistentHashRing.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd21-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d21-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace Day21.DistributedCache;
+
+/// &lt;summary&gt;
+/// Production Consistent Hash Ring with Virtual Nodes (Ketama-style).
+/// Distributes keys uniformly across cache nodes in a 32-bit circular hash space.
+/// &lt;/summary&gt;
+public class ConsistentHashRing&lt;TNode&gt; where TNode : notnull
+{
+    private readonly int _virtualNodeReplicas;
+    private readonly Func&lt;TNode, string&gt; _nodeKeySelector;
+    private readonly List&lt;uint&gt; _sortedRingKeys = new();
+    private readonly Dictionary&lt;uint, TNode&gt; _ring = new();
+    private readonly HashSet&lt;TNode&gt; _physicalNodes = new();
+    private readonly object _syncLock = new();
+
+    public int PhysicalNodeCount
+    {
+        get { lock (_syncLock) return _physicalNodes.Count; }
+    }
+
+    public int VirtualNodeCount
+    {
+        get { lock (_syncLock) return _sortedRingKeys.Count; }
+    }
+
+    public IReadOnlyCollection&lt;TNode&gt; PhysicalNodes
+    {
+        get { lock (_syncLock) return _physicalNodes.ToList(); }
+    }
+
+    public ConsistentHashRing(
+        Func&lt;TNode, string&gt; nodeKeySelector,
+        int virtualNodeReplicas = 100,
+        IEnumerable&lt;TNode&gt;? initialNodes = null)
+    {
+        _nodeKeySelector = nodeKeySelector ?? throw new ArgumentNullException(nameof(nodeKeySelector));
+        _virtualNodeReplicas = virtualNodeReplicas &gt; 0 ? virtualNodeReplicas : 100;
+
+        if (initialNodes != null)
+        {
+            foreach (var node in initialNodes)
+            {
+                AddNode(node);
+            }
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Adds a physical node to the ring, allocating _virtualNodeReplicas positions on the hash ring.
+    /// &lt;/summary&gt;
+    public bool AddNode(TNode node)
+    {
+        lock (_syncLock)
+        {
+            if (!_physicalNodes.Add(node)) return false;
+
+            string baseNodeKey = _nodeKeySelector(node);
+            for (int i = 0; i &lt; _virtualNodeReplicas; i++)
+            {
+                string vNodeKey = $&quot;{baseNodeKey}#vn_{i}&quot;;
+                uint hash = ComputeHash(vNodeKey);
+
+                _ring[hash] = node;
+                int idx = _sortedRingKeys.BinarySearch(hash);
+                if (idx &lt; 0)
+                {
+                    _sortedRingKeys.Insert(~idx, hash);
+                }
+            }
+
+            return true;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Removes a physical node and all its virtual nodes from the ring.
+    /// &lt;/summary&gt;
+    public bool RemoveNode(TNode node)
+    {
+        lock (_syncLock)
+        {
+            if (!_physicalNodes.Remove(node)) return false;
+
+            string baseNodeKey = _nodeKeySelector(node);
+            for (int i = 0; i &lt; _virtualNodeReplicas; i++)
+            {
+                string vNodeKey = $&quot;{baseNodeKey}#vn_{i}&quot;;
+                uint hash = ComputeHash(vNodeKey);
+
+                _ring.Remove(hash);
+                int idx = _sortedRingKeys.BinarySearch(hash);
+                if (idx &gt;= 0)
+                {
+                    _sortedRingKeys.RemoveAt(idx);
+                }
+            }
+
+            return true;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Finds the owning cache node for a given cache key by walking clockwise on the ring.
+    /// Complexity: O(log(N * V)) via binary search.
+    /// &lt;/summary&gt;
+    public TNode GetNode(string key)
+    {
+        lock (_syncLock)
+        {
+            if (_sortedRingKeys.Count == 0)
+            {
+                throw new InvalidOperationException(&quot;Cannot resolve key: Consistent hash ring is empty.&quot;);
+            }
+
+            uint hash = ComputeHash(key);
+            int idx = _sortedRingKeys.BinarySearch(hash);
+
+            if (idx &lt; 0)
+            {
+                idx = ~idx;
+                // If hash is greater than all points on the ring, wrap around to the first point (circular ring)
+                if (idx == _sortedRingKeys.Count)
+                {
+                    idx = 0;
+                }
+            }
+
+            uint ringHash = _sortedRingKeys[idx];
+            return _ring[ringHash];
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Computes a uniform 32-bit hash using MD5 bytes truncated to uint.
+    /// MD5 provides superior distribution uniformity over standard string.GetHashCode() across virtual nodes.
+    /// &lt;/summary&gt;
+    public static uint ComputeHash(string input)
+    {
+        byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+        byte[] hashBytes = MD5.HashData(inputBytes);
+
+        // Take first 4 bytes as 32-bit integer
+        return BitConverter.ToUInt32(hashBytes, 0);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day21.DistributedCache/DistributedCacheCluster.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd21-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d21-src-code-1" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day21.DistributedCache;
+
+/// &lt;summary&gt;
+/// An independent distributed cache shard node.
+/// &lt;/summary&gt;
+public class CacheShardNode
+{
+    private record CacheEntry(object Value, DateTime ExpiresAtUtc, DateTime CreatedUtc, TimeSpan ComputeDuration);
+
+    private readonly ConcurrentDictionary&lt;string, CacheEntry&gt; _storage = new();
+
+    public string NodeId { get; }
+    public int KeyCount =&gt; _storage.Count;
+
+    public CacheShardNode(string nodeId)
+    {
+        NodeId = nodeId;
+    }
+
+    public void Set(string key, object value, TimeSpan ttl, TimeSpan computeDuration = default)
+    {
+        var now = DateTime.UtcNow;
+        _storage[key] = new CacheEntry(value, now.Add(ttl), now, computeDuration);
+    }
+
+    public object? Get(string key)
+    {
+        var now = DateTime.UtcNow;
+        if (_storage.TryGetValue(key, out var entry))
+        {
+            if (now &lt; entry.ExpiresAtUtc)
+            {
+                return entry.Value;
+            }
+            _storage.TryRemove(key, out _);
+        }
+        return null;
+    }
+
+    public bool ShouldRefreshEarly(string key, double beta = 1.0)
+    {
+        var now = DateTime.UtcNow;
+        if (_storage.TryGetValue(key, out var entry))
+        {
+            double remainingSec = (entry.ExpiresAtUtc - now).TotalSeconds;
+            if (remainingSec &lt;= 0) return true;
+
+            double deltaSec = entry.ComputeDuration.TotalSeconds &gt; 0 ? entry.ComputeDuration.TotalSeconds : 0.1;
+            double rand = Random.Shared.NextDouble();
+            if (rand &lt;= 0.0) rand = 0.0001;
+
+            // XFetch probabilistic threshold
+            return (deltaSec * beta * -Math.Log(rand)) &gt; remainingSec;
+        }
+        return false;
+    }
+
+    public void Invalidate(string key) =&gt; _storage.TryRemove(key, out _);
+    public void Clear() =&gt; _storage.Clear();
+}
+
+/// &lt;summary&gt;
+/// Production Distributed Caching Cluster coordinating:
+/// - 2-Tier Caching: L1 Local In-Memory + L2 Sharded Cluster
+/// - Consistent Hashing Ring key partitioning with virtual nodes
+/// - Hot-Key Read Mitigation via Suffix Scattering
+/// - Cache Stampede Protection (Single-Flight Mutex + XFetch early refresh)
+/// &lt;/summary&gt;
+public class DistributedCacheCluster
+{
+    private readonly ConsistentHashRing&lt;CacheShardNode&gt; _hashRing;
+    private readonly ConcurrentDictionary&lt;string, (object Value, DateTime ExpiresAtUtc)&gt; _l1Cache = new();
+    private readonly ConcurrentDictionary&lt;string, SemaphoreSlim&gt; _locks = new();
+    private readonly TimeSpan _l1Ttl;
+
+    public ConsistentHashRing&lt;CacheShardNode&gt; HashRing =&gt; _hashRing;
+    public int L1CacheCount =&gt; _l1Cache.Count;
+
+    public DistributedCacheCluster(
+        IEnumerable&lt;CacheShardNode&gt; initialShards,
+        int virtualNodesPerShard = 100,
+        TimeSpan? l1Ttl = null)
+    {
+        _hashRing = new ConsistentHashRing&lt;CacheShardNode&gt;(s =&gt; s.NodeId, virtualNodesPerShard, initialShards);
+        _l1Ttl = l1Ttl ?? TimeSpan.FromSeconds(5);
+    }
+
+    /// &lt;summary&gt;
+    /// Multi-tier GetOrSet with Single-Flight Stampede Protection.
+    /// &lt;/summary&gt;
+    public async Task&lt;T&gt; GetOrSetAsync&lt;T&gt;(
+        string key,
+        Func&lt;Task&lt;T&gt;&gt; valueFactory,
+        TimeSpan ttl,
+        bool useL1 = true)
+    {
+        var now = DateTime.UtcNow;
+
+        // 1. Check L1 local in-process cache
+        if (useL1 &amp;&amp; _l1Cache.TryGetValue(key, out var l1Entry))
+        {
+            if (now &lt; l1Entry.ExpiresAtUtc)
+            {
+                return (T)l1Entry.Value;
+            }
+            _l1Cache.TryRemove(key, out _);
+        }
+
+        // 2. Resolve owning L2 shard via Consistent Hash Ring
+        var targetShard = _hashRing.GetNode(key);
+
+        // Check L2 shard
+        var l2Val = targetShard.Get(key);
+        if (l2Val != null)
+        {
+            if (useL1)
+            {
+                _l1Cache[key] = (l2Val, now.Add(_l1Ttl));
+            }
+            return (T)l2Val;
+        }
+
+        // 3. Single-Flight Lock: Only one worker queries factory; concurrent requests await
+        var gate = _locks.GetOrAdd(key, _ =&gt; new SemaphoreSlim(1, 1));
+        await gate.WaitAsync();
+
+        try
+        {
+            // Recheck inside lock
+            l2Val = targetShard.Get(key);
+            if (l2Val != null)
+            {
+                if (useL1) _l1Cache[key] = (l2Val, DateTime.UtcNow.Add(_l1Ttl));
+                return (T)l2Val;
+            }
+
+            var start = DateTime.UtcNow;
+            T computed = await valueFactory();
+            var duration = DateTime.UtcNow - start;
+
+            targetShard.Set(key, computed!, ttl, duration);
+
+            if (useL1)
+            {
+                _l1Cache[key] = (computed!, DateTime.UtcNow.Add(_l1Ttl));
+            }
+
+            return computed;
+        }
+        finally
+        {
+            gate.Release();
+            _locks.TryRemove(key, out _);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Hot-Key Mitigation: Scatters high-volume keys across M suffixes (e.g. key:#hk_0, key:#hk_1)
+    /// to distribute query throughput evenly across multiple physical shard machines.
+    /// &lt;/summary&gt;
+    public async Task&lt;T&gt; GetOrSetHotKeyAsync&lt;T&gt;(
+        string key,
+        Func&lt;Task&lt;T&gt;&gt; valueFactory,
+        TimeSpan ttl,
+        int scatterShards = 4)
+    {
+        // Read from randomly selected replica shard
+        int readIndex = Random.Shared.Next(scatterShards);
+        string shardKey = $&quot;{key}:#hk_{readIndex}&quot;;
+
+        return await GetOrSetAsync(shardKey, async () =&gt;
+        {
+            // On miss, compute once and populate all scatter replica shards
+            T computed = await valueFactory();
+            for (int i = 0; i &lt; scatterShards; i++)
+            {
+                string sk = $&quot;{key}:#hk_{i}&quot;;
+                var targetNode = _hashRing.GetNode(sk);
+                targetNode.Set(sk, computed!, ttl);
+            }
+            return computed;
+        }, ttl, useL1: true);
+    }
+
+    /// &lt;summary&gt;
+    /// Explicitly invalidates key across L1 and target L2 shard.
+    /// &lt;/summary&gt;
+    public void Invalidate(string key)
+    {
+        _l1Cache.TryRemove(key, out _);
+        var shard = _hashRing.GetNode(key);
+        shard.Invalidate(key);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day21.DistributedCache/TreeInspectionSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd21-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d21-src-code-2" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day21.DistributedCache;
+
+/// &lt;summary&gt;
+/// Definition for a binary tree node.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// Tree inspection and view algorithms:
+/// - LeetCode #199: Binary Tree Right Side View
+/// - LeetCode #1448: Count Good Nodes in Binary Tree
+/// &lt;/summary&gt;
+public class TreeInspectionSolvers
+{
+    /// &lt;summary&gt;
+    /// Computes the right-side view of a binary tree from top to bottom (LeetCode #199).
+    /// Uses right-first recursive DFS: visits right children before left children and records
+    /// the first node encountered at each depth level.
+    /// Time Complexity: O(N) visiting each node once.
+    /// Space Complexity: O(H) recursion stack space.
+    /// &lt;/summary&gt;
+    public IList&lt;int&gt; RightSideView(TreeNode? root)
+    {
+        var result = new List&lt;int&gt;();
+
+        void Dfs(TreeNode? node, int depth)
+        {
+            if (node == null) return;
+
+            // If this is the first node encountered at this depth level, it must be the rightmost
+            if (depth == result.Count)
+            {
+                result.Add(node.val);
+            }
+
+            // Prioritize right subtree
+            Dfs(node.right, depth + 1);
+            Dfs(node.left, depth + 1);
+        }
+
+        Dfs(root, 0);
+        return result;
+    }
+
+    /// &lt;summary&gt;
+    /// Counts the number of &quot;good&quot; nodes in a binary tree (LeetCode #1448).
+    /// A node X is good if in the path from the root to X there are no nodes with a value greater than X.
+    /// Time Complexity: O(N)
+    /// Space Complexity: O(H) recursion stack space.
+    /// &lt;/summary&gt;
+    public int GoodNodes(TreeNode? root)
+    {
+        if (root == null) return 0;
+
+        int Dfs(TreeNode? node, int maxSoFar)
+        {
+            if (node == null) return 0;
+
+            int isGood = node.val &gt;= maxSoFar ? 1 : 0;
+            int newMax = Math.Max(maxSoFar, node.val);
+
+            return isGood + Dfs(node.left, newMax) + Dfs(node.right, newMax);
+        }
+
+        return Dfs(root, root.val);
+    }
+
+    /// &lt;summary&gt;
+    /// Helper to deserialize a tree from a level-order array representation.
+    /// &lt;/summary&gt;
+    public static TreeNode? BuildTree(int?[] values)
+    {
+        if (values == null || values.Length == 0 || values[0] == null) return null;
+
+        var root = new TreeNode(values[0]!.Value);
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int i = 1;
+        while (queue.Count &gt; 0 &amp;&amp; i &lt; values.Length)
+        {
+            var curr = queue.Dequeue();
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.left = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.left);
+            }
+            i++;
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.right = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.right);
+            }
+            i++;
+        }
+
+        return root;
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day21.DistributedCache.Tests/Day21Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd21-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d21-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day21.DistributedCache.Tests;
+
+public class Day21Tests
+{
+    // ==========================================
+    // 1. CONSISTENT HASHING RING TESTS
+    // ==========================================
+
+    [Fact]
+    public void ConsistentHashRing_UniformDistribution_DistributesKeysEvenlyAcrossNodes()
+    {
+        var nodes = new[] { &quot;node-alpha&quot;, &quot;node-beta&quot;, &quot;node-gamma&quot;, &quot;node-delta&quot; };
+        var ring = new ConsistentHashRing&lt;string&gt;(s =&gt; s, virtualNodeReplicas: 150, initialNodes: nodes);
+
+        var counts = nodes.ToDictionary(n =&gt; n, _ =&gt; 0);
+        int totalKeys = 1000;
+
+        for (int i = 0; i &lt; totalKeys; i++)
+        {
+            var node = ring.GetNode($&quot;cache:user:{i}&quot;);
+            counts[node]++;
+        }
+
+        // Each node in a 4-node ring should ideally receive ~250 keys (+/- 10%)
+        foreach (var (node, count) in counts)
+        {
+            count.Should().BeInRange(170, 330, $&quot;Node {node} received {count} keys, which is within expected balanced range.&quot;);
+        }
+    }
+
+    [Fact]
+    public void ConsistentHashRing_NodeAddition_RedistributesMinimalKeyProportion()
+    {
+        var initialNodes = new[] { &quot;n1&quot;, &quot;n2&quot;, &quot;n3&quot;, &quot;n4&quot; };
+        var ring = new ConsistentHashRing&lt;string&gt;(s =&gt; s, virtualNodeReplicas: 150, initialNodes: initialNodes);
+
+        var originalMapping = new Dictionary&lt;string, string&gt;();
+        int totalKeys = 1000;
+
+        for (int i = 0; i &lt; totalKeys; i++)
+        {
+            string key = $&quot;entity:order:{i}&quot;;
+            originalMapping[key] = ring.GetNode(key);
+        }
+
+        // Add 5th node
+        ring.AddNode(&quot;n5&quot;);
+
+        int shiftedKeys = 0;
+        for (int i = 0; i &lt; totalKeys; i++)
+        {
+            string key = $&quot;entity:order:{i}&quot;;
+            string newNode = ring.GetNode(key);
+            if (newNode != originalMapping[key])
+            {
+                shiftedKeys++;
+                // Any shifted key MUST be reassigned to the newly added node n5
+                newNode.Should().Be(&quot;n5&quot;);
+            }
+        }
+
+        // Expected shift: ~1/5 = 20% of keys (e.g. 12% - 28%)
+        // Traditional modular hashing (K % N) shifts ~80% of keys!
+        double shiftRatio = (double)shiftedKeys / totalKeys;
+        shiftRatio.Should().BeInRange(0.12, 0.28, $&quot;Shifted {shiftedKeys}/{totalKeys} keys, which matches ~1/N redistribution.&quot;);
+    }
+
+    // ==========================================
+    // 2. DISTRIBUTED CACHE CLUSTER TESTS
+    // ==========================================
+
+    [Fact]
+    public async Task DistributedCacheCluster_MultiTier_UsesL1AndL2Efficiently()
+    {
+        var shards = new[]
+        {
+            new CacheShardNode(&quot;shard-1&quot;),
+            new CacheShardNode(&quot;shard-2&quot;),
+            new CacheShardNode(&quot;shard-3&quot;)
+        };
+
+        var cluster = new DistributedCacheCluster(shards, l1Ttl: TimeSpan.FromSeconds(2));
+        int factoryCalls = 0;
+
+        Func&lt;Task&lt;string&gt;&gt; factory = () =&gt;
+        {
+            Interlocked.Increment(ref factoryCalls);
+            return Task.FromResult(&quot;calculated-result&quot;);
+        };
+
+        // Call 1: Misses L1 and L2 -&gt; runs factory
+        var res1 = await cluster.GetOrSetAsync(&quot;product:101&quot;, factory, TimeSpan.FromSeconds(10));
+        res1.Should().Be(&quot;calculated-result&quot;);
+        factoryCalls.Should().Be(1);
+        cluster.L1CacheCount.Should().Be(1);
+
+        // Call 2: Hits L1 memory cache -&gt; factory NOT called
+        var res2 = await cluster.GetOrSetAsync(&quot;product:101&quot;, factory, TimeSpan.FromSeconds(10));
+        res2.Should().Be(&quot;calculated-result&quot;);
+        factoryCalls.Should().Be(1);
+
+        // Invalidate: removes from L1 and L2
+        cluster.Invalidate(&quot;product:101&quot;);
+        cluster.L1CacheCount.Should().Be(0);
+
+        // Call 3: Misses -&gt; runs factory again
+        var res3 = await cluster.GetOrSetAsync(&quot;product:101&quot;, factory, TimeSpan.FromSeconds(10));
+        res3.Should().Be(&quot;calculated-result&quot;);
+        factoryCalls.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task DistributedCacheCluster_SingleFlight_SuppressesThunderingHerd()
+    {
+        var shards = new[] { new CacheShardNode(&quot;s1&quot;), new CacheShardNode(&quot;s2&quot;) };
+        var cluster = new DistributedCacheCluster(shards);
+
+        int computationCount = 0;
+        Func&lt;Task&lt;string&gt;&gt; expensiveFactory = async () =&gt;
+        {
+            Interlocked.Increment(ref computationCount);
+            await Task.Delay(50); // Simulate expensive DB query
+            return &quot;db-payload-42&quot;;
+        };
+
+        // 20 concurrent threads request the exact same missing key simultaneously
+        var tasks = Enumerable.Range(0, 20)
+            .Select(_ =&gt; cluster.GetOrSetAsync(&quot;super-hot-record&quot;, expensiveFactory, TimeSpan.FromSeconds(10)))
+            .ToList();
+
+        var results = await Task.WhenAll(tasks);
+
+        // All 20 threads receive identical result
+        results.Should().AllBeEquivalentTo(&quot;db-payload-42&quot;);
+
+        // Factory was executed ONLY ONCE thanks to single-flight mutex lock!
+        computationCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task DistributedCacheCluster_HotKeyScatter_PopulatesMultipleReplicaShards()
+    {
+        var shards = new[]
+        {
+            new CacheShardNode(&quot;shard-A&quot;),
+            new CacheShardNode(&quot;shard-B&quot;),
+            new CacheShardNode(&quot;shard-C&quot;),
+            new CacheShardNode(&quot;shard-D&quot;)
+        };
+
+        var cluster = new DistributedCacheCluster(shards);
+        int factoryCount = 0;
+
+        var val = await cluster.GetOrSetHotKeyAsync(&quot;celebrity:live_tweet&quot;, () =&gt;
+        {
+            Interlocked.Increment(ref factoryCount);
+            return Task.FromResult(&quot;viral-announcement&quot;);
+        }, TimeSpan.FromSeconds(10), scatterShards: 4);
+
+        val.Should().Be(&quot;viral-announcement&quot;);
+        factoryCount.Should().Be(1);
+
+        // Verify across shards: all 4 scatter keys (0..3) are present in the cluster shards
+        int totalFound = 0;
+        for (int i = 0; i &lt; 4; i++)
+        {
+            string sk = $&quot;celebrity:live_tweet:#hk_{i}&quot;;
+            var node = cluster.HashRing.GetNode(sk);
+            if (node.Get(sk) != null) totalFound++;
+        }
+        totalFound.Should().Be(4);
+    }
+
+    // ==========================================
+    // 3. DSA TREE VIEW &amp; GOOD NODES TESTS (LC #199 &amp; #1448)
+    // ==========================================
+
+    [Fact]
+    public void LC199_RightSideView_StandardTree_ReturnsRightmostNodes()
+    {
+        var solvers = new TreeInspectionSolvers();
+        // Tree: [1, 2, 3, null, 5, null, 4]
+        //        1            &lt;-- 1
+        //       / \
+        //      2   3          &lt;-- 3
+        //       \   \
+        //        5   4        &lt;-- 4
+        var root = TreeInspectionSolvers.BuildTree(new int?[] { 1, 2, 3, null, 5, null, 4 });
+        var view = solvers.RightSideView(root);
+        view.Should().Equal(new[] { 1, 3, 4 });
+    }
+
+    [Fact]
+    public void LC199_RightSideView_LeftHeavyBranchVisible_IncludesLeftDescendant()
+    {
+        var solvers = new TreeInspectionSolvers();
+        // Tree: [1, 2, 3, 4]
+        //        1            &lt;-- 1
+        //       / \
+        //      2   3          &lt;-- 3
+        //     /
+        //    4                &lt;-- 4 (visible from right since 3 has no children!)
+        var root = TreeInspectionSolvers.BuildTree(new int?[] { 1, 2, 3, 4 });
+        var view = solvers.RightSideView(root);
+        view.Should().Equal(new[] { 1, 3, 4 });
+    }
+
+    [Fact]
+    public void LC199_RightSideView_EmptyAndSingleNode_ReturnsCorrectView()
+    {
+        var solvers = new TreeInspectionSolvers();
+        solvers.RightSideView(null).Should().BeEmpty();
+        solvers.RightSideView(new TreeNode(99)).Should().Equal(new[] { 99 });
+    }
+
+    [Fact]
+    public void LC1448_GoodNodes_StandardTree_CountsNodesCorrectly()
+    {
+        var solvers = new TreeInspectionSolvers();
+        // Tree: [3, 1, 4, 3, null, 1, 5]
+        // Root 3: good
+        // Node 1 (left of 3): max is 3 -&gt; bad
+        // Node 3 (left of 1): max is 3 -&gt; good (3 &gt;= 3)
+        // Node 4 (right of 3): max is 3 -&gt; good (4 &gt;= 3)
+        // Node 1 (left of 4): max is 4 -&gt; bad
+        // Node 5 (right of 4): max is 4 -&gt; good (5 &gt;= 4)
+        // Total good nodes = 4
+        var root = TreeInspectionSolvers.BuildTree(new int?[] { 3, 1, 4, 3, null, 1, 5 });
+        solvers.GoodNodes(root).Should().Be(4);
+    }
+
+    [Fact]
+    public void LC1448_GoodNodes_StrictlyIncreasingAndSingleNode_ReturnsCorrectCount()
+    {
+        var solvers = new TreeInspectionSolvers();
+        // Tree: [2, null, 4, 10, 8] -&gt; 2 is good, 4 is good, 10 is good, 8 is not (10 &gt; 8) -&gt; total 3
+        var root = TreeInspectionSolvers.BuildTree(new int?[] { 2, null, 4, null, null, 10, 8 });
+        solvers.GoodNodes(new TreeNode(7)).Should().Be(1);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 21 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

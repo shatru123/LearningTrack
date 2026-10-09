@@ -28,7 +28,9 @@
 | Day 17 | Introduction to Redis & Cache Patterns (LC #226 & #104) | ✅ Completed |
 | Day 18 | Redis Data Structures & Memory Eviction Policies (LC #543 & #110) | ✅ Completed |
 | Day 19 | Redis Distributed Locking with RedLock (LC #100 & #572) | ✅ Completed |
+| Day 20 | Redis Pub/Sub & Redis Streams (LC #235 & #102) | ✅ Completed |
+| Day 21 | Distributed Cache Architecture (LC #199 & #1448) | ✅ Completed |
 
 ## Next
 
-Day 20 — Continue the original 100-day LearningOS roadmap.
+Day 22 — Continue the original 100-day LearningOS roadmap.

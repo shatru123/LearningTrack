@@ -166,7 +166,7 @@ public class Day18Tests
     {
         // Max size 300 bytes
         var cache = new MemoryEvictionSimulator(maxSizeBytes: 300, EvictionPolicy.AllKeysLru);
-        var t0 = new DateTime(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
+        var t0 = DateTime.UtcNow;
 
         cache.Put("key1", "val1", sizeBytes: 100, customAccessTime: t0);
         cache.Put("key2", "val2", sizeBytes: 100, customAccessTime: t0.AddSeconds(1));
@@ -189,7 +189,7 @@ public class Day18Tests
     public void Eviction_VolatileTtl_EvictsKeyWithShortestRemainingTtl()
     {
         var cache = new MemoryEvictionSimulator(maxSizeBytes: 200, EvictionPolicy.VolatileTtl);
-        var t0 = new DateTime(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
+        var t0 = DateTime.UtcNow;
 
         // key1 expires in 60s, key2 expires in 10s
         cache.Put("key1", "val1", sizeBytes: 100, ttl: TimeSpan.FromSeconds(60), customAccessTime: t0);
@@ -219,7 +219,7 @@ public class Day18Tests
     public void Eviction_VolatileLru_LeavesNonVolatileKeysIntact()
     {
         var cache = new MemoryEvictionSimulator(maxSizeBytes: 200, EvictionPolicy.VolatileLru);
-        var t0 = new DateTime(2026, 10, 8, 10, 0, 0, DateTimeKind.Utc);
+        var t0 = DateTime.UtcNow;
 
         // key1 has no TTL (persistent)
         cache.Put("key1_persistent", "v1", sizeBytes: 100, ttl: null, customAccessTime: t0);

@@ -1,0 +1,3254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 20: Redis Pub/Sub &amp; Redis Streams | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 20</span>
+        <span class="badge badge-category">Redis &amp; Distributed Systems</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day19-Redis-RedLock-DistributedLocking/index.html" class="nav-btn">← Day 19</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+
+        </select>
+        <a href="../Day21-Distributed-Cache-Architecture/index.html" class="nav-btn">Day 21 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 20: Redis Pub/Sub &amp; Redis Streams</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 4 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d20GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d20GradStreams" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d20GradPel" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d20GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d20GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Redis Streams Architecture: Radix Tree + ListPacks, Consumer Groups, PEL &amp; XCLAIM</text>
+
+          <!-- 1. Streams Radix Tree Log Column -->
+          <rect x="30" y="60" width="300" height="300" rx="10" fill="url(#d20GradStreams)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Stream Log: Radix + ListPacks</text>
+
+          <!-- Append-only Radix Tree representation -->
+          <rect x="45" y="105" width="270" height="50" rx="6" fill="#0369a1" stroke="#38bdf8"/>
+          <text x="55" y="125" fill="#ffffff" font-size="11" font-weight="bold">Radix Tree (raxNode)</text>
+          <text x="55" y="142" fill="#bae6fd" font-size="9">Radix indexing on Entry ID: &lt;timestamp_ms&gt;-&lt;seq&gt;</text>
+
+          <!-- ListPacks block -->
+          <rect x="45" y="165" width="270" height="75" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="185" fill="#38bdf8" font-size="11" font-weight="bold">Contiguous ListPack Chunk</text>
+          <text x="55" y="202" fill="#cbd5e1" font-size="9">1728475200000-0: {sensor: &quot;temp&quot;, val: 24.5}</text>
+          <text x="55" y="217" fill="#cbd5e1" font-size="9">1728475200001-0: {sensor: &quot;hum&quot;, val: 60.1}</text>
+          <text x="55" y="232" fill="#94a3b8" font-size="8">Delta-compressed IDs • Zero per-entry pointer bloat</text>
+
+          <!-- PubSub vs Stream Contrast -->
+          <rect x="45" y="250" width="270" height="95" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="270" fill="#fbbf24" font-size="11" font-weight="bold">Pub/Sub vs Streams</text>
+          <text x="55" y="288" fill="#ef4444" font-size="9">Pub/Sub: Ephemeral socket push • No history</text>
+          <text x="55" y="303" fill="#34d399" font-size="9">Streams: Append-only disk log • Range replay</text>
+          <text x="55" y="318" fill="#94a3b8" font-size="9">XTRIM MINID / MAXLEN prevents unbounded RAM</text>
+
+          <!-- 2. Consumer Groups & PEL Column -->
+          <rect x="350" y="60" width="280" height="300" rx="10" fill="url(#d20GradPel)" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="370" y="88" fill="#c084fc" font-size="14" font-weight="bold">Consumer Groups &amp; PEL</text>
+
+          <rect x="365" y="105" width="250" height="60" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="125" fill="#60a5fa" font-size="11" font-weight="bold">Group Cursor &amp; Competing Consumers</text>
+          <text x="375" y="142" fill="#cbd5e1" font-size="9">Last-Delivered-ID tracks stream frontier</text>
+          <text x="375" y="157" fill="#94a3b8" font-size="9">XREADGROUP GROUP g1 w1 STREAMS s1 &gt;</text>
+
+          <rect x="365" y="175" width="250" height="80" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="195" fill="#fbbf24" font-size="11" font-weight="bold">Pending Entries List (PEL)</text>
+          <text x="375" y="212" fill="#cbd5e1" font-size="9">Worker 1: msg-101 (idle: 400ms) &#8594; XACK &#10003;</text>
+          <text x="375" y="227" fill="#f87171" font-size="9">Worker 2 (CRASHED): msg-102 (idle: 95s) &#9888;</text>
+          <text x="375" y="242" fill="#94a3b8" font-size="8">PEL tracks ID, consumer, idle time &amp; delivery count</text>
+
+          <rect x="365" y="265" width="250" height="78" rx="5" fill="#0f172a" stroke="#10b981"/>
+          <text x="375" y="285" fill="#34d399" font-size="11" font-weight="bold">Fault Recovery: XCLAIM / XAUTOCLAIM</text>
+          <text x="375" y="302" fill="#cbd5e1" font-size="9">Worker 3 claims msg-102 after min-idle-time</text>
+          <text x="375" y="317" fill="#cbd5e1" font-size="9">Ownership transfers safely without re-reading</text>
+          <text x="375" y="332" fill="#94a3b8" font-size="8">At-least-once delivery + Dead Letter Queue defense</text>
+
+          <!-- 3. DSA Tree Algorithms Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d20GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">Tree Traversal &amp; LCA</text>
+
+          <rect x="665" y="105" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #235: LCA of BST</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Exploits BST Ordering Property:</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">p, q &lt; curr.val &#8594; curr = curr.left</text>
+          <text x="675" y="172" fill="#cbd5e1" font-size="9">p, q &gt; curr.val &#8594; curr = curr.right</text>
+          <text x="675" y="187" fill="#fbbf24" font-size="9">Split point &#8594; curr is LCA!</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">O(H) Time | O(1) Iterative Space</text>
+
+          <rect x="665" y="225" width="210" height="120" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="245" fill="#fbbf24" font-size="11" font-weight="bold">LC #102: Level Order BFS</text>
+          <text x="675" y="262" fill="#94a3b8" font-size="9">FIFO Queue level-by-level:</text>
+          <text x="675" y="278" fill="#cbd5e1" font-size="9">levelSize = queue.Count</text>
+          <text x="675" y="293" fill="#38bdf8" font-size="9">Batch-process current tier</text>
+          <text x="675" y="308" fill="#94a3b8" font-size="9">Enqueue left &amp; right children</text>
+          <text x="675" y="325" fill="#34d399" font-size="9">O(N) Time | O(W) Frontier Width</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (4 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 20 - Engineering Notes: Redis Streams Internals & Messaging Architecture</h1>
+<h2>1. Redis Streams Internal Memory Layout: Radix Tree of ListPacks</h2>
+<p>Redis Streams are implemented internally using a <strong>Radix Tree</strong> (<code>rax.c</code>) where each leaf node stores a <strong>ListPack</strong> containing multiple message entries:</p>
+<h3>Why Radix Tree + ListPack?</h3>
+<ol>
+<li><strong>Memory Compactness</strong>: In a stream receiving 10,000,000 events, storing each event as a standalone Redis Object (<code>robj</code>) would incur 16 bytes of object header + 8 bytes of pointer metadata per entry (240 MB purely for pointers).</li>
+<li><strong>Batching inside ListPack</strong>: Multiple sequential messages are packed contiguously into a single ListPack memory buffer. Field keys (e.g. <code>&quot;userId&quot;</code>, <code>&quot;timestamp&quot;</code>) are deduplicated across messages within the same ListPack block.</li>
+<li><strong>Approximate Trimming (<code>MAXLEN ~ N</code>)</strong>:</li>
+</ol>
+<ul>
+<li><code>XADD stream MAXLEN 1000 ...</code> (exact trimming) forces Redis to prune exact entries, requiring expensive splitting and repacking of ListPacks.</li>
+<li><code>XADD stream MAXLEN ~ 1000 ...</code> (approximate trimming) allows Redis to drop entire ListPack blocks once all their entries fall outside the threshold, turning an $O(N)$ operation into an $O(1)$ memory release.</li>
+</ul>
+<hr/>
+<h2>2. The Pending Entries List (PEL) & Memory Leak Hazards</h2>
+<h3>How PEL Operates Under the Hood</h3>
+<p>Each Consumer Group maintains two primary data structures:</p>
+<ol>
+<li><strong><code>last_id</code></strong>: The cursor pointing to the last message dispatched via <code>XREADGROUP &gt;</code>.</li>
+<li><strong><code>PEL</code></strong>: A radix tree mapping <code>MessageID -&gt; { ConsumerName, DeliveryTime, DeliveryCount }</code>.</li>
+</ol>
+<h3>The "Forgotten XACK" Memory Leak</h3>
+<ul>
+<li>Every message read by a consumer is placed in the PEL.</li>
+<li>Messages remain in the PEL indefinitely until an explicit <strong><code>XACK</code></strong> command is received.</li>
+<li><strong>Production Anti-Pattern</strong>: If worker services consume messages, process them, and forget to call <code>XACK</code> (or crash before ACK), the stream data may be trimmed by <code>MAXLEN</code>, but the PEL entries are retained in RAM forever.</li>
+<li>In high-throughput ingestion pipelines (50,000 msgs/sec), forgotten ACKs will exhaust gigabytes of Redis memory within hours.</li>
+</ul>
+<hr/>
+<h2>3. Redis Streams vs Kafka vs RabbitMQ</h2>
+<div class="table-container"><table><thead><tr>
+<th>Dimension</th>
+<th>Redis Streams</th>
+<th>Apache Kafka</th>
+<th>RabbitMQ</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Primary Architecture</strong></td>
+<td>In-memory append log (Radix Tree)</td>
+<td>Distributed disk-backed commit log</td>
+<td>Erlang AMQP message broker / exchange</td>
+</tr>
+<tr>
+<td><strong>P99 Read/Write Latency</strong></td>
+<td><strong>< 1 millisecond</strong> (In-RAM)</td>
+<td>5–15 milliseconds (OS page cache)</td>
+<td>2–10 milliseconds</td>
+</tr>
+<tr>
+<td><strong>Partitioning Model</strong></td>
+<td>Key-level / Logical Consumer Groups</td>
+<td>Physical Topic Partitions</td>
+<td>Exchange / Queue routing bindings</td>
+</tr>
+<tr>
+<td><strong>Max Scale / Retention</strong></td>
+<td>Bounded by RAM (Gigabytes)</td>
+<td>Bounded by Disk / S3 (Terabytes/Petabytes)</td>
+<td>Bounded by Queue size</td>
+</tr>
+<tr>
+<td><strong>Best Used For</strong></td>
+<td>Real-time event streams, user activity feeds, microservice event bus</td>
+<td>Large-scale telemetry, audit logs, analytics pipes</td>
+<td>Complex transactional task routing & RPC</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>4. DSA Invariant: BST LCA vs General Binary Tree LCA</h2>
+<h3>Why BST LCA is $O(H)$ and $O(1)$ Space</h3>
+<p>In a Binary Search Tree:</p>
+<p>$$\forall x \in \text{Left}(root): x.val < root.val, \quad \forall y \in \text{Right}(root): y.val > root.val$$</p>
+<p>Therefore:</p>
+<ul>
+<li>If both $p.val < root.val$ and $q.val < root.val$, the lowest common ancestor <strong>must</strong> lie exclusively in the left subtree.</li>
+<li>If both $p.val > root.val$ and $q.val > root.val$, the lowest common ancestor <strong>must</strong> lie exclusively in the right subtree.</li>
+<li>The very first node where $p$ and $q$ diverge (or when $root.val \in \{p.val, q.val\}$) is mathematically guaranteed to be their Lowest Common Ancestor.</li>
+</ul>
+<p>This enables a zero-allocation single while-loop traversal in $O(H)$ time and $O(1)$ extra space, unlike general binary trees (LeetCode #236) which require post-order recursive tree scanning in $O(N)$ time.</p>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 20: Redis Pub/Sub & Redis Streams</h1>
+<h2>Overview</h2>
+<p>Comprehensive exploration and production implementation of Redis messaging patterns: comparing ephemeral fire-and-forget <strong>Redis Pub/Sub</strong> against persistent, log-structured <strong>Redis Streams</strong>. We implement end-to-end event ingestion pipelines using Consumer Groups (<code>XGROUP CREATE</code>), partitioned consumption (<code>XREADGROUP</code>), atomic acknowledgments (<code>XACK</code>), in-flight message state tracking via the Pending Entries List (<code>XPENDING</code>), and dead-letter / crashed consumer recovery (<code>XCLAIM</code>). Additionally, we solve tree algorithms: Lowest Common Ancestor of a BST (LeetCode #235) in $O(H)$ and Binary Tree Level Order Traversal (LeetCode #102) in $O(N)$ BFS.</p>
+<hr/>
+<h2>Architectural Breakdown</h2>
+<h3>1. Redis Pub/Sub vs Redis Streams Comparison</h3>
+<div class="table-container"><table><thead><tr>
+<th>Feature</th>
+<th>Redis Pub/Sub</th>
+<th>Redis Streams</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Persistence</strong></td>
+<td>None (in-memory fire-and-forget)</td>
+<td>Append-only log on disk (RDB/AOF)</td>
+</tr>
+<tr>
+<td><strong>Delivery Guarantee</strong></td>
+<td>At-most-once (unconnected clients lose messages)</td>
+<td>At-least-once (ACK + PEL tracking)</td>
+</tr>
+<tr>
+<td><strong>Consumer Scaling</strong></td>
+<td>Every subscriber gets every message (broadcast only)</td>
+<td>Consumer Groups partition messages across workers</td>
+</tr>
+<tr>
+<td><strong>Backpressure / Retention</strong></td>
+<td>None (subscriber buffer overflows crash clients)</td>
+<td><code>MAXLEN ~</code> trims stream log to target capacity</td>
+</tr>
+<tr>
+<td><strong>Replay / Time-Travel</strong></td>
+<td>Impossible</td>
+<td>Supported via <code>XRANGE</code> and entry IDs</td>
+</tr>
+<tr>
+<td><strong>Underlying Data Structure</strong></td>
+<td>In-memory channel subscriber dictionary</td>
+<td>Radix Tree containing encoded ListPacks</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h3>2. Redis Streams Ingestion Lifecycle</h3>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Producer                     Stream: orders_stream                Consumer Group: order_processors
++---------+                    +-----------------+                     +----------------------+
+|  XADD   | -----------------&gt; | 1728500000-0    | ------------------&gt; | Worker A (reads msg) |
+| (event) |                    | 1728500000-1    |                     |   -&gt; Added to PEL    |
++---------+                    | 1728500000-2    |                     +----------------------+
+                               +-----------------+                                |
+                                        |                                          v (Crash / Timeout)
+                                        |                              +----------------------+
+                                        +----------------------------&gt; | Worker B             |
+                                                                       |   -&gt; XCLAIM recovers |
+                                                                       |   -&gt; XACK completes  |
+                                                                       +----------------------+</code></pre></div>
+<ol>
+<li><strong><code>XADD key [MAXLEN ~ N] ID field value ...</code></strong>:</li>
+</ol>
+<ul>
+<li>Appends message to the stream. By default, generates <code>{timestamp_ms}-{sequence}</code> ID.</li>
+</ul>
+<ol>
+<li><strong><code>XGROUP CREATE key groupname ID</code></strong>:</li>
+</ol>
+<ul>
+<li>Creates a consumer group with a dedicated cursor and Pending Entries List (PEL).</li>
+</ul>
+<ol>
+<li><strong><code>XREADGROUP GROUP group consumer [COUNT n] STREAMS key &gt;</code></strong>:</li>
+</ol>
+<ul>
+<li>Reads unconsumed messages (<code>&gt;</code>) and assigns them to the requesting consumer, logging them in the PEL.</li>
+</ul>
+<ol>
+<li><strong><code>XACK key group ID ...</code></strong>:</li>
+</ol>
+<ul>
+<li>Acknowledges processing; removes the ID from the group's PEL.</li>
+</ul>
+<ol>
+<li><strong><code>XPENDING key group [[IDLE minIdle] start end count]</code></strong>:</li>
+</ol>
+<ul>
+<li>Inspects in-flight unacknowledged messages, showing idle time and delivery count.</li>
+</ul>
+<ol>
+<li><strong><code>XCLAIM key group consumer minIdleTime ID ...</code></strong>:</li>
+</ol>
+<ul>
+<li>Transfers ownership of unacknowledged messages whose idle time exceeds a threshold from a dead consumer to a healthy consumer.</li>
+</ul>
+<hr/>
+<h3>3. Tree Algorithms Solved</h3>
+<h4>LeetCode #235: Lowest Common Ancestor of a BST</h4>
+<ul>
+<li><strong>Problem</strong>: Find the Lowest Common Ancestor of nodes $p$ and $q$ in a Binary Search Tree.</li>
+<li><strong>Algorithm</strong>: Leverage BST ordering: if both $p$ and $q$ are smaller than root, traverse left; if both are greater, traverse right; otherwise, current node is the LCA split point.</li>
+<li><strong>Complexity</strong>: Time: $O(H)$ ($O(\log N)$ balanced, $O(N)$ skewed), Space: $O(1)$ iterative.</li>
+</ul>
+<h4>LeetCode #102: Binary Tree Level Order Traversal</h4>
+<ul>
+<li><strong>Problem</strong>: Return node values level-by-level from left to right.</li>
+<li><strong>Algorithm</strong>: Standard BFS queue. At each level, capture <code>queue.Count</code>, dequeue and collect that many nodes, and enqueue their children.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(W) \approx O(N)$ width of tree.</li>
+</ul>
+<hr/>
+<h2>Running Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day20-Redis-Streams-PubSub/tests/Day20.RedisStreams.Tests/Day20.RedisStreams.Tests.csproj</code></pre></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the architectural difference between Redis Pub/Sub and Redis Streams, and when should you choose one over the other?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Redis Pub/Sub is an ephemeral fire-and-forget broadcast mechanism with zero disk persistence; Redis Streams is an append-only, disk-persisted log supporting consumer groups, offsets, acknowledgments, and replayability.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><strong>Pub/Sub</strong>: Operates entirely in memory. When a publisher emits a message to a channel, Redis pushes it to currently connected subscriber TCP sockets. If a subscriber is disconnected or restarting, the message is permanently lost. All subscribers receive identical copies. Best for real-time notifications, chat broadcasts, and ephemeral cache invalidation signals.</li>
+<li><strong>Streams</strong>: Messages are appended to a persistent Radix tree on disk. Messages persist regardless of whether consumers are active. Consumer groups partition messages across worker pools so that each event is processed by only one worker in the group. Supports <code>XACK</code> and historical replay via <code>XRANGE</code>. Best for reliable event-driven microservices, order processing pipelines, and audit event logs.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How does Redis Streams work partitioning compare to Apache Kafka?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Kafka binds physical partitions 1:1 to consumer group workers, limiting concurrency to partition count; Redis Streams dynamically distributes messages across any number of workers from a single logical stream.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In Kafka, if a topic has 8 partitions, a consumer group can have at most 8 active consumers; adding a 9th consumer leaves it idle.</p>
+<p>In Redis Streams:</p>
+<ul>
+<li>Any number of consumers can join a consumer group dynamically.</li>
+<li>Calling <code>XREADGROUP GROUP group worker_N COUNT 10 STREAMS stream &gt;</code> pops the next 10 unassigned messages regardless of which worker requests them.</li>
+<li>This provides elastic, fine-grained load leveling without requiring upfront physical topic partitioning. However, total write throughput is bounded by a single Redis node's CPU, whereas Kafka distributes writes across multiple broker nodes.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the Pending Entries List (PEL) in Redis Streams, and what is the &quot;Forgotten XACK&quot; hazard?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The PEL tracks in-flight messages delivered to consumers that have not yet been acknowledged; failing to execute <code>XACK</code> causes unbounded memory growth because PEL entries are retained in RAM indefinitely.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When a consumer reads messages via <code>XREADGROUP &gt;</code>, Redis inserts an entry into the group's internal PEL storing the message ID, consumer name, delivery count, and last delivery timestamp.</p>
+<p>Even if the stream is capped with <code>MAXLEN ~ 10000</code>, Redis cannot delete PEL metadata for unacknowledged messages. If consumer code catches exceptions or finishes without calling <code>XACK</code>, millions of unacknowledged entries accumulate in the PEL, gradually consuming all available Redis RAM and triggering an Out-Of-Memory (OOM) crash.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does dead-letter and worker crash recovery work in Redis Streams using `XPENDING` and `XCLAIM`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Workers periodically query <code>XPENDING</code> to find messages whose idle time exceeds a threshold (e.g., 30s) from dead workers, then use <code>XCLAIM</code> to transfer ownership to an active worker.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<ol>
+<li>A background watchdog thread in a surviving worker executes:</li>
+</ol>
+<p><code>XPENDING stream group - + 50</code> or <code>XPENDING stream group IDLE 30000 - + 50</code></p>
+<p>to detect messages that have been sitting unacknowledged longer than 30 seconds.</p>
+<ol>
+<li>The worker calls:</li>
+</ol>
+<p><code>XCLAIM stream group active_worker_2 30000 &lt;message_id&gt;</code></p>
+<ol>
+<li>Redis verifies the message has been idle for at least 30,000 ms, reassigns its owner to <code>active_worker_2</code>, increments its <code>delivery_count</code>, and returns the message payload.</li>
+<li>If <code>delivery_count</code> exceeds a poison-pill limit (e.g., 5 attempts), the worker routes the message to a Dead Letter Queue (DLQ) and calls <code>XACK</code> to prevent infinite crash loops.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">Why is approximate trimming (`MAXLEN ~ N`) recommended over exact trimming (`MAXLEN N`)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Approximate trimming prunes entire ListPack macro-nodes in $O(1)$ time, while exact trimming requires CPU-intensive parsing and reallocation of memory buffers to delete exact counts.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Redis Streams group dozens of entries inside contiguous ListPack buffers.</p>
+<ul>
+<li>When exact <code>MAXLEN N</code> is specified, if the cutoff falls in the middle of a ListPack, Redis must allocate a new memory buffer, copy remaining items, and free the old buffer. Under 50,000 writes/sec, this creates severe CPU spikes and memory fragmentation.</li>
+<li>Adding the tilde <code>MAXLEN ~ N</code> tells Redis: "Only evict when a full ListPack can be released." Redis simply drops the pointer to the old ListPack block in constant $O(1)$ time with zero memory repacking.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you achieve exactly-once semantics when consuming from Redis Streams?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Redis Streams provides at-least-once delivery; exactly-once semantics requires an idempotent consumer or transactional deduplication table in the downstream data store.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Because network failures or consumer crashes can occur after a database write but before the <code>XACK</code> is sent to Redis, messages can be redelivered via <code>XCLAIM</code>.</p>
+<p>To ensure exactly-once processing:</p>
+<ol>
+<li><strong>Idempotent mutations</strong>: Design operations such that repeating them produces identical state (e.g. <code>SET balance = 100</code> rather than <code>INCR balance 10</code>).</li>
+<li><strong>Deduplication Key Table</strong>: When writing to the relational database, write the <code>StreamMessage.Id</code> to a <code>processed_events</code> table within the same SQL transaction:</li>
+</ol>
+<p><code>INSERT INTO processed_events (event_id) VALUES (@streamId);</code></p>
+<p>If the write throws a unique constraint violation, the consumer immediately calls <code>XACK</code> and safely skips re-executing the business logic.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What happens when a slow subscriber cannot keep up with high-frequency Redis Pub/Sub traffic?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Redis buffers unconsumed messages in the client's output buffer until <code>client-output-buffer-limit</code> is exceeded, at which point Redis abruptly kills the client socket.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In Redis Pub/Sub, the broker does not pause producers for slow consumers.</p>
+<p>Instead, pending messages accumulate in the client's memory output buffer on the Redis server. Redis enforces buffer safety via:</p>
+<p><code>client-output-buffer-limit pubsub 32mb 8mb 60</code></p>
+<p>If a subscriber's buffer exceeds 32 MB hard limit, or stays above 8 MB for 60 seconds continuously, Redis unilaterally severs the TCP connection. The subscriber disconnects, misses all subsequently broadcasted events, and reconnects in an un-synced state.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What internal data structure powers Redis Streams and why?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A Radix Tree (<code>rax</code>) containing ListPacks; it enables logarithmic ID seeks by timestamp, sequential iteration, and compact memory utilization via field deduplication.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>A pure doubly-linked list would waste 24 bytes of pointer RAM per entry. A hash table does not support range scans (<code>XRANGE</code>).</p>
+<p>Redis uses a Radix Tree whose keys are stream IDs (timestamps). Each leaf node is a contiguous byte buffer called a <strong>ListPack</strong>.</p>
+<p>Field keys (like <code>&quot;sensorId&quot;</code>, <code>&quot;temperature&quot;</code>) that repeat across consecutive events are stored once in the ListPack header and referenced by offset, saving up to 70% RAM compared to standard JSON or hash table storage.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #235 (Lowest Common Ancestor of a BST), why does the iterative solution use $O(1)$ space and $O(H)$ time?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The BST ordering invariant lets you determine whether the LCA is in the left or right subtree with simple value comparisons, eliminating recursive call stack overhead.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  public TreeNode LowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+      TreeNode curr = root;
+      while (curr != null) {
+          if (p.val &lt; curr.val &amp;&amp; q.val &lt; curr.val) curr = curr.left;
+          else if (p.val &gt; curr.val &amp;&amp; q.val &gt; curr.val) curr = curr.right;
+          else return curr;
+      }
+      return null;
+  }</code></pre></div>
+<p>At each node:</p>
+<ul>
+<li>If both values are smaller, LCA must be in left subtree.</li>
+<li>If both are larger, LCA must be in right subtree.</li>
+<li>The first node where $p$ and $q$ split is the LCA.</li>
+</ul>
+<p>No recursion stack is allocated, achieving strict $O(1)$ auxiliary space and $O(H)$ time ($O(\log N)$ on balanced trees).</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">In LeetCode #102 (Binary Tree Level Order Traversal), how do you partition nodes into discrete level groups?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: In each BFS queue iteration, capture <code>int levelSize = queue.Count</code> before the inner loop; dequeue exactly that many nodes to process the current level completely before moving to the next.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  public IList&lt;IList&lt;int&gt;&gt; LevelOrder(TreeNode root) {
+      var result = new List&lt;IList&lt;int&gt;&gt;();
+      if (root == null) return result;
+      var queue = new Queue&lt;TreeNode&gt;();
+      queue.Enqueue(root);
+      while (queue.Count &gt; 0) {
+          int levelSize = queue.Count;
+          var level = new List&lt;int&gt;(levelSize);
+          for (int i = 0; i &lt; levelSize; i++) {
+              var node = queue.Dequeue();
+              level.Add(node.val);
+              if (node.left != null) queue.Enqueue(node.left);
+              if (node.right != null) queue.Enqueue(node.right);
+          }
+          result.Add(level);
+      }
+      return result;
+  }</code></pre></div>
+<p>Taking a snapshot of <code>queue.Count</code> decouples the nodes belonging to the current level from their children being enqueued for the subsequent level, guaranteeing clean level partitioning in $O(N)$ time and $O(W)$ space.</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day20.RedisStreams/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd20-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d20-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day20.RedisStreams;
+
+/// &lt;summary&gt;
+/// Represents a structured Redis Stream Entry ID formatted as: {timestampMs}-{sequence}
+/// &lt;/summary&gt;
+public record StreamEntryId(long TimestampMs, long Sequence) : IComparable&lt;StreamEntryId&gt;
+{
+    public override string ToString() =&gt; $&quot;{TimestampMs}-{Sequence}&quot;;
+
+    public static StreamEntryId Parse(string id)
+    {
+        var parts = id.Split(&#x27;-&#x27;);
+        if (parts.Length != 2 || !long.TryParse(parts[0], out var ts) || !long.TryParse(parts[1], out var seq))
+        {
+            throw new FormatException($&quot;Invalid StreamEntryId format: &#x27;{id}&#x27;. Expected &#x27;timestamp-sequence&#x27;.&quot;);
+        }
+        return new StreamEntryId(ts, seq);
+    }
+
+    public int CompareTo(StreamEntryId? other)
+    {
+        if (other is null) return 1;
+        int cmp = TimestampMs.CompareTo(other.TimestampMs);
+        return cmp != 0 ? cmp : Sequence.CompareTo(other.Sequence);
+    }
+}
+
+/// &lt;summary&gt;
+/// A persistent message record in a Redis Stream.
+/// &lt;/summary&gt;
+public record StreamMessage(
+    string Id,
+    IReadOnlyDictionary&lt;string, string&gt; Fields,
+    DateTime IngestedUtc);
+
+/// &lt;summary&gt;
+/// An unacknowledged message tracked in a Consumer Group&#x27;s Pending Entries List (PEL).
+/// &lt;/summary&gt;
+public record PendingEntry(
+    string MessageId,
+    string ConsumerName,
+    TimeSpan IdleTime,
+    int DeliveryCount,
+    DateTime LastDeliveredUtc);
+
+/// &lt;summary&gt;
+/// Summary statistics for an active consumer group.
+/// &lt;/summary&gt;
+public record ConsumerGroupStats(
+    string GroupName,
+    int ConsumersCount,
+    int PendingCount,
+    string LastDeliveredId);
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day20.RedisStreams/RedisPubSubCoordinator.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd20-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d20-src-code-1" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day20.RedisStreams;
+
+/// &lt;summary&gt;
+/// In-memory coordinator simulating Redis Pub/Sub mechanics:
+/// - Ephemeral fire-and-forget delivery
+/// - Zero persistence (offline/disconnected subscribers miss messages completely)
+/// - Fanout to all active subscribers on a channel
+/// &lt;/summary&gt;
+public class RedisPubSubCoordinator
+{
+    private readonly ConcurrentDictionary&lt;string, List&lt;Func&lt;string, Task&gt;&gt;&gt; _subscribers = new();
+    private readonly object _syncLock = new();
+
+    public int GetSubscriberCount(string channel)
+    {
+        lock (_syncLock)
+        {
+            return _subscribers.TryGetValue(channel, out var list) ? list.Count : 0;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Subscribes an async handler to a specific pub/sub channel.
+    /// Returns an IDisposable subscription token to unsubscribe.
+    /// &lt;/summary&gt;
+    public IDisposable Subscribe(string channel, Func&lt;string, Task&gt; handler)
+    {
+        lock (_syncLock)
+        {
+            var list = _subscribers.GetOrAdd(channel, _ =&gt; new List&lt;Func&lt;string, Task&gt;&gt;());
+            list.Add(handler);
+        }
+
+        return new SubscriptionToken(() =&gt;
+        {
+            lock (_syncLock)
+            {
+                if (_subscribers.TryGetValue(channel, out var list))
+                {
+                    list.Remove(handler);
+                    if (list.Count == 0)
+                    {
+                        _subscribers.TryRemove(channel, out _);
+                    }
+                }
+            }
+        });
+    }
+
+    /// &lt;summary&gt;
+    /// Publishes a message to a channel.
+    /// Returns the number of clients that received the message.
+    /// &lt;/summary&gt;
+    public async Task&lt;int&gt; PublishAsync(string channel, string message)
+    {
+        List&lt;Func&lt;string, Task&gt;&gt; targets;
+        lock (_syncLock)
+        {
+            if (!_subscribers.TryGetValue(channel, out var list) || list.Count == 0)
+            {
+                // Message is dropped immediately; zero persistence
+                return 0;
+            }
+            targets = new List&lt;Func&lt;string, Task&gt;&gt;(list);
+        }
+
+        var tasks = targets.Select(handler =&gt; handler(message));
+        await Task.WhenAll(tasks);
+        return targets.Count;
+    }
+
+    private sealed class SubscriptionToken : IDisposable
+    {
+        private Action? _unsubscribe;
+
+        public SubscriptionToken(Action unsubscribe)
+        {
+            _unsubscribe = unsubscribe;
+        }
+
+        public void Dispose()
+        {
+            Interlocked.Exchange(ref _unsubscribe, null)?.Invoke();
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day20.RedisStreams/RedisStreamsManager.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd20-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d20-src-code-2" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day20.RedisStreams;
+
+/// &lt;summary&gt;
+/// High-performance stream manager simulating Redis Streams engine internals:
+/// - Append-only ordered message stream with Radix tree / ListPack semantics
+/// - Monotonically increasing {timestamp}-{sequence} ID generation
+/// - Consumer Groups with partitioned work distribution
+/// - Pending Entries List (PEL) tracking in-flight message state
+/// - Explicit ACK mechanism (XACK)
+/// - Dead-letter and crash recovery via message claiming (XCLAIM / XAUTOCLAIM)
+/// &lt;/summary&gt;
+public class RedisStreamsManager
+{
+    private class InternalGroup
+    {
+        public string Name { get; }
+        public StreamEntryId LastDeliveredId { get; set; } = new(0, 0);
+        public HashSet&lt;string&gt; ActiveConsumers { get; } = new();
+        public Dictionary&lt;string, PendingEntry&gt; Pel { get; } = new(); // Keyed by MessageId
+
+        public InternalGroup(string name, StreamEntryId startId)
+        {
+            Name = name;
+            LastDeliveredId = startId;
+        }
+    }
+
+    private readonly List&lt;StreamMessage&gt; _messages = new();
+    private readonly ConcurrentDictionary&lt;string, InternalGroup&gt; _groups = new();
+    private readonly object _syncLock = new();
+    private long _lastTimestampMs = 0;
+    private long _sequence = 0;
+
+    public int StreamLength
+    {
+        get
+        {
+            lock (_syncLock) return _messages.Count;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XADD: Appends a new message to the stream with automatic monotonic ID generation.
+    /// &lt;/summary&gt;
+    public StreamMessage Add(IReadOnlyDictionary&lt;string, string&gt; fields, string? customId = null)
+    {
+        lock (_syncLock)
+        {
+            StreamEntryId entryId;
+            if (customId != null &amp;&amp; customId != &quot;*&quot;)
+            {
+                entryId = StreamEntryId.Parse(customId);
+            }
+            else
+            {
+                long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                if (nowMs == _lastTimestampMs)
+                {
+                    _sequence++;
+                }
+                else
+                {
+                    _lastTimestampMs = Math.Max(nowMs, _lastTimestampMs);
+                    _sequence = 0;
+                }
+                entryId = new StreamEntryId(_lastTimestampMs, _sequence);
+            }
+
+            var msg = new StreamMessage(entryId.ToString(), new Dictionary&lt;string, string&gt;(fields), DateTime.UtcNow);
+            _messages.Add(msg);
+            return msg;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XGROUP CREATE: Creates a consumer group starting from a given stream entry ID (or &quot;0&quot; for beginning, &quot;$&quot; for latest).
+    /// &lt;/summary&gt;
+    public bool CreateConsumerGroup(string groupName, string startId = &quot;$&quot;)
+    {
+        lock (_syncLock)
+        {
+            if (_groups.ContainsKey(groupName)) return false;
+
+            StreamEntryId start;
+            if (startId == &quot;$&quot;)
+            {
+                start = _messages.Count &gt; 0 ? StreamEntryId.Parse(_messages.Last().Id) : new StreamEntryId(0, 0);
+            }
+            else if (startId == &quot;0&quot;)
+            {
+                start = new StreamEntryId(0, 0);
+            }
+            else
+            {
+                start = StreamEntryId.Parse(startId);
+            }
+
+            return _groups.TryAdd(groupName, new InternalGroup(groupName, start));
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XREADGROUP: Reads new messages (ID &quot;&gt;&quot;) or pending unacknowledged messages for a consumer in a group.
+    /// Automatically records in-flight messages in the Pending Entries List (PEL).
+    /// &lt;/summary&gt;
+    public IReadOnlyList&lt;StreamMessage&gt; ReadGroup(
+        string groupName,
+        string consumerName,
+        int count = 10,
+        string id = &quot;&gt;&quot;)
+    {
+        lock (_syncLock)
+        {
+            if (!_groups.TryGetValue(groupName, out var group))
+            {
+                throw new InvalidOperationException($&quot;Consumer group &#x27;{groupName}&#x27; does not exist.&quot;);
+            }
+
+            group.ActiveConsumers.Add(consumerName);
+            var now = DateTime.UtcNow;
+            var dispatched = new List&lt;StreamMessage&gt;();
+
+            if (id == &quot;&gt;&quot;)
+            {
+                // Deliver brand new unconsumed messages
+                var candidates = _messages
+                    .Where(m =&gt; StreamEntryId.Parse(m.Id).CompareTo(group.LastDeliveredId) &gt; 0)
+                    .Take(count)
+                    .ToList();
+
+                foreach (var msg in candidates)
+                {
+                    var msgId = msg.Id;
+                    group.LastDeliveredId = StreamEntryId.Parse(msgId);
+
+                    // Add to PEL
+                    group.Pel[msgId] = new PendingEntry(
+                        MessageId: msgId,
+                        ConsumerName: consumerName,
+                        IdleTime: TimeSpan.Zero,
+                        DeliveryCount: 1,
+                        LastDeliveredUtc: now);
+
+                    dispatched.Add(msg);
+                }
+            }
+            else
+            {
+                // Deliver currently pending messages assigned to this consumer
+                var pendingForConsumer = group.Pel.Values
+                    .Where(p =&gt; p.ConsumerName == consumerName)
+                    .Take(count)
+                    .ToList();
+
+                foreach (var pend in pendingForConsumer)
+                {
+                    var msg = _messages.FirstOrDefault(m =&gt; m.Id == pend.MessageId);
+                    if (msg != null)
+                    {
+                        // Increment delivery count
+                        group.Pel[pend.MessageId] = pend with
+                        {
+                            DeliveryCount = pend.DeliveryCount + 1,
+                            LastDeliveredUtc = now
+                        };
+                        dispatched.Add(msg);
+                    }
+                }
+            }
+
+            return dispatched;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XACK: Acknowledges receipt of messages by removing them from the Consumer Group&#x27;s Pending Entries List (PEL).
+    /// &lt;/summary&gt;
+    public int Ack(string groupName, params string[] messageIds)
+    {
+        lock (_syncLock)
+        {
+            if (!_groups.TryGetValue(groupName, out var group)) return 0;
+
+            int acked = 0;
+            foreach (var id in messageIds)
+            {
+                if (group.Pel.Remove(id))
+                {
+                    acked++;
+                }
+            }
+            return acked;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XPENDING: Inspects currently pending unacknowledged messages in the consumer group.
+    /// &lt;/summary&gt;
+    public IReadOnlyList&lt;PendingEntry&gt; GetPendingEntries(string groupName, DateTime? evaluationTime = null)
+    {
+        lock (_syncLock)
+        {
+            if (!_groups.TryGetValue(groupName, out var group)) return Array.Empty&lt;PendingEntry&gt;();
+
+            var now = evaluationTime ?? DateTime.UtcNow;
+            return group.Pel.Values
+                .Select(p =&gt; p with { IdleTime = now - p.LastDeliveredUtc })
+                .ToList();
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XCLAIM / XAUTOCLAIM: Recovers abandoned messages from a dead/failed consumer after an idle duration.
+    /// Reassigns ownership to a new consumer, increments delivery count, and returns the claimed messages.
+    /// &lt;/summary&gt;
+    public IReadOnlyList&lt;StreamMessage&gt; Claim(
+        string groupName,
+        string newConsumerName,
+        TimeSpan minIdleTime,
+        DateTime? evaluationTime = null,
+        int count = 10)
+    {
+        lock (_syncLock)
+        {
+            if (!_groups.TryGetValue(groupName, out var group)) return Array.Empty&lt;StreamMessage&gt;();
+
+            var now = evaluationTime ?? DateTime.UtcNow;
+            group.ActiveConsumers.Add(newConsumerName);
+
+            // Find pending messages exceeding idle time
+            var staleEntries = group.Pel.Values
+                .Where(p =&gt; (now - p.LastDeliveredUtc) &gt;= minIdleTime)
+                .Take(count)
+                .ToList();
+
+            var claimedMessages = new List&lt;StreamMessage&gt;();
+
+            foreach (var entry in staleEntries)
+            {
+                var msg = _messages.FirstOrDefault(m =&gt; m.Id == entry.MessageId);
+                if (msg != null)
+                {
+                    // Reassign to new consumer and update PEL
+                    group.Pel[entry.MessageId] = entry with
+                    {
+                        ConsumerName = newConsumerName,
+                        DeliveryCount = entry.DeliveryCount + 1,
+                        LastDeliveredUtc = now,
+                        IdleTime = TimeSpan.Zero
+                    };
+                    claimedMessages.Add(msg);
+                }
+            }
+
+            return claimedMessages;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Fetches group statistics (consumer count, pending count, last delivered ID).
+    /// &lt;/summary&gt;
+    public ConsumerGroupStats? GetGroupStats(string groupName)
+    {
+        lock (_syncLock)
+        {
+            if (!_groups.TryGetValue(groupName, out var group)) return null;
+
+            return new ConsumerGroupStats(
+                GroupName: group.Name,
+                ConsumersCount: group.ActiveConsumers.Count,
+                PendingCount: group.Pel.Count,
+                LastDeliveredId: group.LastDeliveredId.ToString());
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day20.RedisStreams/TreeTraversalSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd20-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d20-src-code-3" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day20.RedisStreams;
+
+/// &lt;summary&gt;
+/// Definition for a binary tree node.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// Tree traversal and ancestor algorithms:
+/// - LeetCode #235: Lowest Common Ancestor of a Binary Search Tree (BST)
+/// - LeetCode #102: Binary Tree Level Order Traversal (BFS)
+/// &lt;/summary&gt;
+public class TreeTraversalSolvers
+{
+    /// &lt;summary&gt;
+    /// Finds the Lowest Common Ancestor (LCA) of two given nodes in a BST (LeetCode #235).
+    /// Exploits BST ordering invariant: all left values &amp;lt; node.val &amp;lt; all right values.
+    /// Time Complexity: O(H) where H is tree height (O(log N) balanced, O(N) skewed).
+    /// Space Complexity: O(1) auxiliary memory using iterative traversal.
+    /// &lt;/summary&gt;
+    public TreeNode? LowestCommonAncestor(TreeNode? root, TreeNode? p, TreeNode? q)
+    {
+        if (root == null || p == null || q == null) return null;
+
+        var curr = root;
+        while (curr != null)
+        {
+            if (p.val &lt; curr.val &amp;&amp; q.val &lt; curr.val)
+            {
+                // Both nodes reside in left subtree
+                curr = curr.left;
+            }
+            else if (p.val &gt; curr.val &amp;&amp; q.val &gt; curr.val)
+            {
+                // Both nodes reside in right subtree
+                curr = curr.right;
+            }
+            else
+            {
+                // Split point found: one is on left, one on right, or curr is p or q
+                return curr;
+            }
+        }
+
+        return null;
+    }
+
+    /// &lt;summary&gt;
+    /// Returns the level order traversal of a binary tree&#x27;s node values (LeetCode #102).
+    /// Uses iterative BFS level-by-level queue batching.
+    /// Time Complexity: O(N) visiting each node exactly once.
+    /// Space Complexity: O(W) where W is maximum width of tree (up to N/2 nodes at leaf level).
+    /// &lt;/summary&gt;
+    public IList&lt;IList&lt;int&gt;&gt; LevelOrder(TreeNode? root)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (root == null) return result;
+
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        while (queue.Count &gt; 0)
+        {
+            int levelSize = queue.Count;
+            var currentLevel = new List&lt;int&gt;(levelSize);
+
+            for (int i = 0; i &lt; levelSize; i++)
+            {
+                var node = queue.Dequeue();
+                currentLevel.Add(node.val);
+
+                if (node.left != null) queue.Enqueue(node.left);
+                if (node.right != null) queue.Enqueue(node.right);
+            }
+
+            result.Add(currentLevel);
+        }
+
+        return result;
+    }
+
+    /// &lt;summary&gt;
+    /// Helper to deserialize a tree from a level-order array representation.
+    /// &lt;/summary&gt;
+    public static TreeNode? BuildTree(int?[] values)
+    {
+        if (values == null || values.Length == 0 || values[0] == null) return null;
+
+        var root = new TreeNode(values[0]!.Value);
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int i = 1;
+        while (queue.Count &gt; 0 &amp;&amp; i &lt; values.Length)
+        {
+            var curr = queue.Dequeue();
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.left = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.left);
+            }
+            i++;
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.right = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.right);
+            }
+            i++;
+        }
+
+        return root;
+    }
+
+    /// &lt;summary&gt;
+    /// Helper to find a specific node by value in the tree.
+    /// &lt;/summary&gt;
+    public static TreeNode? FindNode(TreeNode? root, int targetVal)
+    {
+        if (root == null) return null;
+        if (root.val == targetVal) return root;
+
+        return FindNode(root.left, targetVal) ?? FindNode(root.right, targetVal);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day20.RedisStreams.Tests/Day20Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd20-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d20-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day20.RedisStreams.Tests;
+
+public class Day20Tests
+{
+    // ==========================================
+    // 1. REDIS PUB/SUB TESTS
+    // ==========================================
+
+    [Fact]
+    public async Task PubSub_MultipleSubscribers_ReceivesBroadcastMessage()
+    {
+        var pubsub = new RedisPubSubCoordinator();
+        var received1 = new List&lt;string&gt;();
+        var received2 = new List&lt;string&gt;();
+
+        using var sub1 = pubsub.Subscribe(&quot;orders.created&quot;, msg =&gt;
+        {
+            received1.Add(msg);
+            return Task.CompletedTask;
+        });
+
+        using var sub2 = pubsub.Subscribe(&quot;orders.created&quot;, msg =&gt;
+        {
+            received2.Add(msg);
+            return Task.CompletedTask;
+        });
+
+        pubsub.GetSubscriberCount(&quot;orders.created&quot;).Should().Be(2);
+
+        int delivered = await pubsub.PublishAsync(&quot;orders.created&quot;, &quot;Order #101 placed&quot;);
+        delivered.Should().Be(2);
+
+        received1.Should().ContainSingle().Which.Should().Be(&quot;Order #101 placed&quot;);
+        received2.Should().ContainSingle().Which.Should().Be(&quot;Order #101 placed&quot;);
+    }
+
+    [Fact]
+    public async Task PubSub_EphemeralDrop_MessageDroppedWhenNoSubscribersExist()
+    {
+        var pubsub = new RedisPubSubCoordinator();
+        int delivered = await pubsub.PublishAsync(&quot;notifications&quot;, &quot;Hello World&quot;);
+
+        delivered.Should().Be(0);
+        pubsub.GetSubscriberCount(&quot;notifications&quot;).Should().Be(0);
+    }
+
+    // ==========================================
+    // 2. REDIS STREAMS TESTS
+    // ==========================================
+
+    [Fact]
+    public void Streams_XAdd_AppendsMessagesWithMonotonicIds()
+    {
+        var manager = new RedisStreamsManager();
+        var m1 = manager.Add(new Dictionary&lt;string, string&gt; { [&quot;event&quot;] = &quot;login&quot;, [&quot;userId&quot;] = &quot;42&quot; });
+        var m2 = manager.Add(new Dictionary&lt;string, string&gt; { [&quot;event&quot;] = &quot;purchase&quot;, [&quot;amount&quot;] = &quot;99.9&quot; });
+
+        manager.StreamLength.Should().Be(2);
+        m1.Id.Should().NotBeNullOrEmpty();
+        m2.Id.Should().NotBeNullOrEmpty();
+
+        var id1 = StreamEntryId.Parse(m1.Id);
+        var id2 = StreamEntryId.Parse(m2.Id);
+        id1.CompareTo(id2).Should().BeNegative();
+    }
+
+    [Fact]
+    public void Streams_ConsumerGroup_DistributesMessagesAcrossMultipleWorkers()
+    {
+        var manager = new RedisStreamsManager();
+        manager.CreateConsumerGroup(&quot;order-processors&quot;, startId: &quot;0&quot;);
+
+        // Add 4 messages
+        for (int i = 1; i &lt;= 4; i++)
+        {
+            manager.Add(new Dictionary&lt;string, string&gt; { [&quot;orderId&quot;] = i.ToString() });
+        }
+
+        // Worker A reads 2 messages
+        var batchA = manager.ReadGroup(&quot;order-processors&quot;, &quot;worker-A&quot;, count: 2);
+        batchA.Should().HaveCount(2);
+        batchA[0].Fields[&quot;orderId&quot;].Should().Be(&quot;1&quot;);
+        batchA[1].Fields[&quot;orderId&quot;].Should().Be(&quot;2&quot;);
+
+        // Worker B reads next 2 messages (partitioned non-overlapping)
+        var batchB = manager.ReadGroup(&quot;order-processors&quot;, &quot;worker-B&quot;, count: 2);
+        batchB.Should().HaveCount(2);
+        batchB[0].Fields[&quot;orderId&quot;].Should().Be(&quot;3&quot;);
+        batchB[1].Fields[&quot;orderId&quot;].Should().Be(&quot;4&quot;);
+
+        // PEL should track all 4 in-flight messages
+        var pending = manager.GetPendingEntries(&quot;order-processors&quot;);
+        pending.Should().HaveCount(4);
+    }
+
+    [Fact]
+    public void Streams_XAck_RemovesAcknowledgedMessagesFromPel()
+    {
+        var manager = new RedisStreamsManager();
+        manager.CreateConsumerGroup(&quot;email-workers&quot;, startId: &quot;0&quot;);
+
+        var msg1 = manager.Add(new Dictionary&lt;string, string&gt; { [&quot;email&quot;] = &quot;a@test.com&quot; });
+        var msg2 = manager.Add(new Dictionary&lt;string, string&gt; { [&quot;email&quot;] = &quot;b@test.com&quot; });
+
+        var read = manager.ReadGroup(&quot;email-workers&quot;, &quot;worker-1&quot;, count: 2);
+        read.Should().HaveCount(2);
+
+        manager.GetPendingEntries(&quot;email-workers&quot;).Should().HaveCount(2);
+
+        // Acknowledge msg1
+        int acked = manager.Ack(&quot;email-workers&quot;, msg1.Id);
+        acked.Should().Be(1);
+
+        // PEL now only contains msg2
+        var pending = manager.GetPendingEntries(&quot;email-workers&quot;);
+        pending.Should().HaveCount(1);
+        pending[0].MessageId.Should().Be(msg2.Id);
+
+        // Double ACK returns 0
+        manager.Ack(&quot;email-workers&quot;, msg1.Id).Should().Be(0);
+    }
+
+    [Fact]
+    public void Streams_XClaim_RecoversAbandonedMessagesFromDeadConsumer()
+    {
+        var manager = new RedisStreamsManager();
+        manager.CreateConsumerGroup(&quot;payment-workers&quot;, startId: &quot;0&quot;);
+
+        var msg = manager.Add(new Dictionary&lt;string, string&gt; { [&quot;invoice&quot;] = &quot;INV-990&quot; });
+
+        // Worker-Dead receives message at t0
+        var t0 = new DateTime(2026, 10, 10, 10, 0, 0, DateTimeKind.Utc);
+        manager.ReadGroup(&quot;payment-workers&quot;, &quot;worker-dead&quot;, count: 1);
+
+        // Worker-Dead crashes without ACK. At t0 + 60s, worker-healthy checks PEL and claims it
+        var tEval = t0.AddSeconds(60);
+        var pendingBefore = manager.GetPendingEntries(&quot;payment-workers&quot;, evaluationTime: tEval);
+        pendingBefore.Should().ContainSingle();
+        pendingBefore[0].ConsumerName.Should().Be(&quot;worker-dead&quot;);
+
+        // Claim messages idle &gt; 30s
+        var claimed = manager.Claim(&quot;payment-workers&quot;, &quot;worker-healthy&quot;, minIdleTime: TimeSpan.FromSeconds(30), evaluationTime: tEval);
+        claimed.Should().ContainSingle();
+        claimed[0].Id.Should().Be(msg.Id);
+
+        // Verify PEL reassignment and delivery count increment
+        var pendingAfter = manager.GetPendingEntries(&quot;payment-workers&quot;, evaluationTime: tEval);
+        pendingAfter[0].ConsumerName.Should().Be(&quot;worker-healthy&quot;);
+        pendingAfter[0].DeliveryCount.Should().Be(2);
+
+        // Worker-healthy completes and ACKs
+        manager.Ack(&quot;payment-workers&quot;, msg.Id).Should().Be(1);
+        manager.GetPendingEntries(&quot;payment-workers&quot;).Should().BeEmpty();
+    }
+
+    // ==========================================
+    // 3. DSA TREE TRAVERSAL TESTS (LC #235 &amp; #102)
+    // ==========================================
+
+    [Fact]
+    public void LC235_LowestCommonAncestor_StandardBst_ReturnsCorrectAncestor()
+    {
+        var solvers = new TreeTraversalSolvers();
+        // BST: [6, 2, 8, 0, 4, 7, 9, null, null, 3, 5]
+        var root = TreeTraversalSolvers.BuildTree(new int?[] { 6, 2, 8, 0, 4, 7, 9, null, null, 3, 5 });
+        var p = TreeTraversalSolvers.FindNode(root, 2);
+        var q = TreeTraversalSolvers.FindNode(root, 8);
+
+        var lca = solvers.LowestCommonAncestor(root, p, q);
+        lca.Should().NotBeNull();
+        lca!.val.Should().Be(6);
+    }
+
+    [Fact]
+    public void LC235_LowestCommonAncestor_NodeIsItsOwnAncestor_ReturnsNode()
+    {
+        var solvers = new TreeTraversalSolvers();
+        // BST: [6, 2, 8, 0, 4, 7, 9, null, null, 3, 5]
+        var root = TreeTraversalSolvers.BuildTree(new int?[] { 6, 2, 8, 0, 4, 7, 9, null, null, 3, 5 });
+        var p = TreeTraversalSolvers.FindNode(root, 2);
+        var q = TreeTraversalSolvers.FindNode(root, 4);
+
+        var lca = solvers.LowestCommonAncestor(root, p, q);
+        lca.Should().NotBeNull();
+        lca!.val.Should().Be(2);
+    }
+
+    [Fact]
+    public void LC102_LevelOrder_StandardTree_ReturnsGroupedLevels()
+    {
+        var solvers = new TreeTraversalSolvers();
+        // Tree: [3, 9, 20, null, null, 15, 7]
+        var root = TreeTraversalSolvers.BuildTree(new int?[] { 3, 9, 20, null, null, 15, 7 });
+
+        var levels = solvers.LevelOrder(root);
+        levels.Should().HaveCount(3);
+        levels[0].Should().Equal(new[] { 3 });
+        levels[1].Should().Equal(new[] { 9, 20 });
+        levels[2].Should().Equal(new[] { 15, 7 });
+    }
+
+    [Fact]
+    public void LC102_LevelOrder_SingleNodeAndEmptyTree_ReturnsExpectedList()
+    {
+        var solvers = new TreeTraversalSolvers();
+        solvers.LevelOrder(null).Should().BeEmpty();
+
+        var single = solvers.LevelOrder(new TreeNode(42));
+        single.Should().HaveCount(1);
+        single[0].Should().Equal(new[] { 42 });
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 20 - Engineering Notes: Redis Streams Internals & Messaging Architecture</h1>
+<h2>1. Redis Streams Internal Memory Layout: Radix Tree of ListPacks</h2>
+<p>Redis Streams are implemented internally using a <strong>Radix Tree</strong> (<code>rax.c</code>) where each leaf node stores a <strong>ListPack</strong> containing multiple message entries:</p>
+<h3>Why Radix Tree + ListPack?</h3>
+<ol>
+<li><strong>Memory Compactness</strong>: In a stream receiving 10,000,000 events, storing each event as a standalone Redis Object (<code>robj</code>) would incur 16 bytes of object header + 8 bytes of pointer metadata per entry (240 MB purely for pointers).</li>
+<li><strong>Batching inside ListPack</strong>: Multiple sequential messages are packed contiguously into a single ListPack memory buffer. Field keys (e.g. <code>&quot;userId&quot;</code>, <code>&quot;timestamp&quot;</code>) are deduplicated across messages within the same ListPack block.</li>
+<li><strong>Approximate Trimming (<code>MAXLEN ~ N</code>)</strong>:</li>
+</ol>
+<ul>
+<li><code>XADD stream MAXLEN 1000 ...</code> (exact trimming) forces Redis to prune exact entries, requiring expensive splitting and repacking of ListPacks.</li>
+<li><code>XADD stream MAXLEN ~ 1000 ...</code> (approximate trimming) allows Redis to drop entire ListPack blocks once all their entries fall outside the threshold, turning an $O(N)$ operation into an $O(1)$ memory release.</li>
+</ul>
+<hr/>
+<h2>2. The Pending Entries List (PEL) & Memory Leak Hazards</h2>
+<h3>How PEL Operates Under the Hood</h3>
+<p>Each Consumer Group maintains two primary data structures:</p>
+<ol>
+<li><strong><code>last_id</code></strong>: The cursor pointing to the last message dispatched via <code>XREADGROUP &gt;</code>.</li>
+<li><strong><code>PEL</code></strong>: A radix tree mapping <code>MessageID -&gt; { ConsumerName, DeliveryTime, DeliveryCount }</code>.</li>
+</ol>
+<h3>The "Forgotten XACK" Memory Leak</h3>
+<ul>
+<li>Every message read by a consumer is placed in the PEL.</li>
+<li>Messages remain in the PEL indefinitely until an explicit <strong><code>XACK</code></strong> command is received.</li>
+<li><strong>Production Anti-Pattern</strong>: If worker services consume messages, process them, and forget to call <code>XACK</code> (or crash before ACK), the stream data may be trimmed by <code>MAXLEN</code>, but the PEL entries are retained in RAM forever.</li>
+<li>In high-throughput ingestion pipelines (50,000 msgs/sec), forgotten ACKs will exhaust gigabytes of Redis memory within hours.</li>
+</ul>
+<hr/>
+<h2>3. Redis Streams vs Kafka vs RabbitMQ</h2>
+<div class="table-container"><table><thead><tr>
+<th>Dimension</th>
+<th>Redis Streams</th>
+<th>Apache Kafka</th>
+<th>RabbitMQ</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Primary Architecture</strong></td>
+<td>In-memory append log (Radix Tree)</td>
+<td>Distributed disk-backed commit log</td>
+<td>Erlang AMQP message broker / exchange</td>
+</tr>
+<tr>
+<td><strong>P99 Read/Write Latency</strong></td>
+<td><strong>< 1 millisecond</strong> (In-RAM)</td>
+<td>5–15 milliseconds (OS page cache)</td>
+<td>2–10 milliseconds</td>
+</tr>
+<tr>
+<td><strong>Partitioning Model</strong></td>
+<td>Key-level / Logical Consumer Groups</td>
+<td>Physical Topic Partitions</td>
+<td>Exchange / Queue routing bindings</td>
+</tr>
+<tr>
+<td><strong>Max Scale / Retention</strong></td>
+<td>Bounded by RAM (Gigabytes)</td>
+<td>Bounded by Disk / S3 (Terabytes/Petabytes)</td>
+<td>Bounded by Queue size</td>
+</tr>
+<tr>
+<td><strong>Best Used For</strong></td>
+<td>Real-time event streams, user activity feeds, microservice event bus</td>
+<td>Large-scale telemetry, audit logs, analytics pipes</td>
+<td>Complex transactional task routing & RPC</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>4. DSA Invariant: BST LCA vs General Binary Tree LCA</h2>
+<h3>Why BST LCA is $O(H)$ and $O(1)$ Space</h3>
+<p>In a Binary Search Tree:</p>
+<p>$$\forall x \in \text{Left}(root): x.val < root.val, \quad \forall y \in \text{Right}(root): y.val > root.val$$</p>
+<p>Therefore:</p>
+<ul>
+<li>If both $p.val < root.val$ and $q.val < root.val$, the lowest common ancestor <strong>must</strong> lie exclusively in the left subtree.</li>
+<li>If both $p.val > root.val$ and $q.val > root.val$, the lowest common ancestor <strong>must</strong> lie exclusively in the right subtree.</li>
+<li>The very first node where $p$ and $q$ diverge (or when $root.val \in \{p.val, q.val\}$) is mathematically guaranteed to be their Lowest Common Ancestor.</li>
+</ul>
+<p>This enables a zero-allocation single while-loop traversal in $O(H)$ time and $O(1)$ extra space, unlike general binary trees (LeetCode #236) which require post-order recursive tree scanning in $O(N)$ time.</p>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 20: Redis Pub/Sub & Redis Streams</h1>
+<h2>Overview</h2>
+<p>Comprehensive exploration and production implementation of Redis messaging patterns: comparing ephemeral fire-and-forget <strong>Redis Pub/Sub</strong> against persistent, log-structured <strong>Redis Streams</strong>. We implement end-to-end event ingestion pipelines using Consumer Groups (<code>XGROUP CREATE</code>), partitioned consumption (<code>XREADGROUP</code>), atomic acknowledgments (<code>XACK</code>), in-flight message state tracking via the Pending Entries List (<code>XPENDING</code>), and dead-letter / crashed consumer recovery (<code>XCLAIM</code>). Additionally, we solve tree algorithms: Lowest Common Ancestor of a BST (LeetCode #235) in $O(H)$ and Binary Tree Level Order Traversal (LeetCode #102) in $O(N)$ BFS.</p>
+<hr/>
+<h2>Architectural Breakdown</h2>
+<h3>1. Redis Pub/Sub vs Redis Streams Comparison</h3>
+<div class="table-container"><table><thead><tr>
+<th>Feature</th>
+<th>Redis Pub/Sub</th>
+<th>Redis Streams</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Persistence</strong></td>
+<td>None (in-memory fire-and-forget)</td>
+<td>Append-only log on disk (RDB/AOF)</td>
+</tr>
+<tr>
+<td><strong>Delivery Guarantee</strong></td>
+<td>At-most-once (unconnected clients lose messages)</td>
+<td>At-least-once (ACK + PEL tracking)</td>
+</tr>
+<tr>
+<td><strong>Consumer Scaling</strong></td>
+<td>Every subscriber gets every message (broadcast only)</td>
+<td>Consumer Groups partition messages across workers</td>
+</tr>
+<tr>
+<td><strong>Backpressure / Retention</strong></td>
+<td>None (subscriber buffer overflows crash clients)</td>
+<td><code>MAXLEN ~</code> trims stream log to target capacity</td>
+</tr>
+<tr>
+<td><strong>Replay / Time-Travel</strong></td>
+<td>Impossible</td>
+<td>Supported via <code>XRANGE</code> and entry IDs</td>
+</tr>
+<tr>
+<td><strong>Underlying Data Structure</strong></td>
+<td>In-memory channel subscriber dictionary</td>
+<td>Radix Tree containing encoded ListPacks</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h3>2. Redis Streams Ingestion Lifecycle</h3>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Producer                     Stream: orders_stream                Consumer Group: order_processors
++---------+                    +-----------------+                     +----------------------+
+|  XADD   | -----------------&gt; | 1728500000-0    | ------------------&gt; | Worker A (reads msg) |
+| (event) |                    | 1728500000-1    |                     |   -&gt; Added to PEL    |
++---------+                    | 1728500000-2    |                     +----------------------+
+                               +-----------------+                                |
+                                        |                                          v (Crash / Timeout)
+                                        |                              +----------------------+
+                                        +----------------------------&gt; | Worker B             |
+                                                                       |   -&gt; XCLAIM recovers |
+                                                                       |   -&gt; XACK completes  |
+                                                                       +----------------------+</code></pre></div>
+<ol>
+<li><strong><code>XADD key [MAXLEN ~ N] ID field value ...</code></strong>:</li>
+</ol>
+<ul>
+<li>Appends message to the stream. By default, generates <code>{timestamp_ms}-{sequence}</code> ID.</li>
+</ul>
+<ol>
+<li><strong><code>XGROUP CREATE key groupname ID</code></strong>:</li>
+</ol>
+<ul>
+<li>Creates a consumer group with a dedicated cursor and Pending Entries List (PEL).</li>
+</ul>
+<ol>
+<li><strong><code>XREADGROUP GROUP group consumer [COUNT n] STREAMS key &gt;</code></strong>:</li>
+</ol>
+<ul>
+<li>Reads unconsumed messages (<code>&gt;</code>) and assigns them to the requesting consumer, logging them in the PEL.</li>
+</ul>
+<ol>
+<li><strong><code>XACK key group ID ...</code></strong>:</li>
+</ol>
+<ul>
+<li>Acknowledges processing; removes the ID from the group's PEL.</li>
+</ul>
+<ol>
+<li><strong><code>XPENDING key group [[IDLE minIdle] start end count]</code></strong>:</li>
+</ol>
+<ul>
+<li>Inspects in-flight unacknowledged messages, showing idle time and delivery count.</li>
+</ul>
+<ol>
+<li><strong><code>XCLAIM key group consumer minIdleTime ID ...</code></strong>:</li>
+</ol>
+<ul>
+<li>Transfers ownership of unacknowledged messages whose idle time exceeds a threshold from a dead consumer to a healthy consumer.</li>
+</ul>
+<hr/>
+<h3>3. Tree Algorithms Solved</h3>
+<h4>LeetCode #235: Lowest Common Ancestor of a BST</h4>
+<ul>
+<li><strong>Problem</strong>: Find the Lowest Common Ancestor of nodes $p$ and $q$ in a Binary Search Tree.</li>
+<li><strong>Algorithm</strong>: Leverage BST ordering: if both $p$ and $q$ are smaller than root, traverse left; if both are greater, traverse right; otherwise, current node is the LCA split point.</li>
+<li><strong>Complexity</strong>: Time: $O(H)$ ($O(\log N)$ balanced, $O(N)$ skewed), Space: $O(1)$ iterative.</li>
+</ul>
+<h4>LeetCode #102: Binary Tree Level Order Traversal</h4>
+<ul>
+<li><strong>Problem</strong>: Return node values level-by-level from left to right.</li>
+<li><strong>Algorithm</strong>: Standard BFS queue. At each level, capture <code>queue.Count</code>, dequeue and collect that many nodes, and enqueue their children.</li>
+<li><strong>Complexity</strong>: Time: $O(N)$, Space: $O(W) \approx O(N)$ width of tree.</li>
+</ul>
+<hr/>
+<h2>Running Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day20-Redis-Streams-PubSub/tests/Day20.RedisStreams.Tests/Day20.RedisStreams.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the architectural difference between Redis Pub/Sub and Redis Streams, and when should you choose one over the other?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Redis Pub/Sub is an ephemeral fire-and-forget broadcast mechanism with zero disk persistence; Redis Streams is an append-only, disk-persisted log supporting consumer groups, offsets, acknowledgments, and replayability.</li>
+<li><strong>Deeper answer</strong>:</li>
+<li><strong>Pub/Sub</strong>: Operates entirely in memory. When a publisher emits a message to a channel, Redis pushes it to currently connected subscriber TCP sockets. If a subscriber is disconnected or restarting, the message is permanently lost. All subscribers receive identical copies. Best for real-time notifications, chat broadcasts, and ephemeral cache invalidation signals.</li>
+<li><strong>Streams</strong>: Messages are appended to a persistent Radix tree on disk. Messages persist regardless of whether consumers are active. Consumer groups partition messages across worker pools so that each event is processed by only one worker in the group. Supports <code>XACK</code> and historical replay via <code>XRANGE</code>. Best for reliable event-driven microservices, order processing pipelines, and audit event logs.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How does Redis Streams work partitioning compare to Apache Kafka?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Kafka binds physical partitions 1:1 to consumer group workers, limiting concurrency to partition count; Redis Streams dynamically distributes messages across any number of workers from a single logical stream.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In Kafka, if a topic has 8 partitions, a consumer group can have at most 8 active consumers; adding a 9th consumer leaves it idle.</p>
+<p>In Redis Streams:</p>
+<ul>
+<li>Any number of consumers can join a consumer group dynamically.</li>
+<li>Calling <code>XREADGROUP GROUP group worker_N COUNT 10 STREAMS stream &gt;</code> pops the next 10 unassigned messages regardless of which worker requests them.</li>
+<li>This provides elastic, fine-grained load leveling without requiring upfront physical topic partitioning. However, total write throughput is bounded by a single Redis node's CPU, whereas Kafka distributes writes across multiple broker nodes.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the Pending Entries List (PEL) in Redis Streams, and what is the &quot;Forgotten XACK&quot; hazard?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The PEL tracks in-flight messages delivered to consumers that have not yet been acknowledged; failing to execute <code>XACK</code> causes unbounded memory growth because PEL entries are retained in RAM indefinitely.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>When a consumer reads messages via <code>XREADGROUP &gt;</code>, Redis inserts an entry into the group's internal PEL storing the message ID, consumer name, delivery count, and last delivery timestamp.</p>
+<p>Even if the stream is capped with <code>MAXLEN ~ 10000</code>, Redis cannot delete PEL metadata for unacknowledged messages. If consumer code catches exceptions or finishes without calling <code>XACK</code>, millions of unacknowledged entries accumulate in the PEL, gradually consuming all available Redis RAM and triggering an Out-Of-Memory (OOM) crash.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does dead-letter and worker crash recovery work in Redis Streams using `XPENDING` and `XCLAIM`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Workers periodically query <code>XPENDING</code> to find messages whose idle time exceeds a threshold (e.g., 30s) from dead workers, then use <code>XCLAIM</code> to transfer ownership to an active worker.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<ol>
+<li>A background watchdog thread in a surviving worker executes:</li>
+</ol>
+<p><code>XPENDING stream group - + 50</code> or <code>XPENDING stream group IDLE 30000 - + 50</code></p>
+<p>to detect messages that have been sitting unacknowledged longer than 30 seconds.</p>
+<ol>
+<li>The worker calls:</li>
+</ol>
+<p><code>XCLAIM stream group active_worker_2 30000 &lt;message_id&gt;</code></p>
+<ol>
+<li>Redis verifies the message has been idle for at least 30,000 ms, reassigns its owner to <code>active_worker_2</code>, increments its <code>delivery_count</code>, and returns the message payload.</li>
+<li>If <code>delivery_count</code> exceeds a poison-pill limit (e.g., 5 attempts), the worker routes the message to a Dead Letter Queue (DLQ) and calls <code>XACK</code> to prevent infinite crash loops.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">Why is approximate trimming (`MAXLEN ~ N`) recommended over exact trimming (`MAXLEN N`)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Approximate trimming prunes entire ListPack macro-nodes in $O(1)$ time, while exact trimming requires CPU-intensive parsing and reallocation of memory buffers to delete exact counts.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Redis Streams group dozens of entries inside contiguous ListPack buffers.</p>
+<ul>
+<li>When exact <code>MAXLEN N</code> is specified, if the cutoff falls in the middle of a ListPack, Redis must allocate a new memory buffer, copy remaining items, and free the old buffer. Under 50,000 writes/sec, this creates severe CPU spikes and memory fragmentation.</li>
+<li>Adding the tilde <code>MAXLEN ~ N</code> tells Redis: "Only evict when a full ListPack can be released." Redis simply drops the pointer to the old ListPack block in constant $O(1)$ time with zero memory repacking.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you achieve exactly-once semantics when consuming from Redis Streams?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Redis Streams provides at-least-once delivery; exactly-once semantics requires an idempotent consumer or transactional deduplication table in the downstream data store.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>Because network failures or consumer crashes can occur after a database write but before the <code>XACK</code> is sent to Redis, messages can be redelivered via <code>XCLAIM</code>.</p>
+<p>To ensure exactly-once processing:</p>
+<ol>
+<li><strong>Idempotent mutations</strong>: Design operations such that repeating them produces identical state (e.g. <code>SET balance = 100</code> rather than <code>INCR balance 10</code>).</li>
+<li><strong>Deduplication Key Table</strong>: When writing to the relational database, write the <code>StreamMessage.Id</code> to a <code>processed_events</code> table within the same SQL transaction:</li>
+</ol>
+<p><code>INSERT INTO processed_events (event_id) VALUES (@streamId);</code></p>
+<p>If the write throws a unique constraint violation, the consumer immediately calls <code>XACK</code> and safely skips re-executing the business logic.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What happens when a slow subscriber cannot keep up with high-frequency Redis Pub/Sub traffic?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: Redis buffers unconsumed messages in the client's output buffer until <code>client-output-buffer-limit</code> is exceeded, at which point Redis abruptly kills the client socket.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>In Redis Pub/Sub, the broker does not pause producers for slow consumers.</p>
+<p>Instead, pending messages accumulate in the client's memory output buffer on the Redis server. Redis enforces buffer safety via:</p>
+<p><code>client-output-buffer-limit pubsub 32mb 8mb 60</code></p>
+<p>If a subscriber's buffer exceeds 32 MB hard limit, or stays above 8 MB for 60 seconds continuously, Redis unilaterally severs the TCP connection. The subscriber disconnects, misses all subsequently broadcasted events, and reconnects in an un-synced state.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What internal data structure powers Redis Streams and why?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: A Radix Tree (<code>rax</code>) containing ListPacks; it enables logarithmic ID seeks by timestamp, sequential iteration, and compact memory utilization via field deduplication.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<p>A pure doubly-linked list would waste 24 bytes of pointer RAM per entry. A hash table does not support range scans (<code>XRANGE</code>).</p>
+<p>Redis uses a Radix Tree whose keys are stream IDs (timestamps). Each leaf node is a contiguous byte buffer called a <strong>ListPack</strong>.</p>
+<p>Field keys (like <code>&quot;sensorId&quot;</code>, <code>&quot;temperature&quot;</code>) that repeat across consecutive events are stored once in the ListPack header and referenced by offset, saving up to 70% RAM compared to standard JSON or hash table storage.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #235 (Lowest Common Ancestor of a BST), why does the iterative solution use $O(1)$ space and $O(H)$ time?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: The BST ordering invariant lets you determine whether the LCA is in the left or right subtree with simple value comparisons, eliminating recursive call stack overhead.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  public TreeNode LowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+      TreeNode curr = root;
+      while (curr != null) {
+          if (p.val &lt; curr.val &amp;&amp; q.val &lt; curr.val) curr = curr.left;
+          else if (p.val &gt; curr.val &amp;&amp; q.val &gt; curr.val) curr = curr.right;
+          else return curr;
+      }
+      return null;
+  }</code></pre></div>
+<p>At each node:</p>
+<ul>
+<li>If both values are smaller, LCA must be in left subtree.</li>
+<li>If both are larger, LCA must be in right subtree.</li>
+<li>The first node where $p$ and $q$ split is the LCA.</li>
+</ul>
+<p>No recursion stack is allocated, achieving strict $O(1)$ auxiliary space and $O(H)$ time ($O(\log N)$ on balanced trees).</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">In LeetCode #102 (Binary Tree Level Order Traversal), how do you partition nodes into discrete level groups?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <ul>
+<li><strong>Short answer</strong>: In each BFS queue iteration, capture <code>int levelSize = queue.Count</code> before the inner loop; dequeue exactly that many nodes to process the current level completely before moving to the next.</li>
+<li><strong>Deeper answer</strong>:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  public IList&lt;IList&lt;int&gt;&gt; LevelOrder(TreeNode root) {
+      var result = new List&lt;IList&lt;int&gt;&gt;();
+      if (root == null) return result;
+      var queue = new Queue&lt;TreeNode&gt;();
+      queue.Enqueue(root);
+      while (queue.Count &gt; 0) {
+          int levelSize = queue.Count;
+          var level = new List&lt;int&gt;(levelSize);
+          for (int i = 0; i &lt; levelSize; i++) {
+              var node = queue.Dequeue();
+              level.Add(node.val);
+              if (node.left != null) queue.Enqueue(node.left);
+              if (node.right != null) queue.Enqueue(node.right);
+          }
+          result.Add(level);
+      }
+      return result;
+  }</code></pre></div>
+<p>Taking a snapshot of <code>queue.Count</code> decouples the nodes belonging to the current level from their children being enqueued for the subsequent level, guaranteeing clean level partitioning in $O(N)$ time and $O(W)$ space.</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day20.RedisStreams/Models.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd20-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d20-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day20.RedisStreams;
+
+/// &lt;summary&gt;
+/// Represents a structured Redis Stream Entry ID formatted as: {timestampMs}-{sequence}
+/// &lt;/summary&gt;
+public record StreamEntryId(long TimestampMs, long Sequence) : IComparable&lt;StreamEntryId&gt;
+{
+    public override string ToString() =&gt; $&quot;{TimestampMs}-{Sequence}&quot;;
+
+    public static StreamEntryId Parse(string id)
+    {
+        var parts = id.Split(&#x27;-&#x27;);
+        if (parts.Length != 2 || !long.TryParse(parts[0], out var ts) || !long.TryParse(parts[1], out var seq))
+        {
+            throw new FormatException($&quot;Invalid StreamEntryId format: &#x27;{id}&#x27;. Expected &#x27;timestamp-sequence&#x27;.&quot;);
+        }
+        return new StreamEntryId(ts, seq);
+    }
+
+    public int CompareTo(StreamEntryId? other)
+    {
+        if (other is null) return 1;
+        int cmp = TimestampMs.CompareTo(other.TimestampMs);
+        return cmp != 0 ? cmp : Sequence.CompareTo(other.Sequence);
+    }
+}
+
+/// &lt;summary&gt;
+/// A persistent message record in a Redis Stream.
+/// &lt;/summary&gt;
+public record StreamMessage(
+    string Id,
+    IReadOnlyDictionary&lt;string, string&gt; Fields,
+    DateTime IngestedUtc);
+
+/// &lt;summary&gt;
+/// An unacknowledged message tracked in a Consumer Group&#x27;s Pending Entries List (PEL).
+/// &lt;/summary&gt;
+public record PendingEntry(
+    string MessageId,
+    string ConsumerName,
+    TimeSpan IdleTime,
+    int DeliveryCount,
+    DateTime LastDeliveredUtc);
+
+/// &lt;summary&gt;
+/// Summary statistics for an active consumer group.
+/// &lt;/summary&gt;
+public record ConsumerGroupStats(
+    string GroupName,
+    int ConsumersCount,
+    int PendingCount,
+    string LastDeliveredId);
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day20.RedisStreams/RedisPubSubCoordinator.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd20-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d20-src-code-1" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day20.RedisStreams;
+
+/// &lt;summary&gt;
+/// In-memory coordinator simulating Redis Pub/Sub mechanics:
+/// - Ephemeral fire-and-forget delivery
+/// - Zero persistence (offline/disconnected subscribers miss messages completely)
+/// - Fanout to all active subscribers on a channel
+/// &lt;/summary&gt;
+public class RedisPubSubCoordinator
+{
+    private readonly ConcurrentDictionary&lt;string, List&lt;Func&lt;string, Task&gt;&gt;&gt; _subscribers = new();
+    private readonly object _syncLock = new();
+
+    public int GetSubscriberCount(string channel)
+    {
+        lock (_syncLock)
+        {
+            return _subscribers.TryGetValue(channel, out var list) ? list.Count : 0;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Subscribes an async handler to a specific pub/sub channel.
+    /// Returns an IDisposable subscription token to unsubscribe.
+    /// &lt;/summary&gt;
+    public IDisposable Subscribe(string channel, Func&lt;string, Task&gt; handler)
+    {
+        lock (_syncLock)
+        {
+            var list = _subscribers.GetOrAdd(channel, _ =&gt; new List&lt;Func&lt;string, Task&gt;&gt;());
+            list.Add(handler);
+        }
+
+        return new SubscriptionToken(() =&gt;
+        {
+            lock (_syncLock)
+            {
+                if (_subscribers.TryGetValue(channel, out var list))
+                {
+                    list.Remove(handler);
+                    if (list.Count == 0)
+                    {
+                        _subscribers.TryRemove(channel, out _);
+                    }
+                }
+            }
+        });
+    }
+
+    /// &lt;summary&gt;
+    /// Publishes a message to a channel.
+    /// Returns the number of clients that received the message.
+    /// &lt;/summary&gt;
+    public async Task&lt;int&gt; PublishAsync(string channel, string message)
+    {
+        List&lt;Func&lt;string, Task&gt;&gt; targets;
+        lock (_syncLock)
+        {
+            if (!_subscribers.TryGetValue(channel, out var list) || list.Count == 0)
+            {
+                // Message is dropped immediately; zero persistence
+                return 0;
+            }
+            targets = new List&lt;Func&lt;string, Task&gt;&gt;(list);
+        }
+
+        var tasks = targets.Select(handler =&gt; handler(message));
+        await Task.WhenAll(tasks);
+        return targets.Count;
+    }
+
+    private sealed class SubscriptionToken : IDisposable
+    {
+        private Action? _unsubscribe;
+
+        public SubscriptionToken(Action unsubscribe)
+        {
+            _unsubscribe = unsubscribe;
+        }
+
+        public void Dispose()
+        {
+            Interlocked.Exchange(ref _unsubscribe, null)?.Invoke();
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day20.RedisStreams/RedisStreamsManager.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd20-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d20-src-code-2" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day20.RedisStreams;
+
+/// &lt;summary&gt;
+/// High-performance stream manager simulating Redis Streams engine internals:
+/// - Append-only ordered message stream with Radix tree / ListPack semantics
+/// - Monotonically increasing {timestamp}-{sequence} ID generation
+/// - Consumer Groups with partitioned work distribution
+/// - Pending Entries List (PEL) tracking in-flight message state
+/// - Explicit ACK mechanism (XACK)
+/// - Dead-letter and crash recovery via message claiming (XCLAIM / XAUTOCLAIM)
+/// &lt;/summary&gt;
+public class RedisStreamsManager
+{
+    private class InternalGroup
+    {
+        public string Name { get; }
+        public StreamEntryId LastDeliveredId { get; set; } = new(0, 0);
+        public HashSet&lt;string&gt; ActiveConsumers { get; } = new();
+        public Dictionary&lt;string, PendingEntry&gt; Pel { get; } = new(); // Keyed by MessageId
+
+        public InternalGroup(string name, StreamEntryId startId)
+        {
+            Name = name;
+            LastDeliveredId = startId;
+        }
+    }
+
+    private readonly List&lt;StreamMessage&gt; _messages = new();
+    private readonly ConcurrentDictionary&lt;string, InternalGroup&gt; _groups = new();
+    private readonly object _syncLock = new();
+    private long _lastTimestampMs = 0;
+    private long _sequence = 0;
+
+    public int StreamLength
+    {
+        get
+        {
+            lock (_syncLock) return _messages.Count;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XADD: Appends a new message to the stream with automatic monotonic ID generation.
+    /// &lt;/summary&gt;
+    public StreamMessage Add(IReadOnlyDictionary&lt;string, string&gt; fields, string? customId = null)
+    {
+        lock (_syncLock)
+        {
+            StreamEntryId entryId;
+            if (customId != null &amp;&amp; customId != &quot;*&quot;)
+            {
+                entryId = StreamEntryId.Parse(customId);
+            }
+            else
+            {
+                long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                if (nowMs == _lastTimestampMs)
+                {
+                    _sequence++;
+                }
+                else
+                {
+                    _lastTimestampMs = Math.Max(nowMs, _lastTimestampMs);
+                    _sequence = 0;
+                }
+                entryId = new StreamEntryId(_lastTimestampMs, _sequence);
+            }
+
+            var msg = new StreamMessage(entryId.ToString(), new Dictionary&lt;string, string&gt;(fields), DateTime.UtcNow);
+            _messages.Add(msg);
+            return msg;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XGROUP CREATE: Creates a consumer group starting from a given stream entry ID (or &quot;0&quot; for beginning, &quot;$&quot; for latest).
+    /// &lt;/summary&gt;
+    public bool CreateConsumerGroup(string groupName, string startId = &quot;$&quot;)
+    {
+        lock (_syncLock)
+        {
+            if (_groups.ContainsKey(groupName)) return false;
+
+            StreamEntryId start;
+            if (startId == &quot;$&quot;)
+            {
+                start = _messages.Count &gt; 0 ? StreamEntryId.Parse(_messages.Last().Id) : new StreamEntryId(0, 0);
+            }
+            else if (startId == &quot;0&quot;)
+            {
+                start = new StreamEntryId(0, 0);
+            }
+            else
+            {
+                start = StreamEntryId.Parse(startId);
+            }
+
+            return _groups.TryAdd(groupName, new InternalGroup(groupName, start));
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XREADGROUP: Reads new messages (ID &quot;&gt;&quot;) or pending unacknowledged messages for a consumer in a group.
+    /// Automatically records in-flight messages in the Pending Entries List (PEL).
+    /// &lt;/summary&gt;
+    public IReadOnlyList&lt;StreamMessage&gt; ReadGroup(
+        string groupName,
+        string consumerName,
+        int count = 10,
+        string id = &quot;&gt;&quot;)
+    {
+        lock (_syncLock)
+        {
+            if (!_groups.TryGetValue(groupName, out var group))
+            {
+                throw new InvalidOperationException($&quot;Consumer group &#x27;{groupName}&#x27; does not exist.&quot;);
+            }
+
+            group.ActiveConsumers.Add(consumerName);
+            var now = DateTime.UtcNow;
+            var dispatched = new List&lt;StreamMessage&gt;();
+
+            if (id == &quot;&gt;&quot;)
+            {
+                // Deliver brand new unconsumed messages
+                var candidates = _messages
+                    .Where(m =&gt; StreamEntryId.Parse(m.Id).CompareTo(group.LastDeliveredId) &gt; 0)
+                    .Take(count)
+                    .ToList();
+
+                foreach (var msg in candidates)
+                {
+                    var msgId = msg.Id;
+                    group.LastDeliveredId = StreamEntryId.Parse(msgId);
+
+                    // Add to PEL
+                    group.Pel[msgId] = new PendingEntry(
+                        MessageId: msgId,
+                        ConsumerName: consumerName,
+                        IdleTime: TimeSpan.Zero,
+                        DeliveryCount: 1,
+                        LastDeliveredUtc: now);
+
+                    dispatched.Add(msg);
+                }
+            }
+            else
+            {
+                // Deliver currently pending messages assigned to this consumer
+                var pendingForConsumer = group.Pel.Values
+                    .Where(p =&gt; p.ConsumerName == consumerName)
+                    .Take(count)
+                    .ToList();
+
+                foreach (var pend in pendingForConsumer)
+                {
+                    var msg = _messages.FirstOrDefault(m =&gt; m.Id == pend.MessageId);
+                    if (msg != null)
+                    {
+                        // Increment delivery count
+                        group.Pel[pend.MessageId] = pend with
+                        {
+                            DeliveryCount = pend.DeliveryCount + 1,
+                            LastDeliveredUtc = now
+                        };
+                        dispatched.Add(msg);
+                    }
+                }
+            }
+
+            return dispatched;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XACK: Acknowledges receipt of messages by removing them from the Consumer Group&#x27;s Pending Entries List (PEL).
+    /// &lt;/summary&gt;
+    public int Ack(string groupName, params string[] messageIds)
+    {
+        lock (_syncLock)
+        {
+            if (!_groups.TryGetValue(groupName, out var group)) return 0;
+
+            int acked = 0;
+            foreach (var id in messageIds)
+            {
+                if (group.Pel.Remove(id))
+                {
+                    acked++;
+                }
+            }
+            return acked;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XPENDING: Inspects currently pending unacknowledged messages in the consumer group.
+    /// &lt;/summary&gt;
+    public IReadOnlyList&lt;PendingEntry&gt; GetPendingEntries(string groupName, DateTime? evaluationTime = null)
+    {
+        lock (_syncLock)
+        {
+            if (!_groups.TryGetValue(groupName, out var group)) return Array.Empty&lt;PendingEntry&gt;();
+
+            var now = evaluationTime ?? DateTime.UtcNow;
+            return group.Pel.Values
+                .Select(p =&gt; p with { IdleTime = now - p.LastDeliveredUtc })
+                .ToList();
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// XCLAIM / XAUTOCLAIM: Recovers abandoned messages from a dead/failed consumer after an idle duration.
+    /// Reassigns ownership to a new consumer, increments delivery count, and returns the claimed messages.
+    /// &lt;/summary&gt;
+    public IReadOnlyList&lt;StreamMessage&gt; Claim(
+        string groupName,
+        string newConsumerName,
+        TimeSpan minIdleTime,
+        DateTime? evaluationTime = null,
+        int count = 10)
+    {
+        lock (_syncLock)
+        {
+            if (!_groups.TryGetValue(groupName, out var group)) return Array.Empty&lt;StreamMessage&gt;();
+
+            var now = evaluationTime ?? DateTime.UtcNow;
+            group.ActiveConsumers.Add(newConsumerName);
+
+            // Find pending messages exceeding idle time
+            var staleEntries = group.Pel.Values
+                .Where(p =&gt; (now - p.LastDeliveredUtc) &gt;= minIdleTime)
+                .Take(count)
+                .ToList();
+
+            var claimedMessages = new List&lt;StreamMessage&gt;();
+
+            foreach (var entry in staleEntries)
+            {
+                var msg = _messages.FirstOrDefault(m =&gt; m.Id == entry.MessageId);
+                if (msg != null)
+                {
+                    // Reassign to new consumer and update PEL
+                    group.Pel[entry.MessageId] = entry with
+                    {
+                        ConsumerName = newConsumerName,
+                        DeliveryCount = entry.DeliveryCount + 1,
+                        LastDeliveredUtc = now,
+                        IdleTime = TimeSpan.Zero
+                    };
+                    claimedMessages.Add(msg);
+                }
+            }
+
+            return claimedMessages;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Fetches group statistics (consumer count, pending count, last delivered ID).
+    /// &lt;/summary&gt;
+    public ConsumerGroupStats? GetGroupStats(string groupName)
+    {
+        lock (_syncLock)
+        {
+            if (!_groups.TryGetValue(groupName, out var group)) return null;
+
+            return new ConsumerGroupStats(
+                GroupName: group.Name,
+                ConsumersCount: group.ActiveConsumers.Count,
+                PendingCount: group.Pel.Count,
+                LastDeliveredId: group.LastDeliveredId.ToString());
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day20.RedisStreams/TreeTraversalSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd20-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d20-src-code-3" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day20.RedisStreams;
+
+/// &lt;summary&gt;
+/// Definition for a binary tree node.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// Tree traversal and ancestor algorithms:
+/// - LeetCode #235: Lowest Common Ancestor of a Binary Search Tree (BST)
+/// - LeetCode #102: Binary Tree Level Order Traversal (BFS)
+/// &lt;/summary&gt;
+public class TreeTraversalSolvers
+{
+    /// &lt;summary&gt;
+    /// Finds the Lowest Common Ancestor (LCA) of two given nodes in a BST (LeetCode #235).
+    /// Exploits BST ordering invariant: all left values &amp;lt; node.val &amp;lt; all right values.
+    /// Time Complexity: O(H) where H is tree height (O(log N) balanced, O(N) skewed).
+    /// Space Complexity: O(1) auxiliary memory using iterative traversal.
+    /// &lt;/summary&gt;
+    public TreeNode? LowestCommonAncestor(TreeNode? root, TreeNode? p, TreeNode? q)
+    {
+        if (root == null || p == null || q == null) return null;
+
+        var curr = root;
+        while (curr != null)
+        {
+            if (p.val &lt; curr.val &amp;&amp; q.val &lt; curr.val)
+            {
+                // Both nodes reside in left subtree
+                curr = curr.left;
+            }
+            else if (p.val &gt; curr.val &amp;&amp; q.val &gt; curr.val)
+            {
+                // Both nodes reside in right subtree
+                curr = curr.right;
+            }
+            else
+            {
+                // Split point found: one is on left, one on right, or curr is p or q
+                return curr;
+            }
+        }
+
+        return null;
+    }
+
+    /// &lt;summary&gt;
+    /// Returns the level order traversal of a binary tree&#x27;s node values (LeetCode #102).
+    /// Uses iterative BFS level-by-level queue batching.
+    /// Time Complexity: O(N) visiting each node exactly once.
+    /// Space Complexity: O(W) where W is maximum width of tree (up to N/2 nodes at leaf level).
+    /// &lt;/summary&gt;
+    public IList&lt;IList&lt;int&gt;&gt; LevelOrder(TreeNode? root)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (root == null) return result;
+
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        while (queue.Count &gt; 0)
+        {
+            int levelSize = queue.Count;
+            var currentLevel = new List&lt;int&gt;(levelSize);
+
+            for (int i = 0; i &lt; levelSize; i++)
+            {
+                var node = queue.Dequeue();
+                currentLevel.Add(node.val);
+
+                if (node.left != null) queue.Enqueue(node.left);
+                if (node.right != null) queue.Enqueue(node.right);
+            }
+
+            result.Add(currentLevel);
+        }
+
+        return result;
+    }
+
+    /// &lt;summary&gt;
+    /// Helper to deserialize a tree from a level-order array representation.
+    /// &lt;/summary&gt;
+    public static TreeNode? BuildTree(int?[] values)
+    {
+        if (values == null || values.Length == 0 || values[0] == null) return null;
+
+        var root = new TreeNode(values[0]!.Value);
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int i = 1;
+        while (queue.Count &gt; 0 &amp;&amp; i &lt; values.Length)
+        {
+            var curr = queue.Dequeue();
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.left = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.left);
+            }
+            i++;
+
+            if (i &lt; values.Length &amp;&amp; values[i] != null)
+            {
+                curr.right = new TreeNode(values[i]!.Value);
+                queue.Enqueue(curr.right);
+            }
+            i++;
+        }
+
+        return root;
+    }
+
+    /// &lt;summary&gt;
+    /// Helper to find a specific node by value in the tree.
+    /// &lt;/summary&gt;
+    public static TreeNode? FindNode(TreeNode? root, int targetVal)
+    {
+        if (root == null) return null;
+        if (root.val == targetVal) return root;
+
+        return FindNode(root.left, targetVal) ?? FindNode(root.right, targetVal);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day20.RedisStreams.Tests/Day20Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd20-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d20-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day20.RedisStreams.Tests;
+
+public class Day20Tests
+{
+    // ==========================================
+    // 1. REDIS PUB/SUB TESTS
+    // ==========================================
+
+    [Fact]
+    public async Task PubSub_MultipleSubscribers_ReceivesBroadcastMessage()
+    {
+        var pubsub = new RedisPubSubCoordinator();
+        var received1 = new List&lt;string&gt;();
+        var received2 = new List&lt;string&gt;();
+
+        using var sub1 = pubsub.Subscribe(&quot;orders.created&quot;, msg =&gt;
+        {
+            received1.Add(msg);
+            return Task.CompletedTask;
+        });
+
+        using var sub2 = pubsub.Subscribe(&quot;orders.created&quot;, msg =&gt;
+        {
+            received2.Add(msg);
+            return Task.CompletedTask;
+        });
+
+        pubsub.GetSubscriberCount(&quot;orders.created&quot;).Should().Be(2);
+
+        int delivered = await pubsub.PublishAsync(&quot;orders.created&quot;, &quot;Order #101 placed&quot;);
+        delivered.Should().Be(2);
+
+        received1.Should().ContainSingle().Which.Should().Be(&quot;Order #101 placed&quot;);
+        received2.Should().ContainSingle().Which.Should().Be(&quot;Order #101 placed&quot;);
+    }
+
+    [Fact]
+    public async Task PubSub_EphemeralDrop_MessageDroppedWhenNoSubscribersExist()
+    {
+        var pubsub = new RedisPubSubCoordinator();
+        int delivered = await pubsub.PublishAsync(&quot;notifications&quot;, &quot;Hello World&quot;);
+
+        delivered.Should().Be(0);
+        pubsub.GetSubscriberCount(&quot;notifications&quot;).Should().Be(0);
+    }
+
+    // ==========================================
+    // 2. REDIS STREAMS TESTS
+    // ==========================================
+
+    [Fact]
+    public void Streams_XAdd_AppendsMessagesWithMonotonicIds()
+    {
+        var manager = new RedisStreamsManager();
+        var m1 = manager.Add(new Dictionary&lt;string, string&gt; { [&quot;event&quot;] = &quot;login&quot;, [&quot;userId&quot;] = &quot;42&quot; });
+        var m2 = manager.Add(new Dictionary&lt;string, string&gt; { [&quot;event&quot;] = &quot;purchase&quot;, [&quot;amount&quot;] = &quot;99.9&quot; });
+
+        manager.StreamLength.Should().Be(2);
+        m1.Id.Should().NotBeNullOrEmpty();
+        m2.Id.Should().NotBeNullOrEmpty();
+
+        var id1 = StreamEntryId.Parse(m1.Id);
+        var id2 = StreamEntryId.Parse(m2.Id);
+        id1.CompareTo(id2).Should().BeNegative();
+    }
+
+    [Fact]
+    public void Streams_ConsumerGroup_DistributesMessagesAcrossMultipleWorkers()
+    {
+        var manager = new RedisStreamsManager();
+        manager.CreateConsumerGroup(&quot;order-processors&quot;, startId: &quot;0&quot;);
+
+        // Add 4 messages
+        for (int i = 1; i &lt;= 4; i++)
+        {
+            manager.Add(new Dictionary&lt;string, string&gt; { [&quot;orderId&quot;] = i.ToString() });
+        }
+
+        // Worker A reads 2 messages
+        var batchA = manager.ReadGroup(&quot;order-processors&quot;, &quot;worker-A&quot;, count: 2);
+        batchA.Should().HaveCount(2);
+        batchA[0].Fields[&quot;orderId&quot;].Should().Be(&quot;1&quot;);
+        batchA[1].Fields[&quot;orderId&quot;].Should().Be(&quot;2&quot;);
+
+        // Worker B reads next 2 messages (partitioned non-overlapping)
+        var batchB = manager.ReadGroup(&quot;order-processors&quot;, &quot;worker-B&quot;, count: 2);
+        batchB.Should().HaveCount(2);
+        batchB[0].Fields[&quot;orderId&quot;].Should().Be(&quot;3&quot;);
+        batchB[1].Fields[&quot;orderId&quot;].Should().Be(&quot;4&quot;);
+
+        // PEL should track all 4 in-flight messages
+        var pending = manager.GetPendingEntries(&quot;order-processors&quot;);
+        pending.Should().HaveCount(4);
+    }
+
+    [Fact]
+    public void Streams_XAck_RemovesAcknowledgedMessagesFromPel()
+    {
+        var manager = new RedisStreamsManager();
+        manager.CreateConsumerGroup(&quot;email-workers&quot;, startId: &quot;0&quot;);
+
+        var msg1 = manager.Add(new Dictionary&lt;string, string&gt; { [&quot;email&quot;] = &quot;a@test.com&quot; });
+        var msg2 = manager.Add(new Dictionary&lt;string, string&gt; { [&quot;email&quot;] = &quot;b@test.com&quot; });
+
+        var read = manager.ReadGroup(&quot;email-workers&quot;, &quot;worker-1&quot;, count: 2);
+        read.Should().HaveCount(2);
+
+        manager.GetPendingEntries(&quot;email-workers&quot;).Should().HaveCount(2);
+
+        // Acknowledge msg1
+        int acked = manager.Ack(&quot;email-workers&quot;, msg1.Id);
+        acked.Should().Be(1);
+
+        // PEL now only contains msg2
+        var pending = manager.GetPendingEntries(&quot;email-workers&quot;);
+        pending.Should().HaveCount(1);
+        pending[0].MessageId.Should().Be(msg2.Id);
+
+        // Double ACK returns 0
+        manager.Ack(&quot;email-workers&quot;, msg1.Id).Should().Be(0);
+    }
+
+    [Fact]
+    public void Streams_XClaim_RecoversAbandonedMessagesFromDeadConsumer()
+    {
+        var manager = new RedisStreamsManager();
+        manager.CreateConsumerGroup(&quot;payment-workers&quot;, startId: &quot;0&quot;);
+
+        var msg = manager.Add(new Dictionary&lt;string, string&gt; { [&quot;invoice&quot;] = &quot;INV-990&quot; });
+
+        // Worker-Dead receives message at t0
+        var t0 = new DateTime(2026, 10, 10, 10, 0, 0, DateTimeKind.Utc);
+        manager.ReadGroup(&quot;payment-workers&quot;, &quot;worker-dead&quot;, count: 1);
+
+        // Worker-Dead crashes without ACK. At t0 + 60s, worker-healthy checks PEL and claims it
+        var tEval = t0.AddSeconds(60);
+        var pendingBefore = manager.GetPendingEntries(&quot;payment-workers&quot;, evaluationTime: tEval);
+        pendingBefore.Should().ContainSingle();
+        pendingBefore[0].ConsumerName.Should().Be(&quot;worker-dead&quot;);
+
+        // Claim messages idle &gt; 30s
+        var claimed = manager.Claim(&quot;payment-workers&quot;, &quot;worker-healthy&quot;, minIdleTime: TimeSpan.FromSeconds(30), evaluationTime: tEval);
+        claimed.Should().ContainSingle();
+        claimed[0].Id.Should().Be(msg.Id);
+
+        // Verify PEL reassignment and delivery count increment
+        var pendingAfter = manager.GetPendingEntries(&quot;payment-workers&quot;, evaluationTime: tEval);
+        pendingAfter[0].ConsumerName.Should().Be(&quot;worker-healthy&quot;);
+        pendingAfter[0].DeliveryCount.Should().Be(2);
+
+        // Worker-healthy completes and ACKs
+        manager.Ack(&quot;payment-workers&quot;, msg.Id).Should().Be(1);
+        manager.GetPendingEntries(&quot;payment-workers&quot;).Should().BeEmpty();
+    }
+
+    // ==========================================
+    // 3. DSA TREE TRAVERSAL TESTS (LC #235 &amp; #102)
+    // ==========================================
+
+    [Fact]
+    public void LC235_LowestCommonAncestor_StandardBst_ReturnsCorrectAncestor()
+    {
+        var solvers = new TreeTraversalSolvers();
+        // BST: [6, 2, 8, 0, 4, 7, 9, null, null, 3, 5]
+        var root = TreeTraversalSolvers.BuildTree(new int?[] { 6, 2, 8, 0, 4, 7, 9, null, null, 3, 5 });
+        var p = TreeTraversalSolvers.FindNode(root, 2);
+        var q = TreeTraversalSolvers.FindNode(root, 8);
+
+        var lca = solvers.LowestCommonAncestor(root, p, q);
+        lca.Should().NotBeNull();
+        lca!.val.Should().Be(6);
+    }
+
+    [Fact]
+    public void LC235_LowestCommonAncestor_NodeIsItsOwnAncestor_ReturnsNode()
+    {
+        var solvers = new TreeTraversalSolvers();
+        // BST: [6, 2, 8, 0, 4, 7, 9, null, null, 3, 5]
+        var root = TreeTraversalSolvers.BuildTree(new int?[] { 6, 2, 8, 0, 4, 7, 9, null, null, 3, 5 });
+        var p = TreeTraversalSolvers.FindNode(root, 2);
+        var q = TreeTraversalSolvers.FindNode(root, 4);
+
+        var lca = solvers.LowestCommonAncestor(root, p, q);
+        lca.Should().NotBeNull();
+        lca!.val.Should().Be(2);
+    }
+
+    [Fact]
+    public void LC102_LevelOrder_StandardTree_ReturnsGroupedLevels()
+    {
+        var solvers = new TreeTraversalSolvers();
+        // Tree: [3, 9, 20, null, null, 15, 7]
+        var root = TreeTraversalSolvers.BuildTree(new int?[] { 3, 9, 20, null, null, 15, 7 });
+
+        var levels = solvers.LevelOrder(root);
+        levels.Should().HaveCount(3);
+        levels[0].Should().Equal(new[] { 3 });
+        levels[1].Should().Equal(new[] { 9, 20 });
+        levels[2].Should().Equal(new[] { 15, 7 });
+    }
+
+    [Fact]
+    public void LC102_LevelOrder_SingleNodeAndEmptyTree_ReturnsExpectedList()
+    {
+        var solvers = new TreeTraversalSolvers();
+        solvers.LevelOrder(null).Should().BeEmpty();
+
+        var single = solvers.LevelOrder(new TreeNode(42));
+        single.Should().HaveCount(1);
+        single[0].Should().Equal(new[] { 42 });
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 20 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

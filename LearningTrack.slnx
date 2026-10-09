@@ -132,4 +132,18 @@
   <Folder Name="/Day19-Redis-RedLock-DistributedLocking/tests/">
     <Project Path="Day19-Redis-RedLock-DistributedLocking/tests/Day19.RedisRedLock.Tests/Day19.RedisRedLock.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day20-Redis-Streams-PubSub/" />
+  <Folder Name="/Day20-Redis-Streams-PubSub/src/">
+    <Project Path="Day20-Redis-Streams-PubSub/src/Day20.RedisStreams/Day20.RedisStreams.csproj" />
+  </Folder>
+  <Folder Name="/Day20-Redis-Streams-PubSub/tests/">
+    <Project Path="Day20-Redis-Streams-PubSub/tests/Day20.RedisStreams.Tests/Day20.RedisStreams.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day21-Distributed-Cache-Architecture/" />
+  <Folder Name="/Day21-Distributed-Cache-Architecture/src/">
+    <Project Path="Day21-Distributed-Cache-Architecture/src/Day21.DistributedCache/Day21.DistributedCache.csproj" />
+  </Folder>
+  <Folder Name="/Day21-Distributed-Cache-Architecture/tests/">
+    <Project Path="Day21-Distributed-Cache-Architecture/tests/Day21.DistributedCache.Tests/Day21.DistributedCache.Tests.csproj" />
+  </Folder>
 </Solution>

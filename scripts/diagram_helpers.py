@@ -24,6 +24,8 @@ DAYS_INFO = [
     {"num": 17, "dir": "Day17-Redis-Cache-Patterns", "title": "Introduction to Redis & Cache Patterns", "category": "Redis & Distributed Systems"},
     {"num": 18, "dir": "Day18-Redis-DataStructures-Eviction", "title": "Redis Data Structures & Memory Eviction Policies", "category": "Redis & Distributed Systems"},
     {"num": 19, "dir": "Day19-Redis-RedLock-DistributedLocking", "title": "Redis Distributed Locking with RedLock", "category": "Redis & Distributed Systems"},
+    {"num": 20, "dir": "Day20-Redis-Streams-PubSub", "title": "Redis Pub/Sub & Redis Streams", "category": "Redis & Distributed Systems"},
+    {"num": 21, "dir": "Day21-Distributed-Cache-Architecture", "title": "System Design: Distributed Cache Architecture", "category": "System Design & DSA"},
 ]
 
 def get_day_svg(day_num):
@@ -730,6 +732,175 @@ def get_day_svg(day_num):
           <text x="675" y="295" fill="#cbd5e1" font-size="9">H(u) = Mix(val, H_L, H_R)</text>
           <text x="675" y="310" fill="#94a3b8" font-size="9">64-bit polynomial hash set</text>
           <text x="675" y="325" fill="#34d399" font-size="9">Linear time subtree fingerprint</text>
+        </svg>
+        """
+    elif day_num == 20:
+        return """
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d20GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d20GradStreams" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d20GradPel" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d20GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d20GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Redis Streams Architecture: Radix Tree + ListPacks, Consumer Groups, PEL &amp; XCLAIM</text>
+
+          <!-- 1. Streams Radix Tree Log Column -->
+          <rect x="30" y="60" width="300" height="300" rx="10" fill="url(#d20GradStreams)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Stream Log: Radix + ListPacks</text>
+
+          <!-- Append-only Radix Tree representation -->
+          <rect x="45" y="105" width="270" height="50" rx="6" fill="#0369a1" stroke="#38bdf8"/>
+          <text x="55" y="125" fill="#ffffff" font-size="11" font-weight="bold">Radix Tree (raxNode)</text>
+          <text x="55" y="142" fill="#bae6fd" font-size="9">Radix indexing on Entry ID: &lt;timestamp_ms&gt;-&lt;seq&gt;</text>
+
+          <!-- ListPacks block -->
+          <rect x="45" y="165" width="270" height="75" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="185" fill="#38bdf8" font-size="11" font-weight="bold">Contiguous ListPack Chunk</text>
+          <text x="55" y="202" fill="#cbd5e1" font-size="9">1728475200000-0: {sensor: &quot;temp&quot;, val: 24.5}</text>
+          <text x="55" y="217" fill="#cbd5e1" font-size="9">1728475200001-0: {sensor: &quot;hum&quot;, val: 60.1}</text>
+          <text x="55" y="232" fill="#94a3b8" font-size="8">Delta-compressed IDs • Zero per-entry pointer bloat</text>
+
+          <!-- PubSub vs Stream Contrast -->
+          <rect x="45" y="250" width="270" height="95" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="270" fill="#fbbf24" font-size="11" font-weight="bold">Pub/Sub vs Streams</text>
+          <text x="55" y="288" fill="#ef4444" font-size="9">Pub/Sub: Ephemeral socket push • No history</text>
+          <text x="55" y="303" fill="#34d399" font-size="9">Streams: Append-only disk log • Range replay</text>
+          <text x="55" y="318" fill="#94a3b8" font-size="9">XTRIM MINID / MAXLEN prevents unbounded RAM</text>
+
+          <!-- 2. Consumer Groups & PEL Column -->
+          <rect x="350" y="60" width="280" height="300" rx="10" fill="url(#d20GradPel)" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="370" y="88" fill="#c084fc" font-size="14" font-weight="bold">Consumer Groups &amp; PEL</text>
+
+          <rect x="365" y="105" width="250" height="60" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="125" fill="#60a5fa" font-size="11" font-weight="bold">Group Cursor &amp; Competing Consumers</text>
+          <text x="375" y="142" fill="#cbd5e1" font-size="9">Last-Delivered-ID tracks stream frontier</text>
+          <text x="375" y="157" fill="#94a3b8" font-size="9">XREADGROUP GROUP g1 w1 STREAMS s1 &gt;</text>
+
+          <rect x="365" y="175" width="250" height="80" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="195" fill="#fbbf24" font-size="11" font-weight="bold">Pending Entries List (PEL)</text>
+          <text x="375" y="212" fill="#cbd5e1" font-size="9">Worker 1: msg-101 (idle: 400ms) &#8594; XACK &#10003;</text>
+          <text x="375" y="227" fill="#f87171" font-size="9">Worker 2 (CRASHED): msg-102 (idle: 95s) &#9888;</text>
+          <text x="375" y="242" fill="#94a3b8" font-size="8">PEL tracks ID, consumer, idle time &amp; delivery count</text>
+
+          <rect x="365" y="265" width="250" height="78" rx="5" fill="#0f172a" stroke="#10b981"/>
+          <text x="375" y="285" fill="#34d399" font-size="11" font-weight="bold">Fault Recovery: XCLAIM / XAUTOCLAIM</text>
+          <text x="375" y="302" fill="#cbd5e1" font-size="9">Worker 3 claims msg-102 after min-idle-time</text>
+          <text x="375" y="317" fill="#cbd5e1" font-size="9">Ownership transfers safely without re-reading</text>
+          <text x="375" y="332" fill="#94a3b8" font-size="8">At-least-once delivery + Dead Letter Queue defense</text>
+
+          <!-- 3. DSA Tree Algorithms Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d20GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">Tree Traversal &amp; LCA</text>
+
+          <rect x="665" y="105" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #235: LCA of BST</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Exploits BST Ordering Property:</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">p, q &lt; curr.val &#8594; curr = curr.left</text>
+          <text x="675" y="172" fill="#cbd5e1" font-size="9">p, q &gt; curr.val &#8594; curr = curr.right</text>
+          <text x="675" y="187" fill="#fbbf24" font-size="9">Split point &#8594; curr is LCA!</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">O(H) Time | O(1) Iterative Space</text>
+
+          <rect x="665" y="225" width="210" height="120" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="245" fill="#fbbf24" font-size="11" font-weight="bold">LC #102: Level Order BFS</text>
+          <text x="675" y="262" fill="#94a3b8" font-size="9">FIFO Queue level-by-level:</text>
+          <text x="675" y="278" fill="#cbd5e1" font-size="9">levelSize = queue.Count</text>
+          <text x="675" y="293" fill="#38bdf8" font-size="9">Batch-process current tier</text>
+          <text x="675" y="308" fill="#94a3b8" font-size="9">Enqueue left &amp; right children</text>
+          <text x="675" y="325" fill="#34d399" font-size="9">O(N) Time | O(W) Frontier Width</text>
+        </svg>
+        """
+    elif day_num == 21:
+        return """
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d21GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d21GradRing" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d21GradCache" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2e1065"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d21GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d21GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Distributed Cache Architecture: Ketama Consistent Hashing, Stampede Shield &amp; Tree Views</text>
+
+          <!-- 1. Ketama Consistent Hash Ring Column -->
+          <rect x="30" y="60" width="300" height="300" rx="10" fill="url(#d21GradRing)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Ketama Consistent Hash Ring</text>
+
+          <rect x="45" y="105" width="270" height="60" rx="6" fill="#0284c7" stroke="#38bdf8"/>
+          <text x="55" y="125" fill="#ffffff" font-size="11" font-weight="bold">Ring Space: [0, 2^32 - 1]</text>
+          <text x="55" y="142" fill="#e0f2fe" font-size="9">Virtual Nodes (150/server) prevent hot spots</text>
+          <text x="55" y="155" fill="#bae6fd" font-size="9">BinarySearch O(log(N * V)) nearest clockwise node</text>
+
+          <rect x="45" y="175" width="270" height="75" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="195" fill="#fbbf24" font-size="11" font-weight="bold">Minimal Cluster Disruption</text>
+          <text x="55" y="212" fill="#cbd5e1" font-size="9">Hash(key) &#8594; Node A#42 &#8594; Physical Server A</text>
+          <text x="55" y="227" fill="#34d399" font-size="9">Node scale up/down: Only 1/N keys remapped</text>
+          <text x="55" y="242" fill="#ef4444" font-size="8">vs Traditional Hash(k) % N: Remaps 100% of keys!</text>
+
+          <rect x="45" y="260" width="270" height="85" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="280" fill="#38bdf8" font-size="11" font-weight="bold">Hot-Key Suffix Scattering</text>
+          <text x="55" y="297" fill="#cbd5e1" font-size="9">Scatter key: &quot;celebrity_feed_#&quot; + rand(0..10)</text>
+          <text x="55" y="312" fill="#cbd5e1" font-size="9">Spreads 100k QPS across 10 independent shards</text>
+          <text x="55" y="327" fill="#94a3b8" font-size="8">Writes fan-out or write to primary with background sync</text>
+
+          <!-- 2. Two-Tier Cache & Stampede Shield Column -->
+          <rect x="350" y="60" width="280" height="300" rx="10" fill="url(#d21GradCache)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="370" y="88" fill="#c084fc" font-size="14" font-weight="bold">Cache Stampede &amp; 2-Tier Shield</text>
+
+          <rect x="365" y="105" width="250" height="70" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="125" fill="#60a5fa" font-size="11" font-weight="bold">Two-Tier Architecture</text>
+          <text x="375" y="142" fill="#cbd5e1" font-size="9">L1: MemoryCache (in-proc, &lt; 100ns)</text>
+          <text x="375" y="157" fill="#cbd5e1" font-size="9">L2: Redis Sharded Cluster (remote, ~1ms)</text>
+          <text x="375" y="170" fill="#94a3b8" font-size="8">L1 shields network roundtrips for hottest 5% keys</text>
+
+          <rect x="365" y="185" width="250" height="75" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="205" fill="#fbbf24" font-size="11" font-weight="bold">Single-Flight Mutex</text>
+          <text x="375" y="222" fill="#cbd5e1" font-size="9">Concurrent requests for expired key</text>
+          <text x="375" y="237" fill="#34d399" font-size="9">1 thread acquires semaphore &#8594; fetches DB</text>
+          <text x="375" y="252" fill="#94a3b8" font-size="8">Remaining N-1 threads await Task without DB hit</text>
+
+          <rect x="365" y="270" width="250" height="75" rx="5" fill="#0f172a" stroke="#10b981"/>
+          <text x="375" y="290" fill="#34d399" font-size="11" font-weight="bold">XFetch Probabilistic Refresh</text>
+          <text x="375" y="307" fill="#cbd5e1" font-size="9">-delta * beta * ln(rand()) &gt; rem_ttl</text>
+          <text x="375" y="322" fill="#cbd5e1" font-size="9">Background asynchronous DB pre-computation</text>
+          <text x="375" y="337" fill="#94a3b8" font-size="8">Guarantees zero-downtime cache misses under load</text>
+
+          <!-- 3. DSA Tree Inspection Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d21GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">Tree Inspection</text>
+
+          <rect x="665" y="105" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #199: Right Side View</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Right-First Preorder DFS:</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">if (depth == result.Count)</text>
+          <text x="675" y="172" fill="#fbbf24" font-size="9">  result.Add(node.val);</text>
+          <text x="675" y="187" fill="#cbd5e1" font-size="9">DFS(node.right); DFS(node.left);</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">O(N) Time | O(H) Call Stack</text>
+
+          <rect x="665" y="225" width="210" height="120" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="245" fill="#fbbf24" font-size="11" font-weight="bold">LC #1448: Good Nodes</text>
+          <text x="675" y="262" fill="#94a3b8" font-size="9">Path Maximum Invariant:</text>
+          <text x="675" y="278" fill="#cbd5e1" font-size="9">if (node.val &gt;= maxSoFar)</text>
+          <text x="675" y="293" fill="#34d399" font-size="9">  count++;</text>
+          <text x="675" y="308" fill="#cbd5e1" font-size="9">newMax = max(maxSoFar, val)</text>
+          <text x="675" y="325" fill="#34d399" font-size="9">O(N) Time | O(H) Depth-First Stack</text>
         </svg>
         """
     return ""

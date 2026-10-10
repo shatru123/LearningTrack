@@ -1,0 +1,3286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 23: System Design: URL Shortener (TinyURL) | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 23</span>
+        <span class="badge badge-category">System Design &amp; Distributed Systems</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day22-Rate-Limiter-Design/index.html" class="nav-btn">← Day 22</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+
+        </select>
+        <span class="nav-btn" style="opacity:0.4; cursor:default;">Next Day →</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 23: System Design: URL Shortener (TinyURL)</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 5 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d23GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d23GradSnowflake" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d23GradCluster" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2e1065"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d23GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d23GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">TinyURL System Architecture: Snowflake 64-bit ID, Base62, Sharding &amp; Tree Reconstruction</text>
+
+          <!-- 1. Snowflake & Base62 Column -->
+          <rect x="30" y="60" width="300" height="300" rx="10" fill="url(#d23GradSnowflake)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Snowflake ID &amp; Base62 Codec</text>
+
+          <rect x="45" y="105" width="270" height="65" rx="6" fill="#0284c7" stroke="#38bdf8"/>
+          <text x="55" y="125" fill="#ffffff" font-size="11" font-weight="bold">64-bit Twitter Snowflake</text>
+          <text x="55" y="142" fill="#e0f2fe" font-size="9">1-bit Sign | 41-bit ms Epoch (69 yrs)</text>
+          <text x="55" y="157" fill="#bae6fd" font-size="9">5-bit DC | 5-bit Worker | 12-bit Seq (4096/ms)</text>
+
+          <rect x="45" y="180" width="270" height="75" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="200" fill="#fbbf24" font-size="11" font-weight="bold">Base62 Bijective Codec</text>
+          <text x="55" y="217" fill="#cbd5e1" font-size="9">Alphabet: [0-9a-zA-Z] (62 URL-safe chars)</text>
+          <text x="55" y="232" fill="#34d399" font-size="9">Zero hash collision risk • 7-8 char links</text>
+          <text x="55" y="247" fill="#94a3b8" font-size="8">123456789 &#8594; &quot;8m0Kx&quot; (Bi-directional)</text>
+
+          <rect x="45" y="265" width="270" height="80" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="285" fill="#38bdf8" font-size="11" font-weight="bold">Monotonic B-Tree Friendly</text>
+          <text x="55" y="302" fill="#cbd5e1" font-size="9">k-sorted IDs prevent random B-Tree page splits</text>
+          <text x="55" y="317" fill="#34d399" font-size="9">Handles 4.096M IDs/sec per machine node</text>
+          <text x="55" y="332" fill="#94a3b8" font-size="8">Spin-wait protection against NTP clock backwards drift</text>
+
+          <!-- 2. Sharding & Capacity Column -->
+          <rect x="350" y="60" width="280" height="300" rx="10" fill="url(#d23GradCluster)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="370" y="88" fill="#c084fc" font-size="14" font-weight="bold">Capacity Planning &amp; Sharding</text>
+
+          <rect x="365" y="105" width="250" height="75" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="125" fill="#60a5fa" font-size="11" font-weight="bold">100M Writes &amp; 1B Reads Workload</text>
+          <text x="375" y="142" fill="#cbd5e1" font-size="9">Write QPS: ~1,157 (Peak 3x: ~3,500)</text>
+          <text x="375" y="157" fill="#cbd5e1" font-size="9">Read QPS: ~11,574 (Peak 3x: ~35,000)</text>
+          <text x="375" y="170" fill="#94a3b8" font-size="8">10:1 Read-to-Write Ratio • Latency SLA &lt; 10ms</text>
+
+          <rect x="365" y="190" width="250" height="75" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="210" fill="#fbbf24" font-size="11" font-weight="bold">Storage &amp; Cache Requirements</text>
+          <text x="375" y="227" fill="#cbd5e1" font-size="9">500 bytes/rec &#8594; 18.25 TB/yr (91.25 TB/5yr)</text>
+          <text x="375" y="242" fill="#34d399" font-size="9">Pareto 80/20 Rule: 100 GB RAM Redis Cache</text>
+          <text x="375" y="255" fill="#94a3b8" font-size="8">Caches 20% of daily read URLs (200M links)</text>
+
+          <rect x="365" y="275" width="250" height="70" rx="5" fill="#0f172a" stroke="#10b981"/>
+          <text x="375" y="295" fill="#34d399" font-size="11" font-weight="bold">Hash(ID) % N Sharding &amp; HTTP 302</text>
+          <text x="375" y="312" fill="#cbd5e1" font-size="9">Decode(shortCode) % N finds target shard directly</text>
+          <text x="375" y="327" fill="#94a3b8" font-size="8">HTTP 302 preserves 100% telemetry &amp; analytics tracking</text>
+
+          <!-- 3. DSA Tree Reconstruction Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d23GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">Tree Reconstruction</text>
+
+          <rect x="665" y="105" width="210" height="115" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #105: Preorder + Inorder</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Preorder: [Root, Left..., Right...]</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">rootVal = preorder[preIndex++]</text>
+          <text x="675" y="172" fill="#fbbf24" font-size="9">Inorder: [Left..., Root, Right...]</text>
+          <text x="675" y="187" fill="#cbd5e1" font-size="9">inRoot divides left &amp; right</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">Recursive divide-and-conquer</text>
+
+          <rect x="665" y="230" width="210" height="115" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="250" fill="#fbbf24" font-size="11" font-weight="bold">Hash Map O(1) Index Lookup</text>
+          <text x="675" y="267" fill="#94a3b8" font-size="9">Without map: O(N) scan &#8594; O(N^2)</text>
+          <text x="675" y="283" fill="#34d399" font-size="10" font-weight="bold">inorderMap[val] = index</text>
+          <text x="675" y="300" fill="#cbd5e1" font-size="9">Reduces split lookup to O(1)</text>
+          <text x="675" y="315" fill="#34d399" font-size="9">Optimal O(N) Time | O(N) Space</text>
+          <text x="675" y="330" fill="#94a3b8" font-size="8">Strictly builds left child before right</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (5 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 23: Deep Dive — TinyURL System Design & Tree Reconstruction Mechanics</h1>
+<h2>1. High-Level Architecture Overview</h2>
+<p>A URL shortener is a classic read-heavy distributed system requiring high availability, low latency redirects, and scalable write throughput.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">[Client]
+   │
+   ▼
+[Cloudflare / Edge CDN] ── (301/302 Cache for Hottest URLs)
+   │
+   ▼
+[Load Balancer (Layer 7)]
+   │
+   ▼
+[API Gateway / App Service]
+   ├── [Snowflake ID Generator] (In-process, decentralized)
+   ├── [Base62 Codec] (Deterministic bijection)
+   │
+   ├──► [L1/L2 Redis Cluster] (Cache-Aside, ~100GB hot working set)
+   │
+   └──► [Sharded Database (PostgreSQL / DynamoDB)] (Hash(ID) sharding)</code></pre></div>
+<hr/>
+<h2>2. Capacity Planning & Math Formulas</h2>
+<h3>2.1 Traffic Estimation</h3>
+<ul>
+<li><strong>Daily Writes</strong>: $100\text{M}$ URLs/day.</li>
+<li><strong>Daily Reads</strong>: $1\text{B}$ redirects/day (10:1 Read to Write ratio).</li>
+<li><strong>Average Write QPS</strong>:</li>
+</ul>
+<p>$$\text{Write QPS} = \frac{100,000,000}{86,400\text{ s}} \approx 1,157.4\text{ requests/sec}$$</p>
+<ul>
+<li>Peak Write QPS ($3\times$): $\approx 3,472\text{ QPS}$.</li>
+<li><strong>Average Read QPS</strong>:</li>
+</ul>
+<p>$$\text{Read QPS} = \frac{1,000,000,000}{86,400\text{ s}} \approx 11,574.1\text{ requests/sec}$$</p>
+<ul>
+<li>Peak Read QPS ($3\times$): $\approx 34,722\text{ QPS}$.</li>
+</ul>
+<h3>2.2 Storage Calculations</h3>
+<ul>
+<li><strong>Per Record Sizing</strong>:</li>
+<li><code>ID</code>: 8 bytes (64-bit Snowflake int)</li>
+<li><code>ShortCode</code>: 7-8 bytes</li>
+<li><code>LongUrl</code>: ~250 bytes</li>
+<li><code>CreatedAtUtc</code>: 8 bytes</li>
+<li><code>ExpiresAtUtc</code>: 8 bytes</li>
+<li><code>UserId</code>: 16 bytes (UUID)</li>
+<li><code>ClickCount</code>: 8 bytes</li>
+<li>Index overhead & padding: ~195 bytes</li>
+<li><strong>Total</strong>: $500\text{ bytes}$ per record.</li>
+<li><strong>Yearly Growth</strong>:</li>
+</ul>
+<p>$$100\text{M} \times 365 \times 500\text{ bytes} = 18.25\text{ TB/year}$$</p>
+<ul>
+<li><strong>5-Year Growth</strong>: $18.25 \times 5 = 91.25\text{ TB}$.</li>
+</ul>
+<h3>2.3 Memory Cache Sizing (Pareto 80/20 Rule)</h3>
+<ul>
+<li>20% of daily reads generate 80% of traffic.</li>
+<li>Requests to cache daily: $1\text{B} \times 0.20 = 200\text{M}$ URLs.</li>
+<li>RAM Required:</li>
+</ul>
+<p>$$200,000,000 \times 500\text{ bytes} = 100,000,000,000\text{ bytes} = 100\text{ GB RAM}$$</p>
+<ul>
+<li>A Redis cluster configured with 4 nodes (32GB RAM each) comfortably caches the entire hot working set with sub-millisecond redirect latency.</li>
+</ul>
+<hr/>
+<h2>3. ID Generation Architecture Comparison</h2>
+<div class="table-container"><table><thead><tr>
+<th>Mechanism</th>
+<th>Coordination</th>
+<th>Size</th>
+<th>B-Tree Friendly</th>
+<th>Collision Risk</th>
+<th>Base62 Length</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>DB Auto-Increment</strong></td>
+<td>High (Single point of failure)</td>
+<td>64-bit</td>
+<td>Yes</td>
+<td>Zero</td>
+<td>7 chars</td>
+</tr>
+<tr>
+<td><strong>UUID v4</strong></td>
+<td>None (Decentralized)</td>
+<td>128-bit</td>
+<td>No (Random index thrashing)</td>
+<td>Negligible</td>
+<td>22 chars (Too long!)</td>
+</tr>
+<tr>
+<td><strong>MD5 / SHA-256 Truncation</strong></td>
+<td>None</td>
+<td>Hash</td>
+<td>No</td>
+<td>High (requires check-and-retry)</td>
+<td>7 chars</td>
+</tr>
+<tr>
+<td><strong>Ticket Server (Flickr)</strong></td>
+<td>Medium (Central MySQL)</td>
+<td>64-bit</td>
+<td>Yes</td>
+<td>Zero</td>
+<td>7 chars</td>
+</tr>
+<tr>
+<td><strong>Twitter Snowflake</strong></td>
+<td><strong>Zero (In-process bitwise)</strong></td>
+<td><strong>64-bit</strong></td>
+<td><strong>Yes (k-sorted by time)</strong></td>
+<td><strong>Zero</strong></td>
+<td><strong>7-11 chars</strong></td>
+</tr>
+</tbody></table></div>
+<h3>Twitter Snowflake Bit Allocation</h3>
+<div class="code-block-container"><pre class="language-text"><code class="language-text"> 1 bit  41 bits (Timestamp in ms)        5 bits (DC)  5 bits (Worker) 12 bits (Seq)
+┌──────┬────────────────────────────────┬────────────┬───────────────┬─────────────┐
+│  0   │ 011010101110010110010101101... │   00010    │     00101     │ 000000000001│
+└──────┴────────────────────────────────┴────────────┴───────────────┴─────────────┘</code></pre></div>
+<ul>
+<li><strong>$2^{41}\text{ ms} \approx 69.7\text{ years}$</strong> longevity from epoch.</li>
+<li>Up to $32 \times 32 = 1,024$ worker instances.</li>
+<li>Up to $4,096$ IDs per millisecond per worker instance ($4.096\text{M IDs/sec}$).</li>
+</ul>
+<hr/>
+<h2>4. HTTP 301 vs. 302 / 307 Redirect Trade-Offs</h2>
+<ul>
+<li><strong>HTTP 301 (Moved Permanently)</strong>:</li>
+<li><em>Browser behavior</em>: Browsers cache the redirect permanently. Subsequent clicks navigate straight to the long URL without contacting the TinyURL server.</li>
+<li><em>Pros</em>: Extreme reduction in server load and egress bandwidth.</li>
+<li><em>Cons</em>: <strong>Cannot track click analytics</strong> after the initial visit!</li>
+<li><strong>HTTP 302 (Found) / HTTP 307 (Temporary Redirect)</strong>:</li>
+<li><em>Browser behavior</em>: Browsers re-request the short URL every time.</li>
+<li><em>Pros</em>: <strong>100% accurate click analytics</strong>, referrer tracking, and user geography telemetry.</li>
+<li><em>Cons</em>: Every click hits the TinyURL infrastructure, requiring Redis caching to maintain sub-10ms response SLAs.</li>
+</ul>
+<hr/>
+<h2>5. DSA: Reconstructing Binary Tree from Preorder & Inorder Traversal</h2>
+<h3>5.1 Traversal Properties</h3>
+<ul>
+<li><strong>Preorder</strong>: <code>[Root, Left Subtree..., Right Subtree...]</code> $\implies$ The first element is always the subtree root!</li>
+<li><strong>Inorder</strong>: <code>[Left Subtree..., Root, Right Subtree...]</code> $\implies$ The root splits elements into left and right subtrees!</li>
+</ul>
+<h3>5.2 Algorithm & Complexity</h3>
+<ol>
+<li>Maintain <code>preIndex</code> starting at 0.</li>
+<li>Select <code>rootVal = preorder[preIndex++]</code>.</li>
+<li>Locate <code>rootVal</code> in the inorder array at index <code>inRoot</code>.</li>
+<li>Left subtree nodes span inorder indices $[inStart, inRoot - 1]$.</li>
+<li>Right subtree nodes span inorder indices $[inRoot + 1, inEnd]$.</li>
+<li>Recursively construct <code>root.left</code>, then <code>root.right</code>.</li>
+</ol>
+<ul>
+<li><strong>Optimization</strong>: By building a hash map of <code>value -&gt; inorderIndex</code> in $O(N)$ upfront, step 3 executes in $O(1)$ instead of $O(N)$ linear scans.</li>
+<li><strong>Overall Complexity</strong>:</li>
+<li>Time: $O(N)$</li>
+<li>Space: $O(N)$ for the recursion stack and dictionary.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 23: System Design — URL Shortener (TinyURL) & DSA Tree Reconstruction</h1>
+<p>Comprehensive systems design lab implementing a distributed URL Shortener (TinyURL) service, capacity planning models, Twitter Snowflake 64-bit ID generation, Base62 bi-directional encoding, cache-aside Redis layer, database sharding, and LeetCode #105 binary tree reconstruction.</p>
+<hr/>
+<h2>🎯 Architecture & Objectives</h2>
+<ol>
+<li><strong>Capacity Planning & Workload Estimation</strong>:</li>
+</ol>
+<ul>
+<li>Workload: 100M daily writes, 1B daily reads (10:1 read-to-write ratio).</li>
+<li>Average Throughput: ~1,157 Write QPS, ~11,574 Read QPS (Peak 3x: ~3,500 Write QPS, ~35,000 Read QPS).</li>
+<li>Storage Sizing: ~500 bytes/record $\to$ 18.25 TB/year, 91.25 TB over 5 years.</li>
+<li>Cache Sizing: 20% of daily reads cached (Pareto 80/20 rule) $\to$ 100 GB RAM working set.</li>
+</ul>
+<ol>
+<li><strong>Twitter Snowflake 64-bit Distributed ID Generation</strong>:</li>
+</ol>
+<ul>
+<li>Layout: 1 sign bit + 41 millisecond timestamp bits (69-year span) + 5 datacenter bits + 5 worker bits + 12 sequence bits.</li>
+<li>High Throughput: Generates up to 4,096 IDs per millisecond per node (4.096M IDs/sec) with zero network lock contention.</li>
+<li>Clock Skew Defense: Spin-waits or halts generation if system clock drifts backwards.</li>
+</ul>
+<ol>
+<li><strong>Bi-Directional Base62 Codec</strong>:</li>
+</ol>
+<ul>
+<li>Positional notation across <code>[0-9a-zA-Z]</code> (62 chars) providing URL safety without escape sequences.</li>
+<li>Mathematical 1-to-1 bijection with zero hash collisions.</li>
+</ul>
+<ol>
+<li><strong>TinyURL Service & Database Sharding</strong>:</li>
+</ol>
+<ul>
+<li>Partitioning by <code>Hash(SnowflakeId) % ShardCount</code>.</li>
+<li>Two-tier cache-aside layer with configurable TTL and auto-purging.</li>
+<li>Collision-safe custom alias assignment.</li>
+<li>Click analytics telemetry.</li>
+</ul>
+<ol>
+<li><strong>DSA Tree Reconstruction</strong>:</li>
+</ol>
+<ul>
+<li><strong>LeetCode #105 (Construct Binary Tree from Preorder & Inorder Traversal)</strong>: Divide-and-conquer recursion leveraging an $O(1)$ in-order hash map lookup in optimal $O(N)$ time and $O(N)$ space.</li>
+</ul>
+<hr/>
+<h2>📁 Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day23-Url-Shortener-TinyUrl/
+├── src/
+│   └── Day23.TinyUrl/
+│       ├── Day23.TinyUrl.csproj
+│       ├── CapacityPlanner.cs               # Capacity &amp; SLA calculation models
+│       ├── SnowflakeIdGenerator.cs          # 64-bit Twitter Snowflake generator
+│       ├── Base62Codec.cs                   # Loss-less Base62 encoder/decoder
+│       ├── TinyUrlService.cs                # Sharded service with Cache-Aside
+│       └── TreeReconstructionSolvers.cs     # LC #105 Preorder + Inorder solver
+├── tests/
+│   └── Day23.TinyUrl.Tests/
+│       ├── Day23.TinyUrl.Tests.csproj
+│       └── Day23Tests.cs                    # 10 unit tests covering system &amp; DSA
+├── README.md
+├── notes.md                                 # Deep dive architectural notes
+├── interview-questions.md                   # 10 Senior/Staff interview Q&amp;As
+└── index.html                               # Standalone offline web guide</code></pre></div>
+<hr/>
+<h2>🧪 Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day23.TinyUrl.Tests/Day23.TinyUrl.Tests.csproj</code></pre></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Walk through the capacity planning for a global URL Shortener handling 100M writes/day and 1B reads/day.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ol>
+<li><strong>QPS Estimation</strong>:</li>
+</ol>
+<ul>
+<li>Write QPS: $\frac{100,000,000}{86,400} \approx 1,157\text{ req/sec}$ (Peak $3\times \approx 3,500\text{ QPS}$).</li>
+<li>Read QPS: $\frac{1,000,000,000}{86,400} \approx 11,574\text{ req/sec}$ (Peak $3\times \approx 35,000\text{ QPS}$).</li>
+</ul>
+<ol>
+<li><strong>Storage Estimation</strong>:</li>
+</ol>
+<ul>
+<li>Record size: 500 bytes (ID, short URL, long URL, timestamps, user ID, click stats).</li>
+<li>Daily storage: $100\text{M} \times 500\text{ bytes} = 50\text{ GB/day}$.</li>
+<li>1-Year storage: $50\text{ GB} \times 365 \approx 18.25\text{ TB}$.</li>
+<li>5-Year storage: $18.25\text{ TB} \times 5 \approx 91.25\text{ TB}$.</li>
+</ul>
+<ol>
+<li><strong>Cache Sizing (Pareto 80/20 Rule)</strong>:</li>
+</ol>
+<ul>
+<li>20% of read URLs generate 80% of read traffic.</li>
+<li>Cached URLs per day: $1\text{B} \times 0.20 = 200\text{M}$ URLs.</li>
+<li>Cache RAM required: $200\text{M} \times 500\text{ bytes} = 100\text{ GB RAM}$.</li>
+</ul>
+<ol>
+<li><strong>Bandwidth</strong>:</li>
+</ol>
+<ul>
+<li>Ingress: $1,157\text{ writes/sec} \times 500\text{ bytes} \approx 4.6\text{ Mbps}$.</li>
+<li>Egress: $11,574\text{ reads/sec} \times 500\text{ bytes} \approx 46.3\text{ Mbps}$.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why is Twitter Snowflake preferred over UUID v4 or database auto-increment sequences for ID generation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Auto-Increment Sequences</strong>: Create a central database bottleneck. Scaling writes across sharded databases requires multi-master synchronization or ticket servers (Flickr approach), introducing single points of failure.</li>
+<li><strong>UUID v4 (128-bit)</strong>:</li>
+<li>Generates 36-character hexadecimal strings. Base62 encoding a 128-bit UUID requires 22 characters, which completely defeats the purpose of a "short" URL!</li>
+<li>UUIDs are completely unordered (random), causing severe B-Tree page splits and disk fragmentation when indexing in relational databases.</li>
+<li><strong>Twitter Snowflake (64-bit)</strong>:</li>
+<li>Generates 64-bit integers locally in memory without any network synchronization.</li>
+<li>Encodes into short 7-8 character Base62 strings.</li>
+<li>The leading 41 bits represent millisecond timestamps, ensuring IDs are <strong>k-sorted</strong> (monotonically increasing over time), which maximizes B-Tree index append efficiency and eliminates page splits.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why is Base62 encoding used instead of Base64 or MD5/SHA-256 hash truncation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Base64</strong>: Uses characters <code>+</code>, <code>/</code>, and <code>=</code> (padding). In URLs, <code>+</code> is interpreted as space, <code>/</code> is a path separator, and <code>=</code> is a query parameter delimiter. Using Base64 requires URL percent-encoding (<code>%2B</code>, <code>%2F</code>), making short links longer and fragile.</li>
+<li><strong>Base62</strong>: Uses strictly <code>[0-9a-zA-Z]</code> (62 alphanumeric characters), which are guaranteed to be URL-safe across all protocols and browsers without escape characters.</li>
+<li><strong>MD5/SHA-256 Truncation</strong>: Hashing a long URL and taking the first 7 characters introduces hash collisions (birthday paradox). Handling collisions requires querying the database on every write and appending counter salts, adding database roundtrips.</li>
+<li><strong>Base62 Bijection</strong>: Base62 is a positional numeral system conversion of a unique 64-bit integer. Because every Snowflake ID is guaranteed unique, the Base62 string has <strong>zero collision risk</strong> by mathematical definition.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Should a URL shortener return HTTP 301 or HTTP 302/307 redirects?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>HTTP 301 (Moved Permanently)</strong>:</li>
+<li>Browsers cache the redirect locally. Subsequent clicks go directly to the target URL without contacting the TinyURL server.</li>
+<li><em>Advantage</em>: Dramatically cuts server traffic, network bandwidth, and hosting cost.</li>
+<li><em>Disadvantage</em>: <strong>Cannot record click analytics</strong> (referrers, device types, timestamps) after the initial visit.</li>
+<li><strong>HTTP 302 (Found) / HTTP 307 (Temporary Redirect)</strong>:</li>
+<li>Browsers re-query the TinyURL server on every single click.</li>
+<li><em>Advantage</em>: Enables real-time, 100% accurate click tracking, geographic analysis, and dynamic link routing.</li>
+<li><strong>Industry Standard</strong>: Modern URL shorteners (Bitly, TinyURL) return <strong>HTTP 302/307</strong> because analytics are core to their business model, relying on distributed Redis caching to keep redirect latency $< 10\text{ms}$.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How would you shard the database for a URL Shortener storing 100TB of data?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Sharding Key</strong>: <code>Hash(SnowflakeId) % NumberOfShards</code>.</li>
+<li><strong>Why ID instead of UserID or ShortCode?</strong></li>
+<li>If sharding by <code>UserId</code>, anonymous URLs or non-logged-in users cannot be sharded evenly, and resolving a short URL without knowing the user ID would require broadcast queries across all shards!</li>
+<li>Because <code>ShortCode</code> is simply the Base62 representation of <code>SnowflakeId</code>, we can instantly decode <code>ShortCode</code> back to <code>SnowflakeId</code> on the read path:</li>
+</ul>
+<p>$$\text{ShardId} = \text{Base62Decode}(\text{ShortCode}) \pmod N$$</p>
+<ul>
+<li>This allows read and write requests to route directly to the single target database shard in $O(1)$ time without scatter-gather overhead.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you prevent URL enumeration and scraping attacks?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Vulnerability</strong>: If IDs are sequential (e.g. 10001, 10002), an attacker can easily iterate through Base62 codes (<code>Base62(10001)</code>, <code>Base62(10002)</code>) to scrape all private internal URLs created by users.</li>
+<li><strong>Mitigation</strong>:</li>
+</ul>
+<ol>
+<li><strong>Bit Shuffling / Feistel Cipher</strong>: Apply a reversible pseudo-random permutation or lightweight Feistel cipher to the Snowflake ID before Base62 encoding. This preserves mathematical 1-to-1 bijection while making sequential IDs look completely random.</li>
+<li><strong>Rate Limiting</strong>: Apply sliding window rate limits on redirect endpoints per IP to halt automated crawlers.</li>
+<li><strong>Custom Aliases Protection</strong>: Enforce authentication and reserved keyword blacklists (e.g., <code>admin</code>, <code>api</code>, <code>login</code>, <code>health</code>).</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How do you handle clock backwards drift in a distributed Snowflake generator?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Issue</strong>: Network Time Protocol (NTP) adjustments can occasionally shift the machine clock backward by several milliseconds. Generating IDs during a backward jump could produce duplicate IDs.</li>
+<li><strong>Mitigations</strong>:</li>
+</ul>
+<ol>
+<li><strong>Spin Wait for Small Drift</strong>: If <code>now &lt; lastTimestamp</code> and <code>lastTimestamp - now &lt;= 5ms</code>, spin-wait in memory until the clock catches up to <code>lastTimestamp</code>.</li>
+<li><strong>Rejection on Major Drift</strong>: If drift exceeds 5ms, reject ID generation and trigger alerts to avoid data corruption.</li>
+<li><strong>Monotonic Clocks</strong>: Use clock sources that guarantee monotonicity (e.g. <code>Stopwatch.GetTimestamp()</code> or NTP slew mode instead of step mode, which gradually adjusts clock speed rather than jumping backward).</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What caching topology should be used to achieve sub-10ms redirect latency at 35,000 QPS?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Two-Tier Cache Architecture</strong>:</li>
+</ul>
+<ol>
+<li><strong>L1 In-Memory Cache (Process RAM)</strong>: Holds the top 1,000 ultra-hot URLs (e.g. viral campaign links) inside ASP.NET Core memory cache (<code>IMemoryCache</code>). Lookups execute in sub-microsecond time with zero network overhead.</li>
+<li><strong>L2 Distributed Cache (Redis Cluster)</strong>: 100 GB cluster sharded via consistent hashing holding the top 20% of daily read URLs with a 24-hour TTL. Lookups take $< 1\text{ms}$.</li>
+</ol>
+<ul>
+<li><strong>Cache-Aside Pattern</strong>:</li>
+<li>Read: Check L1 $\to$ Check L2 $\to$ Fallback to DB shard $\to$ Populate L2 and L1.</li>
+<li>Hot-key protection: Single-flight mutex to avoid cache stampedes when hot keys expire.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How would you detect and block malicious phishing links submitted to TinyURL?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ol>
+<li><strong>Synchronous Validation</strong>:</li>
+</ol>
+<ul>
+<li>Query Google Safe Browsing API or Cloudflare Radar API during URL creation.</li>
+<li>If marked malicious, immediately reject write with HTTP 400 Bad Request.</li>
+</ul>
+<ol>
+<li><strong>Asynchronous Deep Scanning</strong>:</li>
+</ol>
+<ul>
+<li>Push newly created URLs to a message queue (Kafka / Redis Streams).</li>
+<li>Headless browser workers follow redirects, inspect domain reputation, analyze landing page SSL certificates, and run ML phishing classifiers.</li>
+<li>If flagged, mark the record <code>IsSuspicious = true</code> in DB and purge from Redis.</li>
+</ul>
+<ol>
+<li><strong>Interstitial Warning Page</strong>:</li>
+</ol>
+<ul>
+<li>For newly created, unverified domains, display a brief 3-second security warning page: <em>"You are leaving TinyURL to visit example.com. Proceed with caution."</em></li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">Explain LeetCode #105 (Construct Binary Tree from Preorder &amp; Inorder). How does the hash map optimize runtime from $O(N^2)$ to $O(N)$?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Core Principle</strong>:</li>
+<li><code>preorder</code>: The first element is always the subtree root.</li>
+<li><code>inorder</code>: The root element splits the tree into left and right subtrees.</li>
+<li><strong>Naive Pitfall</strong>:</li>
+<li>In each recursive step, scanning the inorder array linearly to find <code>rootVal</code> takes $O(N)$ time. For an unbalanced or skewed tree of depth $N$, this produces $O(N^2)$ runtime.</li>
+<li><strong>Hash Map Optimization</strong>:</li>
+<li>Build <code>inorderMap[val] = index</code> once in $O(N)$ time before starting recursion.</li>
+<li>During recursive calls:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">    int inRoot = inorderMap[rootVal]; // O(1)
+    root.left = Build(inStart, inRoot - 1);
+    root.right = Build(inRoot + 1, inEnd);</code></pre></div>
+<ul>
+<li>Lookups run in $O(1)$ time. With $N$ total recursive calls (one per tree node), total execution time drops to optimal $O(N)$ with $O(N)$ auxiliary space.</li>
+</ul>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day23.TinyUrl/Base62Codec.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-src-code-0" class="language-csharp">using System;
+using System.Text;
+
+namespace Day23.TinyUrl;
+
+/// &lt;summary&gt;
+/// Bi-directional Base62 encoder and decoder.
+/// Uses alphanumeric characters [0-9a-zA-Z] ensuring URL safety without escaping.
+/// Guarantees a 1-to-1 mathematical bijection with zero hash collisions.
+/// &lt;/summary&gt;
+public static class Base62Codec
+{
+    private const string Alphabet = &quot;0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;;
+    private static readonly int Base = Alphabet.Length; // 62
+
+    /// &lt;summary&gt;
+    /// Encodes a positive 64-bit integer into a Base62 string.
+    /// &lt;/summary&gt;
+    public static string Encode(long value)
+    {
+        if (value &lt; 0) throw new ArgumentOutOfRangeException(nameof(value), &quot;Value must be non-negative.&quot;);
+        if (value == 0) return &quot;0&quot;;
+
+        var sb = new StringBuilder();
+        var temp = value;
+
+        while (temp &gt; 0)
+        {
+            var remainder = (int)(temp % Base);
+            sb.Append(Alphabet[remainder]);
+            temp /= Base;
+        }
+
+        // Reverse to maintain big-endian positional notation
+        var chars = sb.ToString().ToCharArray();
+        Array.Reverse(chars);
+        return new string(chars);
+    }
+
+    /// &lt;summary&gt;
+    /// Decodes a Base62 string back into its original 64-bit integer.
+    /// &lt;/summary&gt;
+    public static long Decode(string base62String)
+    {
+        if (string.IsNullOrWhiteSpace(base62String))
+            throw new ArgumentException(&quot;Base62 string cannot be null or empty.&quot;, nameof(base62String));
+
+        long result = 0;
+        foreach (char c in base62String)
+        {
+            var index = Alphabet.IndexOf(c);
+            if (index == -1)
+            {
+                throw new FormatException($&quot;Invalid character &#x27;{c}&#x27; in Base62 string &#x27;{base62String}&#x27;.&quot;);
+            }
+
+            result = checked((result * Base) + index);
+        }
+
+        return result;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day23.TinyUrl/CapacityPlanner.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-src-code-1" class="language-csharp">using System;
+
+namespace Day23.TinyUrl;
+
+/// &lt;summary&gt;
+/// Encapsulates capacity calculations and architecture sizing for TinyURL.
+/// Evaluates writes, reads, memory cache requirements, disk growth, and network throughput.
+/// &lt;/summary&gt;
+public record CapacityPlanResult
+{
+    public long DailyWrites { get; init; }
+    public long DailyReads { get; init; }
+    public double AverageWriteQps { get; init; }
+    public double PeakWriteQps { get; init; }
+    public double AverageReadQps { get; init; }
+    public double PeakReadQps { get; init; }
+    public double StorageBytesPerYear { get; init; }
+    public double StorageBytesPerFiveYears { get; init; }
+    public double CacheMemoryBytes { get; init; }
+    public double IngressBandwidthBytesPerSec { get; init; }
+    public double EgressBandwidthBytesPerSec { get; init; }
+}
+
+public static class CapacityPlanner
+{
+    public const int SecondsPerDay = 86400;
+    public const int BytesPerUrlRecord = 500; // ID, ShortUrl, LongUrl, Timestamps, UserId, Metadata
+
+    /// &lt;summary&gt;
+    /// Computes full capacity planning estimates for specified daily read and write workloads.
+    /// &lt;/summary&gt;
+    public static CapacityPlanResult Calculate(
+        long dailyWrites = 100_000_000L,
+        long dailyReads = 1_000_000_000L,
+        double peakMultiplier = 3.0,
+        double cachePercentage = 0.20,
+        int bytesPerRecord = BytesPerUrlRecord)
+    {
+        double avgWriteQps = (double)dailyWrites / SecondsPerDay;
+        double peakWriteQps = avgWriteQps * peakMultiplier;
+
+        double avgReadQps = (double)dailyReads / SecondsPerDay;
+        double peakReadQps = avgReadQps * peakMultiplier;
+
+        double storagePerYear = (double)dailyWrites * 365 * bytesPerRecord;
+        double storagePerFiveYears = storagePerYear * 5.0;
+
+        // Pareto 80/20 Rule: Cache 20% of daily reads
+        double cacheMemory = (double)dailyReads * cachePercentage * bytesPerRecord;
+
+        double ingressBytesPerSec = avgWriteQps * bytesPerRecord;
+        double egressBytesPerSec = avgReadQps * bytesPerRecord;
+
+        return new CapacityPlanResult
+        {
+            DailyWrites = dailyWrites,
+            DailyReads = dailyReads,
+            AverageWriteQps = Math.Round(avgWriteQps, 1),
+            PeakWriteQps = Math.Round(peakWriteQps, 1),
+            AverageReadQps = Math.Round(avgReadQps, 1),
+            PeakReadQps = Math.Round(peakReadQps, 1),
+            StorageBytesPerYear = storagePerYear,
+            StorageBytesPerFiveYears = storagePerFiveYears,
+            CacheMemoryBytes = cacheMemory,
+            IngressBandwidthBytesPerSec = ingressBytesPerSec,
+            EgressBandwidthBytesPerSec = egressBytesPerSec
+        };
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day23.TinyUrl/SnowflakeIdGenerator.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-src-code-2" class="language-csharp">using System;
+
+namespace Day23.TinyUrl;
+
+/// &lt;summary&gt;
+/// Twitter Snowflake 64-bit Distributed Unique ID Generator.
+/// Bit Layout:
+/// - 1 bit: Unused sign bit (always 0)
+/// - 41 bits: Millisecond timestamp since custom epoch (~69 years lifespan)
+/// - 5 bits: Datacenter ID (0 - 31)
+/// - 5 bits: Worker / Machine ID (0 - 31)
+/// - 12 bits: Sequence counter (0 - 4095 per millisecond)
+/// &lt;/summary&gt;
+public class SnowflakeIdGenerator
+{
+    // Epoch: 2026-01-01 00:00:00 UTC
+    public static readonly DateTime CustomEpochUtc = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    public static readonly long CustomEpochMs = new DateTimeOffset(CustomEpochUtc).ToUnixTimeMilliseconds();
+
+    private const int WorkerIdBits = 5;
+    private const int DatacenterIdBits = 5;
+    private const int SequenceBits = 12;
+
+    public const long MaxWorkerId = (1L &lt;&lt; WorkerIdBits) - 1; // 31
+    public const long MaxDatacenterId = (1L &lt;&lt; DatacenterIdBits) - 1; // 31
+    public const long SequenceMask = (1L &lt;&lt; SequenceBits) - 1; // 4095
+
+    private const int WorkerIdShift = SequenceBits; // 12
+    private const int DatacenterIdShift = SequenceBits + WorkerIdBits; // 17
+    private const int TimestampLeftShift = SequenceBits + WorkerIdBits + DatacenterIdBits; // 22
+
+    private readonly long _workerId;
+    private readonly long _datacenterId;
+    private readonly object _lock = new();
+
+    private long _sequence = 0L;
+    private long _lastTimestamp = -1L;
+
+    public long WorkerId =&gt; _workerId;
+    public long DatacenterId =&gt; _datacenterId;
+
+    public SnowflakeIdGenerator(long datacenterId = 1, long workerId = 1)
+    {
+        if (datacenterId &lt; 0 || datacenterId &gt; MaxDatacenterId)
+            throw new ArgumentOutOfRangeException(nameof(datacenterId), $&quot;Datacenter ID must be between 0 and {MaxDatacenterId}&quot;);
+
+        if (workerId &lt; 0 || workerId &gt; MaxWorkerId)
+            throw new ArgumentOutOfRangeException(nameof(workerId), $&quot;Worker ID must be between 0 and {MaxWorkerId}&quot;);
+
+        _datacenterId = datacenterId;
+        _workerId = workerId;
+    }
+
+    /// &lt;summary&gt;
+    /// Generates a globally unique, k-ordered 64-bit integer ID.
+    /// Thread-safe via synchronized spinlock.
+    /// &lt;/summary&gt;
+    public long NextId(long? customTimestampMs = null)
+    {
+        lock (_lock)
+        {
+            var timestamp = customTimestampMs ?? CurrentTimeMillis();
+
+            // Clock backwards drift check
+            if (timestamp &lt; _lastTimestamp)
+            {
+                var offset = _lastTimestamp - timestamp;
+                if (offset &lt;= 5) // Brief drift: spin-wait
+                {
+                    while (timestamp &lt; _lastTimestamp)
+                    {
+                        timestamp = CurrentTimeMillis();
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException($&quot;Clock moved backwards! Refusing to generate ID for {offset}ms.&quot;);
+                }
+            }
+
+            if (_lastTimestamp == timestamp)
+            {
+                _sequence = (_sequence + 1) &amp; SequenceMask;
+                if (_sequence == 0)
+                {
+                    // Exhausted 4096 IDs in current ms; wait for next ms
+                    timestamp = WaitNextMillis(_lastTimestamp);
+                }
+            }
+            else
+            {
+                _sequence = 0L;
+            }
+
+            _lastTimestamp = timestamp;
+
+            return ((timestamp - CustomEpochMs) &lt;&lt; TimestampLeftShift) |
+                   (_datacenterId &lt;&lt; DatacenterIdShift) |
+                   (_workerId &lt;&lt; WorkerIdShift) |
+                   _sequence;
+        }
+    }
+
+    private static long CurrentTimeMillis()
+    {
+        return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    }
+
+    private static long WaitNextMillis(long lastTimestamp)
+    {
+        var timestamp = CurrentTimeMillis();
+        while (timestamp &lt;= lastTimestamp)
+        {
+            timestamp = CurrentTimeMillis();
+        }
+        return timestamp;
+    }
+
+    /// &lt;summary&gt;
+    /// Extracts the original creation timestamp from a generated Snowflake ID.
+    /// &lt;/summary&gt;
+    public static DateTime ExtractTimestampUtc(long snowflakeId)
+    {
+        var elapsedMs = snowflakeId &gt;&gt; TimestampLeftShift;
+        var unixMs = elapsedMs + CustomEpochMs;
+        return DateTimeOffset.FromUnixTimeMilliseconds(unixMs).UtcDateTime;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day23.TinyUrl/TinyUrlService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-src-code-3" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day23.TinyUrl;
+
+public record UrlRecord
+{
+    public long Id { get; init; }
+    public string ShortCode { get; init; } = string.Empty;
+    public string LongUrl { get; init; } = string.Empty;
+    public DateTime CreatedAtUtc { get; init; }
+    public DateTime? ExpiresAtUtc { get; init; }
+    public int ShardId { get; init; }
+    public long ClickCount;
+}
+
+/// &lt;summary&gt;
+/// Core URL Shortener Service integrating:
+/// - Distributed Snowflake 64-bit ID Generation
+/// - Loss-less Base62 Encoding
+/// - Database Sharding by Hash(ID)
+/// - Two-tier Cache-Aside Layer with TTL Eviction
+/// - Collision-safe Custom Alias Support
+/// &lt;/summary&gt;
+public class TinyUrlService
+{
+    private readonly SnowflakeIdGenerator _idGenerator;
+    private readonly int _shardCount;
+    private readonly List&lt;ConcurrentDictionary&lt;string, UrlRecord&gt;&gt; _dbShards = new();
+    private readonly ConcurrentDictionary&lt;string, UrlRecord&gt; _redisCache = new();
+
+    private long _cacheHits = 0;
+    private long _cacheMisses = 0;
+
+    public long CacheHits =&gt; Interlocked.Read(ref _cacheHits);
+    public long CacheMisses =&gt; Interlocked.Read(ref _cacheMisses);
+    public int ShardCount =&gt; _shardCount;
+
+    public TinyUrlService(SnowflakeIdGenerator? idGenerator = null, int shardCount = 4)
+    {
+        _idGenerator = idGenerator ?? new SnowflakeIdGenerator(datacenterId: 1, workerId: 1);
+        _shardCount = Math.Max(1, shardCount);
+
+        for (int i = 0; i &lt; _shardCount; i++)
+        {
+            _dbShards.Add(new ConcurrentDictionary&lt;string, UrlRecord&gt;());
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Shortens a long URL using Snowflake ID and Base62 encoding, or applies a custom alias.
+    /// &lt;/summary&gt;
+    public async Task&lt;UrlRecord&gt; ShortenAsync(
+        string longUrl,
+        string? customAlias = null,
+        TimeSpan? ttl = null,
+        DateTime? customNow = null)
+    {
+        if (string.IsNullOrWhiteSpace(longUrl))
+            throw new ArgumentException(&quot;Long URL cannot be null or empty.&quot;, nameof(longUrl));
+
+        if (!Uri.TryCreate(longUrl, UriKind.Absolute, out _))
+            throw new ArgumentException(&quot;Invalid URL format.&quot;, nameof(longUrl));
+
+        var now = customNow ?? DateTime.UtcNow;
+        long id;
+        string shortCode;
+
+        if (!string.IsNullOrWhiteSpace(customAlias))
+        {
+            shortCode = customAlias.Trim();
+            // Verify alias uniqueness across all shards
+            if (FindRecordInShards(shortCode) != null)
+            {
+                throw new InvalidOperationException($&quot;Custom alias &#x27;{shortCode}&#x27; is already taken.&quot;);
+            }
+            id = _idGenerator.NextId();
+        }
+        else
+        {
+            id = _idGenerator.NextId();
+            shortCode = Base62Codec.Encode(id);
+        }
+
+        var shardId = (int)(Math.Abs(id) % _shardCount);
+        var record = new UrlRecord
+        {
+            Id = id,
+            ShortCode = shortCode,
+            LongUrl = longUrl,
+            CreatedAtUtc = now,
+            ExpiresAtUtc = ttl.HasValue ? now.Add(ttl.Value) : null,
+            ShardId = shardId,
+            ClickCount = 0
+        };
+
+        // 1. Write to database shard
+        _dbShards[shardId][shortCode] = record;
+
+        // 2. Populate Cache (Cache-Aside / Write-Through)
+        _redisCache[shortCode] = record;
+
+        return await Task.FromResult(record);
+    }
+
+    /// &lt;summary&gt;
+    /// Resolves a short code to its original long URL, executing Cache-Aside lookup.
+    /// Increments click analytics counter upon successful resolution.
+    /// &lt;/summary&gt;
+    public async Task&lt;string?&gt; ResolveAsync(string shortCode, DateTime? customNow = null)
+    {
+        if (string.IsNullOrWhiteSpace(shortCode)) return null;
+
+        var now = customNow ?? DateTime.UtcNow;
+
+        // 1. Check Cache
+        if (_redisCache.TryGetValue(shortCode, out var cachedRecord))
+        {
+            if (cachedRecord.ExpiresAtUtc.HasValue &amp;&amp; now &gt;= cachedRecord.ExpiresAtUtc.Value)
+            {
+                // Expired in cache
+                _redisCache.TryRemove(shortCode, out _);
+                return null;
+            }
+
+            Interlocked.Increment(ref _cacheHits);
+            Interlocked.Increment(ref cachedRecord.ClickCount);
+            return await Task.FromResult(cachedRecord.LongUrl);
+        }
+
+        // 2. Cache Miss: Query Database Shards
+        Interlocked.Increment(ref _cacheMisses);
+        var dbRecord = FindRecordInShards(shortCode);
+
+        if (dbRecord == null) return null;
+
+        // Check DB expiration
+        if (dbRecord.ExpiresAtUtc.HasValue &amp;&amp; now &gt;= dbRecord.ExpiresAtUtc.Value)
+        {
+            // Expired in DB
+            _dbShards[dbRecord.ShardId].TryRemove(shortCode, out _);
+            return null;
+        }
+
+        // Cache-Aside replenishment
+        _redisCache[shortCode] = dbRecord;
+        Interlocked.Increment(ref dbRecord.ClickCount);
+
+        return await Task.FromResult(dbRecord.LongUrl);
+    }
+
+    /// &lt;summary&gt;
+    /// Retrieves full record and analytics for a short code.
+    /// &lt;/summary&gt;
+    public UrlRecord? GetStats(string shortCode)
+    {
+        if (_redisCache.TryGetValue(shortCode, out var cached)) return cached;
+        return FindRecordInShards(shortCode);
+    }
+
+    private UrlRecord? FindRecordInShards(string shortCode)
+    {
+        for (int i = 0; i &lt; _shardCount; i++)
+        {
+            if (_dbShards[i].TryGetValue(shortCode, out var record))
+            {
+                return record;
+            }
+        }
+        return null;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day23.TinyUrl/TreeReconstructionSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-src-code-4')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-src-code-4" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day23.TinyUrl;
+
+/// &lt;summary&gt;
+/// Standard Binary Tree Node definition.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// LeetCode #105: Construct Binary Tree from Preorder and Inorder Traversal.
+/// Uses a hash map to achieve O(1) partition lookups in divide-and-conquer recursion.
+/// Time Complexity: O(N) | Space Complexity: O(N)
+/// &lt;/summary&gt;
+public class TreeReconstructionSolvers
+{
+    public TreeNode? BuildTree(int[] preorder, int[] inorder)
+    {
+        if (preorder == null || inorder == null || preorder.Length != inorder.Length || preorder.Length == 0)
+        {
+            return null;
+        }
+
+        // Build value-to-index map for O(1) split index retrieval in inorder array
+        var inorderMap = new Dictionary&lt;int, int&gt;(inorder.Length);
+        for (int i = 0; i &lt; inorder.Length; i++)
+        {
+            inorderMap[inorder[i]] = i;
+        }
+
+        int preIndex = 0;
+
+        TreeNode? BuildSubtree(int inStart, int inEnd)
+        {
+            if (inStart &gt; inEnd) return null;
+
+            int rootVal = preorder[preIndex++];
+            var root = new TreeNode(rootVal);
+
+            int inRootIndex = inorderMap[rootVal];
+
+            // In preorder, all left subtree nodes appear immediately after root,
+            // so left child must be built before right child.
+            root.left = BuildSubtree(inStart, inRootIndex - 1);
+            root.right = BuildSubtree(inRootIndex + 1, inEnd);
+
+            return root;
+        }
+
+        return BuildSubtree(0, inorder.Length - 1);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day23.TinyUrl.Tests/Day23Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day23.TinyUrl.Tests;
+
+public class Day23Tests
+{
+    // ==========================================
+    // 1. CAPACITY PLANNING TESTS
+    // ==========================================
+
+    [Fact]
+    public void CapacityPlanner_CalculatesAccurateThroughputAndStorage_For100MWritesAnd1BReads()
+    {
+        var plan = CapacityPlanner.Calculate(
+            dailyWrites: 100_000_000L,
+            dailyReads: 1_000_000_000L,
+            peakMultiplier: 3.0,
+            cachePercentage: 0.20
+        );
+
+        // 100M / 86400 = ~1157.4 QPS
+        plan.AverageWriteQps.Should().BeApproximately(1157.4, 1.0);
+        plan.PeakWriteQps.Should().BeApproximately(3472.2, 3.0);
+
+        // 1B / 86400 = ~11574.1 QPS
+        plan.AverageReadQps.Should().BeApproximately(11574.1, 1.0);
+        plan.PeakReadQps.Should().BeApproximately(34722.2, 3.0);
+
+        // 100M * 365 * 500 bytes = 18.25 TB/year
+        plan.StorageBytesPerYear.Should().Be(18_250_000_000_000.0);
+        plan.StorageBytesPerFiveYears.Should().Be(91_250_000_000_000.0);
+
+        // 20% of 1B reads * 500 bytes = 100 GB cache
+        plan.CacheMemoryBytes.Should().Be(100_000_000_000.0);
+    }
+
+    // ==========================================
+    // 2. SNOWFLAKE ID GENERATOR TESTS
+    // ==========================================
+
+    [Fact]
+    public void SnowflakeId_GeneratesMonotonicallyIncreasingUniqueIds()
+    {
+        var generator = new SnowflakeIdGenerator(datacenterId: 2, workerId: 5);
+        var ids = new HashSet&lt;long&gt;();
+        long prev = -1;
+
+        for (int i = 0; i &lt; 1000; i++)
+        {
+            var id = generator.NextId();
+            id.Should().BeGreaterThan(0, &quot;Snowflake IDs must be positive 64-bit integers&quot;);
+            id.Should().BeGreaterThan(prev, &quot;Snowflake IDs must monotonically increase&quot;);
+            ids.Add(id).Should().BeTrue(&quot;Each Snowflake ID must be globally unique&quot;);
+            prev = id;
+        }
+    }
+
+    [Fact]
+    public void SnowflakeId_ExtractsAccurateCreationTimestamp()
+    {
+        var generator = new SnowflakeIdGenerator(datacenterId: 1, workerId: 1);
+        var before = DateTime.UtcNow;
+        var id = generator.NextId();
+        var after = DateTime.UtcNow;
+
+        var extracted = SnowflakeIdGenerator.ExtractTimestampUtc(id);
+
+        extracted.Should().BeOnOrAfter(before.AddMilliseconds(-10));
+        extracted.Should().BeOnOrBefore(after.AddMilliseconds(10));
+    }
+
+    [Fact]
+    public void SnowflakeId_ThrowsOnClockBackwardsDrift()
+    {
+        var generator = new SnowflakeIdGenerator(datacenterId: 1, workerId: 1);
+        var baseMs = 1770000000000L;
+
+        // Generate at baseMs
+        generator.NextId(customTimestampMs: baseMs);
+
+        // Simulate significant backwards drift (1000ms in the past)
+        Action act = () =&gt; generator.NextId(customTimestampMs: baseMs - 1000);
+        act.Should().Throw&lt;InvalidOperationException&gt;()
+           .WithMessage(&quot;*Clock moved backwards*&quot;);
+    }
+
+    // ==========================================
+    // 3. BASE62 CODEC TESTS
+    // ==========================================
+
+    [Theory]
+    [InlineData(0L, &quot;0&quot;)]
+    [InlineData(1L, &quot;1&quot;)]
+    [InlineData(61L, &quot;Z&quot;)]
+    [InlineData(62L, &quot;10&quot;)]
+    [InlineData(123456789L, &quot;8m0Kx&quot;)]
+    [InlineData(long.MaxValue, &quot;aZl8N0y58M7&quot;)]
+    public void Base62Codec_RoundTripConversion_IsLossless(long original, string expectedEncoded)
+    {
+        var encoded = Base62Codec.Encode(original);
+        encoded.Should().Be(expectedEncoded);
+
+        var decoded = Base62Codec.Decode(encoded);
+        decoded.Should().Be(original);
+    }
+
+    // ==========================================
+    // 4. TINYURL SERVICE WORKFLOW TESTS
+    // ==========================================
+
+    [Fact]
+    public async Task TinyUrlService_ShortenAndResolve_Success()
+    {
+        var service = new TinyUrlService(shardCount: 4);
+        var longUrl = &quot;https://learningsystem.internal/courses/dotnet-distributed-architecture?module=3&quot;;
+
+        var record = await service.ShortenAsync(longUrl);
+        record.Should().NotBeNull();
+        record.ShortCode.Should().NotBeNullOrEmpty();
+        record.LongUrl.Should().Be(longUrl);
+        record.ShardId.Should().BeInRange(0, 3);
+
+        // Resolve
+        var resolved = await service.ResolveAsync(record.ShortCode);
+        resolved.Should().Be(longUrl);
+
+        var stats = service.GetStats(record.ShortCode);
+        stats.Should().NotBeNull();
+        stats!.ClickCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task TinyUrlService_CustomAlias_HandlesUniquenessAndConflicts()
+    {
+        var service = new TinyUrlService();
+        var longUrl1 = &quot;https://github.com/shatru123/LearningTrack&quot;;
+        var longUrl2 = &quot;https://google.com&quot;;
+
+        var record = await service.ShortenAsync(longUrl1, customAlias: &quot;my-repo&quot;);
+        record.ShortCode.Should().Be(&quot;my-repo&quot;);
+
+        var resolved = await service.ResolveAsync(&quot;my-repo&quot;);
+        resolved.Should().Be(longUrl1);
+
+        // Collision attempt with same alias
+        Func&lt;Task&gt; act = async () =&gt; await service.ShortenAsync(longUrl2, customAlias: &quot;my-repo&quot;);
+        await act.Should().ThrowAsync&lt;InvalidOperationException&gt;()
+                 .WithMessage(&quot;*already taken*&quot;);
+    }
+
+    [Fact]
+    public async Task TinyUrlService_Expiration_PurgesExpiredUrls()
+    {
+        var service = new TinyUrlService();
+        var longUrl = &quot;https://temporary-promotion.com/flash-sale&quot;;
+        var t0 = DateTime.UtcNow;
+
+        var record = await service.ShortenAsync(longUrl, ttl: TimeSpan.FromMinutes(10), customNow: t0);
+
+        // Resolving within validity period
+        var active = await service.ResolveAsync(record.ShortCode, customNow: t0.AddMinutes(5));
+        active.Should().Be(longUrl);
+
+        // Resolving after TTL expires returns null
+        var expired = await service.ResolveAsync(record.ShortCode, customNow: t0.AddMinutes(15));
+        expired.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TinyUrlService_CacheAside_IncrementsHitsAndMisses()
+    {
+        var service = new TinyUrlService();
+        var longUrl = &quot;https://engineering.blog/redis-internals&quot;;
+
+        var record = await service.ShortenAsync(longUrl);
+
+        // First resolve: cache was already warm from write-through -&gt; Cache hit
+        await service.ResolveAsync(record.ShortCode);
+        service.CacheHits.Should().Be(1);
+
+        // Resolving non-existent short code -&gt; Cache miss
+        var missing = await service.ResolveAsync(&quot;nonexistent_code_xyz&quot;);
+        missing.Should().BeNull();
+        service.CacheMisses.Should().Be(1);
+    }
+
+    // ==========================================
+    // 5. DSA: CONSTRUCT TREE FROM PREORDER &amp; INORDER (LC #105)
+    // ==========================================
+
+    [Fact]
+    public void LC105_BuildTree_ReconstructsTreeCorrectly()
+    {
+        var solver = new TreeReconstructionSolvers();
+
+        // Standard LeetCode test case:
+        // preorder = [3, 9, 20, 15, 7]
+        // inorder  = [9, 3, 15, 20, 7]
+        // Tree:
+        //        3
+        //       / \
+        //      9   20
+        //         /  \
+        //        15   7
+        int[] preorder = { 3, 9, 20, 15, 7 };
+        int[] inorder  = { 9, 3, 15, 20, 7 };
+
+        var root = solver.BuildTree(preorder, inorder);
+
+        root.Should().NotBeNull();
+        root!.val.Should().Be(3);
+        root.left!.val.Should().Be(9);
+        root.left.left.Should().BeNull();
+        root.left.right.Should().BeNull();
+
+        root.right!.val.Should().Be(20);
+        root.right.left!.val.Should().Be(15);
+        root.right.right!.val.Should().Be(7);
+
+        // Edge case: Single node
+        var single = solver.BuildTree(new[] { 1 }, new[] { 1 });
+        single.Should().NotBeNull();
+        single!.val.Should().Be(1);
+        single.left.Should().BeNull();
+        single.right.Should().BeNull();
+
+        // Edge case: Empty array
+        var empty = solver.BuildTree(Array.Empty&lt;int&gt;(), Array.Empty&lt;int&gt;());
+        empty.Should().BeNull();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 23: Deep Dive — TinyURL System Design & Tree Reconstruction Mechanics</h1>
+<h2>1. High-Level Architecture Overview</h2>
+<p>A URL shortener is a classic read-heavy distributed system requiring high availability, low latency redirects, and scalable write throughput.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">[Client]
+   │
+   ▼
+[Cloudflare / Edge CDN] ── (301/302 Cache for Hottest URLs)
+   │
+   ▼
+[Load Balancer (Layer 7)]
+   │
+   ▼
+[API Gateway / App Service]
+   ├── [Snowflake ID Generator] (In-process, decentralized)
+   ├── [Base62 Codec] (Deterministic bijection)
+   │
+   ├──► [L1/L2 Redis Cluster] (Cache-Aside, ~100GB hot working set)
+   │
+   └──► [Sharded Database (PostgreSQL / DynamoDB)] (Hash(ID) sharding)</code></pre></div>
+<hr/>
+<h2>2. Capacity Planning & Math Formulas</h2>
+<h3>2.1 Traffic Estimation</h3>
+<ul>
+<li><strong>Daily Writes</strong>: $100\text{M}$ URLs/day.</li>
+<li><strong>Daily Reads</strong>: $1\text{B}$ redirects/day (10:1 Read to Write ratio).</li>
+<li><strong>Average Write QPS</strong>:</li>
+</ul>
+<p>$$\text{Write QPS} = \frac{100,000,000}{86,400\text{ s}} \approx 1,157.4\text{ requests/sec}$$</p>
+<ul>
+<li>Peak Write QPS ($3\times$): $\approx 3,472\text{ QPS}$.</li>
+<li><strong>Average Read QPS</strong>:</li>
+</ul>
+<p>$$\text{Read QPS} = \frac{1,000,000,000}{86,400\text{ s}} \approx 11,574.1\text{ requests/sec}$$</p>
+<ul>
+<li>Peak Read QPS ($3\times$): $\approx 34,722\text{ QPS}$.</li>
+</ul>
+<h3>2.2 Storage Calculations</h3>
+<ul>
+<li><strong>Per Record Sizing</strong>:</li>
+<li><code>ID</code>: 8 bytes (64-bit Snowflake int)</li>
+<li><code>ShortCode</code>: 7-8 bytes</li>
+<li><code>LongUrl</code>: ~250 bytes</li>
+<li><code>CreatedAtUtc</code>: 8 bytes</li>
+<li><code>ExpiresAtUtc</code>: 8 bytes</li>
+<li><code>UserId</code>: 16 bytes (UUID)</li>
+<li><code>ClickCount</code>: 8 bytes</li>
+<li>Index overhead & padding: ~195 bytes</li>
+<li><strong>Total</strong>: $500\text{ bytes}$ per record.</li>
+<li><strong>Yearly Growth</strong>:</li>
+</ul>
+<p>$$100\text{M} \times 365 \times 500\text{ bytes} = 18.25\text{ TB/year}$$</p>
+<ul>
+<li><strong>5-Year Growth</strong>: $18.25 \times 5 = 91.25\text{ TB}$.</li>
+</ul>
+<h3>2.3 Memory Cache Sizing (Pareto 80/20 Rule)</h3>
+<ul>
+<li>20% of daily reads generate 80% of traffic.</li>
+<li>Requests to cache daily: $1\text{B} \times 0.20 = 200\text{M}$ URLs.</li>
+<li>RAM Required:</li>
+</ul>
+<p>$$200,000,000 \times 500\text{ bytes} = 100,000,000,000\text{ bytes} = 100\text{ GB RAM}$$</p>
+<ul>
+<li>A Redis cluster configured with 4 nodes (32GB RAM each) comfortably caches the entire hot working set with sub-millisecond redirect latency.</li>
+</ul>
+<hr/>
+<h2>3. ID Generation Architecture Comparison</h2>
+<div class="table-container"><table><thead><tr>
+<th>Mechanism</th>
+<th>Coordination</th>
+<th>Size</th>
+<th>B-Tree Friendly</th>
+<th>Collision Risk</th>
+<th>Base62 Length</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>DB Auto-Increment</strong></td>
+<td>High (Single point of failure)</td>
+<td>64-bit</td>
+<td>Yes</td>
+<td>Zero</td>
+<td>7 chars</td>
+</tr>
+<tr>
+<td><strong>UUID v4</strong></td>
+<td>None (Decentralized)</td>
+<td>128-bit</td>
+<td>No (Random index thrashing)</td>
+<td>Negligible</td>
+<td>22 chars (Too long!)</td>
+</tr>
+<tr>
+<td><strong>MD5 / SHA-256 Truncation</strong></td>
+<td>None</td>
+<td>Hash</td>
+<td>No</td>
+<td>High (requires check-and-retry)</td>
+<td>7 chars</td>
+</tr>
+<tr>
+<td><strong>Ticket Server (Flickr)</strong></td>
+<td>Medium (Central MySQL)</td>
+<td>64-bit</td>
+<td>Yes</td>
+<td>Zero</td>
+<td>7 chars</td>
+</tr>
+<tr>
+<td><strong>Twitter Snowflake</strong></td>
+<td><strong>Zero (In-process bitwise)</strong></td>
+<td><strong>64-bit</strong></td>
+<td><strong>Yes (k-sorted by time)</strong></td>
+<td><strong>Zero</strong></td>
+<td><strong>7-11 chars</strong></td>
+</tr>
+</tbody></table></div>
+<h3>Twitter Snowflake Bit Allocation</h3>
+<div class="code-block-container"><pre class="language-text"><code class="language-text"> 1 bit  41 bits (Timestamp in ms)        5 bits (DC)  5 bits (Worker) 12 bits (Seq)
+┌──────┬────────────────────────────────┬────────────┬───────────────┬─────────────┐
+│  0   │ 011010101110010110010101101... │   00010    │     00101     │ 000000000001│
+└──────┴────────────────────────────────┴────────────┴───────────────┴─────────────┘</code></pre></div>
+<ul>
+<li><strong>$2^{41}\text{ ms} \approx 69.7\text{ years}$</strong> longevity from epoch.</li>
+<li>Up to $32 \times 32 = 1,024$ worker instances.</li>
+<li>Up to $4,096$ IDs per millisecond per worker instance ($4.096\text{M IDs/sec}$).</li>
+</ul>
+<hr/>
+<h2>4. HTTP 301 vs. 302 / 307 Redirect Trade-Offs</h2>
+<ul>
+<li><strong>HTTP 301 (Moved Permanently)</strong>:</li>
+<li><em>Browser behavior</em>: Browsers cache the redirect permanently. Subsequent clicks navigate straight to the long URL without contacting the TinyURL server.</li>
+<li><em>Pros</em>: Extreme reduction in server load and egress bandwidth.</li>
+<li><em>Cons</em>: <strong>Cannot track click analytics</strong> after the initial visit!</li>
+<li><strong>HTTP 302 (Found) / HTTP 307 (Temporary Redirect)</strong>:</li>
+<li><em>Browser behavior</em>: Browsers re-request the short URL every time.</li>
+<li><em>Pros</em>: <strong>100% accurate click analytics</strong>, referrer tracking, and user geography telemetry.</li>
+<li><em>Cons</em>: Every click hits the TinyURL infrastructure, requiring Redis caching to maintain sub-10ms response SLAs.</li>
+</ul>
+<hr/>
+<h2>5. DSA: Reconstructing Binary Tree from Preorder & Inorder Traversal</h2>
+<h3>5.1 Traversal Properties</h3>
+<ul>
+<li><strong>Preorder</strong>: <code>[Root, Left Subtree..., Right Subtree...]</code> $\implies$ The first element is always the subtree root!</li>
+<li><strong>Inorder</strong>: <code>[Left Subtree..., Root, Right Subtree...]</code> $\implies$ The root splits elements into left and right subtrees!</li>
+</ul>
+<h3>5.2 Algorithm & Complexity</h3>
+<ol>
+<li>Maintain <code>preIndex</code> starting at 0.</li>
+<li>Select <code>rootVal = preorder[preIndex++]</code>.</li>
+<li>Locate <code>rootVal</code> in the inorder array at index <code>inRoot</code>.</li>
+<li>Left subtree nodes span inorder indices $[inStart, inRoot - 1]$.</li>
+<li>Right subtree nodes span inorder indices $[inRoot + 1, inEnd]$.</li>
+<li>Recursively construct <code>root.left</code>, then <code>root.right</code>.</li>
+</ol>
+<ul>
+<li><strong>Optimization</strong>: By building a hash map of <code>value -&gt; inorderIndex</code> in $O(N)$ upfront, step 3 executes in $O(1)$ instead of $O(N)$ linear scans.</li>
+<li><strong>Overall Complexity</strong>:</li>
+<li>Time: $O(N)$</li>
+<li>Space: $O(N)$ for the recursion stack and dictionary.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 23: System Design — URL Shortener (TinyURL) & DSA Tree Reconstruction</h1>
+<p>Comprehensive systems design lab implementing a distributed URL Shortener (TinyURL) service, capacity planning models, Twitter Snowflake 64-bit ID generation, Base62 bi-directional encoding, cache-aside Redis layer, database sharding, and LeetCode #105 binary tree reconstruction.</p>
+<hr/>
+<h2>🎯 Architecture & Objectives</h2>
+<ol>
+<li><strong>Capacity Planning & Workload Estimation</strong>:</li>
+</ol>
+<ul>
+<li>Workload: 100M daily writes, 1B daily reads (10:1 read-to-write ratio).</li>
+<li>Average Throughput: ~1,157 Write QPS, ~11,574 Read QPS (Peak 3x: ~3,500 Write QPS, ~35,000 Read QPS).</li>
+<li>Storage Sizing: ~500 bytes/record $\to$ 18.25 TB/year, 91.25 TB over 5 years.</li>
+<li>Cache Sizing: 20% of daily reads cached (Pareto 80/20 rule) $\to$ 100 GB RAM working set.</li>
+</ul>
+<ol>
+<li><strong>Twitter Snowflake 64-bit Distributed ID Generation</strong>:</li>
+</ol>
+<ul>
+<li>Layout: 1 sign bit + 41 millisecond timestamp bits (69-year span) + 5 datacenter bits + 5 worker bits + 12 sequence bits.</li>
+<li>High Throughput: Generates up to 4,096 IDs per millisecond per node (4.096M IDs/sec) with zero network lock contention.</li>
+<li>Clock Skew Defense: Spin-waits or halts generation if system clock drifts backwards.</li>
+</ul>
+<ol>
+<li><strong>Bi-Directional Base62 Codec</strong>:</li>
+</ol>
+<ul>
+<li>Positional notation across <code>[0-9a-zA-Z]</code> (62 chars) providing URL safety without escape sequences.</li>
+<li>Mathematical 1-to-1 bijection with zero hash collisions.</li>
+</ul>
+<ol>
+<li><strong>TinyURL Service & Database Sharding</strong>:</li>
+</ol>
+<ul>
+<li>Partitioning by <code>Hash(SnowflakeId) % ShardCount</code>.</li>
+<li>Two-tier cache-aside layer with configurable TTL and auto-purging.</li>
+<li>Collision-safe custom alias assignment.</li>
+<li>Click analytics telemetry.</li>
+</ul>
+<ol>
+<li><strong>DSA Tree Reconstruction</strong>:</li>
+</ol>
+<ul>
+<li><strong>LeetCode #105 (Construct Binary Tree from Preorder & Inorder Traversal)</strong>: Divide-and-conquer recursion leveraging an $O(1)$ in-order hash map lookup in optimal $O(N)$ time and $O(N)$ space.</li>
+</ul>
+<hr/>
+<h2>📁 Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day23-Url-Shortener-TinyUrl/
+├── src/
+│   └── Day23.TinyUrl/
+│       ├── Day23.TinyUrl.csproj
+│       ├── CapacityPlanner.cs               # Capacity &amp; SLA calculation models
+│       ├── SnowflakeIdGenerator.cs          # 64-bit Twitter Snowflake generator
+│       ├── Base62Codec.cs                   # Loss-less Base62 encoder/decoder
+│       ├── TinyUrlService.cs                # Sharded service with Cache-Aside
+│       └── TreeReconstructionSolvers.cs     # LC #105 Preorder + Inorder solver
+├── tests/
+│   └── Day23.TinyUrl.Tests/
+│       ├── Day23.TinyUrl.Tests.csproj
+│       └── Day23Tests.cs                    # 10 unit tests covering system &amp; DSA
+├── README.md
+├── notes.md                                 # Deep dive architectural notes
+├── interview-questions.md                   # 10 Senior/Staff interview Q&amp;As
+└── index.html                               # Standalone offline web guide</code></pre></div>
+<hr/>
+<h2>🧪 Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day23.TinyUrl.Tests/Day23.TinyUrl.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Walk through the capacity planning for a global URL Shortener handling 100M writes/day and 1B reads/day.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ol>
+<li><strong>QPS Estimation</strong>:</li>
+</ol>
+<ul>
+<li>Write QPS: $\frac{100,000,000}{86,400} \approx 1,157\text{ req/sec}$ (Peak $3\times \approx 3,500\text{ QPS}$).</li>
+<li>Read QPS: $\frac{1,000,000,000}{86,400} \approx 11,574\text{ req/sec}$ (Peak $3\times \approx 35,000\text{ QPS}$).</li>
+</ul>
+<ol>
+<li><strong>Storage Estimation</strong>:</li>
+</ol>
+<ul>
+<li>Record size: 500 bytes (ID, short URL, long URL, timestamps, user ID, click stats).</li>
+<li>Daily storage: $100\text{M} \times 500\text{ bytes} = 50\text{ GB/day}$.</li>
+<li>1-Year storage: $50\text{ GB} \times 365 \approx 18.25\text{ TB}$.</li>
+<li>5-Year storage: $18.25\text{ TB} \times 5 \approx 91.25\text{ TB}$.</li>
+</ul>
+<ol>
+<li><strong>Cache Sizing (Pareto 80/20 Rule)</strong>:</li>
+</ol>
+<ul>
+<li>20% of read URLs generate 80% of read traffic.</li>
+<li>Cached URLs per day: $1\text{B} \times 0.20 = 200\text{M}$ URLs.</li>
+<li>Cache RAM required: $200\text{M} \times 500\text{ bytes} = 100\text{ GB RAM}$.</li>
+</ul>
+<ol>
+<li><strong>Bandwidth</strong>:</li>
+</ol>
+<ul>
+<li>Ingress: $1,157\text{ writes/sec} \times 500\text{ bytes} \approx 4.6\text{ Mbps}$.</li>
+<li>Egress: $11,574\text{ reads/sec} \times 500\text{ bytes} \approx 46.3\text{ Mbps}$.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why is Twitter Snowflake preferred over UUID v4 or database auto-increment sequences for ID generation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Auto-Increment Sequences</strong>: Create a central database bottleneck. Scaling writes across sharded databases requires multi-master synchronization or ticket servers (Flickr approach), introducing single points of failure.</li>
+<li><strong>UUID v4 (128-bit)</strong>:</li>
+<li>Generates 36-character hexadecimal strings. Base62 encoding a 128-bit UUID requires 22 characters, which completely defeats the purpose of a "short" URL!</li>
+<li>UUIDs are completely unordered (random), causing severe B-Tree page splits and disk fragmentation when indexing in relational databases.</li>
+<li><strong>Twitter Snowflake (64-bit)</strong>:</li>
+<li>Generates 64-bit integers locally in memory without any network synchronization.</li>
+<li>Encodes into short 7-8 character Base62 strings.</li>
+<li>The leading 41 bits represent millisecond timestamps, ensuring IDs are <strong>k-sorted</strong> (monotonically increasing over time), which maximizes B-Tree index append efficiency and eliminates page splits.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why is Base62 encoding used instead of Base64 or MD5/SHA-256 hash truncation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Base64</strong>: Uses characters <code>+</code>, <code>/</code>, and <code>=</code> (padding). In URLs, <code>+</code> is interpreted as space, <code>/</code> is a path separator, and <code>=</code> is a query parameter delimiter. Using Base64 requires URL percent-encoding (<code>%2B</code>, <code>%2F</code>), making short links longer and fragile.</li>
+<li><strong>Base62</strong>: Uses strictly <code>[0-9a-zA-Z]</code> (62 alphanumeric characters), which are guaranteed to be URL-safe across all protocols and browsers without escape characters.</li>
+<li><strong>MD5/SHA-256 Truncation</strong>: Hashing a long URL and taking the first 7 characters introduces hash collisions (birthday paradox). Handling collisions requires querying the database on every write and appending counter salts, adding database roundtrips.</li>
+<li><strong>Base62 Bijection</strong>: Base62 is a positional numeral system conversion of a unique 64-bit integer. Because every Snowflake ID is guaranteed unique, the Base62 string has <strong>zero collision risk</strong> by mathematical definition.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Should a URL shortener return HTTP 301 or HTTP 302/307 redirects?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>HTTP 301 (Moved Permanently)</strong>:</li>
+<li>Browsers cache the redirect locally. Subsequent clicks go directly to the target URL without contacting the TinyURL server.</li>
+<li><em>Advantage</em>: Dramatically cuts server traffic, network bandwidth, and hosting cost.</li>
+<li><em>Disadvantage</em>: <strong>Cannot record click analytics</strong> (referrers, device types, timestamps) after the initial visit.</li>
+<li><strong>HTTP 302 (Found) / HTTP 307 (Temporary Redirect)</strong>:</li>
+<li>Browsers re-query the TinyURL server on every single click.</li>
+<li><em>Advantage</em>: Enables real-time, 100% accurate click tracking, geographic analysis, and dynamic link routing.</li>
+<li><strong>Industry Standard</strong>: Modern URL shorteners (Bitly, TinyURL) return <strong>HTTP 302/307</strong> because analytics are core to their business model, relying on distributed Redis caching to keep redirect latency $< 10\text{ms}$.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How would you shard the database for a URL Shortener storing 100TB of data?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Sharding Key</strong>: <code>Hash(SnowflakeId) % NumberOfShards</code>.</li>
+<li><strong>Why ID instead of UserID or ShortCode?</strong></li>
+<li>If sharding by <code>UserId</code>, anonymous URLs or non-logged-in users cannot be sharded evenly, and resolving a short URL without knowing the user ID would require broadcast queries across all shards!</li>
+<li>Because <code>ShortCode</code> is simply the Base62 representation of <code>SnowflakeId</code>, we can instantly decode <code>ShortCode</code> back to <code>SnowflakeId</code> on the read path:</li>
+</ul>
+<p>$$\text{ShardId} = \text{Base62Decode}(\text{ShortCode}) \pmod N$$</p>
+<ul>
+<li>This allows read and write requests to route directly to the single target database shard in $O(1)$ time without scatter-gather overhead.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you prevent URL enumeration and scraping attacks?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Vulnerability</strong>: If IDs are sequential (e.g. 10001, 10002), an attacker can easily iterate through Base62 codes (<code>Base62(10001)</code>, <code>Base62(10002)</code>) to scrape all private internal URLs created by users.</li>
+<li><strong>Mitigation</strong>:</li>
+</ul>
+<ol>
+<li><strong>Bit Shuffling / Feistel Cipher</strong>: Apply a reversible pseudo-random permutation or lightweight Feistel cipher to the Snowflake ID before Base62 encoding. This preserves mathematical 1-to-1 bijection while making sequential IDs look completely random.</li>
+<li><strong>Rate Limiting</strong>: Apply sliding window rate limits on redirect endpoints per IP to halt automated crawlers.</li>
+<li><strong>Custom Aliases Protection</strong>: Enforce authentication and reserved keyword blacklists (e.g., <code>admin</code>, <code>api</code>, <code>login</code>, <code>health</code>).</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How do you handle clock backwards drift in a distributed Snowflake generator?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Issue</strong>: Network Time Protocol (NTP) adjustments can occasionally shift the machine clock backward by several milliseconds. Generating IDs during a backward jump could produce duplicate IDs.</li>
+<li><strong>Mitigations</strong>:</li>
+</ul>
+<ol>
+<li><strong>Spin Wait for Small Drift</strong>: If <code>now &lt; lastTimestamp</code> and <code>lastTimestamp - now &lt;= 5ms</code>, spin-wait in memory until the clock catches up to <code>lastTimestamp</code>.</li>
+<li><strong>Rejection on Major Drift</strong>: If drift exceeds 5ms, reject ID generation and trigger alerts to avoid data corruption.</li>
+<li><strong>Monotonic Clocks</strong>: Use clock sources that guarantee monotonicity (e.g. <code>Stopwatch.GetTimestamp()</code> or NTP slew mode instead of step mode, which gradually adjusts clock speed rather than jumping backward).</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What caching topology should be used to achieve sub-10ms redirect latency at 35,000 QPS?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Two-Tier Cache Architecture</strong>:</li>
+</ul>
+<ol>
+<li><strong>L1 In-Memory Cache (Process RAM)</strong>: Holds the top 1,000 ultra-hot URLs (e.g. viral campaign links) inside ASP.NET Core memory cache (<code>IMemoryCache</code>). Lookups execute in sub-microsecond time with zero network overhead.</li>
+<li><strong>L2 Distributed Cache (Redis Cluster)</strong>: 100 GB cluster sharded via consistent hashing holding the top 20% of daily read URLs with a 24-hour TTL. Lookups take $< 1\text{ms}$.</li>
+</ol>
+<ul>
+<li><strong>Cache-Aside Pattern</strong>:</li>
+<li>Read: Check L1 $\to$ Check L2 $\to$ Fallback to DB shard $\to$ Populate L2 and L1.</li>
+<li>Hot-key protection: Single-flight mutex to avoid cache stampedes when hot keys expire.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How would you detect and block malicious phishing links submitted to TinyURL?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ol>
+<li><strong>Synchronous Validation</strong>:</li>
+</ol>
+<ul>
+<li>Query Google Safe Browsing API or Cloudflare Radar API during URL creation.</li>
+<li>If marked malicious, immediately reject write with HTTP 400 Bad Request.</li>
+</ul>
+<ol>
+<li><strong>Asynchronous Deep Scanning</strong>:</li>
+</ol>
+<ul>
+<li>Push newly created URLs to a message queue (Kafka / Redis Streams).</li>
+<li>Headless browser workers follow redirects, inspect domain reputation, analyze landing page SSL certificates, and run ML phishing classifiers.</li>
+<li>If flagged, mark the record <code>IsSuspicious = true</code> in DB and purge from Redis.</li>
+</ul>
+<ol>
+<li><strong>Interstitial Warning Page</strong>:</li>
+</ol>
+<ul>
+<li>For newly created, unverified domains, display a brief 3-second security warning page: <em>"You are leaving TinyURL to visit example.com. Proceed with caution."</em></li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">Explain LeetCode #105 (Construct Binary Tree from Preorder &amp; Inorder). How does the hash map optimize runtime from $O(N^2)$ to $O(N)$?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Core Principle</strong>:</li>
+<li><code>preorder</code>: The first element is always the subtree root.</li>
+<li><code>inorder</code>: The root element splits the tree into left and right subtrees.</li>
+<li><strong>Naive Pitfall</strong>:</li>
+<li>In each recursive step, scanning the inorder array linearly to find <code>rootVal</code> takes $O(N)$ time. For an unbalanced or skewed tree of depth $N$, this produces $O(N^2)$ runtime.</li>
+<li><strong>Hash Map Optimization</strong>:</li>
+<li>Build <code>inorderMap[val] = index</code> once in $O(N)$ time before starting recursion.</li>
+<li>During recursive calls:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">    int inRoot = inorderMap[rootVal]; // O(1)
+    root.left = Build(inStart, inRoot - 1);
+    root.right = Build(inRoot + 1, inEnd);</code></pre></div>
+<ul>
+<li>Lookups run in $O(1)$ time. With $N$ total recursive calls (one per tree node), total execution time drops to optimal $O(N)$ with $O(N)$ auxiliary space.</li>
+</ul>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day23.TinyUrl/Base62Codec.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-src-code-0" class="language-csharp">using System;
+using System.Text;
+
+namespace Day23.TinyUrl;
+
+/// &lt;summary&gt;
+/// Bi-directional Base62 encoder and decoder.
+/// Uses alphanumeric characters [0-9a-zA-Z] ensuring URL safety without escaping.
+/// Guarantees a 1-to-1 mathematical bijection with zero hash collisions.
+/// &lt;/summary&gt;
+public static class Base62Codec
+{
+    private const string Alphabet = &quot;0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;;
+    private static readonly int Base = Alphabet.Length; // 62
+
+    /// &lt;summary&gt;
+    /// Encodes a positive 64-bit integer into a Base62 string.
+    /// &lt;/summary&gt;
+    public static string Encode(long value)
+    {
+        if (value &lt; 0) throw new ArgumentOutOfRangeException(nameof(value), &quot;Value must be non-negative.&quot;);
+        if (value == 0) return &quot;0&quot;;
+
+        var sb = new StringBuilder();
+        var temp = value;
+
+        while (temp &gt; 0)
+        {
+            var remainder = (int)(temp % Base);
+            sb.Append(Alphabet[remainder]);
+            temp /= Base;
+        }
+
+        // Reverse to maintain big-endian positional notation
+        var chars = sb.ToString().ToCharArray();
+        Array.Reverse(chars);
+        return new string(chars);
+    }
+
+    /// &lt;summary&gt;
+    /// Decodes a Base62 string back into its original 64-bit integer.
+    /// &lt;/summary&gt;
+    public static long Decode(string base62String)
+    {
+        if (string.IsNullOrWhiteSpace(base62String))
+            throw new ArgumentException(&quot;Base62 string cannot be null or empty.&quot;, nameof(base62String));
+
+        long result = 0;
+        foreach (char c in base62String)
+        {
+            var index = Alphabet.IndexOf(c);
+            if (index == -1)
+            {
+                throw new FormatException($&quot;Invalid character &#x27;{c}&#x27; in Base62 string &#x27;{base62String}&#x27;.&quot;);
+            }
+
+            result = checked((result * Base) + index);
+        }
+
+        return result;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day23.TinyUrl/CapacityPlanner.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-src-code-1" class="language-csharp">using System;
+
+namespace Day23.TinyUrl;
+
+/// &lt;summary&gt;
+/// Encapsulates capacity calculations and architecture sizing for TinyURL.
+/// Evaluates writes, reads, memory cache requirements, disk growth, and network throughput.
+/// &lt;/summary&gt;
+public record CapacityPlanResult
+{
+    public long DailyWrites { get; init; }
+    public long DailyReads { get; init; }
+    public double AverageWriteQps { get; init; }
+    public double PeakWriteQps { get; init; }
+    public double AverageReadQps { get; init; }
+    public double PeakReadQps { get; init; }
+    public double StorageBytesPerYear { get; init; }
+    public double StorageBytesPerFiveYears { get; init; }
+    public double CacheMemoryBytes { get; init; }
+    public double IngressBandwidthBytesPerSec { get; init; }
+    public double EgressBandwidthBytesPerSec { get; init; }
+}
+
+public static class CapacityPlanner
+{
+    public const int SecondsPerDay = 86400;
+    public const int BytesPerUrlRecord = 500; // ID, ShortUrl, LongUrl, Timestamps, UserId, Metadata
+
+    /// &lt;summary&gt;
+    /// Computes full capacity planning estimates for specified daily read and write workloads.
+    /// &lt;/summary&gt;
+    public static CapacityPlanResult Calculate(
+        long dailyWrites = 100_000_000L,
+        long dailyReads = 1_000_000_000L,
+        double peakMultiplier = 3.0,
+        double cachePercentage = 0.20,
+        int bytesPerRecord = BytesPerUrlRecord)
+    {
+        double avgWriteQps = (double)dailyWrites / SecondsPerDay;
+        double peakWriteQps = avgWriteQps * peakMultiplier;
+
+        double avgReadQps = (double)dailyReads / SecondsPerDay;
+        double peakReadQps = avgReadQps * peakMultiplier;
+
+        double storagePerYear = (double)dailyWrites * 365 * bytesPerRecord;
+        double storagePerFiveYears = storagePerYear * 5.0;
+
+        // Pareto 80/20 Rule: Cache 20% of daily reads
+        double cacheMemory = (double)dailyReads * cachePercentage * bytesPerRecord;
+
+        double ingressBytesPerSec = avgWriteQps * bytesPerRecord;
+        double egressBytesPerSec = avgReadQps * bytesPerRecord;
+
+        return new CapacityPlanResult
+        {
+            DailyWrites = dailyWrites,
+            DailyReads = dailyReads,
+            AverageWriteQps = Math.Round(avgWriteQps, 1),
+            PeakWriteQps = Math.Round(peakWriteQps, 1),
+            AverageReadQps = Math.Round(avgReadQps, 1),
+            PeakReadQps = Math.Round(peakReadQps, 1),
+            StorageBytesPerYear = storagePerYear,
+            StorageBytesPerFiveYears = storagePerFiveYears,
+            CacheMemoryBytes = cacheMemory,
+            IngressBandwidthBytesPerSec = ingressBytesPerSec,
+            EgressBandwidthBytesPerSec = egressBytesPerSec
+        };
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day23.TinyUrl/SnowflakeIdGenerator.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-src-code-2" class="language-csharp">using System;
+
+namespace Day23.TinyUrl;
+
+/// &lt;summary&gt;
+/// Twitter Snowflake 64-bit Distributed Unique ID Generator.
+/// Bit Layout:
+/// - 1 bit: Unused sign bit (always 0)
+/// - 41 bits: Millisecond timestamp since custom epoch (~69 years lifespan)
+/// - 5 bits: Datacenter ID (0 - 31)
+/// - 5 bits: Worker / Machine ID (0 - 31)
+/// - 12 bits: Sequence counter (0 - 4095 per millisecond)
+/// &lt;/summary&gt;
+public class SnowflakeIdGenerator
+{
+    // Epoch: 2026-01-01 00:00:00 UTC
+    public static readonly DateTime CustomEpochUtc = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    public static readonly long CustomEpochMs = new DateTimeOffset(CustomEpochUtc).ToUnixTimeMilliseconds();
+
+    private const int WorkerIdBits = 5;
+    private const int DatacenterIdBits = 5;
+    private const int SequenceBits = 12;
+
+    public const long MaxWorkerId = (1L &lt;&lt; WorkerIdBits) - 1; // 31
+    public const long MaxDatacenterId = (1L &lt;&lt; DatacenterIdBits) - 1; // 31
+    public const long SequenceMask = (1L &lt;&lt; SequenceBits) - 1; // 4095
+
+    private const int WorkerIdShift = SequenceBits; // 12
+    private const int DatacenterIdShift = SequenceBits + WorkerIdBits; // 17
+    private const int TimestampLeftShift = SequenceBits + WorkerIdBits + DatacenterIdBits; // 22
+
+    private readonly long _workerId;
+    private readonly long _datacenterId;
+    private readonly object _lock = new();
+
+    private long _sequence = 0L;
+    private long _lastTimestamp = -1L;
+
+    public long WorkerId =&gt; _workerId;
+    public long DatacenterId =&gt; _datacenterId;
+
+    public SnowflakeIdGenerator(long datacenterId = 1, long workerId = 1)
+    {
+        if (datacenterId &lt; 0 || datacenterId &gt; MaxDatacenterId)
+            throw new ArgumentOutOfRangeException(nameof(datacenterId), $&quot;Datacenter ID must be between 0 and {MaxDatacenterId}&quot;);
+
+        if (workerId &lt; 0 || workerId &gt; MaxWorkerId)
+            throw new ArgumentOutOfRangeException(nameof(workerId), $&quot;Worker ID must be between 0 and {MaxWorkerId}&quot;);
+
+        _datacenterId = datacenterId;
+        _workerId = workerId;
+    }
+
+    /// &lt;summary&gt;
+    /// Generates a globally unique, k-ordered 64-bit integer ID.
+    /// Thread-safe via synchronized spinlock.
+    /// &lt;/summary&gt;
+    public long NextId(long? customTimestampMs = null)
+    {
+        lock (_lock)
+        {
+            var timestamp = customTimestampMs ?? CurrentTimeMillis();
+
+            // Clock backwards drift check
+            if (timestamp &lt; _lastTimestamp)
+            {
+                var offset = _lastTimestamp - timestamp;
+                if (offset &lt;= 5) // Brief drift: spin-wait
+                {
+                    while (timestamp &lt; _lastTimestamp)
+                    {
+                        timestamp = CurrentTimeMillis();
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException($&quot;Clock moved backwards! Refusing to generate ID for {offset}ms.&quot;);
+                }
+            }
+
+            if (_lastTimestamp == timestamp)
+            {
+                _sequence = (_sequence + 1) &amp; SequenceMask;
+                if (_sequence == 0)
+                {
+                    // Exhausted 4096 IDs in current ms; wait for next ms
+                    timestamp = WaitNextMillis(_lastTimestamp);
+                }
+            }
+            else
+            {
+                _sequence = 0L;
+            }
+
+            _lastTimestamp = timestamp;
+
+            return ((timestamp - CustomEpochMs) &lt;&lt; TimestampLeftShift) |
+                   (_datacenterId &lt;&lt; DatacenterIdShift) |
+                   (_workerId &lt;&lt; WorkerIdShift) |
+                   _sequence;
+        }
+    }
+
+    private static long CurrentTimeMillis()
+    {
+        return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    }
+
+    private static long WaitNextMillis(long lastTimestamp)
+    {
+        var timestamp = CurrentTimeMillis();
+        while (timestamp &lt;= lastTimestamp)
+        {
+            timestamp = CurrentTimeMillis();
+        }
+        return timestamp;
+    }
+
+    /// &lt;summary&gt;
+    /// Extracts the original creation timestamp from a generated Snowflake ID.
+    /// &lt;/summary&gt;
+    public static DateTime ExtractTimestampUtc(long snowflakeId)
+    {
+        var elapsedMs = snowflakeId &gt;&gt; TimestampLeftShift;
+        var unixMs = elapsedMs + CustomEpochMs;
+        return DateTimeOffset.FromUnixTimeMilliseconds(unixMs).UtcDateTime;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day23.TinyUrl/TinyUrlService.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-src-code-3" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day23.TinyUrl;
+
+public record UrlRecord
+{
+    public long Id { get; init; }
+    public string ShortCode { get; init; } = string.Empty;
+    public string LongUrl { get; init; } = string.Empty;
+    public DateTime CreatedAtUtc { get; init; }
+    public DateTime? ExpiresAtUtc { get; init; }
+    public int ShardId { get; init; }
+    public long ClickCount;
+}
+
+/// &lt;summary&gt;
+/// Core URL Shortener Service integrating:
+/// - Distributed Snowflake 64-bit ID Generation
+/// - Loss-less Base62 Encoding
+/// - Database Sharding by Hash(ID)
+/// - Two-tier Cache-Aside Layer with TTL Eviction
+/// - Collision-safe Custom Alias Support
+/// &lt;/summary&gt;
+public class TinyUrlService
+{
+    private readonly SnowflakeIdGenerator _idGenerator;
+    private readonly int _shardCount;
+    private readonly List&lt;ConcurrentDictionary&lt;string, UrlRecord&gt;&gt; _dbShards = new();
+    private readonly ConcurrentDictionary&lt;string, UrlRecord&gt; _redisCache = new();
+
+    private long _cacheHits = 0;
+    private long _cacheMisses = 0;
+
+    public long CacheHits =&gt; Interlocked.Read(ref _cacheHits);
+    public long CacheMisses =&gt; Interlocked.Read(ref _cacheMisses);
+    public int ShardCount =&gt; _shardCount;
+
+    public TinyUrlService(SnowflakeIdGenerator? idGenerator = null, int shardCount = 4)
+    {
+        _idGenerator = idGenerator ?? new SnowflakeIdGenerator(datacenterId: 1, workerId: 1);
+        _shardCount = Math.Max(1, shardCount);
+
+        for (int i = 0; i &lt; _shardCount; i++)
+        {
+            _dbShards.Add(new ConcurrentDictionary&lt;string, UrlRecord&gt;());
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Shortens a long URL using Snowflake ID and Base62 encoding, or applies a custom alias.
+    /// &lt;/summary&gt;
+    public async Task&lt;UrlRecord&gt; ShortenAsync(
+        string longUrl,
+        string? customAlias = null,
+        TimeSpan? ttl = null,
+        DateTime? customNow = null)
+    {
+        if (string.IsNullOrWhiteSpace(longUrl))
+            throw new ArgumentException(&quot;Long URL cannot be null or empty.&quot;, nameof(longUrl));
+
+        if (!Uri.TryCreate(longUrl, UriKind.Absolute, out _))
+            throw new ArgumentException(&quot;Invalid URL format.&quot;, nameof(longUrl));
+
+        var now = customNow ?? DateTime.UtcNow;
+        long id;
+        string shortCode;
+
+        if (!string.IsNullOrWhiteSpace(customAlias))
+        {
+            shortCode = customAlias.Trim();
+            // Verify alias uniqueness across all shards
+            if (FindRecordInShards(shortCode) != null)
+            {
+                throw new InvalidOperationException($&quot;Custom alias &#x27;{shortCode}&#x27; is already taken.&quot;);
+            }
+            id = _idGenerator.NextId();
+        }
+        else
+        {
+            id = _idGenerator.NextId();
+            shortCode = Base62Codec.Encode(id);
+        }
+
+        var shardId = (int)(Math.Abs(id) % _shardCount);
+        var record = new UrlRecord
+        {
+            Id = id,
+            ShortCode = shortCode,
+            LongUrl = longUrl,
+            CreatedAtUtc = now,
+            ExpiresAtUtc = ttl.HasValue ? now.Add(ttl.Value) : null,
+            ShardId = shardId,
+            ClickCount = 0
+        };
+
+        // 1. Write to database shard
+        _dbShards[shardId][shortCode] = record;
+
+        // 2. Populate Cache (Cache-Aside / Write-Through)
+        _redisCache[shortCode] = record;
+
+        return await Task.FromResult(record);
+    }
+
+    /// &lt;summary&gt;
+    /// Resolves a short code to its original long URL, executing Cache-Aside lookup.
+    /// Increments click analytics counter upon successful resolution.
+    /// &lt;/summary&gt;
+    public async Task&lt;string?&gt; ResolveAsync(string shortCode, DateTime? customNow = null)
+    {
+        if (string.IsNullOrWhiteSpace(shortCode)) return null;
+
+        var now = customNow ?? DateTime.UtcNow;
+
+        // 1. Check Cache
+        if (_redisCache.TryGetValue(shortCode, out var cachedRecord))
+        {
+            if (cachedRecord.ExpiresAtUtc.HasValue &amp;&amp; now &gt;= cachedRecord.ExpiresAtUtc.Value)
+            {
+                // Expired in cache
+                _redisCache.TryRemove(shortCode, out _);
+                return null;
+            }
+
+            Interlocked.Increment(ref _cacheHits);
+            Interlocked.Increment(ref cachedRecord.ClickCount);
+            return await Task.FromResult(cachedRecord.LongUrl);
+        }
+
+        // 2. Cache Miss: Query Database Shards
+        Interlocked.Increment(ref _cacheMisses);
+        var dbRecord = FindRecordInShards(shortCode);
+
+        if (dbRecord == null) return null;
+
+        // Check DB expiration
+        if (dbRecord.ExpiresAtUtc.HasValue &amp;&amp; now &gt;= dbRecord.ExpiresAtUtc.Value)
+        {
+            // Expired in DB
+            _dbShards[dbRecord.ShardId].TryRemove(shortCode, out _);
+            return null;
+        }
+
+        // Cache-Aside replenishment
+        _redisCache[shortCode] = dbRecord;
+        Interlocked.Increment(ref dbRecord.ClickCount);
+
+        return await Task.FromResult(dbRecord.LongUrl);
+    }
+
+    /// &lt;summary&gt;
+    /// Retrieves full record and analytics for a short code.
+    /// &lt;/summary&gt;
+    public UrlRecord? GetStats(string shortCode)
+    {
+        if (_redisCache.TryGetValue(shortCode, out var cached)) return cached;
+        return FindRecordInShards(shortCode);
+    }
+
+    private UrlRecord? FindRecordInShards(string shortCode)
+    {
+        for (int i = 0; i &lt; _shardCount; i++)
+        {
+            if (_dbShards[i].TryGetValue(shortCode, out var record))
+            {
+                return record;
+            }
+        }
+        return null;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day23.TinyUrl/TreeReconstructionSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-src-code-4')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-src-code-4" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day23.TinyUrl;
+
+/// &lt;summary&gt;
+/// Standard Binary Tree Node definition.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// LeetCode #105: Construct Binary Tree from Preorder and Inorder Traversal.
+/// Uses a hash map to achieve O(1) partition lookups in divide-and-conquer recursion.
+/// Time Complexity: O(N) | Space Complexity: O(N)
+/// &lt;/summary&gt;
+public class TreeReconstructionSolvers
+{
+    public TreeNode? BuildTree(int[] preorder, int[] inorder)
+    {
+        if (preorder == null || inorder == null || preorder.Length != inorder.Length || preorder.Length == 0)
+        {
+            return null;
+        }
+
+        // Build value-to-index map for O(1) split index retrieval in inorder array
+        var inorderMap = new Dictionary&lt;int, int&gt;(inorder.Length);
+        for (int i = 0; i &lt; inorder.Length; i++)
+        {
+            inorderMap[inorder[i]] = i;
+        }
+
+        int preIndex = 0;
+
+        TreeNode? BuildSubtree(int inStart, int inEnd)
+        {
+            if (inStart &gt; inEnd) return null;
+
+            int rootVal = preorder[preIndex++];
+            var root = new TreeNode(rootVal);
+
+            int inRootIndex = inorderMap[rootVal];
+
+            // In preorder, all left subtree nodes appear immediately after root,
+            // so left child must be built before right child.
+            root.left = BuildSubtree(inStart, inRootIndex - 1);
+            root.right = BuildSubtree(inRootIndex + 1, inEnd);
+
+            return root;
+        }
+
+        return BuildSubtree(0, inorder.Length - 1);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day23.TinyUrl.Tests/Day23Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd23-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d23-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Xunit;
+
+namespace Day23.TinyUrl.Tests;
+
+public class Day23Tests
+{
+    // ==========================================
+    // 1. CAPACITY PLANNING TESTS
+    // ==========================================
+
+    [Fact]
+    public void CapacityPlanner_CalculatesAccurateThroughputAndStorage_For100MWritesAnd1BReads()
+    {
+        var plan = CapacityPlanner.Calculate(
+            dailyWrites: 100_000_000L,
+            dailyReads: 1_000_000_000L,
+            peakMultiplier: 3.0,
+            cachePercentage: 0.20
+        );
+
+        // 100M / 86400 = ~1157.4 QPS
+        plan.AverageWriteQps.Should().BeApproximately(1157.4, 1.0);
+        plan.PeakWriteQps.Should().BeApproximately(3472.2, 3.0);
+
+        // 1B / 86400 = ~11574.1 QPS
+        plan.AverageReadQps.Should().BeApproximately(11574.1, 1.0);
+        plan.PeakReadQps.Should().BeApproximately(34722.2, 3.0);
+
+        // 100M * 365 * 500 bytes = 18.25 TB/year
+        plan.StorageBytesPerYear.Should().Be(18_250_000_000_000.0);
+        plan.StorageBytesPerFiveYears.Should().Be(91_250_000_000_000.0);
+
+        // 20% of 1B reads * 500 bytes = 100 GB cache
+        plan.CacheMemoryBytes.Should().Be(100_000_000_000.0);
+    }
+
+    // ==========================================
+    // 2. SNOWFLAKE ID GENERATOR TESTS
+    // ==========================================
+
+    [Fact]
+    public void SnowflakeId_GeneratesMonotonicallyIncreasingUniqueIds()
+    {
+        var generator = new SnowflakeIdGenerator(datacenterId: 2, workerId: 5);
+        var ids = new HashSet&lt;long&gt;();
+        long prev = -1;
+
+        for (int i = 0; i &lt; 1000; i++)
+        {
+            var id = generator.NextId();
+            id.Should().BeGreaterThan(0, &quot;Snowflake IDs must be positive 64-bit integers&quot;);
+            id.Should().BeGreaterThan(prev, &quot;Snowflake IDs must monotonically increase&quot;);
+            ids.Add(id).Should().BeTrue(&quot;Each Snowflake ID must be globally unique&quot;);
+            prev = id;
+        }
+    }
+
+    [Fact]
+    public void SnowflakeId_ExtractsAccurateCreationTimestamp()
+    {
+        var generator = new SnowflakeIdGenerator(datacenterId: 1, workerId: 1);
+        var before = DateTime.UtcNow;
+        var id = generator.NextId();
+        var after = DateTime.UtcNow;
+
+        var extracted = SnowflakeIdGenerator.ExtractTimestampUtc(id);
+
+        extracted.Should().BeOnOrAfter(before.AddMilliseconds(-10));
+        extracted.Should().BeOnOrBefore(after.AddMilliseconds(10));
+    }
+
+    [Fact]
+    public void SnowflakeId_ThrowsOnClockBackwardsDrift()
+    {
+        var generator = new SnowflakeIdGenerator(datacenterId: 1, workerId: 1);
+        var baseMs = 1770000000000L;
+
+        // Generate at baseMs
+        generator.NextId(customTimestampMs: baseMs);
+
+        // Simulate significant backwards drift (1000ms in the past)
+        Action act = () =&gt; generator.NextId(customTimestampMs: baseMs - 1000);
+        act.Should().Throw&lt;InvalidOperationException&gt;()
+           .WithMessage(&quot;*Clock moved backwards*&quot;);
+    }
+
+    // ==========================================
+    // 3. BASE62 CODEC TESTS
+    // ==========================================
+
+    [Theory]
+    [InlineData(0L, &quot;0&quot;)]
+    [InlineData(1L, &quot;1&quot;)]
+    [InlineData(61L, &quot;Z&quot;)]
+    [InlineData(62L, &quot;10&quot;)]
+    [InlineData(123456789L, &quot;8m0Kx&quot;)]
+    [InlineData(long.MaxValue, &quot;aZl8N0y58M7&quot;)]
+    public void Base62Codec_RoundTripConversion_IsLossless(long original, string expectedEncoded)
+    {
+        var encoded = Base62Codec.Encode(original);
+        encoded.Should().Be(expectedEncoded);
+
+        var decoded = Base62Codec.Decode(encoded);
+        decoded.Should().Be(original);
+    }
+
+    // ==========================================
+    // 4. TINYURL SERVICE WORKFLOW TESTS
+    // ==========================================
+
+    [Fact]
+    public async Task TinyUrlService_ShortenAndResolve_Success()
+    {
+        var service = new TinyUrlService(shardCount: 4);
+        var longUrl = &quot;https://learningsystem.internal/courses/dotnet-distributed-architecture?module=3&quot;;
+
+        var record = await service.ShortenAsync(longUrl);
+        record.Should().NotBeNull();
+        record.ShortCode.Should().NotBeNullOrEmpty();
+        record.LongUrl.Should().Be(longUrl);
+        record.ShardId.Should().BeInRange(0, 3);
+
+        // Resolve
+        var resolved = await service.ResolveAsync(record.ShortCode);
+        resolved.Should().Be(longUrl);
+
+        var stats = service.GetStats(record.ShortCode);
+        stats.Should().NotBeNull();
+        stats!.ClickCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task TinyUrlService_CustomAlias_HandlesUniquenessAndConflicts()
+    {
+        var service = new TinyUrlService();
+        var longUrl1 = &quot;https://github.com/shatru123/LearningTrack&quot;;
+        var longUrl2 = &quot;https://google.com&quot;;
+
+        var record = await service.ShortenAsync(longUrl1, customAlias: &quot;my-repo&quot;);
+        record.ShortCode.Should().Be(&quot;my-repo&quot;);
+
+        var resolved = await service.ResolveAsync(&quot;my-repo&quot;);
+        resolved.Should().Be(longUrl1);
+
+        // Collision attempt with same alias
+        Func&lt;Task&gt; act = async () =&gt; await service.ShortenAsync(longUrl2, customAlias: &quot;my-repo&quot;);
+        await act.Should().ThrowAsync&lt;InvalidOperationException&gt;()
+                 .WithMessage(&quot;*already taken*&quot;);
+    }
+
+    [Fact]
+    public async Task TinyUrlService_Expiration_PurgesExpiredUrls()
+    {
+        var service = new TinyUrlService();
+        var longUrl = &quot;https://temporary-promotion.com/flash-sale&quot;;
+        var t0 = DateTime.UtcNow;
+
+        var record = await service.ShortenAsync(longUrl, ttl: TimeSpan.FromMinutes(10), customNow: t0);
+
+        // Resolving within validity period
+        var active = await service.ResolveAsync(record.ShortCode, customNow: t0.AddMinutes(5));
+        active.Should().Be(longUrl);
+
+        // Resolving after TTL expires returns null
+        var expired = await service.ResolveAsync(record.ShortCode, customNow: t0.AddMinutes(15));
+        expired.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TinyUrlService_CacheAside_IncrementsHitsAndMisses()
+    {
+        var service = new TinyUrlService();
+        var longUrl = &quot;https://engineering.blog/redis-internals&quot;;
+
+        var record = await service.ShortenAsync(longUrl);
+
+        // First resolve: cache was already warm from write-through -&gt; Cache hit
+        await service.ResolveAsync(record.ShortCode);
+        service.CacheHits.Should().Be(1);
+
+        // Resolving non-existent short code -&gt; Cache miss
+        var missing = await service.ResolveAsync(&quot;nonexistent_code_xyz&quot;);
+        missing.Should().BeNull();
+        service.CacheMisses.Should().Be(1);
+    }
+
+    // ==========================================
+    // 5. DSA: CONSTRUCT TREE FROM PREORDER &amp; INORDER (LC #105)
+    // ==========================================
+
+    [Fact]
+    public void LC105_BuildTree_ReconstructsTreeCorrectly()
+    {
+        var solver = new TreeReconstructionSolvers();
+
+        // Standard LeetCode test case:
+        // preorder = [3, 9, 20, 15, 7]
+        // inorder  = [9, 3, 15, 20, 7]
+        // Tree:
+        //        3
+        //       / \
+        //      9   20
+        //         /  \
+        //        15   7
+        int[] preorder = { 3, 9, 20, 15, 7 };
+        int[] inorder  = { 9, 3, 15, 20, 7 };
+
+        var root = solver.BuildTree(preorder, inorder);
+
+        root.Should().NotBeNull();
+        root!.val.Should().Be(3);
+        root.left!.val.Should().Be(9);
+        root.left.left.Should().BeNull();
+        root.left.right.Should().BeNull();
+
+        root.right!.val.Should().Be(20);
+        root.right.left!.val.Should().Be(15);
+        root.right.right!.val.Should().Be(7);
+
+        // Edge case: Single node
+        var single = solver.BuildTree(new[] { 1 }, new[] { 1 });
+        single.Should().NotBeNull();
+        single!.val.Should().Be(1);
+        single.left.Should().BeNull();
+        single.right.Should().BeNull();
+
+        // Edge case: Empty array
+        var empty = solver.BuildTree(Array.Empty&lt;int&gt;(), Array.Empty&lt;int&gt;());
+        empty.Should().BeNull();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 23 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

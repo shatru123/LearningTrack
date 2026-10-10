@@ -1,8 +1,8 @@
 # 100-Day .NET + AI Engineering Track
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
-[![Status](https://img.shields.io/badge/Roadmap-Days%201--21%20Completed-brightgreen.svg)](#completed-curriculum-days-121)
-[![Tests](https://img.shields.io/badge/Tests-240%20Passed-brightgreen.svg)](#running-builds-and-tests)
+[![Status](https://img.shields.io/badge/Roadmap-Days%201--23%20Completed-brightgreen.svg)](#completed-curriculum-days-123)
+[![Tests](https://img.shields.io/badge/Tests-265%20Passed-brightgreen.svg)](#running-builds-and-tests)
 
 Practical engineering implementations, performance benchmarks, systems architecture labs, and Data Structures & Algorithms (DSA) exercises across the 100-Day .NET + AI Engineering journey.
 
@@ -17,7 +17,7 @@ Practical engineering implementations, performance benchmarks, systems architect
 
 ## Status
 
-**Days 1–21: Completed**
+**Days 1–23: Completed**
 
 Detailed status table: [roadmap/progress.md](roadmap/progress.md)  
 Roadmap overview: [roadmap/100-day-roadmap.md](roadmap/100-day-roadmap.md)
@@ -33,7 +33,7 @@ Read complete daily guides, deep architectural notes, interview questions, and c
 
 ---
 
-## Completed Curriculum (Days 1–21)
+## Completed Curriculum (Days 1–23)
 
 Each day includes complete practical implementations, xUnit test suites, comprehensive engineering notes, and practical scenarios.
 
@@ -60,6 +60,8 @@ Each day includes complete practical implementations, xUnit test suites, compreh
 | **Day 19** | Redis Distributed Locking with RedLock | Multi-instance RedLock consensus, quorum validation ($\lfloor N/2 \rfloor + 1$), clock drift & skew, auto-renewal lease watchdog, fencing tokens, DSA (LeetCode #100 Same Tree & #572 Subtree of Another Tree with Merkle Hashing) | [Day19-Redis-RedLock-DistributedLocking](Day19-Redis-RedLock-DistributedLocking/) • [README](Day19-Redis-RedLock-DistributedLocking/README.md) • [Notes](Day19-Redis-RedLock-DistributedLocking/notes.md) • [Interview Qs](Day19-Redis-RedLock-DistributedLocking/interview-questions.md) |
 | **Day 20** | Redis Pub/Sub & Redis Streams | Redis Streams Radix tree of listpacks, Consumer groups, ACK, Pending Entries List (PEL), `XCLAIM` fault recovery, Pub/Sub broadcast, DSA (LeetCode #235 Lowest Common Ancestor of a BST & #102 Binary Tree Level Order Traversal) | [Day20-Redis-Streams-PubSub](Day20-Redis-Streams-PubSub/) • [README](Day20-Redis-Streams-PubSub/README.md) • [Notes](Day20-Redis-Streams-PubSub/notes.md) • [Interview Qs](Day20-Redis-Streams-PubSub/interview-questions.md) |
 | **Day 21** | System Design: Distributed Cache Architecture | Ketama consistent hash ring with virtual nodes ($2^{32}-1$), two-tier caching (L1 MemoryCache + L2 Redis), hot-key suffix scattering, single-flight mutex & XFetch stampede protection, DSA (LeetCode #199 Binary Tree Right Side View & #1448 Count Good Nodes in Binary Tree) | [Day21-Distributed-Cache-Architecture](Day21-Distributed-Cache-Architecture/) • [README](Day21-Distributed-Cache-Architecture/README.md) • [Notes](Day21-Distributed-Cache-Architecture/notes.md) • [Interview Qs](Day21-Distributed-Cache-Architecture/interview-questions.md) |
+| **Day 22** | System Design: Rate Limiter Design | Token Bucket, Leaky Bucket, Fixed Window, Sliding Window Log, Sliding Window Counter, ASP.NET Core distributed rate limiter middleware, standard headers, RFC 7807 429, DSA (LeetCode #98 Validate BST & #230 Kth Smallest Element in BST) | [Day22-Rate-Limiter-Design](Day22-Rate-Limiter-Design/) • [README](Day22-Rate-Limiter-Design/README.md) • [Notes](Day22-Rate-Limiter-Design/notes.md) • [Interview Qs](Day22-Rate-Limiter-Design/interview-questions.md) |
+| **Day 23** | System Design: URL Shortener (TinyURL) | Capacity planning (100M writes, 1B reads), Twitter Snowflake 64-bit ID generator, loss-less Base62 codec, database sharding by Hash(ID), Cache-Aside Redis layer, HTTP 302 analytics, DSA (LeetCode #105 Construct Binary Tree from Preorder & Inorder) | [Day23-Url-Shortener-TinyUrl](Day23-Url-Shortener-TinyUrl/) • [README](Day23-Url-Shortener-TinyUrl/README.md) • [Notes](Day23-Url-Shortener-TinyUrl/notes.md) • [Interview Qs](Day23-Url-Shortener-TinyUrl/interview-questions.md) |
 
 ---
 
@@ -73,4 +75,4 @@ dotnet build
 dotnet test LearningTrack.sln
 ```
 
-All 240 automated unit and integration tests validate the implementations across Days 1–21.
+All 265 automated unit and integration tests validate the implementations across Days 1–23.

@@ -30,7 +30,9 @@
 | Day 19 | Redis Distributed Locking with RedLock (LC #100 & #572) | ✅ Completed |
 | Day 20 | Redis Pub/Sub & Redis Streams (LC #235 & #102) | ✅ Completed |
 | Day 21 | Distributed Cache Architecture (LC #199 & #1448) | ✅ Completed |
+| Day 22 | System Design: Rate Limiter Design (LC #98 & #230) | ✅ Completed |
+| Day 23 | System Design: URL Shortener / TinyURL (LC #105) | ✅ Completed |
 
 ## Next
 
-Day 22 — Continue the original 100-day LearningOS roadmap.
+Day 24 — Continue the original 100-day LearningOS roadmap.

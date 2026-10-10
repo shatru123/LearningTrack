@@ -1,0 +1,3502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 22: System Design: Rate Limiter Design | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 22</span>
+        <span class="badge badge-category">System Design &amp; Distributed Systems</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day21-Distributed-Cache-Architecture/index.html" class="nav-btn">← Day 21</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+
+        </select>
+        <a href="../Day23-Url-Shortener-TinyUrl/index.html" class="nav-btn">Day 23 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 22: System Design: Rate Limiter Design</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 4 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d22GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d22GradToken" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d22GradSlide" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d22GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d22GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Distributed Rate Limiter Architecture: Token Bucket, Sliding Window &amp; BST In-Order</text>
+
+          <!-- 1. Token & Leaky Bucket Column -->
+          <rect x="30" y="60" width="300" height="300" rx="10" fill="url(#d22GradToken)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Token Bucket &amp; Traffic Shaping</text>
+
+          <rect x="45" y="105" width="270" height="65" rx="6" fill="#0284c7" stroke="#38bdf8"/>
+          <text x="55" y="125" fill="#ffffff" font-size="11" font-weight="bold">Token Bucket (AWS, Stripe Standard)</text>
+          <text x="55" y="142" fill="#e0f2fe" font-size="9">Burst capacity C=10 • Refill rate R=2 tokens/s</text>
+          <text x="55" y="157" fill="#bae6fd" font-size="9">Tokens = min(C, old + delta_t * R)</text>
+
+          <rect x="45" y="180" width="270" height="75" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="200" fill="#fbbf24" font-size="11" font-weight="bold">Leaky Bucket (Constant Outflow)</text>
+          <text x="55" y="217" fill="#cbd5e1" font-size="9">FIFO queue buffer drops excess packets</text>
+          <text x="55" y="232" fill="#34d399" font-size="9">Outputs strict steady stream at rate R</text>
+          <text x="55" y="247" fill="#94a3b8" font-size="8">Ideal for webhook dispatchers &amp; third-party APIs</text>
+
+          <rect x="45" y="265" width="270" height="80" rx="6" fill="#0f172a" stroke="#ef4444"/>
+          <text x="55" y="285" fill="#f87171" font-size="11" font-weight="bold">Fixed Window 2x Boundary Spike</text>
+          <text x="55" y="302" fill="#cbd5e1" font-size="9">100 req at 12:00:59 + 100 req at 12:01:01</text>
+          <text x="55" y="317" fill="#ef4444" font-size="9">&#9888; 200 requests pass in a 2-second interval!</text>
+          <text x="55" y="332" fill="#94a3b8" font-size="8">Fixed window counters are vulnerable to DDoS bursts</text>
+
+          <!-- 2. Sliding Window Counter & Middleware Column -->
+          <rect x="350" y="60" width="280" height="300" rx="10" fill="url(#d22GradSlide)" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="370" y="88" fill="#c084fc" font-size="14" font-weight="bold">Sliding Window &amp; Middleware</text>
+
+          <rect x="365" y="105" width="250" height="80" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="125" fill="#60a5fa" font-size="11" font-weight="bold">Cloudflare Hybrid Sliding Counter</text>
+          <text x="375" y="142" fill="#cbd5e1" font-size="9">Count = Curr + Prev * (1 - elapsed / window)</text>
+          <text x="375" y="157" fill="#34d399" font-size="9">&#10003; Memory: Strictly O(1) (only 2 counters)</text>
+          <text x="375" y="172" fill="#94a3b8" font-size="8">Eliminates 2x spike with &lt; 0.05% error rate</text>
+
+          <rect x="365" y="195" width="250" height="75" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="215" fill="#fbbf24" font-size="11" font-weight="bold">ASP.NET Core Middleware Headers</text>
+          <text x="375" y="232" fill="#cbd5e1" font-size="9">X-RateLimit-Limit: 100</text>
+          <text x="375" y="247" fill="#cbd5e1" font-size="9">X-RateLimit-Remaining: 42</text>
+          <text x="375" y="260" fill="#cbd5e1" font-size="9">X-RateLimit-Reset: 1728561600</text>
+
+          <rect x="365" y="280" width="250" height="65" rx="5" fill="#0f172a" stroke="#10b981"/>
+          <text x="375" y="300" fill="#34d399" font-size="11" font-weight="bold">HTTP 429 &amp; RFC 7807 Details</text>
+          <text x="375" y="317" fill="#cbd5e1" font-size="9">Retry-After: 18 seconds</text>
+          <text x="375" y="332" fill="#94a3b8" font-size="8">Standardized problem+json automated backoff</text>
+
+          <!-- 3. DSA BST Traversal Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d22GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">BST In-Order Invariants</text>
+
+          <rect x="665" y="105" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #98: Validate BST</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Global Interval Range Check:</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">min &lt; node.val &lt; max (64-bit bounds)</text>
+          <text x="675" y="172" fill="#fbbf24" font-size="9">In-order: prev &lt; curr strictly</text>
+          <text x="675" y="187" fill="#94a3b8" font-size="9">Prevents deep ancestor leaks</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">O(N) Time | O(H) Call Stack</text>
+
+          <rect x="665" y="225" width="210" height="120" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="245" fill="#fbbf24" font-size="11" font-weight="bold">LC #230: Kth Smallest BST</text>
+          <text x="675" y="262" fill="#94a3b8" font-size="9">Iterative Stack In-Order:</text>
+          <text x="675" y="278" fill="#cbd5e1" font-size="9">while (curr != null) Push(curr)</text>
+          <text x="675" y="293" fill="#38bdf8" font-size="9">curr = Pop(); if (--k == 0) return</text>
+          <text x="675" y="308" fill="#94a3b8" font-size="9">Early exit without full traversal</text>
+          <text x="675" y="325" fill="#34d399" font-size="9">O(H + k) Time | O(H) Memory</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (4 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 22: Deep Dive — Distributed Rate Limiting & BST Traversal Mechanics</h1>
+<h2>1. Rate Limiting Algorithm Taxonomy & Trade-Offs</h2>
+<p>Rate limiting controls the consumption of resources by restricting the frequency of incoming operations across a given temporal window.</p>
+<div class="table-container"><table><thead><tr>
+<th>Algorithm</th>
+<th>Memory Complexity</th>
+<th>Time Complexity</th>
+<th>Burst Support</th>
+<th>Smooth Traffic Outflow</th>
+<th>Edge Spike Vulnerability</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Token Bucket</strong></td>
+<td>$O(1)$ per client</td>
+<td>$O(1)$</td>
+<td>Yes (up to capacity $C$)</td>
+<td>Moderate</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><strong>Leaky Bucket</strong></td>
+<td>$O(1)$ or $O(QueueSize)$</td>
+<td>$O(1)$</td>
+<td>No (enforces fixed leak rate $R$)</td>
+<td>Yes (strict constant flow)</td>
+<td>Zero</td>
+</tr>
+<tr>
+<td><strong>Fixed Window Counter</strong></td>
+<td>$O(1)$ per client</td>
+<td>$O(1)$</td>
+<td>Yes (within slot)</td>
+<td>No (uneven burst at boundaries)</td>
+<td>High ($2\times$ burst across boundaries)</td>
+</tr>
+<tr>
+<td><strong>Sliding Window Log</strong></td>
+<td>$O(M)$ where $M$ is request count</td>
+<td>$O(\log M)$ to $O(M)$</td>
+<td>Yes</td>
+<td>High</td>
+<td>Zero (100% accurate)</td>
+</tr>
+<tr>
+<td><strong>Sliding Window Counter</strong></td>
+<td>$O(1)$ (2 counters per client)</td>
+<td>$O(1)$</td>
+<td>Yes</td>
+<td>High</td>
+<td>Negligible ($\le 0.05\%$ variance)</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>2. In-Depth Algorithmic Mechanics</h2>
+<h3>2.1 Token Bucket</h3>
+<ul>
+<li><strong>Mechanics</strong>: A bucket holds at most $C$ tokens. Tokens refill continuously at rate $R$ tokens/second.</li>
+<li><strong>Refill Formula</strong>:</li>
+</ul>
+<p>$$\text{Tokens}_{\text{new}} = \min(C, \text{Tokens}_{\text{old}} + (t_{\text{now}} - t_{\text{last}}) \times R)$$</p>
+<ul>
+<li><strong>Why it is widely used (AWS, Stripe)</strong>: Supports natural bursts (e.g., page load with 10 assets) while bounding sustained average throughput.</li>
+</ul>
+<h3>2.2 Leaky Bucket</h3>
+<ul>
+<li><strong>Mechanics</strong>: Implemented as a FIFO queue of capacity $C$. Incoming requests enter the queue; a worker processes or transmits requests at a steady rate $R$. If the queue is full, new requests are dropped.</li>
+<li><strong>Ideal Use Case</strong>: Egress traffic shaping (e.g. video streaming, webhook dispatchers to external third-party APIs).</li>
+</ul>
+<h3>2.3 Fixed Window Counter Boundary Burst Problem</h3>
+<ul>
+<li><strong>The Vulnerability</strong>: Consider a limit of 100 requests per 1-minute window ($12:00:00 - 12:01:00$).</li>
+<li>An attacker sends 100 requests at $12:00:59$.</li>
+<li>At $12:01:00$, the new window begins with counter reset to 0.</li>
+<li>The attacker sends another 100 requests at $12:01:01$.</li>
+<li><strong>Result</strong>: 200 requests pass in a 2-second interval, doubling the intended maximum capacity!</li>
+</ul>
+<h3>2.4 Sliding Window Counter (Cloudflare Hybrid)</h3>
+<ul>
+<li>Avoids storing individual timestamps by estimating the overlap:</li>
+</ul>
+<p>$$\text{Count}_{\text{est}} = \text{Count}_{\text{current}} + \text{Count}_{\text{prev}} \times \left(1 - \frac{t - t_{\text{current\_start}}}{\text{WindowSize}}\right)$$</p>
+<ul>
+<li>If a client made 100 requests in the previous 1-minute window, and at 15 seconds into the current minute makes another request with current count 10:</li>
+</ul>
+<p>$$\text{Count}_{\text{est}} = 10 + 100 \times \left(1 - \frac{15}{60}\right) = 10 + 75 = 85$$</p>
+<ul>
+<li>Memory footprint is strictly two numbers ($O(1)$) per client, making it the premier choice for multi-tenant cloud gateways.</li>
+</ul>
+<hr/>
+<h2>3. Distributed Redis Rate Limiting Implementation</h2>
+<p>In a distributed cluster of web API servers, state cannot reside solely in process memory without causing traffic divergence (a client hitting server A, then server B).</p>
+<h3>3.1 Atomic Lua Script for Sliding Window Counter in Redis</h3>
+<div class="code-block-container"><pre class="language-lua"><code class="language-lua">-- KEYS[1]: Current window key (e.g., rl:client123:28800)
+-- KEYS[2]: Previous window key (e.g., rl:client123:28799)
+-- ARGV[1]: Max limit
+-- ARGV[2]: Current timestamp in seconds
+-- ARGV[3]: Window size in seconds
+
+local curr_key = KEYS[1]
+local prev_key = KEYS[2]
+local limit = tonumber(ARGV[1])
+local now = tonumber(ARGV[2])
+local window = tonumber(ARGV[3])
+
+local curr_count = tonumber(redis.call(&#x27;get&#x27;, curr_key) or &quot;0&quot;)
+local prev_count = tonumber(redis.call(&#x27;get&#x27;, prev_key) or &quot;0&quot;)
+
+local elapsed = now % window
+local weight = (window - elapsed) / window
+local est_count = curr_count + (prev_count * weight)
+
+if est_count + 1 &gt; limit then
+    return 0 -- Rejected
+else
+    redis.call(&#x27;incr&#x27;, curr_key)
+    redis.call(&#x27;expire&#x27;, curr_key, window * 2)
+    return 1 -- Allowed
+end</code></pre></div>
+<h3>3.2 Key Resolution Hierarchy</h3>
+<ol>
+<li><strong>Authenticated Users</strong>: <code>user:{user_id}</code> (prevents users from bypassing limits by rotating IP).</li>
+<li><strong>API Clients</strong>: <code>apikey:{sha256(api_key)}</code>.</li>
+<li><strong>Public / Unauthenticated</strong>: <code>ip:{client_ip}</code> (with special handling for <code>X-Forwarded-For</code> through trusted proxies to prevent header spoofing).</li>
+</ol>
+<hr/>
+<h2>4. DSA: BST In-Order Traversal Invariants</h2>
+<h3>4.1 In-Order Traversal Property</h3>
+<ul>
+<li>In any valid Binary Search Tree:</li>
+</ul>
+<p>$$\text{In-Order}(T) = \text{Left} \to \text{Node} \to \text{Right} \implies \text{Strictly Ascending Sequence}$$</p>
+<ul>
+<li>If and only if $v_i < v_{i+1}$ for all sequential visits, the tree is a valid BST.</li>
+</ul>
+<h3>4.2 LeetCode #98 (Validate BST)</h3>
+<ul>
+<li>Common Pitfall: Checking only <code>node.left.val &lt; node.val &lt; node.right.val</code> locally is insufficient. A node in a right subtree might be smaller than a grandparent node!</li>
+<li>Solution: Maintain global interval bounds $(\text{min}, \text{max})$ for each recursive branch, using <code>long?</code> to avoid integer overflow when root contains <code>int.MinValue</code> or <code>int.MaxValue</code>.</li>
+</ul>
+<h3>4.3 LeetCode #230 (Kth Smallest Element in BST)</h3>
+<ul>
+<li>Rather than traversing all $N$ nodes to construct an array, an iterative stack traversal enables <strong>early exit</strong>:</li>
+<li>Traverse left pushing to stack until leaf.</li>
+<li>Pop, decrement $k$.</li>
+<li>When $k == 0$, immediately return the current value!</li>
+<li>Time Complexity: $O(H + k)$, where $H$ is tree height. Space: $O(H)$.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 22: System Design — Rate Limiter Design & DSA BST In-Order Traversal</h1>
+<p>Comprehensive systems design lab implementing core rate limiting algorithms, production-grade ASP.NET Core distributed rate limiting middleware, and BST traversal verification.</p>
+<hr/>
+<h2>🎯 Architecture & Objectives</h2>
+<ol>
+<li><strong>Token Bucket Algorithm</strong>:</li>
+</ol>
+<ul>
+<li>Manages bursty traffic with fixed maximum capacity $C$ and constant token generation rate $R$.</li>
+<li>Allows requests consuming $K$ tokens if available; returns exact <code>Retry-After</code> calculation when tokens are depleted.</li>
+</ul>
+<ol>
+<li><strong>Leaky Bucket Algorithm</strong>:</li>
+</ol>
+<ul>
+<li>Smooths output traffic to a constant rate $R$ via a bounded FIFO buffer queue.</li>
+<li>Drops incoming requests immediately if buffer capacity is exceeded.</li>
+</ul>
+<ol>
+<li><strong>Fixed Window Counter</strong>:</li>
+</ol>
+<ul>
+<li>Discrete time-window counter illustrating the classical $2\times$ boundary burst vulnerability at window transitions.</li>
+</ul>
+<ol>
+<li><strong>Sliding Window Log</strong>:</li>
+</ol>
+<ul>
+<li>Accurate timestamp log (equivalent to Redis Sorted Set <code>ZADD</code>/<code>ZREMRANGEBYSCORE</code>) with $O(M)$ memory trade-off.</li>
+</ul>
+<ol>
+<li><strong>Sliding Window Counter (Cloudflare Hybrid)</strong>:</li>
+</ol>
+<ul>
+<li>High-throughput $O(1)$ memory algorithm combining current and previous window counts using weighted approximation:</li>
+</ul>
+<p>$$\text{Estimated Count} = \text{CurrentCount} + \text{PreviousCount} \times \left(1 - \frac{\text{Elapsed}}{\text{Window}}\right)$$</p>
+<ol>
+<li><strong>ASP.NET Core Middleware (<code>DistributedRateLimiterMiddleware</code>)</strong>:</li>
+</ol>
+<ul>
+<li>Injects RFC 6585 standard headers (<code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, <code>X-RateLimit-Reset</code>, <code>Retry-After</code>).</li>
+<li>Returns RFC 7807 <code>ProblemDetails</code> on HTTP 429 Too Many Requests.</li>
+</ul>
+<ol>
+<li><strong>DSA BST Traversal Solvers</strong>:</li>
+</ol>
+<ul>
+<li><strong>LeetCode #98 (Validate Binary Search Tree)</strong>: Range-bounded DFS and in-order strictly-increasing validation in $O(N)$ time.</li>
+<li><strong>LeetCode #230 (Kth Smallest Element in a BST)</strong>: Iterative in-order stack traversal with early termination at step $k$ in $O(H + k)$ time.</li>
+</ul>
+<hr/>
+<h2>📁 Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day22-Rate-Limiter-Design/
+├── src/
+│   └── Day22.RateLimiter/
+│       ├── Day22.RateLimiter.csproj
+│       ├── RateLimiterModels.cs             # RateLimitResult, Rule &amp; IRateLimiter
+│       ├── Algorithms.cs                    # 5 Rate limiting algorithm implementations
+│       ├── DistributedRateLimiterMiddleware.cs # ASP.NET Core middleware
+│       └── BstValidationSolvers.cs          # LC #98 &amp; LC #230 BST solvers
+├── tests/
+│   └── Day22.RateLimiter.Tests/
+│       ├── Day22.RateLimiter.Tests.csproj
+│       └── Day22Tests.cs                    # 10 unit tests covering algorithms &amp; DSA
+├── README.md
+├── notes.md                                 # Deep dive architectural notes
+├── interview-questions.md                   # 10 Senior/Staff interview Q&amp;As
+└── index.html                               # Standalone offline web guide</code></pre></div>
+<hr/>
+<h2>🧪 Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day22.RateLimiter.Tests/Day22.RateLimiter.Tests.csproj</code></pre></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How would you design a distributed rate limiter for a high-traffic microservices architecture (100k+ QPS)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>A production-grade distributed rate limiter requires a multi-tier defense architecture:</p>
+<ol>
+<li><strong>Tier 1 (Edge / API Gateway)</strong>: Envoy, Cloudflare, or AWS API Gateway enforces coarse rate limits per IP or client subnet to absorb volumetric DDoS attacks before reaching origin servers.</li>
+<li><strong>Tier 2 (Service Mesh / In-Process Local Token Bucket)</strong>: Each ASP.NET Core pod runs an in-memory token bucket that batches token synchronizations with a shared store, reducing network I/O.</li>
+<li><strong>Tier 3 (Centralized Redis Cluster)</strong>:</li>
+</ol>
+<ul>
+<li>Utilizes Redis as a low-latency (sub-millisecond) shared data store.</li>
+<li>Executes atomic Lua scripts (<code>SlidingWindowCounter</code> or <code>redis-cell</code>) to avoid distributed race conditions.</li>
+<li>Keys are sharded across Redis nodes by client identifier: <code>rl:{client_id}:{window_epoch}</code>.</li>
+<li>Emits standard RFC 6585 headers: <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, <code>X-RateLimit-Reset</code>, and <code>Retry-After</code>.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Compare Token Bucket vs. Leaky Bucket. When would you strictly pick one over the other?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Token Bucket</strong>: Accumulates tokens up to capacity $C$ at rate $R$.</li>
+<li><em>Behavior</em>: Permits instantaneous bursts up to $C$, then strictly caps throughput at rate $R$.</li>
+<li><em>Pick when</em>: Facing customer-facing APIs (e.g. Stripe, GitHub). Real-world user interactions are inherently bursty (e.g. loading a dashboard triggers 15 concurrent REST calls). Penalizing natural bursts damages user experience.</li>
+<li><strong>Leaky Bucket</strong>: Queues incoming requests in a FIFO buffer and discharges them at a steady, constant frequency $R$.</li>
+<li><em>Behavior</em>: Completely eliminates bursts; outputs a perfectly uniform stream.</li>
+<li><em>Pick when</em>: Egress rate limiting and traffic shaping—such as dispatching webhooks to external third-party services whose servers cannot tolerate bursts, or background batch DB writers where sustained constant disk throughput is required.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the Boundary Burst problem in Fixed Window rate limiters, and how does the Sliding Window Counter solve it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Problem</strong>: In a Fixed Window limiter with a limit of $N$ per minute, if an attacker fires $N$ requests at second 59 and another $N$ requests at second 01 of the next minute, $2N$ requests are processed within a 2-second interval, violating SLA guarantees and risking downstream service collapse.</li>
+<li><strong>Solution (Sliding Window Counter / Cloudflare Hybrid)</strong>:</li>
+</ul>
+<p>Instead of tracking thousands of timestamps in a sorted set ($O(M)$ RAM), it maintains only the current window count and previous window count ($O(1)$ RAM).</p>
+<p>$$\text{Estimated Count} = \text{CurrentCount} + \text{PreviousCount} \times \left(1 - \frac{\text{ElapsedInCurrent}}{\text{WindowDuration}}\right)$$</p>
+<p>In the scenario above, at second 01 of the new minute, the weight of the previous window is $59/60 \approx 98.3\%$. The calculated count is $0 + N \times 0.983 = 0.983N$, immediately rejecting subsequent requests until sufficient time has elapsed.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How do you handle race conditions in a distributed rate limiter without introducing massive lock contention?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>Naive <code>GET</code> followed by <code>SET</code> in Redis causes race conditions: two concurrent threads both read counter <code>99</code>, both see limit <code>100</code>, and both increment to <code>100</code>, allowing 101 requests.</p>
+<ul>
+<li><strong>Anti-Pattern</strong>: Using distributed locks (e.g., RedLock) on every API request adds 5–15ms of latency and creates extreme lock contention at 100k QPS.</li>
+<li><strong>Production Solution</strong>: Atomic Lua Scripts in Redis. Redis executes Lua scripts as single atomic operations within its single-threaded event loop. No other command can interleave.</li>
+</ul>
+<div class="code-block-container"><pre class="language-lua"><code class="language-lua">local current = redis.call(&#x27;incr&#x27;, KEYS[1])
+if current == 1 then
+    redis.call(&#x27;expire&#x27;, KEYS[1], ARGV[1])
+end
+if current &gt; tonumber(ARGV[2]) then
+    return 0 -- Rejected
+end
+return 1 -- Allowed</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What client identification strategy should you use, and how do you prevent IP spoofing attacks?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>Client identity resolution must follow a strict priority ladder:</p>
+<ol>
+<li><strong>Authenticated Users</strong>: <code>Bearer</code> token subject (<code>sub</code> claim) or user ID.</li>
+<li><strong>API Integrations</strong>: Cryptographic API Key (<code>X-Api-Key</code> or <code>Authorization: ApiKey ...</code>).</li>
+<li><strong>Unauthenticated Public Endpoints</strong>: Remote Client IP.</li>
+</ol>
+<ul>
+<li><strong>IP Spoofing Vulnerability</strong>: Attackers can forge <code>X-Forwarded-For: 1.2.3.4</code> headers.</li>
+<li><strong>Defense</strong>: Never trust raw <code>X-Forwarded-For</code> from the open internet. The edge proxy (Cloudflare, AWS ALB, NGINX) must be configured to strip untrusted incoming headers and append the true socket IP (<code>RemoteIpAddress</code>) to the header chain. In ASP.NET Core, use <code>app.UseForwardedHeaders()</code> with explicitly configured <code>KnownNetworks</code> and <code>KnownProxies</code>.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you size memory requirements for a Redis cluster backing 50 million active users on a sliding window rate limiter?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>Using the Cloudflare Sliding Window Counter:</p>
+<ul>
+<li><strong>Keys per user</strong>: 1 key per window (with previous window stored as a hash or separate key).</li>
+<li><strong>Data size</strong>: Key string (<code>rl:usr:{uuid}:epoch</code> ~ 36 bytes) + Redis integer value (8 bytes) + dict entry overhead (~32 bytes) + jemalloc allocation padding $\approx 100\text{ bytes}$ per entry.</li>
+<li><strong>Two windows per user</strong>: $100\text{ bytes} \times 2 = 200\text{ bytes}$.</li>
+<li><strong>50 Million Active Users</strong>:</li>
+</ul>
+<p>$$50,000,000 \times 200\text{ bytes} \approx 10,000,000,000\text{ bytes} \approx 10\text{ GB RAM}$$</p>
+<ul>
+<li><strong>TTL Pruning</strong>: Keys have <code>EXPIRE = window_size * 2</code>, ensuring inactive users consume zero memory. 10 GB of Redis RAM comfortably fits on a single small Redis cluster node or a 3-shard cluster for high availability.</li>
+<li><em>Contrast</em>: A Sliding Window Log at 100 req/min would require $50\text{M} \times 100 \times 16\text{ bytes} \approx 80\text{ GB RAM}$.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What headers and HTTP response status code should be returned according to RFC specifications when rate limiting?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ol>
+<li><strong>Status Code</strong>: <code>HTTP 429 Too Many Requests</code> (RFC 6585).</li>
+<li><strong>Headers</strong>:</li>
+</ol>
+<ul>
+<li><code>Retry-After</code>: Number of seconds (or HTTP-date) the client must wait before retrying (RFC 7231).</li>
+<li><code>X-RateLimit-Limit</code>: Maximum requests permitted in the current period.</li>
+<li><code>X-RateLimit-Remaining</code>: Remaining request quota.</li>
+<li><code>X-RateLimit-Reset</code>: Unix epoch timestamp indicating when the current window resets.</li>
+</ul>
+<ol>
+<li><strong>Response Body</strong>: RFC 7807 <code>application/problem+json</code> providing machine-readable error details, helping client libraries implement automated exponential backoff with jitter.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the impact of clock drift in distributed rate limiting, and how do you mitigate it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Problem</strong>: In a distributed cluster, if App Server A has clock time $T_0$, App Server B has $T_0 + 2\text{s}$, and Redis has $T_0 - 1\text{s}$, calculating window boundaries locally leads to inconsistent window IDs and premature or delayed resets.</li>
+<li><strong>Mitigation</strong>:</li>
+</ul>
+<ol>
+<li><strong>Redis Server-Side Time</strong>: Never pass application server local timestamps to Redis for window calculations. Call <code>redis.call(&#x27;TIME&#x27;)</code> inside the Lua script or use Redis relative expiration <code>PEXPIRE</code>.</li>
+<li><strong>NTP / PTP Synchronization</strong>: Run AWS Time Sync Service or Chrony on all infrastructure instances to maintain clock drift below 1 millisecond.</li>
+<li><strong>Relative Time</strong>: In Token Bucket algorithms, track elapsed time relative to monotonically increasing system ticks (<code>Stopwatch.GetTimestamp()</code> in .NET) rather than wall-clock <code>DateTime.UtcNow</code>.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Explain LeetCode #98 (Validate BST). Why is checking `left &lt; root &lt; right` locally a critical pitfall?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Pitfall</strong>: Local verification only validates direct parent-child relationships. Consider the tree:</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">       10
+      /  \
+     5    15
+         /  \
+        6    20</code></pre></div>
+<p>Locally, $6 < 15 < 20$ is valid, and $5 < 10 < 15$ is valid. However, the node $6$ resides in the right subtree of $10$, which violates the fundamental BST invariant: <strong>every</strong> node in the right subtree must be strictly greater than $10$!</p>
+<ul>
+<li><strong>Optimal Solution</strong>: Maintain valid intervals $(\text{min}, \text{max})$ down the call tree:</li>
+<li>Left child inherits $(\text{min}, \text{node.val})$.</li>
+<li>Right child inherits $(\text{node.val}, \text{max})$.</li>
+<li>Use <code>long?</code> for bounds to handle boundary nodes containing <code>int.MinValue</code> and <code>int.MaxValue</code>.</li>
+<li>Alternatively, perform an in-order traversal verifying that each visited node is strictly greater than the preceding node: <code>prev.HasValue &amp;&amp; curr.val &lt;= prev.Value =&gt; return false</code>.</li>
+<li>Time: $O(N)$, Space: $O(H)$.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">In LeetCode #230 (Kth Smallest Element in BST), how do you achieve early termination in $O(H + k)$ time instead of $O(N)$?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Naive Approach</strong>: Traverse the whole tree ($O(N)$), store values in a sorted list or min-heap, and retrieve the $k$-th element. This wastes $O(N)$ time and memory when $k$ is small.</li>
+<li><strong>Optimal Stack Approach</strong>:</li>
+</ul>
+<p>Simulate in-order traversal using an explicit stack:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  var stack = new Stack&lt;TreeNode&gt;();
+  var curr = root;
+  while (curr != null || stack.Count &gt; 0)
+  {
+      while (curr != null)
+      {
+          stack.Push(curr);
+          curr = curr.left; // Drill down to leftmost leaf
+      }
+      curr = stack.Pop();
+      if (--k == 0) return curr.val; // Early exit!
+      curr = curr.right;
+  }</code></pre></div>
+<ul>
+<li><strong>Complexity</strong>: It drills down the left branch of height $H$, then pops and traverses only $k$ nodes. Runtime is $O(H + k)$ rather than $O(N)$. For a balanced BST with $H = \log N$ and small $k$, this executes in nearly logarithmic time with $O(H)$ auxiliary space.</li>
+</ul>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day22.RateLimiter/Algorithms.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd22-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d22-src-code-0" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+
+namespace Day22.RateLimiter;
+
+/// &lt;summary&gt;
+/// Token Bucket Algorithm:
+/// Allows bursts up to capacity while enforcing average throughput via constant token refill.
+/// &lt;/summary&gt;
+public class TokenBucketRateLimiter : IRateLimiter
+{
+    private readonly double _capacity;
+    private readonly double _refillRatePerSecond;
+    private readonly ConcurrentDictionary&lt;string, (double tokens, DateTime lastRefill)&gt; _buckets = new();
+    private readonly object _lock = new();
+
+    public double Capacity =&gt; _capacity;
+    public double RefillRatePerSecond =&gt; _refillRatePerSecond;
+
+    public TokenBucketRateLimiter(double capacity, double refillRatePerSecond)
+    {
+        if (capacity &lt;= 0) throw new ArgumentOutOfRangeException(nameof(capacity), &quot;Capacity must be positive.&quot;);
+        if (refillRatePerSecond &lt;= 0) throw new ArgumentOutOfRangeException(nameof(refillRatePerSecond), &quot;Refill rate must be positive.&quot;);
+
+        _capacity = capacity;
+        _refillRatePerSecond = refillRatePerSecond;
+    }
+
+    public RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null)
+    {
+        var now = customNow ?? DateTime.UtcNow;
+
+        lock (_lock)
+        {
+            var (tokens, lastRefill) = _buckets.GetOrAdd(key, _ =&gt; (_capacity, now));
+
+            // Refill tokens based on elapsed duration
+            var elapsedSeconds = Math.Max(0, (now - lastRefill).TotalSeconds);
+            var refilledTokens = Math.Min(_capacity, tokens + elapsedSeconds * _refillRatePerSecond);
+
+            var resetSeconds = (_capacity - refilledTokens) / _refillRatePerSecond;
+            var resetTimeUtc = now.AddSeconds(Math.Max(0, resetSeconds));
+
+            if (refilledTokens &gt;= tokensRequested)
+            {
+                var remaining = refilledTokens - tokensRequested;
+                _buckets[key] = (remaining, now);
+                return RateLimitResult.Allowed((long)_capacity, (long)remaining, resetTimeUtc);
+            }
+            else
+            {
+                var neededTokens = tokensRequested - refilledTokens;
+                var retryAfterSeconds = neededTokens / _refillRatePerSecond;
+                _buckets[key] = (refilledTokens, now);
+                return RateLimitResult.Rejected((long)_capacity, TimeSpan.FromSeconds(retryAfterSeconds), resetTimeUtc);
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Leaky Bucket Algorithm:
+/// Buffers incoming requests and processes them at a smooth, constant outflow rate.
+/// Excess requests overflowing bucket capacity are immediately discarded.
+/// &lt;/summary&gt;
+public class LeakyBucketRateLimiter : IRateLimiter
+{
+    private readonly double _capacity;
+    private readonly double _leakRatePerSecond;
+    private readonly ConcurrentDictionary&lt;string, (double waterLevel, DateTime lastLeak)&gt; _buckets = new();
+    private readonly object _lock = new();
+
+    public LeakyBucketRateLimiter(double capacity, double leakRatePerSecond)
+    {
+        if (capacity &lt;= 0) throw new ArgumentOutOfRangeException(nameof(capacity), &quot;Capacity must be positive.&quot;);
+        if (leakRatePerSecond &lt;= 0) throw new ArgumentOutOfRangeException(nameof(leakRatePerSecond), &quot;Leak rate must be positive.&quot;);
+
+        _capacity = capacity;
+        _leakRatePerSecond = leakRatePerSecond;
+    }
+
+    public RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null)
+    {
+        var now = customNow ?? DateTime.UtcNow;
+
+        lock (_lock)
+        {
+            var (waterLevel, lastLeak) = _buckets.GetOrAdd(key, _ =&gt; (0.0, now));
+
+            // Leak water based on elapsed time
+            var elapsedSeconds = Math.Max(0, (now - lastLeak).TotalSeconds);
+            var leaked = elapsedSeconds * _leakRatePerSecond;
+            var currentWater = Math.Max(0.0, waterLevel - leaked);
+
+            var resetSeconds = currentWater / _leakRatePerSecond;
+            var resetTimeUtc = now.AddSeconds(resetSeconds);
+
+            if (currentWater + tokensRequested &lt;= _capacity)
+            {
+                var newWater = currentWater + tokensRequested;
+                _buckets[key] = (newWater, now);
+                var remaining = (long)(_capacity - newWater);
+                return RateLimitResult.Allowed((long)_capacity, remaining, resetTimeUtc);
+            }
+            else
+            {
+                var overflow = (currentWater + tokensRequested) - _capacity;
+                var retryAfter = TimeSpan.FromSeconds(overflow / _leakRatePerSecond);
+                _buckets[key] = (currentWater, now);
+                return RateLimitResult.Rejected((long)_capacity, retryAfter, resetTimeUtc);
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Fixed Window Counter Algorithm:
+/// Divides time into fixed discrete slots and increments a counter per window.
+/// Vulnerable to boundary burst (2x the configured limit across window transitions).
+/// &lt;/summary&gt;
+public class FixedWindowCounterRateLimiter : IRateLimiter
+{
+    private readonly long _limit;
+    private readonly TimeSpan _window;
+    private readonly ConcurrentDictionary&lt;string, (long windowIndex, long count)&gt; _windows = new();
+    private readonly object _lock = new();
+
+    public FixedWindowCounterRateLimiter(long limit, TimeSpan window)
+    {
+        if (limit &lt;= 0) throw new ArgumentOutOfRangeException(nameof(limit), &quot;Limit must be positive.&quot;);
+        if (window &lt;= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(window), &quot;Window must be positive.&quot;);
+
+        _limit = limit;
+        _window = window;
+    }
+
+    public RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null)
+    {
+        var now = customNow ?? DateTime.UtcNow;
+        var currentWindowIndex = now.Ticks / _window.Ticks;
+        var currentWindowStart = new DateTime(currentWindowIndex * _window.Ticks, DateTimeKind.Utc);
+        var resetTimeUtc = currentWindowStart.Add(_window);
+
+        lock (_lock)
+        {
+            var (windowIndex, count) = _windows.GetOrAdd(key, _ =&gt; (currentWindowIndex, 0));
+
+            // If entering a new window, reset count
+            if (windowIndex != currentWindowIndex)
+            {
+                windowIndex = currentWindowIndex;
+                count = 0;
+            }
+
+            if (count + tokensRequested &lt;= _limit)
+            {
+                count += tokensRequested;
+                _windows[key] = (windowIndex, count);
+                var remaining = _limit - count;
+                return RateLimitResult.Allowed(_limit, remaining, resetTimeUtc);
+            }
+            else
+            {
+                var retryAfter = resetTimeUtc - now;
+                return RateLimitResult.Rejected(_limit, retryAfter, resetTimeUtc);
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Sliding Window Log Algorithm:
+/// Stores precise timestamps of each request (equivalent to Redis Sorted Set ZADD/ZREMRANGEBYSCORE).
+/// Provides 100% accuracy, but memory scales with request count O(M).
+/// &lt;/summary&gt;
+public class SlidingWindowLogRateLimiter : IRateLimiter
+{
+    private readonly long _limit;
+    private readonly TimeSpan _window;
+    private readonly ConcurrentDictionary&lt;string, List&lt;DateTime&gt;&gt; _logs = new();
+    private readonly object _lock = new();
+
+    public SlidingWindowLogRateLimiter(long limit, TimeSpan window)
+    {
+        if (limit &lt;= 0) throw new ArgumentOutOfRangeException(nameof(limit), &quot;Limit must be positive.&quot;);
+        if (window &lt;= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(window), &quot;Window must be positive.&quot;);
+
+        _limit = limit;
+        _window = window;
+    }
+
+    public RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null)
+    {
+        var now = customNow ?? DateTime.UtcNow;
+        var windowStart = now - _window;
+        var resetTimeUtc = now.Add(_window);
+
+        lock (_lock)
+        {
+            var log = _logs.GetOrAdd(key, _ =&gt; new List&lt;DateTime&gt;());
+
+            // Purge expired entries older than (now - window)
+            log.RemoveAll(t =&gt; t &lt;= windowStart);
+
+            if (log.Count + tokensRequested &lt;= _limit)
+            {
+                for (int i = 0; i &lt; tokensRequested; i++)
+                {
+                    log.Add(now);
+                }
+                var remaining = _limit - log.Count;
+                var earliest = log.Count &gt; 0 ? log[0] : now;
+                var reset = earliest.Add(_window);
+                return RateLimitResult.Allowed(_limit, remaining, reset);
+            }
+            else
+            {
+                var oldestInWindow = log[0];
+                var retryAfter = (oldestInWindow + _window) - now;
+                return RateLimitResult.Rejected(_limit, retryAfter, oldestInWindow.Add(_window));
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Sliding Window Counter Algorithm (Cloudflare Hybrid):
+/// Combines the current window counter with the weighted proportion of the previous window counter.
+/// Memory footprint is strictly O(1) (only 2 counters), while eliminating 2x boundary spikes.
+/// Formula: EstimatedCount = CurrentCount + PreviousCount * (1 - ElapsedInCurrent / WindowSize)
+/// &lt;/summary&gt;
+public class SlidingWindowCounterRateLimiter : IRateLimiter
+{
+    private readonly long _limit;
+    private readonly TimeSpan _window;
+    private readonly ConcurrentDictionary&lt;string, ClientWindowState&gt; _clientStates = new();
+    private readonly object _lock = new();
+
+    private class ClientWindowState
+    {
+        public long CurrentWindowIndex { get; set; }
+        public long CurrentCount { get; set; }
+        public long PreviousCount { get; set; }
+    }
+
+    public SlidingWindowCounterRateLimiter(long limit, TimeSpan window)
+    {
+        if (limit &lt;= 0) throw new ArgumentOutOfRangeException(nameof(limit), &quot;Limit must be positive.&quot;);
+        if (window &lt;= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(window), &quot;Window must be positive.&quot;);
+
+        _limit = limit;
+        _window = window;
+    }
+
+    public RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null)
+    {
+        var now = customNow ?? DateTime.UtcNow;
+        var currentWindowIndex = now.Ticks / _window.Ticks;
+        var currentWindowStart = new DateTime(currentWindowIndex * _window.Ticks, DateTimeKind.Utc);
+        var resetTimeUtc = currentWindowStart.Add(_window);
+
+        lock (_lock)
+        {
+            var state = _clientStates.GetOrAdd(key, _ =&gt; new ClientWindowState
+            {
+                CurrentWindowIndex = currentWindowIndex,
+                CurrentCount = 0,
+                PreviousCount = 0
+            });
+
+            // Adjust window transitions
+            if (currentWindowIndex &gt; state.CurrentWindowIndex)
+            {
+                var diff = currentWindowIndex - state.CurrentWindowIndex;
+                if (diff == 1)
+                {
+                    state.PreviousCount = state.CurrentCount;
+                }
+                else
+                {
+                    state.PreviousCount = 0;
+                }
+                state.CurrentCount = 0;
+                state.CurrentWindowIndex = currentWindowIndex;
+            }
+
+            // Calculate overlap weight of the previous window
+            var elapsedInCurrent = (now - currentWindowStart).TotalMilliseconds;
+            var windowTotalMs = _window.TotalMilliseconds;
+            var weightOfPrevious = Math.Max(0.0, 1.0 - (elapsedInCurrent / windowTotalMs));
+
+            var estimatedCount = state.CurrentCount + (state.PreviousCount * weightOfPrevious);
+
+            if (estimatedCount + tokensRequested &lt;= _limit)
+            {
+                state.CurrentCount += tokensRequested;
+                var remaining = Math.Max(0, _limit - (long)Math.Ceiling(estimatedCount + tokensRequested));
+                return RateLimitResult.Allowed(_limit, remaining, resetTimeUtc);
+            }
+            else
+            {
+                var retryAfter = resetTimeUtc - now;
+                return RateLimitResult.Rejected(_limit, retryAfter, resetTimeUtc);
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day22.RateLimiter/BstValidationSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd22-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d22-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day22.RateLimiter;
+
+/// &lt;summary&gt;
+/// Standard Binary Tree Node definition.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// High-performance solvers for BST Validation and Kth Smallest Element.
+/// &lt;/summary&gt;
+public class BstValidationSolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #98: Validate Binary Search Tree.
+    /// Uses bounded range constraints [min, max] to verify that all nodes in left subtrees
+    /// are strictly smaller than ancestors, and all in right subtrees are strictly larger.
+    /// Time Complexity: O(N) | Space Complexity: O(H) call stack.
+    /// &lt;/summary&gt;
+    public bool IsValidBST(TreeNode? root)
+    {
+        return ValidateRange(root, null, null);
+    }
+
+    private static bool ValidateRange(TreeNode? node, long? min, long? max)
+    {
+        if (node == null) return true;
+
+        if (min.HasValue &amp;&amp; node.val &lt;= min.Value) return false;
+        if (max.HasValue &amp;&amp; node.val &gt;= max.Value) return false;
+
+        return ValidateRange(node.left, min, node.val) &amp;&amp;
+               ValidateRange(node.right, node.val, max);
+    }
+
+    /// &lt;summary&gt;
+    /// Alternative validation using In-Order Traversal invariant.
+    /// In a valid BST, in-order traversal (Left, Root, Right) strictly yields an increasing sequence.
+    /// Time Complexity: O(N) | Space Complexity: O(H).
+    /// &lt;/summary&gt;
+    public bool IsValidBstInOrder(TreeNode? root)
+    {
+        long? prev = null;
+        var stack = new Stack&lt;TreeNode&gt;();
+        var curr = root;
+
+        while (curr != null || stack.Count &gt; 0)
+        {
+            while (curr != null)
+            {
+                stack.Push(curr);
+                curr = curr.left;
+            }
+
+            curr = stack.Pop();
+            if (prev.HasValue &amp;&amp; curr.val &lt;= prev.Value)
+            {
+                return false;
+            }
+            prev = curr.val;
+            curr = curr.right;
+        }
+
+        return true;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #230: Kth Smallest Element in a BST.
+    /// Executes an iterative In-Order Traversal with early-exit termination when k steps have been popped.
+    /// Time Complexity: O(H + k) | Space Complexity: O(H).
+    /// &lt;/summary&gt;
+    public int KthSmallest(TreeNode? root, int k)
+    {
+        if (root == null) throw new ArgumentNullException(nameof(root));
+        if (k &lt;= 0) throw new ArgumentOutOfRangeException(nameof(k), &quot;k must be positive.&quot;);
+
+        var stack = new Stack&lt;TreeNode&gt;();
+        var curr = root;
+
+        while (curr != null || stack.Count &gt; 0)
+        {
+            while (curr != null)
+            {
+                stack.Push(curr);
+                curr = curr.left;
+            }
+
+            curr = stack.Pop();
+            k--;
+            if (k == 0)
+            {
+                return curr.val;
+            }
+
+            curr = curr.right;
+        }
+
+        throw new ArgumentException(&quot;k is larger than the number of nodes in the BST.&quot;, nameof(k));
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day22.RateLimiter/DistributedRateLimiterMiddleware.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd22-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d22-src-code-2" class="language-csharp">using System;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+
+namespace Day22.RateLimiter;
+
+/// &lt;summary&gt;
+/// ASP.NET Core Middleware that enforces distributed rate limits across HTTP endpoints.
+/// Emits standard RFC 6585 rate limiting headers and returns RFC 7807 ProblemDetails on 429 rejections.
+/// &lt;/summary&gt;
+public class DistributedRateLimiterMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly IRateLimiter _limiter;
+    private readonly Func&lt;HttpContext, string&gt; _clientKeyResolver;
+
+    public DistributedRateLimiterMiddleware(
+        RequestDelegate next,
+        IRateLimiter limiter,
+        Func&lt;HttpContext, string&gt;? clientKeyResolver = null)
+    {
+        _next = next ?? throw new ArgumentNullException(nameof(next));
+        _limiter = limiter ?? throw new ArgumentNullException(nameof(limiter));
+        _clientKeyResolver = clientKeyResolver ?? DefaultKeyResolver;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var clientKey = _clientKeyResolver(context);
+        var result = _limiter.ShouldAllow(clientKey);
+
+        // Directly inject telemetry rate limit headers
+        context.Response.Headers[&quot;X-RateLimit-Limit&quot;] = result.Limit.ToString();
+        context.Response.Headers[&quot;X-RateLimit-Remaining&quot;] = result.Remaining.ToString();
+        var resetEpoch = new DateTimeOffset(result.ResetTimeUtc).ToUnixTimeSeconds();
+        context.Response.Headers[&quot;X-RateLimit-Reset&quot;] = resetEpoch.ToString();
+
+        if (!result.IsAllowed)
+        {
+            var retryAfterSec = Math.Max(1, (int)Math.Ceiling(result.RetryAfter.TotalSeconds));
+            context.Response.Headers[&quot;Retry-After&quot;] = retryAfterSec.ToString();
+        }
+
+        if (!result.IsAllowed)
+        {
+            context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            context.Response.ContentType = &quot;application/problem+json&quot;;
+
+            var problem = new
+            {
+                type = &quot;https://tools.ietf.org/html/rfc6585#section-4&quot;,
+                title = &quot;Too Many Requests&quot;,
+                status = 429,
+                detail = $&quot;Quota exceeded. Rate limit is {result.Limit} requests. Please retry in {Math.Ceiling(result.RetryAfter.TotalSeconds)} seconds.&quot;,
+                instance = context.Request.Path.Value,
+                retryAfterSeconds = Math.Max(1, (int)Math.Ceiling(result.RetryAfter.TotalSeconds))
+            };
+
+            var json = JsonSerializer.Serialize(problem);
+            await context.Response.WriteAsync(json);
+            return;
+        }
+
+        await _next(context);
+    }
+
+    public static string DefaultKeyResolver(HttpContext context)
+    {
+        // 1. Check API Key header
+        if (context.Request.Headers.TryGetValue(&quot;X-Api-Key&quot;, out var apiKey) &amp;&amp; !string.IsNullOrWhiteSpace(apiKey))
+        {
+            return $&quot;api_key:{apiKey}&quot;;
+        }
+
+        // 2. Check Authorization header
+        if (context.Request.Headers.TryGetValue(&quot;Authorization&quot;, out var authHeader) &amp;&amp; !string.IsNullOrWhiteSpace(authHeader))
+        {
+            return $&quot;auth:{authHeader}&quot;;
+        }
+
+        // 3. Fallback to client IP
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? &quot;unknown_client&quot;;
+        return $&quot;ip:{ip}&quot;;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day22.RateLimiter/RateLimiterModels.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd22-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d22-src-code-3" class="language-csharp">using System;
+
+namespace Day22.RateLimiter;
+
+/// &lt;summary&gt;
+/// Encapsulates the evaluation outcome of a rate limiting check.
+/// &lt;/summary&gt;
+public record RateLimitResult
+{
+    public bool IsAllowed { get; init; }
+    public long Limit { get; init; }
+    public long Remaining { get; init; }
+    public TimeSpan RetryAfter { get; init; }
+    public DateTime ResetTimeUtc { get; init; }
+
+    public static RateLimitResult Allowed(long limit, long remaining, DateTime resetTimeUtc) =&gt;
+        new()
+        {
+            IsAllowed = true,
+            Limit = limit,
+            Remaining = Math.Max(0, remaining),
+            RetryAfter = TimeSpan.Zero,
+            ResetTimeUtc = resetTimeUtc
+        };
+
+    public static RateLimitResult Rejected(long limit, TimeSpan retryAfter, DateTime resetTimeUtc) =&gt;
+        new()
+        {
+            IsAllowed = false,
+            Limit = limit,
+            Remaining = 0,
+            RetryAfter = retryAfter &lt;= TimeSpan.Zero ? TimeSpan.FromSeconds(1) : retryAfter,
+            ResetTimeUtc = resetTimeUtc
+        };
+}
+
+/// &lt;summary&gt;
+/// Defines policy constraints for rate limiting.
+/// &lt;/summary&gt;
+public record RateLimiterRule(long CapacityOrLimit, TimeSpan Window);
+
+/// &lt;summary&gt;
+/// Common contract for rate limiter algorithms.
+/// &lt;/summary&gt;
+public interface IRateLimiter
+{
+    RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null);
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day22.RateLimiter.Tests/Day22Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd22-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d22-tests-code-0" class="language-csharp">using System;
+using System.IO;
+using System.Net;
+using System.Text.Json;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Microsoft.AspNetCore.Http;
+using Xunit;
+
+namespace Day22.RateLimiter.Tests;
+
+public class Day22Tests
+{
+    // ==========================================
+    // 1. TOKEN BUCKET TESTS
+    // ==========================================
+
+    [Fact]
+    public void TokenBucket_AllowsBurstUpToCapacity_AndEnforcesRefillRate()
+    {
+        // 5 tokens capacity, 1 token per second refill
+        var limiter = new TokenBucketRateLimiter(capacity: 5, refillRatePerSecond: 1.0);
+        var t0 = DateTime.UtcNow;
+
+        // Drain 5 tokens instantaneously
+        for (int i = 0; i &lt; 5; i++)
+        {
+            var res = limiter.ShouldAllow(&quot;client1&quot;, tokensRequested: 1, customNow: t0);
+            res.IsAllowed.Should().BeTrue();
+            res.Remaining.Should().Be(4 - i);
+        }
+
+        // 6th request at t0 must be rejected
+        var rejected = limiter.ShouldAllow(&quot;client1&quot;, tokensRequested: 1, customNow: t0);
+        rejected.IsAllowed.Should().BeFalse();
+        rejected.Remaining.Should().Be(0);
+
+        // Advance 2 seconds -&gt; 2 tokens should be refilled
+        var t2 = t0.AddSeconds(2);
+        var after2Sec = limiter.ShouldAllow(&quot;client1&quot;, tokensRequested: 1, customNow: t2);
+        after2Sec.IsAllowed.Should().BeTrue();
+        after2Sec.Remaining.Should().Be(1); // 2 refilled - 1 consumed = 1 remaining
+    }
+
+    [Fact]
+    public void TokenBucket_RejectsWhenExhausted_AndReturnsAccurateRetryAfter()
+    {
+        var limiter = new TokenBucketRateLimiter(capacity: 2, refillRatePerSecond: 0.5); // 1 token every 2 seconds
+        var t0 = DateTime.UtcNow;
+
+        limiter.ShouldAllow(&quot;client2&quot;, tokensRequested: 2, customNow: t0); // Drain bucket
+
+        var res = limiter.ShouldAllow(&quot;client2&quot;, tokensRequested: 1, customNow: t0);
+        res.IsAllowed.Should().BeFalse();
+        // Needs 1 token, refill rate is 0.5/s -&gt; retry after should be 2.0 seconds
+        res.RetryAfter.TotalSeconds.Should().BeApproximately(2.0, 0.05);
+    }
+
+    // ==========================================
+    // 2. LEAKY BUCKET TESTS
+    // ==========================================
+
+    [Fact]
+    public void LeakyBucket_LeaksAtConstantRate_AndRejectsWhenBufferFull()
+    {
+        // Capacity 3 requests buffer, leaks 1 request per second
+        var limiter = new LeakyBucketRateLimiter(capacity: 3, leakRatePerSecond: 1.0);
+        var t0 = DateTime.UtcNow;
+
+        // Fill buffer to capacity
+        limiter.ShouldAllow(&quot;userA&quot;, tokensRequested: 1, customNow: t0).IsAllowed.Should().BeTrue();
+        limiter.ShouldAllow(&quot;userA&quot;, tokensRequested: 1, customNow: t0).IsAllowed.Should().BeTrue();
+        limiter.ShouldAllow(&quot;userA&quot;, tokensRequested: 1, customNow: t0).IsAllowed.Should().BeTrue();
+
+        // 4th request overflows buffer
+        limiter.ShouldAllow(&quot;userA&quot;, tokensRequested: 1, customNow: t0).IsAllowed.Should().BeFalse();
+
+        // Advance 1.5 seconds -&gt; 1.5 requests leaked, buffer water is 1.5. Capacity remaining is 1.5.
+        var t15 = t0.AddSeconds(1.5);
+        limiter.ShouldAllow(&quot;userA&quot;, tokensRequested: 1, customNow: t15).IsAllowed.Should().BeTrue();
+    }
+
+    // ==========================================
+    // 3. FIXED WINDOW &amp; BOUNDARY BURST
+    // ==========================================
+
+    [Fact]
+    public void FixedWindow_DemonstratesBoundaryBurstVulnerability()
+    {
+        // Limit: 5 requests per 1-minute window
+        var limiter = new FixedWindowCounterRateLimiter(limit: 5, window: TimeSpan.FromMinutes(1));
+        var baseTime = new DateTime(2026, 10, 10, 12, 0, 0, DateTimeKind.Utc);
+
+        // 5 requests at end of window 1 (12:00:58)
+        var tEndWindow1 = baseTime.AddSeconds(58);
+        for (int i = 0; i &lt; 5; i++)
+        {
+            limiter.ShouldAllow(&quot;client_burst&quot;, tokensRequested: 1, customNow: tEndWindow1).IsAllowed.Should().BeTrue();
+        }
+
+        // 6th request at 12:00:59 rejected
+        limiter.ShouldAllow(&quot;client_burst&quot;, tokensRequested: 1, customNow: baseTime.AddSeconds(59)).IsAllowed.Should().BeFalse();
+
+        // Window resets at 12:01:00! Another 5 requests allowed at 12:01:01
+        var tStartWindow2 = baseTime.AddSeconds(61);
+        for (int i = 0; i &lt; 5; i++)
+        {
+            limiter.ShouldAllow(&quot;client_burst&quot;, tokensRequested: 1, customNow: tStartWindow2).IsAllowed.Should().BeTrue();
+        }
+
+        // In the 3-second period from 12:00:58 to 12:01:01, 10 total requests passed through (2x the 5 req/min limit!)
+    }
+
+    // ==========================================
+    // 4. SLIDING WINDOW LOG TESTS
+    // ==========================================
+
+    [Fact]
+    public void SlidingWindowLog_PurgesOldTimestamps_AndMaintainsExactPrecision()
+    {
+        var limiter = new SlidingWindowLogRateLimiter(limit: 3, window: TimeSpan.FromSeconds(10));
+        var t0 = DateTime.UtcNow;
+
+        limiter.ShouldAllow(&quot;client_log&quot;, tokensRequested: 1, customNow: t0).IsAllowed.Should().BeTrue();
+        limiter.ShouldAllow(&quot;client_log&quot;, tokensRequested: 1, customNow: t0.AddSeconds(2)).IsAllowed.Should().BeTrue();
+        limiter.ShouldAllow(&quot;client_log&quot;, tokensRequested: 1, customNow: t0.AddSeconds(4)).IsAllowed.Should().BeTrue();
+
+        // 4th request at t0 + 6s rejected (all 3 earlier are in 10s window)
+        limiter.ShouldAllow(&quot;client_log&quot;, tokensRequested: 1, customNow: t0.AddSeconds(6)).IsAllowed.Should().BeFalse();
+
+        // Advance to t0 + 11s -&gt; 1st request (at t0) has slid out of 10s window. 1 slot available!
+        var allowed = limiter.ShouldAllow(&quot;client_log&quot;, tokensRequested: 1, customNow: t0.AddSeconds(11));
+        allowed.IsAllowed.Should().BeTrue();
+        allowed.Remaining.Should().Be(0);
+    }
+
+    // ==========================================
+    // 5. SLIDING WINDOW COUNTER (CLOUDFLARE HYBRID)
+    // ==========================================
+
+    [Fact]
+    public void SlidingWindowCounter_WeightedEstimation_SmoothsWindowTransitions()
+    {
+        // 10 requests per 60-second window
+        var limiter = new SlidingWindowCounterRateLimiter(limit: 10, window: TimeSpan.FromSeconds(60));
+        var t0 = new DateTime(2026, 10, 10, 12, 0, 0, DateTimeKind.Utc);
+
+        // Previous window (12:00:00 - 12:00:59): 8 requests
+        for (int i = 0; i &lt; 8; i++)
+        {
+            limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, t0.AddSeconds(30)).IsAllowed.Should().BeTrue();
+        }
+
+        // Current window starts at 12:01:00.
+        // At 12:01:15 (25% into new window): weight of prev window is 75% (0.75).
+        // Estimated prev = 8 * 0.75 = 6.0 requests.
+        // Remaining capacity = 10 - 6.0 = 4 requests.
+        var tNew25 = new DateTime(2026, 10, 10, 12, 1, 15, DateTimeKind.Utc);
+        limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, tNew25).IsAllowed.Should().BeTrue(); // Curr = 1, total = 7
+        limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, tNew25).IsAllowed.Should().BeTrue(); // Curr = 2, total = 8
+        limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, tNew25).IsAllowed.Should().BeTrue(); // Curr = 3, total = 9
+        limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, tNew25).IsAllowed.Should().BeTrue(); // Curr = 4, total = 10
+
+        // 5th request at 12:01:15 exceeds 10 limit!
+        limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, tNew25).IsAllowed.Should().BeFalse();
+    }
+
+    // ==========================================
+    // 6. ASP.NET CORE MIDDLEWARE INTEGRATION TESTS
+    // ==========================================
+
+    [Fact]
+    public async Task Middleware_AllowsRequestsWithinLimit_AndInjectsStandardHeaders()
+    {
+        var limiter = new TokenBucketRateLimiter(capacity: 10, refillRatePerSecond: 1.0);
+        var middleware = new DistributedRateLimiterMiddleware(
+            next: ctx =&gt;
+            {
+                ctx.Response.StatusCode = 200;
+                return Task.CompletedTask;
+            },
+            limiter: limiter
+        );
+
+        var context = new DefaultHttpContext();
+        context.Request.Headers[&quot;X-Api-Key&quot;] = &quot;premium_client_123&quot;;
+        context.Response.Body = new MemoryStream();
+
+        await middleware.InvokeAsync(context);
+
+        context.Response.StatusCode.Should().Be(200);
+        context.Response.Headers[&quot;X-RateLimit-Limit&quot;].ToString().Should().Be(&quot;10&quot;);
+        context.Response.Headers[&quot;X-RateLimit-Remaining&quot;].ToString().Should().Be(&quot;9&quot;);
+        context.Response.Headers[&quot;X-RateLimit-Reset&quot;].ToString().Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task Middleware_RejectsExceededRequests_With429AndProblemDetails()
+    {
+        var limiter = new TokenBucketRateLimiter(capacity: 1, refillRatePerSecond: 0.1);
+        var middleware = new DistributedRateLimiterMiddleware(
+            next: ctx =&gt;
+            {
+                ctx.Response.StatusCode = 200;
+                return Task.CompletedTask;
+            },
+            limiter: limiter
+        );
+
+        // 1st request allowed
+        var ctx1 = new DefaultHttpContext();
+        ctx1.Request.Headers[&quot;X-Api-Key&quot;] = &quot;test_key&quot;;
+        ctx1.Response.Body = new MemoryStream();
+        await middleware.InvokeAsync(ctx1);
+        ctx1.Response.StatusCode.Should().Be(200);
+
+        // 2nd request immediately rejected with 429
+        var ctx2 = new DefaultHttpContext();
+        ctx2.Request.Headers[&quot;X-Api-Key&quot;] = &quot;test_key&quot;;
+        ctx2.Response.Body = new MemoryStream();
+        await middleware.InvokeAsync(ctx2);
+
+        ctx2.Response.StatusCode.Should().Be(429);
+        ctx2.Response.ContentType.Should().Be(&quot;application/problem+json&quot;);
+        ctx2.Response.Headers[&quot;Retry-After&quot;].ToString().Should().NotBeNullOrEmpty();
+
+        ctx2.Response.Body.Seek(0, SeekOrigin.Begin);
+        using var reader = new StreamReader(ctx2.Response.Body);
+        var body = await reader.ReadToEndAsync();
+        body.Should().Contain(&quot;Too Many Requests&quot;);
+        body.Should().Contain(&quot;Quota exceeded&quot;);
+    }
+
+    // ==========================================
+    // 7. DSA: VALIDATE BST (LC #98) TESTS
+    // ==========================================
+
+    [Fact]
+    public void LC98_ValidateBST_DetectsValidAndInvalidSubtreeViolations()
+    {
+        var solvers = new BstValidationSolvers();
+
+        // Valid BST: [2, 1, 3]
+        //      2
+        //     / \
+        //    1   3
+        var validTree = new TreeNode(2, new TreeNode(1), new TreeNode(3));
+        solvers.IsValidBST(validTree).Should().BeTrue();
+        solvers.IsValidBstInOrder(validTree).Should().BeTrue();
+
+        // Invalid BST: [5, 1, 4, null, null, 3, 6]
+        //      5
+        //     / \
+        //    1   4
+        //       / \
+        //      3   6 (3 is in right subtree of 5, but 3 &lt; 5! Invalid!)
+        var invalidTree = new TreeNode(5,
+            new TreeNode(1),
+            new TreeNode(4, new TreeNode(3), new TreeNode(6))
+        );
+        solvers.IsValidBST(invalidTree).Should().BeFalse();
+        solvers.IsValidBstInOrder(invalidTree).Should().BeFalse();
+
+        // Edge case: Node values near Int32.MinValue and Int32.MaxValue
+        var boundaryTree = new TreeNode(int.MaxValue, new TreeNode(int.MaxValue - 1), null);
+        solvers.IsValidBST(boundaryTree).Should().BeTrue();
+        solvers.IsValidBstInOrder(boundaryTree).Should().BeTrue();
+
+        // Duplicate value violation in BST
+        var dupTree = new TreeNode(2, new TreeNode(2), new TreeNode(3));
+        solvers.IsValidBST(dupTree).Should().BeFalse();
+        solvers.IsValidBstInOrder(dupTree).Should().BeFalse();
+    }
+
+    // ==========================================
+    // 8. DSA: KTH SMALLEST IN BST (LC #230) TESTS
+    // ==========================================
+
+    [Fact]
+    public void LC230_KthSmallest_ReturnsCorrectKthElement_WithEarlyExit()
+    {
+        var solvers = new BstValidationSolvers();
+
+        // Tree: [5, 3, 6, 2, 4, null, null, 1]
+        //        5
+        //       / \
+        //      3   6
+        //     / \
+        //    2   4
+        //   /
+        //  1
+        var root = new TreeNode(5,
+            new TreeNode(3,
+                new TreeNode(2, new TreeNode(1)),
+                new TreeNode(4)
+            ),
+            new TreeNode(6)
+        );
+
+        // Sorted order: 1, 2, 3, 4, 5, 6
+        solvers.KthSmallest(root, 1).Should().Be(1);
+        solvers.KthSmallest(root, 2).Should().Be(2);
+        solvers.KthSmallest(root, 3).Should().Be(3);
+        solvers.KthSmallest(root, 4).Should().Be(4);
+        solvers.KthSmallest(root, 5).Should().Be(5);
+        solvers.KthSmallest(root, 6).Should().Be(6);
+
+        // Invalid k throws
+        Action act = () =&gt; solvers.KthSmallest(root, 10);
+        act.Should().Throw&lt;ArgumentException&gt;();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 22: Deep Dive — Distributed Rate Limiting & BST Traversal Mechanics</h1>
+<h2>1. Rate Limiting Algorithm Taxonomy & Trade-Offs</h2>
+<p>Rate limiting controls the consumption of resources by restricting the frequency of incoming operations across a given temporal window.</p>
+<div class="table-container"><table><thead><tr>
+<th>Algorithm</th>
+<th>Memory Complexity</th>
+<th>Time Complexity</th>
+<th>Burst Support</th>
+<th>Smooth Traffic Outflow</th>
+<th>Edge Spike Vulnerability</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Token Bucket</strong></td>
+<td>$O(1)$ per client</td>
+<td>$O(1)$</td>
+<td>Yes (up to capacity $C$)</td>
+<td>Moderate</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><strong>Leaky Bucket</strong></td>
+<td>$O(1)$ or $O(QueueSize)$</td>
+<td>$O(1)$</td>
+<td>No (enforces fixed leak rate $R$)</td>
+<td>Yes (strict constant flow)</td>
+<td>Zero</td>
+</tr>
+<tr>
+<td><strong>Fixed Window Counter</strong></td>
+<td>$O(1)$ per client</td>
+<td>$O(1)$</td>
+<td>Yes (within slot)</td>
+<td>No (uneven burst at boundaries)</td>
+<td>High ($2\times$ burst across boundaries)</td>
+</tr>
+<tr>
+<td><strong>Sliding Window Log</strong></td>
+<td>$O(M)$ where $M$ is request count</td>
+<td>$O(\log M)$ to $O(M)$</td>
+<td>Yes</td>
+<td>High</td>
+<td>Zero (100% accurate)</td>
+</tr>
+<tr>
+<td><strong>Sliding Window Counter</strong></td>
+<td>$O(1)$ (2 counters per client)</td>
+<td>$O(1)$</td>
+<td>Yes</td>
+<td>High</td>
+<td>Negligible ($\le 0.05\%$ variance)</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h2>2. In-Depth Algorithmic Mechanics</h2>
+<h3>2.1 Token Bucket</h3>
+<ul>
+<li><strong>Mechanics</strong>: A bucket holds at most $C$ tokens. Tokens refill continuously at rate $R$ tokens/second.</li>
+<li><strong>Refill Formula</strong>:</li>
+</ul>
+<p>$$\text{Tokens}_{\text{new}} = \min(C, \text{Tokens}_{\text{old}} + (t_{\text{now}} - t_{\text{last}}) \times R)$$</p>
+<ul>
+<li><strong>Why it is widely used (AWS, Stripe)</strong>: Supports natural bursts (e.g., page load with 10 assets) while bounding sustained average throughput.</li>
+</ul>
+<h3>2.2 Leaky Bucket</h3>
+<ul>
+<li><strong>Mechanics</strong>: Implemented as a FIFO queue of capacity $C$. Incoming requests enter the queue; a worker processes or transmits requests at a steady rate $R$. If the queue is full, new requests are dropped.</li>
+<li><strong>Ideal Use Case</strong>: Egress traffic shaping (e.g. video streaming, webhook dispatchers to external third-party APIs).</li>
+</ul>
+<h3>2.3 Fixed Window Counter Boundary Burst Problem</h3>
+<ul>
+<li><strong>The Vulnerability</strong>: Consider a limit of 100 requests per 1-minute window ($12:00:00 - 12:01:00$).</li>
+<li>An attacker sends 100 requests at $12:00:59$.</li>
+<li>At $12:01:00$, the new window begins with counter reset to 0.</li>
+<li>The attacker sends another 100 requests at $12:01:01$.</li>
+<li><strong>Result</strong>: 200 requests pass in a 2-second interval, doubling the intended maximum capacity!</li>
+</ul>
+<h3>2.4 Sliding Window Counter (Cloudflare Hybrid)</h3>
+<ul>
+<li>Avoids storing individual timestamps by estimating the overlap:</li>
+</ul>
+<p>$$\text{Count}_{\text{est}} = \text{Count}_{\text{current}} + \text{Count}_{\text{prev}} \times \left(1 - \frac{t - t_{\text{current\_start}}}{\text{WindowSize}}\right)$$</p>
+<ul>
+<li>If a client made 100 requests in the previous 1-minute window, and at 15 seconds into the current minute makes another request with current count 10:</li>
+</ul>
+<p>$$\text{Count}_{\text{est}} = 10 + 100 \times \left(1 - \frac{15}{60}\right) = 10 + 75 = 85$$</p>
+<ul>
+<li>Memory footprint is strictly two numbers ($O(1)$) per client, making it the premier choice for multi-tenant cloud gateways.</li>
+</ul>
+<hr/>
+<h2>3. Distributed Redis Rate Limiting Implementation</h2>
+<p>In a distributed cluster of web API servers, state cannot reside solely in process memory without causing traffic divergence (a client hitting server A, then server B).</p>
+<h3>3.1 Atomic Lua Script for Sliding Window Counter in Redis</h3>
+<div class="code-block-container"><pre class="language-lua"><code class="language-lua">-- KEYS[1]: Current window key (e.g., rl:client123:28800)
+-- KEYS[2]: Previous window key (e.g., rl:client123:28799)
+-- ARGV[1]: Max limit
+-- ARGV[2]: Current timestamp in seconds
+-- ARGV[3]: Window size in seconds
+
+local curr_key = KEYS[1]
+local prev_key = KEYS[2]
+local limit = tonumber(ARGV[1])
+local now = tonumber(ARGV[2])
+local window = tonumber(ARGV[3])
+
+local curr_count = tonumber(redis.call(&#x27;get&#x27;, curr_key) or &quot;0&quot;)
+local prev_count = tonumber(redis.call(&#x27;get&#x27;, prev_key) or &quot;0&quot;)
+
+local elapsed = now % window
+local weight = (window - elapsed) / window
+local est_count = curr_count + (prev_count * weight)
+
+if est_count + 1 &gt; limit then
+    return 0 -- Rejected
+else
+    redis.call(&#x27;incr&#x27;, curr_key)
+    redis.call(&#x27;expire&#x27;, curr_key, window * 2)
+    return 1 -- Allowed
+end</code></pre></div>
+<h3>3.2 Key Resolution Hierarchy</h3>
+<ol>
+<li><strong>Authenticated Users</strong>: <code>user:{user_id}</code> (prevents users from bypassing limits by rotating IP).</li>
+<li><strong>API Clients</strong>: <code>apikey:{sha256(api_key)}</code>.</li>
+<li><strong>Public / Unauthenticated</strong>: <code>ip:{client_ip}</code> (with special handling for <code>X-Forwarded-For</code> through trusted proxies to prevent header spoofing).</li>
+</ol>
+<hr/>
+<h2>4. DSA: BST In-Order Traversal Invariants</h2>
+<h3>4.1 In-Order Traversal Property</h3>
+<ul>
+<li>In any valid Binary Search Tree:</li>
+</ul>
+<p>$$\text{In-Order}(T) = \text{Left} \to \text{Node} \to \text{Right} \implies \text{Strictly Ascending Sequence}$$</p>
+<ul>
+<li>If and only if $v_i < v_{i+1}$ for all sequential visits, the tree is a valid BST.</li>
+</ul>
+<h3>4.2 LeetCode #98 (Validate BST)</h3>
+<ul>
+<li>Common Pitfall: Checking only <code>node.left.val &lt; node.val &lt; node.right.val</code> locally is insufficient. A node in a right subtree might be smaller than a grandparent node!</li>
+<li>Solution: Maintain global interval bounds $(\text{min}, \text{max})$ for each recursive branch, using <code>long?</code> to avoid integer overflow when root contains <code>int.MinValue</code> or <code>int.MaxValue</code>.</li>
+</ul>
+<h3>4.3 LeetCode #230 (Kth Smallest Element in BST)</h3>
+<ul>
+<li>Rather than traversing all $N$ nodes to construct an array, an iterative stack traversal enables <strong>early exit</strong>:</li>
+<li>Traverse left pushing to stack until leaf.</li>
+<li>Pop, decrement $k$.</li>
+<li>When $k == 0$, immediately return the current value!</li>
+<li>Time Complexity: $O(H + k)$, where $H$ is tree height. Space: $O(H)$.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 22: System Design — Rate Limiter Design & DSA BST In-Order Traversal</h1>
+<p>Comprehensive systems design lab implementing core rate limiting algorithms, production-grade ASP.NET Core distributed rate limiting middleware, and BST traversal verification.</p>
+<hr/>
+<h2>🎯 Architecture & Objectives</h2>
+<ol>
+<li><strong>Token Bucket Algorithm</strong>:</li>
+</ol>
+<ul>
+<li>Manages bursty traffic with fixed maximum capacity $C$ and constant token generation rate $R$.</li>
+<li>Allows requests consuming $K$ tokens if available; returns exact <code>Retry-After</code> calculation when tokens are depleted.</li>
+</ul>
+<ol>
+<li><strong>Leaky Bucket Algorithm</strong>:</li>
+</ol>
+<ul>
+<li>Smooths output traffic to a constant rate $R$ via a bounded FIFO buffer queue.</li>
+<li>Drops incoming requests immediately if buffer capacity is exceeded.</li>
+</ul>
+<ol>
+<li><strong>Fixed Window Counter</strong>:</li>
+</ol>
+<ul>
+<li>Discrete time-window counter illustrating the classical $2\times$ boundary burst vulnerability at window transitions.</li>
+</ul>
+<ol>
+<li><strong>Sliding Window Log</strong>:</li>
+</ol>
+<ul>
+<li>Accurate timestamp log (equivalent to Redis Sorted Set <code>ZADD</code>/<code>ZREMRANGEBYSCORE</code>) with $O(M)$ memory trade-off.</li>
+</ul>
+<ol>
+<li><strong>Sliding Window Counter (Cloudflare Hybrid)</strong>:</li>
+</ol>
+<ul>
+<li>High-throughput $O(1)$ memory algorithm combining current and previous window counts using weighted approximation:</li>
+</ul>
+<p>$$\text{Estimated Count} = \text{CurrentCount} + \text{PreviousCount} \times \left(1 - \frac{\text{Elapsed}}{\text{Window}}\right)$$</p>
+<ol>
+<li><strong>ASP.NET Core Middleware (<code>DistributedRateLimiterMiddleware</code>)</strong>:</li>
+</ol>
+<ul>
+<li>Injects RFC 6585 standard headers (<code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, <code>X-RateLimit-Reset</code>, <code>Retry-After</code>).</li>
+<li>Returns RFC 7807 <code>ProblemDetails</code> on HTTP 429 Too Many Requests.</li>
+</ul>
+<ol>
+<li><strong>DSA BST Traversal Solvers</strong>:</li>
+</ol>
+<ul>
+<li><strong>LeetCode #98 (Validate Binary Search Tree)</strong>: Range-bounded DFS and in-order strictly-increasing validation in $O(N)$ time.</li>
+<li><strong>LeetCode #230 (Kth Smallest Element in a BST)</strong>: Iterative in-order stack traversal with early termination at step $k$ in $O(H + k)$ time.</li>
+</ul>
+<hr/>
+<h2>📁 Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day22-Rate-Limiter-Design/
+├── src/
+│   └── Day22.RateLimiter/
+│       ├── Day22.RateLimiter.csproj
+│       ├── RateLimiterModels.cs             # RateLimitResult, Rule &amp; IRateLimiter
+│       ├── Algorithms.cs                    # 5 Rate limiting algorithm implementations
+│       ├── DistributedRateLimiterMiddleware.cs # ASP.NET Core middleware
+│       └── BstValidationSolvers.cs          # LC #98 &amp; LC #230 BST solvers
+├── tests/
+│   └── Day22.RateLimiter.Tests/
+│       ├── Day22.RateLimiter.Tests.csproj
+│       └── Day22Tests.cs                    # 10 unit tests covering algorithms &amp; DSA
+├── README.md
+├── notes.md                                 # Deep dive architectural notes
+├── interview-questions.md                   # 10 Senior/Staff interview Q&amp;As
+└── index.html                               # Standalone offline web guide</code></pre></div>
+<hr/>
+<h2>🧪 Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day22.RateLimiter.Tests/Day22.RateLimiter.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How would you design a distributed rate limiter for a high-traffic microservices architecture (100k+ QPS)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>A production-grade distributed rate limiter requires a multi-tier defense architecture:</p>
+<ol>
+<li><strong>Tier 1 (Edge / API Gateway)</strong>: Envoy, Cloudflare, or AWS API Gateway enforces coarse rate limits per IP or client subnet to absorb volumetric DDoS attacks before reaching origin servers.</li>
+<li><strong>Tier 2 (Service Mesh / In-Process Local Token Bucket)</strong>: Each ASP.NET Core pod runs an in-memory token bucket that batches token synchronizations with a shared store, reducing network I/O.</li>
+<li><strong>Tier 3 (Centralized Redis Cluster)</strong>:</li>
+</ol>
+<ul>
+<li>Utilizes Redis as a low-latency (sub-millisecond) shared data store.</li>
+<li>Executes atomic Lua scripts (<code>SlidingWindowCounter</code> or <code>redis-cell</code>) to avoid distributed race conditions.</li>
+<li>Keys are sharded across Redis nodes by client identifier: <code>rl:{client_id}:{window_epoch}</code>.</li>
+<li>Emits standard RFC 6585 headers: <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, <code>X-RateLimit-Reset</code>, and <code>Retry-After</code>.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Compare Token Bucket vs. Leaky Bucket. When would you strictly pick one over the other?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Token Bucket</strong>: Accumulates tokens up to capacity $C$ at rate $R$.</li>
+<li><em>Behavior</em>: Permits instantaneous bursts up to $C$, then strictly caps throughput at rate $R$.</li>
+<li><em>Pick when</em>: Facing customer-facing APIs (e.g. Stripe, GitHub). Real-world user interactions are inherently bursty (e.g. loading a dashboard triggers 15 concurrent REST calls). Penalizing natural bursts damages user experience.</li>
+<li><strong>Leaky Bucket</strong>: Queues incoming requests in a FIFO buffer and discharges them at a steady, constant frequency $R$.</li>
+<li><em>Behavior</em>: Completely eliminates bursts; outputs a perfectly uniform stream.</li>
+<li><em>Pick when</em>: Egress rate limiting and traffic shaping—such as dispatching webhooks to external third-party services whose servers cannot tolerate bursts, or background batch DB writers where sustained constant disk throughput is required.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the Boundary Burst problem in Fixed Window rate limiters, and how does the Sliding Window Counter solve it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Problem</strong>: In a Fixed Window limiter with a limit of $N$ per minute, if an attacker fires $N$ requests at second 59 and another $N$ requests at second 01 of the next minute, $2N$ requests are processed within a 2-second interval, violating SLA guarantees and risking downstream service collapse.</li>
+<li><strong>Solution (Sliding Window Counter / Cloudflare Hybrid)</strong>:</li>
+</ul>
+<p>Instead of tracking thousands of timestamps in a sorted set ($O(M)$ RAM), it maintains only the current window count and previous window count ($O(1)$ RAM).</p>
+<p>$$\text{Estimated Count} = \text{CurrentCount} + \text{PreviousCount} \times \left(1 - \frac{\text{ElapsedInCurrent}}{\text{WindowDuration}}\right)$$</p>
+<p>In the scenario above, at second 01 of the new minute, the weight of the previous window is $59/60 \approx 98.3\%$. The calculated count is $0 + N \times 0.983 = 0.983N$, immediately rejecting subsequent requests until sufficient time has elapsed.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How do you handle race conditions in a distributed rate limiter without introducing massive lock contention?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>Naive <code>GET</code> followed by <code>SET</code> in Redis causes race conditions: two concurrent threads both read counter <code>99</code>, both see limit <code>100</code>, and both increment to <code>100</code>, allowing 101 requests.</p>
+<ul>
+<li><strong>Anti-Pattern</strong>: Using distributed locks (e.g., RedLock) on every API request adds 5–15ms of latency and creates extreme lock contention at 100k QPS.</li>
+<li><strong>Production Solution</strong>: Atomic Lua Scripts in Redis. Redis executes Lua scripts as single atomic operations within its single-threaded event loop. No other command can interleave.</li>
+</ul>
+<div class="code-block-container"><pre class="language-lua"><code class="language-lua">local current = redis.call(&#x27;incr&#x27;, KEYS[1])
+if current == 1 then
+    redis.call(&#x27;expire&#x27;, KEYS[1], ARGV[1])
+end
+if current &gt; tonumber(ARGV[2]) then
+    return 0 -- Rejected
+end
+return 1 -- Allowed</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What client identification strategy should you use, and how do you prevent IP spoofing attacks?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>Client identity resolution must follow a strict priority ladder:</p>
+<ol>
+<li><strong>Authenticated Users</strong>: <code>Bearer</code> token subject (<code>sub</code> claim) or user ID.</li>
+<li><strong>API Integrations</strong>: Cryptographic API Key (<code>X-Api-Key</code> or <code>Authorization: ApiKey ...</code>).</li>
+<li><strong>Unauthenticated Public Endpoints</strong>: Remote Client IP.</li>
+</ol>
+<ul>
+<li><strong>IP Spoofing Vulnerability</strong>: Attackers can forge <code>X-Forwarded-For: 1.2.3.4</code> headers.</li>
+<li><strong>Defense</strong>: Never trust raw <code>X-Forwarded-For</code> from the open internet. The edge proxy (Cloudflare, AWS ALB, NGINX) must be configured to strip untrusted incoming headers and append the true socket IP (<code>RemoteIpAddress</code>) to the header chain. In ASP.NET Core, use <code>app.UseForwardedHeaders()</code> with explicitly configured <code>KnownNetworks</code> and <code>KnownProxies</code>.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you size memory requirements for a Redis cluster backing 50 million active users on a sliding window rate limiter?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>Using the Cloudflare Sliding Window Counter:</p>
+<ul>
+<li><strong>Keys per user</strong>: 1 key per window (with previous window stored as a hash or separate key).</li>
+<li><strong>Data size</strong>: Key string (<code>rl:usr:{uuid}:epoch</code> ~ 36 bytes) + Redis integer value (8 bytes) + dict entry overhead (~32 bytes) + jemalloc allocation padding $\approx 100\text{ bytes}$ per entry.</li>
+<li><strong>Two windows per user</strong>: $100\text{ bytes} \times 2 = 200\text{ bytes}$.</li>
+<li><strong>50 Million Active Users</strong>:</li>
+</ul>
+<p>$$50,000,000 \times 200\text{ bytes} \approx 10,000,000,000\text{ bytes} \approx 10\text{ GB RAM}$$</p>
+<ul>
+<li><strong>TTL Pruning</strong>: Keys have <code>EXPIRE = window_size * 2</code>, ensuring inactive users consume zero memory. 10 GB of Redis RAM comfortably fits on a single small Redis cluster node or a 3-shard cluster for high availability.</li>
+<li><em>Contrast</em>: A Sliding Window Log at 100 req/min would require $50\text{M} \times 100 \times 16\text{ bytes} \approx 80\text{ GB RAM}$.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What headers and HTTP response status code should be returned according to RFC specifications when rate limiting?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ol>
+<li><strong>Status Code</strong>: <code>HTTP 429 Too Many Requests</code> (RFC 6585).</li>
+<li><strong>Headers</strong>:</li>
+</ol>
+<ul>
+<li><code>Retry-After</code>: Number of seconds (or HTTP-date) the client must wait before retrying (RFC 7231).</li>
+<li><code>X-RateLimit-Limit</code>: Maximum requests permitted in the current period.</li>
+<li><code>X-RateLimit-Remaining</code>: Remaining request quota.</li>
+<li><code>X-RateLimit-Reset</code>: Unix epoch timestamp indicating when the current window resets.</li>
+</ul>
+<ol>
+<li><strong>Response Body</strong>: RFC 7807 <code>application/problem+json</code> providing machine-readable error details, helping client libraries implement automated exponential backoff with jitter.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the impact of clock drift in distributed rate limiting, and how do you mitigate it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Problem</strong>: In a distributed cluster, if App Server A has clock time $T_0$, App Server B has $T_0 + 2\text{s}$, and Redis has $T_0 - 1\text{s}$, calculating window boundaries locally leads to inconsistent window IDs and premature or delayed resets.</li>
+<li><strong>Mitigation</strong>:</li>
+</ul>
+<ol>
+<li><strong>Redis Server-Side Time</strong>: Never pass application server local timestamps to Redis for window calculations. Call <code>redis.call(&#x27;TIME&#x27;)</code> inside the Lua script or use Redis relative expiration <code>PEXPIRE</code>.</li>
+<li><strong>NTP / PTP Synchronization</strong>: Run AWS Time Sync Service or Chrony on all infrastructure instances to maintain clock drift below 1 millisecond.</li>
+<li><strong>Relative Time</strong>: In Token Bucket algorithms, track elapsed time relative to monotonically increasing system ticks (<code>Stopwatch.GetTimestamp()</code> in .NET) rather than wall-clock <code>DateTime.UtcNow</code>.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Explain LeetCode #98 (Validate BST). Why is checking `left &lt; root &lt; right` locally a critical pitfall?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Pitfall</strong>: Local verification only validates direct parent-child relationships. Consider the tree:</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">       10
+      /  \
+     5    15
+         /  \
+        6    20</code></pre></div>
+<p>Locally, $6 < 15 < 20$ is valid, and $5 < 10 < 15$ is valid. However, the node $6$ resides in the right subtree of $10$, which violates the fundamental BST invariant: <strong>every</strong> node in the right subtree must be strictly greater than $10$!</p>
+<ul>
+<li><strong>Optimal Solution</strong>: Maintain valid intervals $(\text{min}, \text{max})$ down the call tree:</li>
+<li>Left child inherits $(\text{min}, \text{node.val})$.</li>
+<li>Right child inherits $(\text{node.val}, \text{max})$.</li>
+<li>Use <code>long?</code> for bounds to handle boundary nodes containing <code>int.MinValue</code> and <code>int.MaxValue</code>.</li>
+<li>Alternatively, perform an in-order traversal verifying that each visited node is strictly greater than the preceding node: <code>prev.HasValue &amp;&amp; curr.val &lt;= prev.Value =&gt; return false</code>.</li>
+<li>Time: $O(N)$, Space: $O(H)$.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">In LeetCode #230 (Kth Smallest Element in BST), how do you achieve early termination in $O(H + k)$ time instead of $O(N)$?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Naive Approach</strong>: Traverse the whole tree ($O(N)$), store values in a sorted list or min-heap, and retrieve the $k$-th element. This wastes $O(N)$ time and memory when $k$ is small.</li>
+<li><strong>Optimal Stack Approach</strong>:</li>
+</ul>
+<p>Simulate in-order traversal using an explicit stack:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  var stack = new Stack&lt;TreeNode&gt;();
+  var curr = root;
+  while (curr != null || stack.Count &gt; 0)
+  {
+      while (curr != null)
+      {
+          stack.Push(curr);
+          curr = curr.left; // Drill down to leftmost leaf
+      }
+      curr = stack.Pop();
+      if (--k == 0) return curr.val; // Early exit!
+      curr = curr.right;
+  }</code></pre></div>
+<ul>
+<li><strong>Complexity</strong>: It drills down the left branch of height $H$, then pops and traverses only $k$ nodes. Runtime is $O(H + k)$ rather than $O(N)$. For a balanced BST with $H = \log N$ and small $k$, this executes in nearly logarithmic time with $O(H)$ auxiliary space.</li>
+</ul>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day22.RateLimiter/Algorithms.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd22-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d22-src-code-0" class="language-csharp">using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+
+namespace Day22.RateLimiter;
+
+/// &lt;summary&gt;
+/// Token Bucket Algorithm:
+/// Allows bursts up to capacity while enforcing average throughput via constant token refill.
+/// &lt;/summary&gt;
+public class TokenBucketRateLimiter : IRateLimiter
+{
+    private readonly double _capacity;
+    private readonly double _refillRatePerSecond;
+    private readonly ConcurrentDictionary&lt;string, (double tokens, DateTime lastRefill)&gt; _buckets = new();
+    private readonly object _lock = new();
+
+    public double Capacity =&gt; _capacity;
+    public double RefillRatePerSecond =&gt; _refillRatePerSecond;
+
+    public TokenBucketRateLimiter(double capacity, double refillRatePerSecond)
+    {
+        if (capacity &lt;= 0) throw new ArgumentOutOfRangeException(nameof(capacity), &quot;Capacity must be positive.&quot;);
+        if (refillRatePerSecond &lt;= 0) throw new ArgumentOutOfRangeException(nameof(refillRatePerSecond), &quot;Refill rate must be positive.&quot;);
+
+        _capacity = capacity;
+        _refillRatePerSecond = refillRatePerSecond;
+    }
+
+    public RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null)
+    {
+        var now = customNow ?? DateTime.UtcNow;
+
+        lock (_lock)
+        {
+            var (tokens, lastRefill) = _buckets.GetOrAdd(key, _ =&gt; (_capacity, now));
+
+            // Refill tokens based on elapsed duration
+            var elapsedSeconds = Math.Max(0, (now - lastRefill).TotalSeconds);
+            var refilledTokens = Math.Min(_capacity, tokens + elapsedSeconds * _refillRatePerSecond);
+
+            var resetSeconds = (_capacity - refilledTokens) / _refillRatePerSecond;
+            var resetTimeUtc = now.AddSeconds(Math.Max(0, resetSeconds));
+
+            if (refilledTokens &gt;= tokensRequested)
+            {
+                var remaining = refilledTokens - tokensRequested;
+                _buckets[key] = (remaining, now);
+                return RateLimitResult.Allowed((long)_capacity, (long)remaining, resetTimeUtc);
+            }
+            else
+            {
+                var neededTokens = tokensRequested - refilledTokens;
+                var retryAfterSeconds = neededTokens / _refillRatePerSecond;
+                _buckets[key] = (refilledTokens, now);
+                return RateLimitResult.Rejected((long)_capacity, TimeSpan.FromSeconds(retryAfterSeconds), resetTimeUtc);
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Leaky Bucket Algorithm:
+/// Buffers incoming requests and processes them at a smooth, constant outflow rate.
+/// Excess requests overflowing bucket capacity are immediately discarded.
+/// &lt;/summary&gt;
+public class LeakyBucketRateLimiter : IRateLimiter
+{
+    private readonly double _capacity;
+    private readonly double _leakRatePerSecond;
+    private readonly ConcurrentDictionary&lt;string, (double waterLevel, DateTime lastLeak)&gt; _buckets = new();
+    private readonly object _lock = new();
+
+    public LeakyBucketRateLimiter(double capacity, double leakRatePerSecond)
+    {
+        if (capacity &lt;= 0) throw new ArgumentOutOfRangeException(nameof(capacity), &quot;Capacity must be positive.&quot;);
+        if (leakRatePerSecond &lt;= 0) throw new ArgumentOutOfRangeException(nameof(leakRatePerSecond), &quot;Leak rate must be positive.&quot;);
+
+        _capacity = capacity;
+        _leakRatePerSecond = leakRatePerSecond;
+    }
+
+    public RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null)
+    {
+        var now = customNow ?? DateTime.UtcNow;
+
+        lock (_lock)
+        {
+            var (waterLevel, lastLeak) = _buckets.GetOrAdd(key, _ =&gt; (0.0, now));
+
+            // Leak water based on elapsed time
+            var elapsedSeconds = Math.Max(0, (now - lastLeak).TotalSeconds);
+            var leaked = elapsedSeconds * _leakRatePerSecond;
+            var currentWater = Math.Max(0.0, waterLevel - leaked);
+
+            var resetSeconds = currentWater / _leakRatePerSecond;
+            var resetTimeUtc = now.AddSeconds(resetSeconds);
+
+            if (currentWater + tokensRequested &lt;= _capacity)
+            {
+                var newWater = currentWater + tokensRequested;
+                _buckets[key] = (newWater, now);
+                var remaining = (long)(_capacity - newWater);
+                return RateLimitResult.Allowed((long)_capacity, remaining, resetTimeUtc);
+            }
+            else
+            {
+                var overflow = (currentWater + tokensRequested) - _capacity;
+                var retryAfter = TimeSpan.FromSeconds(overflow / _leakRatePerSecond);
+                _buckets[key] = (currentWater, now);
+                return RateLimitResult.Rejected((long)_capacity, retryAfter, resetTimeUtc);
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Fixed Window Counter Algorithm:
+/// Divides time into fixed discrete slots and increments a counter per window.
+/// Vulnerable to boundary burst (2x the configured limit across window transitions).
+/// &lt;/summary&gt;
+public class FixedWindowCounterRateLimiter : IRateLimiter
+{
+    private readonly long _limit;
+    private readonly TimeSpan _window;
+    private readonly ConcurrentDictionary&lt;string, (long windowIndex, long count)&gt; _windows = new();
+    private readonly object _lock = new();
+
+    public FixedWindowCounterRateLimiter(long limit, TimeSpan window)
+    {
+        if (limit &lt;= 0) throw new ArgumentOutOfRangeException(nameof(limit), &quot;Limit must be positive.&quot;);
+        if (window &lt;= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(window), &quot;Window must be positive.&quot;);
+
+        _limit = limit;
+        _window = window;
+    }
+
+    public RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null)
+    {
+        var now = customNow ?? DateTime.UtcNow;
+        var currentWindowIndex = now.Ticks / _window.Ticks;
+        var currentWindowStart = new DateTime(currentWindowIndex * _window.Ticks, DateTimeKind.Utc);
+        var resetTimeUtc = currentWindowStart.Add(_window);
+
+        lock (_lock)
+        {
+            var (windowIndex, count) = _windows.GetOrAdd(key, _ =&gt; (currentWindowIndex, 0));
+
+            // If entering a new window, reset count
+            if (windowIndex != currentWindowIndex)
+            {
+                windowIndex = currentWindowIndex;
+                count = 0;
+            }
+
+            if (count + tokensRequested &lt;= _limit)
+            {
+                count += tokensRequested;
+                _windows[key] = (windowIndex, count);
+                var remaining = _limit - count;
+                return RateLimitResult.Allowed(_limit, remaining, resetTimeUtc);
+            }
+            else
+            {
+                var retryAfter = resetTimeUtc - now;
+                return RateLimitResult.Rejected(_limit, retryAfter, resetTimeUtc);
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Sliding Window Log Algorithm:
+/// Stores precise timestamps of each request (equivalent to Redis Sorted Set ZADD/ZREMRANGEBYSCORE).
+/// Provides 100% accuracy, but memory scales with request count O(M).
+/// &lt;/summary&gt;
+public class SlidingWindowLogRateLimiter : IRateLimiter
+{
+    private readonly long _limit;
+    private readonly TimeSpan _window;
+    private readonly ConcurrentDictionary&lt;string, List&lt;DateTime&gt;&gt; _logs = new();
+    private readonly object _lock = new();
+
+    public SlidingWindowLogRateLimiter(long limit, TimeSpan window)
+    {
+        if (limit &lt;= 0) throw new ArgumentOutOfRangeException(nameof(limit), &quot;Limit must be positive.&quot;);
+        if (window &lt;= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(window), &quot;Window must be positive.&quot;);
+
+        _limit = limit;
+        _window = window;
+    }
+
+    public RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null)
+    {
+        var now = customNow ?? DateTime.UtcNow;
+        var windowStart = now - _window;
+        var resetTimeUtc = now.Add(_window);
+
+        lock (_lock)
+        {
+            var log = _logs.GetOrAdd(key, _ =&gt; new List&lt;DateTime&gt;());
+
+            // Purge expired entries older than (now - window)
+            log.RemoveAll(t =&gt; t &lt;= windowStart);
+
+            if (log.Count + tokensRequested &lt;= _limit)
+            {
+                for (int i = 0; i &lt; tokensRequested; i++)
+                {
+                    log.Add(now);
+                }
+                var remaining = _limit - log.Count;
+                var earliest = log.Count &gt; 0 ? log[0] : now;
+                var reset = earliest.Add(_window);
+                return RateLimitResult.Allowed(_limit, remaining, reset);
+            }
+            else
+            {
+                var oldestInWindow = log[0];
+                var retryAfter = (oldestInWindow + _window) - now;
+                return RateLimitResult.Rejected(_limit, retryAfter, oldestInWindow.Add(_window));
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// Sliding Window Counter Algorithm (Cloudflare Hybrid):
+/// Combines the current window counter with the weighted proportion of the previous window counter.
+/// Memory footprint is strictly O(1) (only 2 counters), while eliminating 2x boundary spikes.
+/// Formula: EstimatedCount = CurrentCount + PreviousCount * (1 - ElapsedInCurrent / WindowSize)
+/// &lt;/summary&gt;
+public class SlidingWindowCounterRateLimiter : IRateLimiter
+{
+    private readonly long _limit;
+    private readonly TimeSpan _window;
+    private readonly ConcurrentDictionary&lt;string, ClientWindowState&gt; _clientStates = new();
+    private readonly object _lock = new();
+
+    private class ClientWindowState
+    {
+        public long CurrentWindowIndex { get; set; }
+        public long CurrentCount { get; set; }
+        public long PreviousCount { get; set; }
+    }
+
+    public SlidingWindowCounterRateLimiter(long limit, TimeSpan window)
+    {
+        if (limit &lt;= 0) throw new ArgumentOutOfRangeException(nameof(limit), &quot;Limit must be positive.&quot;);
+        if (window &lt;= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(window), &quot;Window must be positive.&quot;);
+
+        _limit = limit;
+        _window = window;
+    }
+
+    public RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null)
+    {
+        var now = customNow ?? DateTime.UtcNow;
+        var currentWindowIndex = now.Ticks / _window.Ticks;
+        var currentWindowStart = new DateTime(currentWindowIndex * _window.Ticks, DateTimeKind.Utc);
+        var resetTimeUtc = currentWindowStart.Add(_window);
+
+        lock (_lock)
+        {
+            var state = _clientStates.GetOrAdd(key, _ =&gt; new ClientWindowState
+            {
+                CurrentWindowIndex = currentWindowIndex,
+                CurrentCount = 0,
+                PreviousCount = 0
+            });
+
+            // Adjust window transitions
+            if (currentWindowIndex &gt; state.CurrentWindowIndex)
+            {
+                var diff = currentWindowIndex - state.CurrentWindowIndex;
+                if (diff == 1)
+                {
+                    state.PreviousCount = state.CurrentCount;
+                }
+                else
+                {
+                    state.PreviousCount = 0;
+                }
+                state.CurrentCount = 0;
+                state.CurrentWindowIndex = currentWindowIndex;
+            }
+
+            // Calculate overlap weight of the previous window
+            var elapsedInCurrent = (now - currentWindowStart).TotalMilliseconds;
+            var windowTotalMs = _window.TotalMilliseconds;
+            var weightOfPrevious = Math.Max(0.0, 1.0 - (elapsedInCurrent / windowTotalMs));
+
+            var estimatedCount = state.CurrentCount + (state.PreviousCount * weightOfPrevious);
+
+            if (estimatedCount + tokensRequested &lt;= _limit)
+            {
+                state.CurrentCount += tokensRequested;
+                var remaining = Math.Max(0, _limit - (long)Math.Ceiling(estimatedCount + tokensRequested));
+                return RateLimitResult.Allowed(_limit, remaining, resetTimeUtc);
+            }
+            else
+            {
+                var retryAfter = resetTimeUtc - now;
+                return RateLimitResult.Rejected(_limit, retryAfter, resetTimeUtc);
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day22.RateLimiter/BstValidationSolvers.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd22-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d22-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day22.RateLimiter;
+
+/// &lt;summary&gt;
+/// Standard Binary Tree Node definition.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// High-performance solvers for BST Validation and Kth Smallest Element.
+/// &lt;/summary&gt;
+public class BstValidationSolvers
+{
+    /// &lt;summary&gt;
+    /// LeetCode #98: Validate Binary Search Tree.
+    /// Uses bounded range constraints [min, max] to verify that all nodes in left subtrees
+    /// are strictly smaller than ancestors, and all in right subtrees are strictly larger.
+    /// Time Complexity: O(N) | Space Complexity: O(H) call stack.
+    /// &lt;/summary&gt;
+    public bool IsValidBST(TreeNode? root)
+    {
+        return ValidateRange(root, null, null);
+    }
+
+    private static bool ValidateRange(TreeNode? node, long? min, long? max)
+    {
+        if (node == null) return true;
+
+        if (min.HasValue &amp;&amp; node.val &lt;= min.Value) return false;
+        if (max.HasValue &amp;&amp; node.val &gt;= max.Value) return false;
+
+        return ValidateRange(node.left, min, node.val) &amp;&amp;
+               ValidateRange(node.right, node.val, max);
+    }
+
+    /// &lt;summary&gt;
+    /// Alternative validation using In-Order Traversal invariant.
+    /// In a valid BST, in-order traversal (Left, Root, Right) strictly yields an increasing sequence.
+    /// Time Complexity: O(N) | Space Complexity: O(H).
+    /// &lt;/summary&gt;
+    public bool IsValidBstInOrder(TreeNode? root)
+    {
+        long? prev = null;
+        var stack = new Stack&lt;TreeNode&gt;();
+        var curr = root;
+
+        while (curr != null || stack.Count &gt; 0)
+        {
+            while (curr != null)
+            {
+                stack.Push(curr);
+                curr = curr.left;
+            }
+
+            curr = stack.Pop();
+            if (prev.HasValue &amp;&amp; curr.val &lt;= prev.Value)
+            {
+                return false;
+            }
+            prev = curr.val;
+            curr = curr.right;
+        }
+
+        return true;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #230: Kth Smallest Element in a BST.
+    /// Executes an iterative In-Order Traversal with early-exit termination when k steps have been popped.
+    /// Time Complexity: O(H + k) | Space Complexity: O(H).
+    /// &lt;/summary&gt;
+    public int KthSmallest(TreeNode? root, int k)
+    {
+        if (root == null) throw new ArgumentNullException(nameof(root));
+        if (k &lt;= 0) throw new ArgumentOutOfRangeException(nameof(k), &quot;k must be positive.&quot;);
+
+        var stack = new Stack&lt;TreeNode&gt;();
+        var curr = root;
+
+        while (curr != null || stack.Count &gt; 0)
+        {
+            while (curr != null)
+            {
+                stack.Push(curr);
+                curr = curr.left;
+            }
+
+            curr = stack.Pop();
+            k--;
+            if (k == 0)
+            {
+                return curr.val;
+            }
+
+            curr = curr.right;
+        }
+
+        throw new ArgumentException(&quot;k is larger than the number of nodes in the BST.&quot;, nameof(k));
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day22.RateLimiter/DistributedRateLimiterMiddleware.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd22-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d22-src-code-2" class="language-csharp">using System;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+
+namespace Day22.RateLimiter;
+
+/// &lt;summary&gt;
+/// ASP.NET Core Middleware that enforces distributed rate limits across HTTP endpoints.
+/// Emits standard RFC 6585 rate limiting headers and returns RFC 7807 ProblemDetails on 429 rejections.
+/// &lt;/summary&gt;
+public class DistributedRateLimiterMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly IRateLimiter _limiter;
+    private readonly Func&lt;HttpContext, string&gt; _clientKeyResolver;
+
+    public DistributedRateLimiterMiddleware(
+        RequestDelegate next,
+        IRateLimiter limiter,
+        Func&lt;HttpContext, string&gt;? clientKeyResolver = null)
+    {
+        _next = next ?? throw new ArgumentNullException(nameof(next));
+        _limiter = limiter ?? throw new ArgumentNullException(nameof(limiter));
+        _clientKeyResolver = clientKeyResolver ?? DefaultKeyResolver;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var clientKey = _clientKeyResolver(context);
+        var result = _limiter.ShouldAllow(clientKey);
+
+        // Directly inject telemetry rate limit headers
+        context.Response.Headers[&quot;X-RateLimit-Limit&quot;] = result.Limit.ToString();
+        context.Response.Headers[&quot;X-RateLimit-Remaining&quot;] = result.Remaining.ToString();
+        var resetEpoch = new DateTimeOffset(result.ResetTimeUtc).ToUnixTimeSeconds();
+        context.Response.Headers[&quot;X-RateLimit-Reset&quot;] = resetEpoch.ToString();
+
+        if (!result.IsAllowed)
+        {
+            var retryAfterSec = Math.Max(1, (int)Math.Ceiling(result.RetryAfter.TotalSeconds));
+            context.Response.Headers[&quot;Retry-After&quot;] = retryAfterSec.ToString();
+        }
+
+        if (!result.IsAllowed)
+        {
+            context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            context.Response.ContentType = &quot;application/problem+json&quot;;
+
+            var problem = new
+            {
+                type = &quot;https://tools.ietf.org/html/rfc6585#section-4&quot;,
+                title = &quot;Too Many Requests&quot;,
+                status = 429,
+                detail = $&quot;Quota exceeded. Rate limit is {result.Limit} requests. Please retry in {Math.Ceiling(result.RetryAfter.TotalSeconds)} seconds.&quot;,
+                instance = context.Request.Path.Value,
+                retryAfterSeconds = Math.Max(1, (int)Math.Ceiling(result.RetryAfter.TotalSeconds))
+            };
+
+            var json = JsonSerializer.Serialize(problem);
+            await context.Response.WriteAsync(json);
+            return;
+        }
+
+        await _next(context);
+    }
+
+    public static string DefaultKeyResolver(HttpContext context)
+    {
+        // 1. Check API Key header
+        if (context.Request.Headers.TryGetValue(&quot;X-Api-Key&quot;, out var apiKey) &amp;&amp; !string.IsNullOrWhiteSpace(apiKey))
+        {
+            return $&quot;api_key:{apiKey}&quot;;
+        }
+
+        // 2. Check Authorization header
+        if (context.Request.Headers.TryGetValue(&quot;Authorization&quot;, out var authHeader) &amp;&amp; !string.IsNullOrWhiteSpace(authHeader))
+        {
+            return $&quot;auth:{authHeader}&quot;;
+        }
+
+        // 3. Fallback to client IP
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? &quot;unknown_client&quot;;
+        return $&quot;ip:{ip}&quot;;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day22.RateLimiter/RateLimiterModels.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd22-src-code-3')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d22-src-code-3" class="language-csharp">using System;
+
+namespace Day22.RateLimiter;
+
+/// &lt;summary&gt;
+/// Encapsulates the evaluation outcome of a rate limiting check.
+/// &lt;/summary&gt;
+public record RateLimitResult
+{
+    public bool IsAllowed { get; init; }
+    public long Limit { get; init; }
+    public long Remaining { get; init; }
+    public TimeSpan RetryAfter { get; init; }
+    public DateTime ResetTimeUtc { get; init; }
+
+    public static RateLimitResult Allowed(long limit, long remaining, DateTime resetTimeUtc) =&gt;
+        new()
+        {
+            IsAllowed = true,
+            Limit = limit,
+            Remaining = Math.Max(0, remaining),
+            RetryAfter = TimeSpan.Zero,
+            ResetTimeUtc = resetTimeUtc
+        };
+
+    public static RateLimitResult Rejected(long limit, TimeSpan retryAfter, DateTime resetTimeUtc) =&gt;
+        new()
+        {
+            IsAllowed = false,
+            Limit = limit,
+            Remaining = 0,
+            RetryAfter = retryAfter &lt;= TimeSpan.Zero ? TimeSpan.FromSeconds(1) : retryAfter,
+            ResetTimeUtc = resetTimeUtc
+        };
+}
+
+/// &lt;summary&gt;
+/// Defines policy constraints for rate limiting.
+/// &lt;/summary&gt;
+public record RateLimiterRule(long CapacityOrLimit, TimeSpan Window);
+
+/// &lt;summary&gt;
+/// Common contract for rate limiter algorithms.
+/// &lt;/summary&gt;
+public interface IRateLimiter
+{
+    RateLimitResult ShouldAllow(string key, int tokensRequested = 1, DateTime? customNow = null);
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day22.RateLimiter.Tests/Day22Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd22-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d22-tests-code-0" class="language-csharp">using System;
+using System.IO;
+using System.Net;
+using System.Text.Json;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Microsoft.AspNetCore.Http;
+using Xunit;
+
+namespace Day22.RateLimiter.Tests;
+
+public class Day22Tests
+{
+    // ==========================================
+    // 1. TOKEN BUCKET TESTS
+    // ==========================================
+
+    [Fact]
+    public void TokenBucket_AllowsBurstUpToCapacity_AndEnforcesRefillRate()
+    {
+        // 5 tokens capacity, 1 token per second refill
+        var limiter = new TokenBucketRateLimiter(capacity: 5, refillRatePerSecond: 1.0);
+        var t0 = DateTime.UtcNow;
+
+        // Drain 5 tokens instantaneously
+        for (int i = 0; i &lt; 5; i++)
+        {
+            var res = limiter.ShouldAllow(&quot;client1&quot;, tokensRequested: 1, customNow: t0);
+            res.IsAllowed.Should().BeTrue();
+            res.Remaining.Should().Be(4 - i);
+        }
+
+        // 6th request at t0 must be rejected
+        var rejected = limiter.ShouldAllow(&quot;client1&quot;, tokensRequested: 1, customNow: t0);
+        rejected.IsAllowed.Should().BeFalse();
+        rejected.Remaining.Should().Be(0);
+
+        // Advance 2 seconds -&gt; 2 tokens should be refilled
+        var t2 = t0.AddSeconds(2);
+        var after2Sec = limiter.ShouldAllow(&quot;client1&quot;, tokensRequested: 1, customNow: t2);
+        after2Sec.IsAllowed.Should().BeTrue();
+        after2Sec.Remaining.Should().Be(1); // 2 refilled - 1 consumed = 1 remaining
+    }
+
+    [Fact]
+    public void TokenBucket_RejectsWhenExhausted_AndReturnsAccurateRetryAfter()
+    {
+        var limiter = new TokenBucketRateLimiter(capacity: 2, refillRatePerSecond: 0.5); // 1 token every 2 seconds
+        var t0 = DateTime.UtcNow;
+
+        limiter.ShouldAllow(&quot;client2&quot;, tokensRequested: 2, customNow: t0); // Drain bucket
+
+        var res = limiter.ShouldAllow(&quot;client2&quot;, tokensRequested: 1, customNow: t0);
+        res.IsAllowed.Should().BeFalse();
+        // Needs 1 token, refill rate is 0.5/s -&gt; retry after should be 2.0 seconds
+        res.RetryAfter.TotalSeconds.Should().BeApproximately(2.0, 0.05);
+    }
+
+    // ==========================================
+    // 2. LEAKY BUCKET TESTS
+    // ==========================================
+
+    [Fact]
+    public void LeakyBucket_LeaksAtConstantRate_AndRejectsWhenBufferFull()
+    {
+        // Capacity 3 requests buffer, leaks 1 request per second
+        var limiter = new LeakyBucketRateLimiter(capacity: 3, leakRatePerSecond: 1.0);
+        var t0 = DateTime.UtcNow;
+
+        // Fill buffer to capacity
+        limiter.ShouldAllow(&quot;userA&quot;, tokensRequested: 1, customNow: t0).IsAllowed.Should().BeTrue();
+        limiter.ShouldAllow(&quot;userA&quot;, tokensRequested: 1, customNow: t0).IsAllowed.Should().BeTrue();
+        limiter.ShouldAllow(&quot;userA&quot;, tokensRequested: 1, customNow: t0).IsAllowed.Should().BeTrue();
+
+        // 4th request overflows buffer
+        limiter.ShouldAllow(&quot;userA&quot;, tokensRequested: 1, customNow: t0).IsAllowed.Should().BeFalse();
+
+        // Advance 1.5 seconds -&gt; 1.5 requests leaked, buffer water is 1.5. Capacity remaining is 1.5.
+        var t15 = t0.AddSeconds(1.5);
+        limiter.ShouldAllow(&quot;userA&quot;, tokensRequested: 1, customNow: t15).IsAllowed.Should().BeTrue();
+    }
+
+    // ==========================================
+    // 3. FIXED WINDOW &amp; BOUNDARY BURST
+    // ==========================================
+
+    [Fact]
+    public void FixedWindow_DemonstratesBoundaryBurstVulnerability()
+    {
+        // Limit: 5 requests per 1-minute window
+        var limiter = new FixedWindowCounterRateLimiter(limit: 5, window: TimeSpan.FromMinutes(1));
+        var baseTime = new DateTime(2026, 10, 10, 12, 0, 0, DateTimeKind.Utc);
+
+        // 5 requests at end of window 1 (12:00:58)
+        var tEndWindow1 = baseTime.AddSeconds(58);
+        for (int i = 0; i &lt; 5; i++)
+        {
+            limiter.ShouldAllow(&quot;client_burst&quot;, tokensRequested: 1, customNow: tEndWindow1).IsAllowed.Should().BeTrue();
+        }
+
+        // 6th request at 12:00:59 rejected
+        limiter.ShouldAllow(&quot;client_burst&quot;, tokensRequested: 1, customNow: baseTime.AddSeconds(59)).IsAllowed.Should().BeFalse();
+
+        // Window resets at 12:01:00! Another 5 requests allowed at 12:01:01
+        var tStartWindow2 = baseTime.AddSeconds(61);
+        for (int i = 0; i &lt; 5; i++)
+        {
+            limiter.ShouldAllow(&quot;client_burst&quot;, tokensRequested: 1, customNow: tStartWindow2).IsAllowed.Should().BeTrue();
+        }
+
+        // In the 3-second period from 12:00:58 to 12:01:01, 10 total requests passed through (2x the 5 req/min limit!)
+    }
+
+    // ==========================================
+    // 4. SLIDING WINDOW LOG TESTS
+    // ==========================================
+
+    [Fact]
+    public void SlidingWindowLog_PurgesOldTimestamps_AndMaintainsExactPrecision()
+    {
+        var limiter = new SlidingWindowLogRateLimiter(limit: 3, window: TimeSpan.FromSeconds(10));
+        var t0 = DateTime.UtcNow;
+
+        limiter.ShouldAllow(&quot;client_log&quot;, tokensRequested: 1, customNow: t0).IsAllowed.Should().BeTrue();
+        limiter.ShouldAllow(&quot;client_log&quot;, tokensRequested: 1, customNow: t0.AddSeconds(2)).IsAllowed.Should().BeTrue();
+        limiter.ShouldAllow(&quot;client_log&quot;, tokensRequested: 1, customNow: t0.AddSeconds(4)).IsAllowed.Should().BeTrue();
+
+        // 4th request at t0 + 6s rejected (all 3 earlier are in 10s window)
+        limiter.ShouldAllow(&quot;client_log&quot;, tokensRequested: 1, customNow: t0.AddSeconds(6)).IsAllowed.Should().BeFalse();
+
+        // Advance to t0 + 11s -&gt; 1st request (at t0) has slid out of 10s window. 1 slot available!
+        var allowed = limiter.ShouldAllow(&quot;client_log&quot;, tokensRequested: 1, customNow: t0.AddSeconds(11));
+        allowed.IsAllowed.Should().BeTrue();
+        allowed.Remaining.Should().Be(0);
+    }
+
+    // ==========================================
+    // 5. SLIDING WINDOW COUNTER (CLOUDFLARE HYBRID)
+    // ==========================================
+
+    [Fact]
+    public void SlidingWindowCounter_WeightedEstimation_SmoothsWindowTransitions()
+    {
+        // 10 requests per 60-second window
+        var limiter = new SlidingWindowCounterRateLimiter(limit: 10, window: TimeSpan.FromSeconds(60));
+        var t0 = new DateTime(2026, 10, 10, 12, 0, 0, DateTimeKind.Utc);
+
+        // Previous window (12:00:00 - 12:00:59): 8 requests
+        for (int i = 0; i &lt; 8; i++)
+        {
+            limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, t0.AddSeconds(30)).IsAllowed.Should().BeTrue();
+        }
+
+        // Current window starts at 12:01:00.
+        // At 12:01:15 (25% into new window): weight of prev window is 75% (0.75).
+        // Estimated prev = 8 * 0.75 = 6.0 requests.
+        // Remaining capacity = 10 - 6.0 = 4 requests.
+        var tNew25 = new DateTime(2026, 10, 10, 12, 1, 15, DateTimeKind.Utc);
+        limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, tNew25).IsAllowed.Should().BeTrue(); // Curr = 1, total = 7
+        limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, tNew25).IsAllowed.Should().BeTrue(); // Curr = 2, total = 8
+        limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, tNew25).IsAllowed.Should().BeTrue(); // Curr = 3, total = 9
+        limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, tNew25).IsAllowed.Should().BeTrue(); // Curr = 4, total = 10
+
+        // 5th request at 12:01:15 exceeds 10 limit!
+        limiter.ShouldAllow(&quot;user_hybrid&quot;, 1, tNew25).IsAllowed.Should().BeFalse();
+    }
+
+    // ==========================================
+    // 6. ASP.NET CORE MIDDLEWARE INTEGRATION TESTS
+    // ==========================================
+
+    [Fact]
+    public async Task Middleware_AllowsRequestsWithinLimit_AndInjectsStandardHeaders()
+    {
+        var limiter = new TokenBucketRateLimiter(capacity: 10, refillRatePerSecond: 1.0);
+        var middleware = new DistributedRateLimiterMiddleware(
+            next: ctx =&gt;
+            {
+                ctx.Response.StatusCode = 200;
+                return Task.CompletedTask;
+            },
+            limiter: limiter
+        );
+
+        var context = new DefaultHttpContext();
+        context.Request.Headers[&quot;X-Api-Key&quot;] = &quot;premium_client_123&quot;;
+        context.Response.Body = new MemoryStream();
+
+        await middleware.InvokeAsync(context);
+
+        context.Response.StatusCode.Should().Be(200);
+        context.Response.Headers[&quot;X-RateLimit-Limit&quot;].ToString().Should().Be(&quot;10&quot;);
+        context.Response.Headers[&quot;X-RateLimit-Remaining&quot;].ToString().Should().Be(&quot;9&quot;);
+        context.Response.Headers[&quot;X-RateLimit-Reset&quot;].ToString().Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task Middleware_RejectsExceededRequests_With429AndProblemDetails()
+    {
+        var limiter = new TokenBucketRateLimiter(capacity: 1, refillRatePerSecond: 0.1);
+        var middleware = new DistributedRateLimiterMiddleware(
+            next: ctx =&gt;
+            {
+                ctx.Response.StatusCode = 200;
+                return Task.CompletedTask;
+            },
+            limiter: limiter
+        );
+
+        // 1st request allowed
+        var ctx1 = new DefaultHttpContext();
+        ctx1.Request.Headers[&quot;X-Api-Key&quot;] = &quot;test_key&quot;;
+        ctx1.Response.Body = new MemoryStream();
+        await middleware.InvokeAsync(ctx1);
+        ctx1.Response.StatusCode.Should().Be(200);
+
+        // 2nd request immediately rejected with 429
+        var ctx2 = new DefaultHttpContext();
+        ctx2.Request.Headers[&quot;X-Api-Key&quot;] = &quot;test_key&quot;;
+        ctx2.Response.Body = new MemoryStream();
+        await middleware.InvokeAsync(ctx2);
+
+        ctx2.Response.StatusCode.Should().Be(429);
+        ctx2.Response.ContentType.Should().Be(&quot;application/problem+json&quot;);
+        ctx2.Response.Headers[&quot;Retry-After&quot;].ToString().Should().NotBeNullOrEmpty();
+
+        ctx2.Response.Body.Seek(0, SeekOrigin.Begin);
+        using var reader = new StreamReader(ctx2.Response.Body);
+        var body = await reader.ReadToEndAsync();
+        body.Should().Contain(&quot;Too Many Requests&quot;);
+        body.Should().Contain(&quot;Quota exceeded&quot;);
+    }
+
+    // ==========================================
+    // 7. DSA: VALIDATE BST (LC #98) TESTS
+    // ==========================================
+
+    [Fact]
+    public void LC98_ValidateBST_DetectsValidAndInvalidSubtreeViolations()
+    {
+        var solvers = new BstValidationSolvers();
+
+        // Valid BST: [2, 1, 3]
+        //      2
+        //     / \
+        //    1   3
+        var validTree = new TreeNode(2, new TreeNode(1), new TreeNode(3));
+        solvers.IsValidBST(validTree).Should().BeTrue();
+        solvers.IsValidBstInOrder(validTree).Should().BeTrue();
+
+        // Invalid BST: [5, 1, 4, null, null, 3, 6]
+        //      5
+        //     / \
+        //    1   4
+        //       / \
+        //      3   6 (3 is in right subtree of 5, but 3 &lt; 5! Invalid!)
+        var invalidTree = new TreeNode(5,
+            new TreeNode(1),
+            new TreeNode(4, new TreeNode(3), new TreeNode(6))
+        );
+        solvers.IsValidBST(invalidTree).Should().BeFalse();
+        solvers.IsValidBstInOrder(invalidTree).Should().BeFalse();
+
+        // Edge case: Node values near Int32.MinValue and Int32.MaxValue
+        var boundaryTree = new TreeNode(int.MaxValue, new TreeNode(int.MaxValue - 1), null);
+        solvers.IsValidBST(boundaryTree).Should().BeTrue();
+        solvers.IsValidBstInOrder(boundaryTree).Should().BeTrue();
+
+        // Duplicate value violation in BST
+        var dupTree = new TreeNode(2, new TreeNode(2), new TreeNode(3));
+        solvers.IsValidBST(dupTree).Should().BeFalse();
+        solvers.IsValidBstInOrder(dupTree).Should().BeFalse();
+    }
+
+    // ==========================================
+    // 8. DSA: KTH SMALLEST IN BST (LC #230) TESTS
+    // ==========================================
+
+    [Fact]
+    public void LC230_KthSmallest_ReturnsCorrectKthElement_WithEarlyExit()
+    {
+        var solvers = new BstValidationSolvers();
+
+        // Tree: [5, 3, 6, 2, 4, null, null, 1]
+        //        5
+        //       / \
+        //      3   6
+        //     / \
+        //    2   4
+        //   /
+        //  1
+        var root = new TreeNode(5,
+            new TreeNode(3,
+                new TreeNode(2, new TreeNode(1)),
+                new TreeNode(4)
+            ),
+            new TreeNode(6)
+        );
+
+        // Sorted order: 1, 2, 3, 4, 5, 6
+        solvers.KthSmallest(root, 1).Should().Be(1);
+        solvers.KthSmallest(root, 2).Should().Be(2);
+        solvers.KthSmallest(root, 3).Should().Be(3);
+        solvers.KthSmallest(root, 4).Should().Be(4);
+        solvers.KthSmallest(root, 5).Should().Be(5);
+        solvers.KthSmallest(root, 6).Should().Be(6);
+
+        // Invalid k throws
+        Action act = () =&gt; solvers.KthSmallest(root, 10);
+        act.Should().Throw&lt;ArgumentException&gt;();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 22 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

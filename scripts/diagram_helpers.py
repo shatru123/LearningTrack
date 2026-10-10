@@ -26,6 +26,8 @@ DAYS_INFO = [
     {"num": 19, "dir": "Day19-Redis-RedLock-DistributedLocking", "title": "Redis Distributed Locking with RedLock", "category": "Redis & Distributed Systems"},
     {"num": 20, "dir": "Day20-Redis-Streams-PubSub", "title": "Redis Pub/Sub & Redis Streams", "category": "Redis & Distributed Systems"},
     {"num": 21, "dir": "Day21-Distributed-Cache-Architecture", "title": "System Design: Distributed Cache Architecture", "category": "System Design & DSA"},
+    {"num": 22, "dir": "Day22-Rate-Limiter-Design", "title": "System Design: Rate Limiter Design", "category": "System Design & Distributed Systems"},
+    {"num": 23, "dir": "Day23-Url-Shortener-TinyUrl", "title": "System Design: URL Shortener (TinyURL)", "category": "System Design & Distributed Systems"},
 ]
 
 def get_day_svg(day_num):
@@ -901,6 +903,172 @@ def get_day_svg(day_num):
           <text x="675" y="293" fill="#34d399" font-size="9">  count++;</text>
           <text x="675" y="308" fill="#cbd5e1" font-size="9">newMax = max(maxSoFar, val)</text>
           <text x="675" y="325" fill="#34d399" font-size="9">O(N) Time | O(H) Depth-First Stack</text>
+        </svg>
+        """
+    elif day_num == 22:
+        return """
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d22GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d22GradToken" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d22GradSlide" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d22GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d22GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Distributed Rate Limiter Architecture: Token Bucket, Sliding Window &amp; BST In-Order</text>
+
+          <!-- 1. Token & Leaky Bucket Column -->
+          <rect x="30" y="60" width="300" height="300" rx="10" fill="url(#d22GradToken)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Token Bucket &amp; Traffic Shaping</text>
+
+          <rect x="45" y="105" width="270" height="65" rx="6" fill="#0284c7" stroke="#38bdf8"/>
+          <text x="55" y="125" fill="#ffffff" font-size="11" font-weight="bold">Token Bucket (AWS, Stripe Standard)</text>
+          <text x="55" y="142" fill="#e0f2fe" font-size="9">Burst capacity C=10 • Refill rate R=2 tokens/s</text>
+          <text x="55" y="157" fill="#bae6fd" font-size="9">Tokens = min(C, old + delta_t * R)</text>
+
+          <rect x="45" y="180" width="270" height="75" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="200" fill="#fbbf24" font-size="11" font-weight="bold">Leaky Bucket (Constant Outflow)</text>
+          <text x="55" y="217" fill="#cbd5e1" font-size="9">FIFO queue buffer drops excess packets</text>
+          <text x="55" y="232" fill="#34d399" font-size="9">Outputs strict steady stream at rate R</text>
+          <text x="55" y="247" fill="#94a3b8" font-size="8">Ideal for webhook dispatchers &amp; third-party APIs</text>
+
+          <rect x="45" y="265" width="270" height="80" rx="6" fill="#0f172a" stroke="#ef4444"/>
+          <text x="55" y="285" fill="#f87171" font-size="11" font-weight="bold">Fixed Window 2x Boundary Spike</text>
+          <text x="55" y="302" fill="#cbd5e1" font-size="9">100 req at 12:00:59 + 100 req at 12:01:01</text>
+          <text x="55" y="317" fill="#ef4444" font-size="9">&#9888; 200 requests pass in a 2-second interval!</text>
+          <text x="55" y="332" fill="#94a3b8" font-size="8">Fixed window counters are vulnerable to DDoS bursts</text>
+
+          <!-- 2. Sliding Window Counter & Middleware Column -->
+          <rect x="350" y="60" width="280" height="300" rx="10" fill="url(#d22GradSlide)" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="370" y="88" fill="#c084fc" font-size="14" font-weight="bold">Sliding Window &amp; Middleware</text>
+
+          <rect x="365" y="105" width="250" height="80" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="125" fill="#60a5fa" font-size="11" font-weight="bold">Cloudflare Hybrid Sliding Counter</text>
+          <text x="375" y="142" fill="#cbd5e1" font-size="9">Count = Curr + Prev * (1 - elapsed / window)</text>
+          <text x="375" y="157" fill="#34d399" font-size="9">&#10003; Memory: Strictly O(1) (only 2 counters)</text>
+          <text x="375" y="172" fill="#94a3b8" font-size="8">Eliminates 2x spike with &lt; 0.05% error rate</text>
+
+          <rect x="365" y="195" width="250" height="75" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="215" fill="#fbbf24" font-size="11" font-weight="bold">ASP.NET Core Middleware Headers</text>
+          <text x="375" y="232" fill="#cbd5e1" font-size="9">X-RateLimit-Limit: 100</text>
+          <text x="375" y="247" fill="#cbd5e1" font-size="9">X-RateLimit-Remaining: 42</text>
+          <text x="375" y="260" fill="#cbd5e1" font-size="9">X-RateLimit-Reset: 1728561600</text>
+
+          <rect x="365" y="280" width="250" height="65" rx="5" fill="#0f172a" stroke="#10b981"/>
+          <text x="375" y="300" fill="#34d399" font-size="11" font-weight="bold">HTTP 429 &amp; RFC 7807 Details</text>
+          <text x="375" y="317" fill="#cbd5e1" font-size="9">Retry-After: 18 seconds</text>
+          <text x="375" y="332" fill="#94a3b8" font-size="8">Standardized problem+json automated backoff</text>
+
+          <!-- 3. DSA BST Traversal Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d22GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">BST In-Order Invariants</text>
+
+          <rect x="665" y="105" width="210" height="110" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #98: Validate BST</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Global Interval Range Check:</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">min &lt; node.val &lt; max (64-bit bounds)</text>
+          <text x="675" y="172" fill="#fbbf24" font-size="9">In-order: prev &lt; curr strictly</text>
+          <text x="675" y="187" fill="#94a3b8" font-size="9">Prevents deep ancestor leaks</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">O(N) Time | O(H) Call Stack</text>
+
+          <rect x="665" y="225" width="210" height="120" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="245" fill="#fbbf24" font-size="11" font-weight="bold">LC #230: Kth Smallest BST</text>
+          <text x="675" y="262" fill="#94a3b8" font-size="9">Iterative Stack In-Order:</text>
+          <text x="675" y="278" fill="#cbd5e1" font-size="9">while (curr != null) Push(curr)</text>
+          <text x="675" y="293" fill="#38bdf8" font-size="9">curr = Pop(); if (--k == 0) return</text>
+          <text x="675" y="308" fill="#94a3b8" font-size="9">Early exit without full traversal</text>
+          <text x="675" y="325" fill="#34d399" font-size="9">O(H + k) Time | O(H) Memory</text>
+        </svg>
+        """
+    elif day_num == 23:
+        return """
+        <svg viewBox="0 0 920 380" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d23GradBg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b0f19"/><stop offset="100%" stop-color="#111827"/>
+            </linearGradient>
+            <linearGradient id="d23GradSnowflake" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d23GradCluster" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2e1065"/><stop offset="100%" stop-color="#0f172a"/>
+            </linearGradient>
+            <linearGradient id="d23GradTree" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0b1e19"/>
+            </linearGradient>
+          </defs>
+          <rect width="920" height="380" rx="12" fill="url(#d23GradBg)" stroke="#1e293b" stroke-width="2"/>
+          <text x="460" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">TinyURL System Architecture: Snowflake 64-bit ID, Base62, Sharding &amp; Tree Reconstruction</text>
+
+          <!-- 1. Snowflake & Base62 Column -->
+          <rect x="30" y="60" width="300" height="300" rx="10" fill="url(#d23GradSnowflake)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="50" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Snowflake ID &amp; Base62 Codec</text>
+
+          <rect x="45" y="105" width="270" height="65" rx="6" fill="#0284c7" stroke="#38bdf8"/>
+          <text x="55" y="125" fill="#ffffff" font-size="11" font-weight="bold">64-bit Twitter Snowflake</text>
+          <text x="55" y="142" fill="#e0f2fe" font-size="9">1-bit Sign | 41-bit ms Epoch (69 yrs)</text>
+          <text x="55" y="157" fill="#bae6fd" font-size="9">5-bit DC | 5-bit Worker | 12-bit Seq (4096/ms)</text>
+
+          <rect x="45" y="180" width="270" height="75" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="200" fill="#fbbf24" font-size="11" font-weight="bold">Base62 Bijective Codec</text>
+          <text x="55" y="217" fill="#cbd5e1" font-size="9">Alphabet: [0-9a-zA-Z] (62 URL-safe chars)</text>
+          <text x="55" y="232" fill="#34d399" font-size="9">Zero hash collision risk • 7-8 char links</text>
+          <text x="55" y="247" fill="#94a3b8" font-size="8">123456789 &#8594; &quot;8m0Kx&quot; (Bi-directional)</text>
+
+          <rect x="45" y="265" width="270" height="80" rx="6" fill="#0f172a" stroke="#334155"/>
+          <text x="55" y="285" fill="#38bdf8" font-size="11" font-weight="bold">Monotonic B-Tree Friendly</text>
+          <text x="55" y="302" fill="#cbd5e1" font-size="9">k-sorted IDs prevent random B-Tree page splits</text>
+          <text x="55" y="317" fill="#34d399" font-size="9">Handles 4.096M IDs/sec per machine node</text>
+          <text x="55" y="332" fill="#94a3b8" font-size="8">Spin-wait protection against NTP clock backwards drift</text>
+
+          <!-- 2. Sharding & Capacity Column -->
+          <rect x="350" y="60" width="280" height="300" rx="10" fill="url(#d23GradCluster)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="370" y="88" fill="#c084fc" font-size="14" font-weight="bold">Capacity Planning &amp; Sharding</text>
+
+          <rect x="365" y="105" width="250" height="75" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="125" fill="#60a5fa" font-size="11" font-weight="bold">100M Writes &amp; 1B Reads Workload</text>
+          <text x="375" y="142" fill="#cbd5e1" font-size="9">Write QPS: ~1,157 (Peak 3x: ~3,500)</text>
+          <text x="375" y="157" fill="#cbd5e1" font-size="9">Read QPS: ~11,574 (Peak 3x: ~35,000)</text>
+          <text x="375" y="170" fill="#94a3b8" font-size="8">10:1 Read-to-Write Ratio • Latency SLA &lt; 10ms</text>
+
+          <rect x="365" y="190" width="250" height="75" rx="5" fill="#0f172a" stroke="#475569"/>
+          <text x="375" y="210" fill="#fbbf24" font-size="11" font-weight="bold">Storage &amp; Cache Requirements</text>
+          <text x="375" y="227" fill="#cbd5e1" font-size="9">500 bytes/rec &#8594; 18.25 TB/yr (91.25 TB/5yr)</text>
+          <text x="375" y="242" fill="#34d399" font-size="9">Pareto 80/20 Rule: 100 GB RAM Redis Cache</text>
+          <text x="375" y="255" fill="#94a3b8" font-size="8">Caches 20% of daily read URLs (200M links)</text>
+
+          <rect x="365" y="275" width="250" height="70" rx="5" fill="#0f172a" stroke="#10b981"/>
+          <text x="375" y="295" fill="#34d399" font-size="11" font-weight="bold">Hash(ID) % N Sharding &amp; HTTP 302</text>
+          <text x="375" y="312" fill="#cbd5e1" font-size="9">Decode(shortCode) % N finds target shard directly</text>
+          <text x="375" y="327" fill="#94a3b8" font-size="8">HTTP 302 preserves 100% telemetry &amp; analytics tracking</text>
+
+          <!-- 3. DSA Tree Reconstruction Column -->
+          <rect x="650" y="60" width="240" height="300" rx="10" fill="url(#d23GradTree)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="670" y="88" fill="#34d399" font-size="14" font-weight="bold">Tree Reconstruction</text>
+
+          <rect x="665" y="105" width="210" height="115" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="125" fill="#38bdf8" font-size="11" font-weight="bold">LC #105: Preorder + Inorder</text>
+          <text x="675" y="142" fill="#94a3b8" font-size="9">Preorder: [Root, Left..., Right...]</text>
+          <text x="675" y="157" fill="#cbd5e1" font-size="9">rootVal = preorder[preIndex++]</text>
+          <text x="675" y="172" fill="#fbbf24" font-size="9">Inorder: [Left..., Root, Right...]</text>
+          <text x="675" y="187" fill="#cbd5e1" font-size="9">inRoot divides left &amp; right</text>
+          <text x="675" y="202" fill="#34d399" font-size="9">Recursive divide-and-conquer</text>
+
+          <rect x="665" y="230" width="210" height="115" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="675" y="250" fill="#fbbf24" font-size="11" font-weight="bold">Hash Map O(1) Index Lookup</text>
+          <text x="675" y="267" fill="#94a3b8" font-size="9">Without map: O(N) scan &#8594; O(N^2)</text>
+          <text x="675" y="283" fill="#34d399" font-size="10" font-weight="bold">inorderMap[val] = index</text>
+          <text x="675" y="300" fill="#cbd5e1" font-size="9">Reduces split lookup to O(1)</text>
+          <text x="675" y="315" fill="#34d399" font-size="9">Optimal O(N) Time | O(N) Space</text>
+          <text x="675" y="330" fill="#94a3b8" font-size="8">Strictly builds left child before right</text>
         </svg>
         """
     return ""

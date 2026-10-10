@@ -26,6 +26,8 @@ DAYS_INFO = [
     {"num": 19, "dir": "Day19-Redis-RedLock-DistributedLocking", "title": "Redis Distributed Locking with RedLock", "category": "Redis & Distributed Systems"},
     {"num": 20, "dir": "Day20-Redis-Streams-PubSub", "title": "Redis Pub/Sub & Redis Streams", "category": "Redis & Distributed Systems"},
     {"num": 21, "dir": "Day21-Distributed-Cache-Architecture", "title": "System Design: Distributed Cache Architecture", "category": "System Design & DSA"},
+    {"num": 22, "dir": "Day22-Rate-Limiter-Design", "title": "System Design: Rate Limiter Design", "category": "System Design & Distributed Systems"},
+    {"num": 23, "dir": "Day23-Url-Shortener-TinyUrl", "title": "System Design: URL Shortener (TinyURL)", "category": "System Design & Distributed Systems"},
 ]
 
 from diagram_helpers import get_day_svg
@@ -793,12 +795,12 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
   <div class="container">
     <header>
       <h1>100-Day .NET + AI Engineering Track</h1>
-      <p class="lead">Interactive Knowledge Hub containing all 21 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
+      <p class="lead">Interactive Knowledge Hub containing all 23 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
       <div class="stats-bar">
-        <div class="stat-pill">Completed: <span>21 / 100 Days</span></div>
-        <div class="stat-pill">Deep Notes: <span>21 Architectural Guides</span></div>
-        <div class="stat-pill">Interview Q&amp;A: <span>210 Senior Scenarios &amp; Answers</span></div>
-        <div class="stat-pill">Test Suite: <span>240 / 240 Passed (100%)</span></div>
+        <div class="stat-pill">Completed: <span>23 / 100 Days</span></div>
+        <div class="stat-pill">Deep Notes: <span>23 Architectural Guides</span></div>
+        <div class="stat-pill">Interview Q&amp;A: <span>230 Senior Scenarios &amp; Answers</span></div>
+        <div class="stat-pill">Test Suite: <span>265 / 265 Passed (100%)</span></div>
         <div class="stat-pill">Platform: <span>.NET 8 / C# 12</span></div>
       </div>
     </header>

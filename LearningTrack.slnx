@@ -146,4 +146,18 @@
   <Folder Name="/Day21-Distributed-Cache-Architecture/tests/">
     <Project Path="Day21-Distributed-Cache-Architecture/tests/Day21.DistributedCache.Tests/Day21.DistributedCache.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day22-Rate-Limiter-Design/" />
+  <Folder Name="/Day22-Rate-Limiter-Design/src/">
+    <Project Path="Day22-Rate-Limiter-Design/src/Day22.RateLimiter/Day22.RateLimiter.csproj" />
+  </Folder>
+  <Folder Name="/Day22-Rate-Limiter-Design/tests/">
+    <Project Path="Day22-Rate-Limiter-Design/tests/Day22.RateLimiter.Tests/Day22.RateLimiter.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day23-Url-Shortener-TinyUrl/" />
+  <Folder Name="/Day23-Url-Shortener-TinyUrl/src/">
+    <Project Path="Day23-Url-Shortener-TinyUrl/src/Day23.TinyUrl/Day23.TinyUrl.csproj" />
+  </Folder>
+  <Folder Name="/Day23-Url-Shortener-TinyUrl/tests/">
+    <Project Path="Day23-Url-Shortener-TinyUrl/tests/Day23.TinyUrl.Tests/Day23.TinyUrl.Tests.csproj" />
+  </Folder>
 </Solution>

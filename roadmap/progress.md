@@ -32,7 +32,16 @@
 | Day 21 | Distributed Cache Architecture (LC #199 & #1448) | ✅ Completed |
 | Day 22 | System Design: Rate Limiter Design (LC #98 & #230) | ✅ Completed |
 | Day 23 | System Design: URL Shortener / TinyURL (LC #105) | ✅ Completed |
+| Day 24 | Advanced SQL: CTEs, Window Functions & Partitions (LC #124 Hard) | ✅ Completed |
+| Day 25 | Phase 1 Review & Milestone Assessment (LC #297 Hard) | ✅ Completed (Phase 1 Concluded) |
+
+## Phase 2: Microservices & Cloud-Native Architecture (Days 26–50)
+
+| Day | Topic | Status |
+|---|---|---|
+| Day 26 | Microservices Principles & Bounded Contexts (LC #200) | ✅ Completed |
 
 ## Next
 
-Day 24 — Continue the original 100-day LearningOS roadmap.
+Day 27 — API Gateway Pattern, Reverse Proxy (YARP), and Service Discovery.
+

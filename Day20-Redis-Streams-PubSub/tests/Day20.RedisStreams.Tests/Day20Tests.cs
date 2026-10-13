@@ -137,7 +137,7 @@ public class Day20Tests
 
         // Worker-Dead receives message at t0
         var t0 = new DateTime(2026, 10, 10, 10, 0, 0, DateTimeKind.Utc);
-        manager.ReadGroup("payment-workers", "worker-dead", count: 1);
+        manager.ReadGroup("payment-workers", "worker-dead", count: 1, deliveryTime: t0);
 
         // Worker-Dead crashes without ACK. At t0 + 60s, worker-healthy checks PEL and claims it
         var tEval = t0.AddSeconds(60);

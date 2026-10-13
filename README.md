@@ -1,8 +1,8 @@
 # 100-Day .NET + AI Engineering Track
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
-[![Status](https://img.shields.io/badge/Roadmap-Days%201--23%20Completed-brightgreen.svg)](#completed-curriculum-days-123)
-[![Tests](https://img.shields.io/badge/Tests-265%20Passed-brightgreen.svg)](#running-builds-and-tests)
+[![Status](https://img.shields.io/badge/Roadmap-Days%201--26%20Completed-brightgreen.svg)](#completed-curriculum-days-126)
+[![Tests](https://img.shields.io/badge/Tests-295%20Passed-brightgreen.svg)](#running-builds-and-tests)
 
 Practical engineering implementations, performance benchmarks, systems architecture labs, and Data Structures & Algorithms (DSA) exercises across the 100-Day .NET + AI Engineering journey.
 
@@ -17,7 +17,7 @@ Practical engineering implementations, performance benchmarks, systems architect
 
 ## Status
 
-**Days 1–23: Completed**
+**Days 1–26: Completed** (Phase 1 [Days 1–25] concluded; Phase 2 [Day 26] started)
 
 Detailed status table: [roadmap/progress.md](roadmap/progress.md)  
 Roadmap overview: [roadmap/100-day-roadmap.md](roadmap/100-day-roadmap.md)
@@ -33,7 +33,7 @@ Read complete daily guides, deep architectural notes, interview questions, and c
 
 ---
 
-## Completed Curriculum (Days 1–23)
+## Completed Curriculum (Days 1–26)
 
 Each day includes complete practical implementations, xUnit test suites, comprehensive engineering notes, and practical scenarios.
 
@@ -62,6 +62,9 @@ Each day includes complete practical implementations, xUnit test suites, compreh
 | **Day 21** | System Design: Distributed Cache Architecture | Ketama consistent hash ring with virtual nodes ($2^{32}-1$), two-tier caching (L1 MemoryCache + L2 Redis), hot-key suffix scattering, single-flight mutex & XFetch stampede protection, DSA (LeetCode #199 Binary Tree Right Side View & #1448 Count Good Nodes in Binary Tree) | [Day21-Distributed-Cache-Architecture](Day21-Distributed-Cache-Architecture/) • [README](Day21-Distributed-Cache-Architecture/README.md) • [Notes](Day21-Distributed-Cache-Architecture/notes.md) • [Interview Qs](Day21-Distributed-Cache-Architecture/interview-questions.md) |
 | **Day 22** | System Design: Rate Limiter Design | Token Bucket, Leaky Bucket, Fixed Window, Sliding Window Log, Sliding Window Counter, ASP.NET Core distributed rate limiter middleware, standard headers, RFC 7807 429, DSA (LeetCode #98 Validate BST & #230 Kth Smallest Element in BST) | [Day22-Rate-Limiter-Design](Day22-Rate-Limiter-Design/) • [README](Day22-Rate-Limiter-Design/README.md) • [Notes](Day22-Rate-Limiter-Design/notes.md) • [Interview Qs](Day22-Rate-Limiter-Design/interview-questions.md) |
 | **Day 23** | System Design: URL Shortener (TinyURL) | Capacity planning (100M writes, 1B reads), Twitter Snowflake 64-bit ID generator, loss-less Base62 codec, database sharding by Hash(ID), Cache-Aside Redis layer, HTTP 302 analytics, DSA (LeetCode #105 Construct Binary Tree from Preorder & Inorder) | [Day23-Url-Shortener-TinyUrl](Day23-Url-Shortener-TinyUrl/) • [README](Day23-Url-Shortener-TinyUrl/README.md) • [Notes](Day23-Url-Shortener-TinyUrl/notes.md) • [Interview Qs](Day23-Url-Shortener-TinyUrl/interview-questions.md) |
+| **Day 24** | Advanced SQL: CTEs, Window Functions & Partitions | `ROW_NUMBER()`, `RANK()`, `DENSE_RANK()`, `LAG()`, `LEAD()`, moving averages, declarative range partitioning, query planner partition pruning simulator, DSA (LeetCode #124 Binary Tree Maximum Path Sum - Hard) | [Day24-Advanced-SQL-Window-Partitions](Day24-Advanced-SQL-Window-Partitions/) • [README](Day24-Advanced-SQL-Window-Partitions/README.md) • [Notes](Day24-Advanced-SQL-Window-Partitions/notes.md) • [Interview Qs](Day24-Advanced-SQL-Window-Partitions/interview-questions.md) |
+| **Day 25** | Phase 1 Review & Milestone Assessment | Phase 1 architectural consolidation, zero-allocation microbenchmarks (`Span<T>` 0B vs `Substring` 48B, `ValueTask` 0B cache hit vs `Task`), DSA (LeetCode #297 Serialize and Deserialize Binary Tree - Hard via Preorder DFS & BFS) | [Day25-Phase1-Milestone-Assessment](Day25-Phase1-Milestone-Assessment/) • [README](Day25-Phase1-Milestone-Assessment/README.md) • [Notes](Day25-Phase1-Milestone-Assessment/notes.md) • [Interview Qs](Day25-Phase1-Milestone-Assessment/interview-questions.md) |
+| **Day 26** | Microservices Principles & Bounded Contexts | Phase 2 launch: DDD strategic subdomains (Core, Supporting, Generic), Bounded Contexts (`OrderingContext`, `InventoryContext`, `PaymentContext`), Anti-Corruption Layer (ACL), in-process Domain Events, DSA (LeetCode #200 Number of Islands via DFS & BFS) | [Day26-Microservices-BoundedContexts](Day26-Microservices-BoundedContexts/) • [README](Day26-Microservices-BoundedContexts/README.md) • [Notes](Day26-Microservices-BoundedContexts/notes.md) • [Interview Qs](Day26-Microservices-BoundedContexts/interview-questions.md) |
 
 ---
 
@@ -75,4 +78,5 @@ dotnet build
 dotnet test LearningTrack.sln
 ```
 
-All 265 automated unit and integration tests validate the implementations across Days 1–23.
+All 295 automated unit and integration tests validate the implementations across Days 1–26.
+

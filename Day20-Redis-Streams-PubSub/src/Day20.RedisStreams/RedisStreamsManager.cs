@@ -112,7 +112,8 @@ public class RedisStreamsManager
         string groupName,
         string consumerName,
         int count = 10,
-        string id = ">")
+        string id = ">",
+        DateTime? deliveryTime = null)
     {
         lock (_syncLock)
         {
@@ -122,7 +123,7 @@ public class RedisStreamsManager
             }
 
             group.ActiveConsumers.Add(consumerName);
-            var now = DateTime.UtcNow;
+            var now = deliveryTime ?? DateTime.UtcNow;
             var dispatched = new List<StreamMessage>();
 
             if (id == ">")

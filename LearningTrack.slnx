@@ -160,4 +160,25 @@
   <Folder Name="/Day23-Url-Shortener-TinyUrl/tests/">
     <Project Path="Day23-Url-Shortener-TinyUrl/tests/Day23.TinyUrl.Tests/Day23.TinyUrl.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day24-Advanced-SQL-Window-Partitions/" />
+  <Folder Name="/Day24-Advanced-SQL-Window-Partitions/src/">
+    <Project Path="Day24-Advanced-SQL-Window-Partitions/src/Day24.AdvancedSql/Day24.AdvancedSql.csproj" />
+  </Folder>
+  <Folder Name="/Day24-Advanced-SQL-Window-Partitions/tests/">
+    <Project Path="Day24-Advanced-SQL-Window-Partitions/tests/Day24.AdvancedSql.Tests/Day24.AdvancedSql.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day25-Phase1-Milestone-Assessment/" />
+  <Folder Name="/Day25-Phase1-Milestone-Assessment/src/">
+    <Project Path="Day25-Phase1-Milestone-Assessment/src/Day25.MilestoneAssessment/Day25.MilestoneAssessment.csproj" />
+  </Folder>
+  <Folder Name="/Day25-Phase1-Milestone-Assessment/tests/">
+    <Project Path="Day25-Phase1-Milestone-Assessment/tests/Day25.MilestoneAssessment.Tests/Day25.MilestoneAssessment.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day26-Microservices-BoundedContexts/" />
+  <Folder Name="/Day26-Microservices-BoundedContexts/src/">
+    <Project Path="Day26-Microservices-BoundedContexts/src/Day26.MicroservicesBoundedContexts/Day26.MicroservicesBoundedContexts.csproj" />
+  </Folder>
+  <Folder Name="/Day26-Microservices-BoundedContexts/tests/">
+    <Project Path="Day26-Microservices-BoundedContexts/tests/Day26.MicroservicesBoundedContexts.Tests/Day26.MicroservicesBoundedContexts.Tests.csproj" />
+  </Folder>
 </Solution>

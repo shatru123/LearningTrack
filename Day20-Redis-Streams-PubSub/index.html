@@ -472,6 +472,9 @@
 <option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
 <option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
 <option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
 
         </select>
         <a href="../Day21-Distributed-Cache-Architecture/index.html" class="nav-btn">Day 21 →</a>
@@ -1345,7 +1348,8 @@ public class RedisStreamsManager
         string groupName,
         string consumerName,
         int count = 10,
-        string id = &quot;&gt;&quot;)
+        string id = &quot;&gt;&quot;,
+        DateTime? deliveryTime = null)
     {
         lock (_syncLock)
         {
@@ -1355,7 +1359,7 @@ public class RedisStreamsManager
             }
 
             group.ActiveConsumers.Add(consumerName);
-            var now = DateTime.UtcNow;
+            var now = deliveryTime ?? DateTime.UtcNow;
             var dispatched = new List&lt;StreamMessage&gt;();
 
             if (id == &quot;&gt;&quot;)
@@ -1812,7 +1816,7 @@ public class Day20Tests
 
         // Worker-Dead receives message at t0
         var t0 = new DateTime(2026, 10, 10, 10, 0, 0, DateTimeKind.Utc);
-        manager.ReadGroup(&quot;payment-workers&quot;, &quot;worker-dead&quot;, count: 1);
+        manager.ReadGroup(&quot;payment-workers&quot;, &quot;worker-dead&quot;, count: 1, deliveryTime: t0);
 
         // Worker-Dead crashes without ACK. At t0 + 60s, worker-healthy checks PEL and claims it
         var tEval = t0.AddSeconds(60);
@@ -2645,7 +2649,8 @@ public class RedisStreamsManager
         string groupName,
         string consumerName,
         int count = 10,
-        string id = &quot;&gt;&quot;)
+        string id = &quot;&gt;&quot;,
+        DateTime? deliveryTime = null)
     {
         lock (_syncLock)
         {
@@ -2655,7 +2660,7 @@ public class RedisStreamsManager
             }
 
             group.ActiveConsumers.Add(consumerName);
-            var now = DateTime.UtcNow;
+            var now = deliveryTime ?? DateTime.UtcNow;
             var dispatched = new List&lt;StreamMessage&gt;();
 
             if (id == &quot;&gt;&quot;)
@@ -3113,7 +3118,7 @@ public class Day20Tests
 
         // Worker-Dead receives message at t0
         var t0 = new DateTime(2026, 10, 10, 10, 0, 0, DateTimeKind.Utc);
-        manager.ReadGroup(&quot;payment-workers&quot;, &quot;worker-dead&quot;, count: 1);
+        manager.ReadGroup(&quot;payment-workers&quot;, &quot;worker-dead&quot;, count: 1, deliveryTime: t0);
 
         // Worker-Dead crashes without ACK. At t0 + 60s, worker-healthy checks PEL and claims it
         var tEval = t0.AddSeconds(60);

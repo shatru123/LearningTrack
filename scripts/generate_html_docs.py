@@ -28,6 +28,9 @@ DAYS_INFO = [
     {"num": 21, "dir": "Day21-Distributed-Cache-Architecture", "title": "System Design: Distributed Cache Architecture", "category": "System Design & DSA"},
     {"num": 22, "dir": "Day22-Rate-Limiter-Design", "title": "System Design: Rate Limiter Design", "category": "System Design & Distributed Systems"},
     {"num": 23, "dir": "Day23-Url-Shortener-TinyUrl", "title": "System Design: URL Shortener (TinyURL)", "category": "System Design & Distributed Systems"},
+    {"num": 24, "dir": "Day24-Advanced-SQL-Window-Partitions", "title": "Advanced SQL: CTEs, Window Functions & Partitions", "category": "SQL & Relational DB"},
+    {"num": 25, "dir": "Day25-Phase1-Milestone-Assessment", "title": "Phase 1 Review & Milestone Assessment", "category": "Architecture, Review & Benchmarks"},
+    {"num": 26, "dir": "Day26-Microservices-BoundedContexts", "title": "Microservices Principles & Bounded Contexts", "category": "Microservices & DDD"},
 ]
 
 from diagram_helpers import get_day_svg
@@ -795,12 +798,12 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
   <div class="container">
     <header>
       <h1>100-Day .NET + AI Engineering Track</h1>
-      <p class="lead">Interactive Knowledge Hub containing all 23 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
+      <p class="lead">Interactive Knowledge Hub containing all 26 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
       <div class="stats-bar">
-        <div class="stat-pill">Completed: <span>23 / 100 Days</span></div>
-        <div class="stat-pill">Deep Notes: <span>23 Architectural Guides</span></div>
-        <div class="stat-pill">Interview Q&amp;A: <span>230 Senior Scenarios &amp; Answers</span></div>
-        <div class="stat-pill">Test Suite: <span>265 / 265 Passed (100%)</span></div>
+        <div class="stat-pill">Completed: <span>26 / 100 Days</span></div>
+        <div class="stat-pill">Deep Notes: <span>26 Architectural Guides</span></div>
+        <div class="stat-pill">Interview Q&amp;A: <span>260 Senior Scenarios &amp; Answers</span></div>
+        <div class="stat-pill">Test Suite: <span>295 / 295 Passed (100%)</span></div>
         <div class="stat-pill">Platform: <span>.NET 8 / C# 12</span></div>
       </div>
     </header>

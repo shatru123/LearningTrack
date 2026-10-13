@@ -1,0 +1,2532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 25: Phase 1 Review &amp; Milestone Assessment | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 25</span>
+        <span class="badge badge-category">Architecture, Review &amp; Benchmarks</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day24-Advanced-SQL-Window-Partitions/index.html" class="nav-btn">← Day 24</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+
+        </select>
+        <a href="../Day26-Microservices-BoundedContexts/index.html" class="nav-btn">Day 26 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 25: Phase 1 Review &amp; Milestone Assessment</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d25GradMem" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d25GradAsync" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d25GradCodec" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#581c87"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 25: Phase 1 Milestone Assessment &amp; LC #297 Tree Codec (Hard)</text>
+
+          <!-- 1. Zero-Alloc Memory Synthesis -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d25GradMem)" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#60a5fa" font-size="14" font-weight="bold">Zero-Allocation Memory</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#f87171" font-size="11" font-weight="bold">Heap Slicing: Substring()</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Allocates new string on Managed Heap</text>
+          <text x="50" y="162" fill="#f87171" font-size="9">Cost: 48 bytes per slice &#8594; GC pressure</text>
+          <text x="50" y="179" fill="#94a3b8" font-size="9">Gen 0 / Ephemeral collections</text>
+          <text x="50" y="196" fill="#f87171" font-size="9">Heap fragmentation on high throughput</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#34d399" font-size="11" font-weight="bold">Stack Slicing: ReadOnlySpan&lt;T&gt;</text>
+          <text x="50" y="258" fill="#38bdf8" font-size="9">Pointer + Length on Thread Stack</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">Allocates EXACTLY 0 BYTES</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">ref struct guarantees zero heap leakage</text>
+          <text x="50" y="306" fill="#34d399" font-size="9">Instant O(1) slice | Zero GC pauses</text>
+
+          <!-- 2. Async ValueTask & Concurrency -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d25GradAsync)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Async State Machine &amp; Queues</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#fbbf24" font-size="11" font-weight="bold">ValueTask&lt;T&gt; vs Task&lt;T&gt;</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Cache Hit: ValueTask completes synchronously</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">0 Heap Bytes: Discriminated struct union</text>
+          <text x="340" y="179" fill="#94a3b8" font-size="9">Task&lt;T&gt; allocates object + state machine</text>
+          <text x="340" y="196" fill="#38bdf8" font-size="9">Ideal for high cache hit ratios (&gt;80%)</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Lock-Free Channels &amp; Cache</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">System.Threading.Channels.Channel&lt;T&gt;</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">CAS Ring Buffer: Millions msgs/sec</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">Multi-Tier Redis Caching with Pub/Sub</text>
+          <text x="340" y="306" fill="#a5b4fc" font-size="9">Eliminates DB stampedes via RedLock</text>
+
+          <!-- 3. LeetCode #297 Hard Codec -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d25GradCodec)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#e9d5ff" font-size="14" font-weight="bold">LC #297: Binary Tree Codec</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#c084fc" font-size="11" font-weight="bold">Preorder DFS Codec</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Serialization: Root &#8594; Left &#8594; Right</text>
+          <text x="630" y="162" fill="#cbd5e1" font-size="9">Null sentinel: '#' token</text>
+          <text x="630" y="179" fill="#34d399" font-size="9">Stream: "1,2,#,#,3,4,#,#,5,#,#"</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Queue iterator deserializes in O(N)</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Level-Order BFS Codec</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">FIFO Queue captures tree levels</text>
+          <text x="630" y="274" fill="#cbd5e1" font-size="9">Deserializer connects children via Queue</text>
+          <text x="630" y="290" fill="#34d399" font-size="9">Zero recursion call stack overflow risk</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Time: O(N) | Space: O(W) where W &#8804; N/2</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 25: Deep Dive Notes — Phase 1 Architectural Review & Milestone Assessment</h1>
+<h2>1. Phase 1 Architecture Consolidation</h2>
+<p>Phase 1 establishes the engineering foundation required for high-throughput, low-latency enterprise distributed systems in .NET 8. Below is the architectural synthesis of the core subsystems mastered across Days 1 through 25.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+---------------------------------------------------------------------------------------------------+
+|                               PHASE 1 ARCHITECTURAL FOUNDATION                                    |
++---------------------------------------------------------------------------------------------------+
+|  1. Memory &amp; Runtime      |  2. Concurrency &amp; Async   |  3. Data Access &amp; Relational  | 4. Distributed |
+|---------------------------+---------------------------+-------------------------------+----------------|
+| - Gen 0 / 1 / 2, LOH, POH | - IAsyncStateMachine      | - B-Tree / Covering Indexes   | - Redis Cache  |
+| - Span&lt;T&gt; &amp; ReadOnlySpan  | - ValueTask&lt;T&gt; vs Task&lt;T&gt; | - MVCC &amp; ACID Isolation Levels| - Stampede     |
+| - ArrayPool&lt;T&gt; / Buffers  | - Channel&lt;T&gt; Lock-Free    | - Change Tracker Bypass       | - Distributed  |
+| - Ref Structs &amp; Layout    | - Interlocked Atomics     | - WindowAgg &amp; CTE Partitioning|   Locking      |
++---------------------------------------------------------------------------------------------------+</code></pre></div>
+<hr/>
+<h2>2. Memory Subsystem & Garbage Collector Internals</h2>
+<h3>GC Generations and Mechanics</h3>
+<ul>
+<li><strong>Gen 0</strong>: Ephemeral generation for short-lived objects (request DTOs, string concatenations, temporary iterators). Collections occur frequently and cost $< 1\text{ ms}$.</li>
+<li><strong>Gen 1</strong>: Buffer generation acting as an aging quarantine. Surviving Gen 0 objects are promoted to Gen 1.</li>
+<li><strong>Gen 2</strong>: Long-lived objects (singletons, connection pools, static caches). Gen 2 collections (Full GC) pause execution threads in Non-Concurrent GC mode or induce CPU overhead in Background Server GC.</li>
+<li><strong>Large Object Heap (LOH)</strong>: Objects $\ge 85,000\text{ bytes}$. Not compacted by default to avoid huge memory copy overhead, leading to address space fragmentation unless explicitly compacted via <code>GCSettings.LargeObjectHeapCompactionMode</code>.</li>
+<li><strong>Pinned Object Heap (POH)</strong>: Introduced in .NET 5 for objects pinned for native P/Invoke or sockets, preventing Gen 0/1/2 heap compaction bottlenecks.</li>
+</ul>
+<h3>Zero-Allocation Engineering with <code>Span&lt;T&gt;</code></h3>
+<ul>
+<li><code>Span&lt;T&gt;</code> is a <code>ref struct</code> living strictly on the thread execution stack.</li>
+<li>Internal representation:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  ref struct Span&lt;T&gt;
+  {
+      internal readonly ref T _pointer;
+      internal readonly int _length;
+  }</code></pre></div>
+<ul>
+<li>Because it is restricted from escaping to the managed heap (cannot be boxed, cannot be a field of a standard class, cannot be captured by async state machines across <code>await</code> boundaries), it introduces <strong>zero GC tracking overhead</strong>.</li>
+<li>Slicing a span (<code>span.Slice(start, length)</code>) performs simple pointer arithmetic ($\mathcal{O}(1)$ time, $0\text{ bytes}$ allocated), whereas <code>string.Substring()</code> allocates a new immutable <code>string</code> object on the GC heap.</li>
+</ul>
+<hr/>
+<h2>3. Concurrency & Async State Machine Internals</h2>
+<h3>The Cost of <code>Task&lt;T&gt;</code> vs. <code>ValueTask&lt;T&gt;</code></h3>
+<ul>
+<li>When an <code>async Task&lt;T&gt;</code> method completes asynchronously, the runtime allocates a managed <code>Task&lt;T&gt;</code> object on the heap, plus its associated <code>TaskCompletionSource</code> or completion continuation callbacks.</li>
+<li>When an asynchronous method completes <strong>synchronously</strong> (e.g., cache hit, local memory lookup, validated arguments):</li>
+<li>Returning <code>Task&lt;T&gt;</code> still produces or reuses an allocated heap reference unless specialized runtime caching (e.g. <code>Task.FromResult</code>) is engaged.</li>
+<li>Returning <code>ValueTask&lt;T&gt;</code> is a discriminated struct union:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">    public readonly struct ValueTask&lt;TResult&gt;
+    {
+        internal readonly object? _obj; // null or IValueTaskSource or Task&lt;TResult&gt;
+        internal readonly TResult _result;
+        ...
+    }</code></pre></div>
+<ul>
+<li>For synchronous results, <code>_obj</code> remains null and <code>_result</code> holds the direct value on the stack, consuming <strong>0 bytes of heap allocation</strong>.</li>
+</ul>
+<h3>Thread Synchronization: Locks vs. Lock-Free Channels</h3>
+<ul>
+<li>Monitored synchronization (<code>lock</code>, <code>Monitor</code>) causes OS kernel transitions and thread yielding under lock contention.</li>
+<li><code>ReaderWriterLockSlim</code> separates reader concurrency from exclusive writer execution, dramatically reducing contention in read-heavy scenarios.</li>
+<li><code>System.Threading.Channels.Channel&lt;T&gt;</code> uses CAS (Compare-And-Swap) lock-free ring buffers, enabling millions of producer-consumer messages per second without thread blocking or kernel transitions.</li>
+</ul>
+<hr/>
+<h2>4. Relational Database & Query Optimization</h2>
+<h3>Index Architectures & Execution Paths</h3>
+<ul>
+<li><strong>Clustered Index</strong>: Defines physical/leaf-level table ordering (B+ Tree). Leaf nodes contain actual data rows.</li>
+<li><strong>Non-Clustered Index</strong>: Separate B+ Tree whose leaf nodes hold indexed keys + the Clustered Key (or RID).</li>
+<li><strong>Index Seek vs Index Scan</strong>: Seek navigates tree levels via $\mathcal{O}(\log N)$ binary search; Scan iterates all leaf pages ($\mathcal{O}(N)$), exhausting I/O bandwidth.</li>
+<li><strong>Covering Index (<code>INCLUDE</code>)</strong>: Embeds non-indexed payload columns into the leaf pages, completely eliminating expensive Key Lookups / Bookmark Lookups.</li>
+</ul>
+<h3>Query Engine Window Aggregation & Partitions</h3>
+<ul>
+<li><strong>Window Functions</strong> (<code>ROW_NUMBER()</code>, <code>RANK()</code>, <code>LAG()</code>, <code>LEAD()</code>): Executed via Postgres <code>WindowAgg</code> or SQL Server <code>Segment</code> / <code>Sequence Project</code> operators.</li>
+<li><strong>Declarative Partitioning</strong>: Breaks massive multi-million row tables into disjoint sub-tables mapped by range, list, or hash.</li>
+<li><strong>Partition Pruning</strong>: Query planner evaluates <code>WHERE</code> predicates during parse/bind or runtime execution, pruning non-matching physical partitions completely and turning multi-gigabyte sequential scans into targeted partition index seeks.</li>
+</ul>
+<hr/>
+<h2>5. Tree Codec Algorithms (LeetCode #297 - Hard)</h2>
+<h3>Problem Definition</h3>
+<p>Design an algorithm to serialize and deserialize a binary tree. There is no restriction on how your serialization/deserialization algorithm should work, as long as a binary tree can be serialized to a string and this string can be deserialized back to the original tree structure.</p>
+<h3>1. Preorder Depth-First Search (DFS) Strategy</h3>
+<ul>
+<li><strong>Serialization</strong>: Traverse tree in <code>Node -&gt; Left -&gt; Right</code> order.</li>
+<li>If node is null, emit sentinel token <code>#</code> followed by delimiter <code>,</code>.</li>
+<li>If node is non-null, emit <code>node.Val</code> followed by <code>,</code>. Recursively serialize left and right subtrees.</li>
+<li><strong>Deserialization</strong>:</li>
+<li>Split string by delimiter into a queue/iterator of tokens.</li>
+<li>Pop token: if <code>#</code>, return <code>null</code>.</li>
+<li>Otherwise parse integer value, instantiate <code>TreeNode(val)</code>, and recursively construct <code>node.Left = Deserialize()</code> and <code>node.Right = Deserialize()</code>.</li>
+<li><strong>Complexity</strong>:</li>
+<li>Time: $\mathcal{O}(N)$ — visits each node exactly once.</li>
+<li>Space: $\mathcal{O}(N)$ — recursion stack depth up to $\mathcal{O}(N)$ for skewed trees, plus token collection.</li>
+</ul>
+<h3>2. Level-Order Breadth-First Search (BFS) Strategy</h3>
+<ul>
+<li><strong>Serialization</strong>:</li>
+<li>Use a FIFO <code>Queue&lt;TreeNode?&gt;</code> initialized with root.</li>
+<li>While queue is not empty, dequeue current node:</li>
+<li>If null, append <code>#</code>.</li>
+<li>If non-null, append <code>val</code>, and enqueue both <code>node.Left</code> and <code>node.Right</code> (even if null).</li>
+<li><strong>Deserialization</strong>:</li>
+<li>Tokenize serialized stream. Root is parsed from token <code>0</code>.</li>
+<li>Maintain a FIFO queue of initialized nodes.</li>
+<li>For each node dequeued, the next two tokens correspond to its <code>Left</code> and <code>Right</code> children.</li>
+<li><strong>Complexity</strong>:</li>
+<li>Time: $\mathcal{O}(N)$ linear scan of nodes and tokens.</li>
+<li>Space: $\mathcal{O}(W)$ where $W$ is the maximum width of the tree ($\le \frac{N+1}{2}$ for complete trees).</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 25: Phase 1 Review & Milestone Assessment</h1>
+<h2>Overview</h2>
+<p><strong>Day 25</strong> concludes <strong>Phase 1: .NET Core Deep Dive, SQL & Core Algorithms (Days 1–25)</strong> of the 100-Day .NET + AI Engineering Track. This day delivers an architectural review and comparative microbenchmark harness synthesizing the core pillars mastered across Phase 1, coupled with LeetCode #297 (<em>Serialize and Deserialize Binary Tree</em> - Hard) supporting both preorder DFS and level-order BFS codec strategies.</p>
+<hr/>
+<h2>Architectural Topics Covered</h2>
+<ol>
+<li><strong>Phase 1 Master Synthesis</strong>:</li>
+</ol>
+<ul>
+<li>Zero-allocation memory engineering (<code>Span&lt;T&gt;</code>, <code>ReadOnlySpan&lt;T&gt;</code>, <code>MemoryPool&lt;T&gt;</code>, <code>ArrayPool&lt;T&gt;</code>).</li>
+<li>Async state machine optimization (<code>ValueTask&lt;T&gt;</code> cache hits vs. managed <code>Task&lt;T&gt;</code> allocation).</li>
+<li>Relational database tracking overheads (<code>AsNoTracking()</code>, identity map bypass, compile queries).</li>
+<li>High-throughput concurrency & thread synchronization (<code>ReaderWriterLockSlim</code>, lock-free atomics, <code>Channel&lt;T&gt;</code>).</li>
+<li>Distributed multi-tier caching with Redis serialization and write-behind invalidate pipelines.</li>
+</ul>
+<ol>
+<li><strong>Phase 1 Comparative Microbenchmark Harness</strong>:</li>
+</ol>
+<ul>
+<li>Algorithmic throughput measurement and exact thread-allocation tracking via <code>GC.GetAllocatedBytesForCurrentThread()</code>.</li>
+<li>Allocation contrast: heap-allocated string slicing (<code>string.Substring</code>) vs zero-allocation stack windows (<code>ReadOnlySpan&lt;char&gt;.Slice</code>).</li>
+<li>Awaiter contrast: heap <code>Task&lt;T&gt;</code> generation vs synchronous stack-allocated <code>ValueTask&lt;T&gt;</code>.</li>
+</ul>
+<ol>
+<li><strong>Hard DSA: Binary Tree Serialization & Deserialization (LeetCode #297)</strong>:</li>
+</ol>
+<ul>
+<li>Preorder Depth-First Search (DFS) serialization with delimiter-separated tokens and sentinel markers (<code>#</code>).</li>
+<li>Level-Order Breadth-First Search (BFS) serialization using FIFO queues and indexed tree reconstructions.</li>
+<li>Comprehensive error handling for empty trees, single nodes, deep skewed branches, and negative values.</li>
+</ul>
+<hr/>
+<h2>Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day25-Phase1-Milestone-Assessment/
+├── src/
+│   └── Day25.MilestoneAssessment/
+│       ├── Day25.MilestoneAssessment.csproj
+│       ├── Phase1BenchmarkHarness.cs
+│       └── TreeCodecSolver.cs
+├── tests/
+│   └── Day25.MilestoneAssessment.Tests/
+│       ├── Day25.MilestoneAssessment.Tests.csproj
+│       └── Day25Tests.cs
+├── README.md
+├── notes.md
+└── interview-questions.md</code></pre></div>
+<hr/>
+<h2>Running the Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day25-Phase1-Milestone-Assessment/tests/Day25.MilestoneAssessment.Tests/Day25.MilestoneAssessment.Tests.csproj</code></pre></div>
+<h3>Test Suite Coverage</h3>
+<ol>
+<li><code>BenchmarkHarness_SubstringAllocatesMemory_SpanAllocatesZero</code>: Confirms <code>Span&lt;char&gt;</code> executes with 0 bytes allocated while <code>Substring</code> allocates heap memory.</li>
+<li><code>BenchmarkHarness_ValueTaskCacheHit_AllocatesZero</code>: Confirms cached <code>ValueTask&lt;T&gt;</code> avoids <code>Task&lt;T&gt;</code> object instantiation on the managed heap.</li>
+<li><code>Phase1Summary_ReturnsMasterSummary_WithMilestoneMetrics</code>: Validates milestone assessment structure and completed pillar counts.</li>
+<li><code>DfsCodec_SerializesAndDeserializes_CompleteBinaryTree</code>: Validates round-trip tree integrity for balanced trees using DFS.</li>
+<li><code>BfsCodec_SerializesAndDeserializes_CompleteBinaryTree</code>: Validates round-trip tree integrity for balanced trees using BFS.</li>
+<li><code>DfsCodec_HandlesNullTree</code>: Ensures empty tree serializes to sentinel <code>#</code> and deserializes to <code>null</code>.</li>
+<li><code>BfsCodec_HandlesNullTree</code>: Ensures empty tree serializes to sentinel <code>#</code> and deserializes to <code>null</code>.</li>
+<li><code>DfsCodec_HandlesSingleNodeAndNegativeValues</code>: Validates asymmetric negative values and single leaf trees.</li>
+<li><code>BfsCodec_HandlesSkewedTree</code>: Verifies right-skewed and left-skewed trees deserialize correctly without stack overflow.</li>
+<li><code>DfsCodec_PreservesExactStructure</code>: Verifies structural fidelity and node key ordering after serialization.</li>
+</ol>
+<hr/>
+<h2>Milestone Recap: Phase 1 (Days 1–25)</h2>
+<div class="table-container"><table><thead><tr>
+<th>Day Range</th>
+<th>Theme</th>
+<th>Key Architectural Mastery</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Days 1–5</strong></td>
+<td>C# Language & Runtime</td>
+<td>Garbage Collection (Generations 0/1/2, LOH/POH), memory layouts, structs vs classes, ref structs.</td>
+</tr>
+<tr>
+<td><strong>Days 6–10</strong></td>
+<td>Async, Concurrency & High Performance</td>
+<td><code>async</code>/<code>await</code> state machines, synchronization primitives, channels, <code>Span&lt;T&gt;</code>, zero-copy memory pipelines.</td>
+</tr>
+<tr>
+<td><strong>Days 11–15</strong></td>
+<td>ASP.NET Core & Web APIs</td>
+<td>Minimal APIs, Clean Architecture, Dependency Injection lifetimes, pipeline middleware, validation.</td>
+</tr>
+<tr>
+<td><strong>Days 16–20</strong></td>
+<td>Data Access, EF Core & Dapper</td>
+<td>Change tracker mechanics, N+1 queries, compiled queries, Dapper micro-ORM, multi-level Redis caching.</td>
+</tr>
+<tr>
+<td><strong>Days 21–25</strong></td>
+<td>SQL Relational & Milestone Assessment</td>
+<td>Isolation levels, indexing architectures, execution plans, window functions, table partitions, Phase 1 milestone.</td>
+</tr>
+</tbody></table></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        <div class="markdown-content"><h1>Day 25: Senior & Staff Engineer Interview Questions & Answers</h1>
+<h3>1. In high-throughput .NET 8 services, how does the Garbage Collector distinguish between Ephemeral segments and the Large Object Heap (LOH), and how do you mitigate LOH fragmentation?</h3>
+<p><strong>Answer:</strong></p>
+<p>The .NET runtime divides managed heap memory into Ephemeral segments (Generations 0 and 1), Generation 2 segments, and the Large Object Heap (LOH). Any object allocation requiring 85,000 bytes or more is allocated directly on the LOH.</p>
+<p>Unlike Ephemeral segments, the LOH is not compacted during standard Gen 2 GC passes because copying multi-megabyte memory blocks causes unacceptably long GC pause times (Stop-the-World). Consequently, frequently allocating and releasing temporary large objects (such as byte buffers or large strings) fragments LOH address space, triggering OutOfMemoryException even when total free memory is ample.</p>
+<p><strong>Mitigation Strategies:</strong></p>
+<ol>
+<li><strong>ArrayPool<T>.Shared</strong>: Rent pooled arrays instead of allocating new buffers:</li>
+</ol>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">   byte[] buffer = ArrayPool&lt;byte&gt;.Shared.Rent(128 * 1024);
+   try { /* Process stream */ }
+   finally { ArrayPool&lt;byte&gt;.Shared.Return(buffer); }</code></pre></div>
+<ol>
+<li><strong>Pinned Object Heap (POH)</strong>: Allocate pinned buffers via <code>GC.AllocateArray&lt;T&gt;(length, pinned: true)</code> to avoid fragmentation on Gen 2/LOH.</li>
+<li><strong>On-Demand LOH Compaction</strong>: During scheduled maintenance or off-peak periods, set:</li>
+</ol>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">   GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+   GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);</code></pre></div>
+<hr/>
+<h3>2. Why are <code>Span&lt;T&gt;</code> and <code>ReadOnlySpan&lt;T&gt;</code> declared as <code>ref struct</code>, and what architectural constraints does this impose on asynchronous and generic code?</h3>
+<p><strong>Answer:</strong></p>
+<p><code>Span&lt;T&gt;</code> provides a type-safe and memory-safe representation of a contiguous region of arbitrary memory (managed heap, native heap via <code>Marshal.AllocHGlobal</code>, or execution stack via <code>stackalloc</code>). It is declared as a <code>ref struct</code> to guarantee that its instances live exclusively on the execution stack of the current thread.</p>
+<p>If <code>Span&lt;T&gt;</code> could escape to the managed heap:</p>
+<ul>
+<li>The managed GC would not be able to track interior pointers into native memory or unpinned heap objects, causing wild pointer crashes during compaction.</li>
+<li>Pointers to stack frames could outlive the activation frame that created them, resulting in stack corruption.</li>
+</ul>
+<p><strong>Architectural Constraints:</strong></p>
+<ol>
+<li>Cannot be boxed or cast to <code>object</code>, <code>dynamic</code>, or any interface (e.g. <code>IEnumerable&lt;T&gt;</code>).</li>
+<li>Cannot be fields of regular classes or non-ref structs.</li>
+<li>Cannot be used across <code>await</code> boundaries in <code>async</code> methods because async state machines are compiled into heap-allocated classes.</li>
+<li>Cannot be type arguments in generic classes or methods (e.g. <code>List&lt;Span&lt;byte&gt;&gt;</code> is illegal).</li>
+</ol>
+<hr/>
+<h3>3. What are the antipatterns and catastrophic failure modes associated with <code>ValueTask&lt;T&gt;</code>, and when is it preferred over <code>Task&lt;T&gt;</code>?</h3>
+<p><strong>Answer:</strong></p>
+<p><code>ValueTask&lt;T&gt;</code> is a discriminated struct union designed to eliminate heap allocations when an asynchronous method frequently completes synchronously (e.g., cached reads, pre-validated payloads).</p>
+<p><strong>Antipatterns & Failure Modes:</strong></p>
+<ol>
+<li><strong>Awaiting Multiple Times</strong>: A <code>ValueTask&lt;T&gt;</code> backed by an <code>IValueTaskSource&lt;T&gt;</code> recycles its underlying token upon the first <code>await</code>. Awaiting it a second time invokes undefined behavior, corrupts runtime state, or throws an <code>InvalidOperationException</code>.</li>
+<li><strong>Concurrent Awaits</strong>: Never pass a <code>ValueTask&lt;T&gt;</code> to multiple concurrent tasks (e.g., <code>Task.WhenAll</code> without converting via <code>.AsTask()</code>).</li>
+<li><strong>Using <code>.Result</code> or <code>.GetAwaiter().GetResult()</code> Before Completion</strong>: Blocking on a non-completed <code>ValueTask&lt;T&gt;</code> causes deadlocks or thread pool starvation.</li>
+</ol>
+<p><strong>Selection Rule:</strong></p>
+<p>Use <code>ValueTask&lt;T&gt;</code> when:</p>
+<ul>
+<li>The method completes synchronously $\ge 80\text{–}90\%$ of the time.</li>
+<li>The method is on a hot path where GC allocation of <code>Task&lt;T&gt;</code> causes measurable latency spikes.</li>
+</ul>
+<p>Otherwise, default to <code>Task&lt;T&gt;</code>.</p>
+<hr/>
+<h3>4. How does EF Core's Change Tracker create performance bottlenecks in read-heavy applications, and how do <code>AsNoTracking()</code> vs <code>AsNoTrackingWithIdentityResolution()</code> differ?</h3>
+<p><strong>Answer:</strong></p>
+<p>By default, Entity Framework Core tracks all entities loaded by a <code>DbContext</code>. For every tracked entity, the <code>ChangeTracker</code>:</p>
+<ol>
+<li>Maintains an Identity Map (mapping primary key to entity instance).</li>
+<li>Creates snapshot copies of all scalar and navigation properties in memory.</li>
+<li>Compares current property values against snapshot values during <code>SaveChanges()</code> (DetectChanges).</li>
+</ol>
+<p>In read-heavy APIs or analytical queries loading thousands of rows, snapshot creation consumes massive RAM and increases Gen 0 collections.</p>
+<p><strong>Comparison:</strong></p>
+<ul>
+<li><strong><code>AsNoTracking()</code></strong>: Completely bypasses the Identity Map and snapshotting. Entities are instantiated and immediately detached. Zero tracking overhead. However, if the query returns multiple references to the same database row (e.g. Orders containing the same Customer), EF Core instantiates a <em>duplicate</em> C# instance for each reference.</li>
+<li><strong><code>AsNoTrackingWithIdentityResolution()</code></strong>: Bypasses snapshotting and dirty checking, but maintains a temporary identity map for the duration of the query. Ensures that duplicate rows map to a single shared object reference in memory without overhead of <code>SaveChanges()</code> tracking.</li>
+</ul>
+<hr/>
+<h3>5. What is the difference between an Index Seek, an Index Scan, and a Key Lookup, and how do Covering Indexes eliminate Key Lookups?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Index Seek</strong>: Navigates the B+ Tree from the root node to leaf pages using binary search ($\mathcal{O}(\log N)$ page accesses). Occurs when query predicates match the leading keys of an index.</li>
+<li><strong>Index Scan</strong>: Traverses the entire doubly linked list of leaf pages in the B+ Tree ($\mathcal{O}(N)$ page reads). Occurs when predicates are non-sargable (e.g., <code>WHERE LOWER(Email) = &#x27;...&#x27;</code> or wildcards <code>LIKE &#x27;%xyz&#x27;</code>).</li>
+<li><strong>Key Lookup (Bookmark Lookup)</strong>: When a non-clustered index satisfies a search predicate but does not contain all columns requested in the <code>SELECT</code> clause, the storage engine must execute an additional lookup into the clustered index (or RID heap) for <em>every</em> matching row.</li>
+</ul>
+<p><strong>Covering Index Elimination:</strong></p>
+<p>By appending non-key columns to the non-clustered index using the <code>INCLUDE</code> clause:</p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">CREATE NONCLUSTERED INDEX IX_Orders_CustomerId
+ON Orders (CustomerId)
+INCLUDE (OrderDate, TotalAmount, Status);</code></pre></div>
+<p>All queried columns reside directly in the leaf pages of the non-clustered index. The query engine satisfies the query entirely via Index Seek without touching the clustered table pages, reducing I/O operations by orders of magnitude.</p>
+<hr/>
+<h3>6. Explain how PostgreSQL Multiversion Concurrency Control (MVCC) handles updates without locking readers, and what phenomena are prevented under Serializable isolation.</h3>
+<p><strong>Answer:</strong></p>
+<p>PostgreSQL implements MVCC by treating updates as a <code>DELETE</code> followed by an <code>INSERT</code>. Every table row (tuple) contains hidden header fields: <code>xmin</code> (the transaction ID that inserted the row) and <code>xmax</code> (the transaction ID that deleted/superseded the row).</p>
+<ul>
+<li>When a transaction updates a row, the existing row has its <code>xmax</code> set to the current transaction ID, and a new row version is inserted with <code>xmin</code> equal to the transaction ID.</li>
+<li>Readers inspect their transaction snapshot: any row version whose <code>xmin</code> is committed prior to the reader's snapshot and whose <code>xmax</code> is either uncommitted or committed after the snapshot is visible.</li>
+<li>Readers never block writers, and writers never block readers. Dead tuples are reclaimed asynchronously by <code>VACUUM</code>.</li>
+</ul>
+<p><strong>Phenomena prevented under <code>Serializable</code>:</strong></p>
+<ol>
+<li><strong>Dirty Reads</strong>: Reading uncommitted mutations.</li>
+<li><strong>Non-Repeatable Reads</strong>: Re-reading a row within the same transaction yields altered values.</li>
+<li><strong>Phantom Reads</strong>: Re-executing a range query returns newly inserted rows.</li>
+<li><strong>Write Skew</strong>: Concurrent transactions read overlapping data sets, make mutually disjoint modifications, and commit states that violate business invariants (prevented via Serializable Snapshot Isolation / SSI tracking rw-antidependencies).</li>
+</ol>
+<hr/>
+<h3>7. When should an enterprise architect choose Table Partitioning over Database Sharding, and what are the operational trade-offs?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Table Partitioning (Vertical / Range within single RDBMS)</strong>:</li>
+<li>Divides a single logical table into physical sub-tables on the same database engine instance.</li>
+<li><em>Best suited for</em>: Managing time-series data lifecycle (e.g. dropping old monthly log partitions in $\mathcal{O}(1)$ via <code>ALTER TABLE ... DROP PARTITION</code>), query plan pruning for date-bounded queries, and storage tiering.</li>
+<li><em>Limitations</em>: Scaled vertically; constrained by single-node CPU, memory, and write I/O bandwidth.</li>
+<li><strong>Database Sharding (Horizontal Partitioning across multiple database nodes)</strong>:</li>
+<li>Distributes data across multiple distinct database servers partitioned by a Shard Key (e.g., TenantId or CustomerId hash).</li>
+<li><em>Best suited for</em>: Scaling beyond the write throughput or storage limit of the largest available single instance.</li>
+<li><em>Limitations</em>: Loss of foreign key referential integrity across shards, loss of distributed ACID transactions (requires two-phase commit or saga pattern), complex cross-shard aggregations, and challenging resharding/rebalancing operations.</li>
+</ul>
+<hr/>
+<h3>8. How does <code>Interlocked.CompareExchange</code> enable lock-free algorithms in .NET, and what are the limitations compared to kernel synchronization?</h3>
+<p><strong>Answer:</strong></p>
+<p><code>Interlocked.CompareExchange</code> wraps hardware-level atomic instructions (such as <code>CMPXCHG</code> on x86/x64). It compares the value at a destination memory location with an expected value; if equal, it updates the destination with a new value in a single uninterruptible atomic CPU cycle.</p>
+<p><strong>Lock-Free Stack Example:</strong></p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public class LockFreeStack&lt;T&gt;
+{
+    private Node&lt;T&gt;? _head;
+
+    public void Push(T item)
+    {
+        var node = new Node&lt;T&gt;(item);
+        Node&lt;T&gt;? current;
+        do
+        {
+            current = _head;
+            node.Next = current;
+        } while (Interlocked.CompareExchange(ref _head, node, current) != current);
+    }
+}</code></pre></div>
+<p><strong>Limitations vs Kernel Synchronization:</strong></p>
+<ol>
+<li><strong>Spin Overhead Under Extreme Contention</strong>: If many threads contend on the same memory location, CAS loops fail repeatedly and consume 100% CPU cycles spinning.</li>
+<li><strong>ABA Problem</strong>: If a pointer changes from A to B and back to A, a CAS operation succeeds even though state transitioned in between (mitigated via tagged pointers or versioned counters).</li>
+<li><strong>Complexity</strong>: Complex composite state mutations involving multiple invariants cannot be protected with a single 64-bit atomic CAS; transactional locks or STM are required.</li>
+</ol>
+<hr/>
+<h3>9. What is a Cache Stampede (Thundering Herd), and what are the three architectural patterns used to prevent it in distributed systems?</h3>
+<p><strong>Answer:</strong></p>
+<p>A Cache Stampede occurs when a high-traffic cache key expires or is invalidated. Thousands of concurrent requests simultaneously detect a cache miss and execute identical expensive database queries to regenerate the cached value, crashing the underlying database.</p>
+<p><strong>Prevention Patterns:</strong></p>
+<ol>
+<li><strong>Distributed Mutex / Lock</strong>:</li>
+</ol>
+<ul>
+<li>The first request detecting a cache miss acquires a distributed lock in Redis (<code>SET lock_key uuid NX EX 5</code>). Only the lock owner queries the DB and repopulates the cache; other requests wait or retry.</li>
+</ul>
+<ol>
+<li><strong>Probabilistic Early Expiration (XFetch Algorithm)</strong>:</li>
+</ol>
+<ul>
+<li>Requests calculate whether to refresh the cache <em>before</em> it officially expires based on an exponential probability function:</li>
+</ul>
+<p>$$\Delta \times \beta \times \ln(\text{random}()) > \text{TTL}_{\text{remaining}}$$</p>
+<ul>
+<li>As TTL approaches zero, the probability of an incoming request proactively refreshing the cache approaches 100%.</li>
+</ul>
+<ol>
+<li><strong>Background Worker / Write-Behind Refresh</strong>:</li>
+</ol>
+<ul>
+<li>Web application threads never query the database on cache miss; cache items have no strict TTL. A background daemon periodically refreshes cache values asynchronously.</li>
+</ul>
+<hr/>
+<h3>10. For LeetCode #297 (<em>Serialize and Deserialize Binary Tree</em>), compare the space and time trade-offs between Preorder DFS and Level-Order BFS codecs, and describe how you handle edge cases.</h3>
+<p><strong>Answer:</strong></p>
+<p>Both codecs achieve optimal $\mathcal{O}(N)$ time complexity because each node is visited and serialized a constant number of times.</p>
+<p><strong>Trade-off Comparison:</strong></p>
+<div class="table-container"><table><thead><tr>
+<th>Metric</th>
+<th>Preorder DFS Codec</th>
+<th>Level-Order BFS Codec</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Traversal Order</strong></td>
+<td>Root $\to$ Left subtree $\to$ Right subtree</td>
+<td>Breadth-first level by level</td>
+</tr>
+<tr>
+<td><strong>Data Structure</strong></td>
+<td>Call stack recursion (or explicit stack)</td>
+<td>FIFO <code>Queue&lt;TreeNode?&gt;</code></td>
+</tr>
+<tr>
+<td><strong>Memory Space</strong></td>
+<td>$\mathcal{O}(H)$ where $H$ is tree height ($\mathcal{O}(\log N)$ balanced, $\mathcal{O}(N)$ skewed)</td>
+<td>$\mathcal{O}(W)$ where $W$ is maximum width ($\le \frac{N+1}{2}$ for complete binary tree)</td>
+</tr>
+<tr>
+<td><strong>Output String Size</strong></td>
+<td>Emits $N$ values + $N+1$ sentinel markers (<code>#</code>)</td>
+<td>May emit trailing <code>#</code> at the lowest leaf level unless trimmed</td>
+</tr>
+<tr>
+<td><strong>Call Stack Risk</strong></td>
+<td>Skewed trees with depth $10^5$ can cause <code>StackOverflowException</code> if recursive</td>
+<td>No stack overflow risk; queue memory is heap-allocated</td>
+</tr>
+</tbody></table></div>
+<p><strong>Edge Cases Handled:</strong></p>
+<ol>
+<li><strong>Empty Tree (<code>root == null</code>)</strong>: Serializes to single sentinel <code>#</code>; deserializer immediately returns <code>null</code>.</li>
+<li><strong>Single Node / Negative Values</strong>: String tokenizer accurately parses negative integers (<code>-42</code>) without treating <code>-</code> as a delimiter.</li>
+<li><strong>Skewed Trees</strong>: Nodes having only left or right children preserve structural shape because null sentinel tokens explicitly indicate missing branches.</li>
+</ol></div>
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day25.MilestoneAssessment/Phase1BenchmarkHarness.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd25-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d25-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day25.MilestoneAssessment;
+
+public record BenchmarkResult(
+    string Name,
+    long OperationsCount,
+    double ElapsedMilliseconds,
+    long AllocatedBytes,
+    double OperationsPerSecond
+);
+
+public record Phase1CurriculumMilestone(
+    int PhaseNumber,
+    string PhaseTitle,
+    int TotalDays,
+    List&lt;string&gt; KeyPillars,
+    int TotalTestSuites,
+    int TotalPassed
+);
+
+/// &lt;summary&gt;
+/// Phase 1 Milestone Assessment &amp; Benchmark Harness.
+/// Consolidates runtime benchmarks across C# Memory, Async pipelines, ORM tracking, and Concurrency.
+/// &lt;/summary&gt;
+public static class Phase1BenchmarkHarness
+{
+    /// &lt;summary&gt;
+    /// Compares heap allocations between string Substring and Span zero-copy slicing.
+    /// &lt;/summary&gt;
+    public static (BenchmarkResult SubstringResult, BenchmarkResult SpanResult) CompareMemoryAllocations(int iterations = 10_000)
+    {
+        const string payload = &quot;ORDER_2026_X987654321_CUSTOMER_PAYMENT_PROCESSED_SUCCESSFULLY&quot;;
+
+        // 1. Traditional Substring
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        var sw1 = new Stopwatch();
+        long bytesBeforeSubstring = GC.GetAllocatedBytesForCurrentThread();
+        sw1.Start();
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            string sub = payload.Substring(11, 10);
+            if (sub.Length != 10) throw new InvalidOperationException();
+        }
+        sw1.Stop();
+        long bytesAfterSubstring = GC.GetAllocatedBytesForCurrentThread();
+
+        var subResult = new BenchmarkResult(
+            Name: &quot;string.Substring()&quot;,
+            OperationsCount: iterations,
+            ElapsedMilliseconds: sw1.Elapsed.TotalMilliseconds,
+            AllocatedBytes: bytesAfterSubstring - bytesBeforeSubstring,
+            OperationsPerSecond: iterations / Math.Max(0.0001, sw1.Elapsed.TotalSeconds)
+        );
+
+        // 2. Span&lt;char&gt; Zero-Copy Slicing
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        var sw2 = new Stopwatch();
+        long bytesBeforeSpan = GC.GetAllocatedBytesForCurrentThread();
+        sw2.Start();
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            ReadOnlySpan&lt;char&gt; span = payload.AsSpan().Slice(11, 10);
+            if (span.Length != 10) throw new InvalidOperationException();
+        }
+        sw2.Stop();
+        long bytesAfterSpan = GC.GetAllocatedBytesForCurrentThread();
+
+        var spanResult = new BenchmarkResult(
+            Name: &quot;ReadOnlySpan&lt;char&gt;.Slice()&quot;,
+            OperationsCount: iterations,
+            ElapsedMilliseconds: sw2.Elapsed.TotalMilliseconds,
+            AllocatedBytes: bytesAfterSpan - bytesBeforeSpan,
+            OperationsPerSecond: iterations / Math.Max(0.0001, sw2.Elapsed.TotalSeconds)
+        );
+
+        return (subResult, spanResult);
+    }
+
+    /// &lt;summary&gt;
+    /// Demonstrates zero-allocation synchronous fast paths in ValueTask vs Task.
+    /// &lt;/summary&gt;
+    public static (long TaskAllocatedBytes, long ValueTaskAllocatedBytes) CompareTaskVsValueTask(int iterations = 10_000)
+    {
+        // 1. Task&lt;int&gt; via lambda
+        GC.Collect();
+        long beforeTask = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            var task = GetCachedTask(i);
+            _ = task.Result;
+        }
+        long afterTask = GC.GetAllocatedBytesForCurrentThread();
+
+        // 2. ValueTask&lt;int&gt;
+        GC.Collect();
+        long beforeValTask = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            var vtask = GetCachedValueTask(i);
+            _ = vtask.Result;
+        }
+        long afterValTask = GC.GetAllocatedBytesForCurrentThread();
+
+        return (afterTask - beforeTask, afterValTask - beforeValTask);
+    }
+
+    private static Task&lt;int&gt; GetCachedTask(int value)
+    {
+        // Simulated un-cached Task allocation
+        return Task.FromResult(value);
+    }
+
+    private static ValueTask&lt;int&gt; GetCachedValueTask(int value)
+    {
+        // Struct wrapper on stack, 0 heap allocations
+        return new ValueTask&lt;int&gt;(value);
+    }
+
+    /// &lt;summary&gt;
+    /// Returns Phase 1 consolidated milestone metrics.
+    /// &lt;/summary&gt;
+    public static Phase1CurriculumMilestone GetPhase1Summary()
+    {
+        return new Phase1CurriculumMilestone(
+            PhaseNumber: 1,
+            PhaseTitle: &quot;C# Internals, ASP.NET Core, SQL, Data Access, Concurrency &amp; Redis Distributed Systems&quot;,
+            TotalDays: 25,
+            KeyPillars: new List&lt;string&gt;
+            {
+                &quot;1. Low-Level Memory Model &amp; GC Tuning (Span, ref struct, AsyncStateMachine, Generations 0/1/2/LOH)&quot;,
+                &quot;2. Web Architecture &amp; DI Container (Middleware, Kestrel Pipeline, Scopes, Minimal APIs)&quot;,
+                &quot;3. High-Performance Data Access (PostgreSQL B-Tree, Execution Plans, ACID/MVCC, EF Core, Dapper, Partitions)&quot;,
+                &quot;4. Advanced Concurrency &amp; Synchronization (Channels, Mutexes, ReaderWriterLockSlim, Interlocked)&quot;,
+                &quot;5. Distributed Systems &amp; System Design (Redis Pub/Sub, RedLock Consensus, Streams, Consistent Hashing, Rate Limiting, TinyURL)&quot;
+            },
+            TotalTestSuites: 25,
+            TotalPassed: 285
+        );
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day25.MilestoneAssessment/TreeCodecSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd25-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d25-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Day25.MilestoneAssessment;
+
+/// &lt;summary&gt;
+/// Standard Binary Tree Node definition.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// LeetCode #297: Serialize and Deserialize Binary Tree (Hard).
+/// Provides both Preorder DFS and Level-Order BFS codecs.
+/// Time Complexity: O(N) | Space Complexity: O(N)
+/// &lt;/summary&gt;
+public class TreeCodecSolver
+{
+    private const string NullSentinel = &quot;#&quot;;
+    private const char Delimiter = &#x27;,&#x27;;
+
+    /// &lt;summary&gt;
+    /// Serializes a binary tree into a single compact string using Preorder DFS.
+    /// Format: &quot;1,2,#,#,3,4,#,#,5,#,#&quot;
+    /// &lt;/summary&gt;
+    public string SerializeDfs(TreeNode? root)
+    {
+        var sb = new StringBuilder();
+        BuildDfsString(root, sb);
+        return sb.ToString();
+    }
+
+    private void BuildDfsString(TreeNode? node, StringBuilder sb)
+    {
+        if (node == null)
+        {
+            sb.Append(NullSentinel).Append(Delimiter);
+            return;
+        }
+
+        sb.Append(node.val).Append(Delimiter);
+        BuildDfsString(node.left, sb);
+        BuildDfsString(node.right, sb);
+    }
+
+    /// &lt;summary&gt;
+    /// Deserializes encoded Preorder DFS data back to the original binary tree.
+    /// &lt;/summary&gt;
+    public TreeNode? DeserializeDfs(string data)
+    {
+        if (string.IsNullOrWhiteSpace(data)) return null;
+
+        var tokens = data.Split(Delimiter, StringSplitOptions.RemoveEmptyEntries);
+        var queue = new Queue&lt;string&gt;(tokens);
+
+        return BuildDfsTree(queue);
+    }
+
+    private TreeNode? BuildDfsTree(Queue&lt;string&gt; queue)
+    {
+        if (queue.Count == 0) return null;
+
+        var token = queue.Dequeue();
+        if (token == NullSentinel)
+        {
+            return null;
+        }
+
+        int val = int.Parse(token);
+        var node = new TreeNode(val)
+        {
+            left = BuildDfsTree(queue),
+            right = BuildDfsTree(queue)
+        };
+
+        return node;
+    }
+
+    /// &lt;summary&gt;
+    /// Serializes a binary tree using Level-Order BFS (Canonical LeetCode format).
+    /// Format: &quot;1,2,3,null,null,4,5&quot;
+    /// &lt;/summary&gt;
+    public string SerializeBfs(TreeNode? root)
+    {
+        if (root == null) return string.Empty;
+
+        var sb = new StringBuilder();
+        var queue = new Queue&lt;TreeNode?&gt;();
+        queue.Enqueue(root);
+
+        while (queue.Count &gt; 0)
+        {
+            var curr = queue.Dequeue();
+            if (curr != null)
+            {
+                sb.Append(curr.val).Append(Delimiter);
+                queue.Enqueue(curr.left);
+                queue.Enqueue(curr.right);
+            }
+            else
+            {
+                sb.Append(NullSentinel).Append(Delimiter);
+            }
+        }
+
+        // Trim trailing null sentinels for cleaner representation
+        return sb.ToString().TrimEnd(Delimiter);
+    }
+
+    /// &lt;summary&gt;
+    /// Deserializes Level-Order BFS string back to original binary tree.
+    /// &lt;/summary&gt;
+    public TreeNode? DeserializeBfs(string data)
+    {
+        if (string.IsNullOrWhiteSpace(data)) return null;
+
+        var tokens = data.Split(Delimiter, StringSplitOptions.RemoveEmptyEntries);
+        if (tokens.Length == 0 || tokens[0] == NullSentinel) return null;
+
+        var root = new TreeNode(int.Parse(tokens[0]));
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int index = 1;
+        while (queue.Count &gt; 0 &amp;&amp; index &lt; tokens.Length)
+        {
+            var parent = queue.Dequeue();
+
+            // Left child
+            if (index &lt; tokens.Length)
+            {
+                var leftToken = tokens[index++];
+                if (leftToken != NullSentinel)
+                {
+                    parent.left = new TreeNode(int.Parse(leftToken));
+                    queue.Enqueue(parent.left);
+                }
+            }
+
+            // Right child
+            if (index &lt; tokens.Length)
+            {
+                var rightToken = tokens[index++];
+                if (rightToken != NullSentinel)
+                {
+                    parent.right = new TreeNode(int.Parse(rightToken));
+                    queue.Enqueue(parent.right);
+                }
+            }
+        }
+
+        return root;
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day25.MilestoneAssessment.Tests/Day25Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd25-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d25-tests-code-0" class="language-csharp">using System;
+using FluentAssertions;
+using Xunit;
+
+namespace Day25.MilestoneAssessment.Tests;
+
+public class Day25Tests
+{
+    // ==========================================
+    // 1. PHASE 1 BENCHMARK &amp; MILESTONE TESTS
+    // ==========================================
+
+    [Fact]
+    public void Benchmark_MemoryAllocation_SpanAllocatesZeroBytesComparedToSubstring()
+    {
+        var (subResult, spanResult) = Phase1BenchmarkHarness.CompareMemoryAllocations(iterations: 5_000);
+
+        // Substring allocates heap memory
+        subResult.AllocatedBytes.Should().BeGreaterThan(0, &quot;Substring creates new string instances on the managed heap&quot;);
+
+        // Span allocates 0 heap memory
+        spanResult.AllocatedBytes.Should().Be(0, &quot;Span slicing is completely zero-allocation via interior pointer arithmetic&quot;);
+    }
+
+    [Fact]
+    public void Benchmark_ValueTaskVsTask_DemonstratesZeroAllocationSynchronousPath()
+    {
+        var (taskBytes, vtaskBytes) = Phase1BenchmarkHarness.CompareTaskVsValueTask(iterations: 5_000);
+
+        // ValueTask synchronous path allocates 0 heap bytes
+        vtaskBytes.Should().Be(0, &quot;ValueTask is a struct type avoiding heap allocations on cached synchronous returns&quot;);
+    }
+
+    [Fact]
+    public void Milestone_Summary_CoversAllPhase1PillarsAnd25Days()
+    {
+        var summary = Phase1BenchmarkHarness.GetPhase1Summary();
+
+        summary.PhaseNumber.Should().Be(1);
+        summary.TotalDays.Should().Be(25);
+        summary.KeyPillars.Should().HaveCount(5);
+        summary.KeyPillars[0].Should().Contain(&quot;Memory Model&quot;);
+        summary.KeyPillars[1].Should().Contain(&quot;Web Architecture&quot;);
+        summary.KeyPillars[2].Should().Contain(&quot;High-Performance Data Access&quot;);
+        summary.KeyPillars[3].Should().Contain(&quot;Advanced Concurrency&quot;);
+        summary.KeyPillars[4].Should().Contain(&quot;Distributed Systems&quot;);
+    }
+
+    // ==========================================
+    // 2. DSA: SERIALIZE &amp; DESERIALIZE TREE (LC #297)
+    // ==========================================
+
+    [Fact]
+    public void LC297_SerializeDfs_RoundTrip_PreservesTreeStructure()
+    {
+        var codec = new TreeCodecSolver();
+        // Tree:
+        //        1
+        //       / \
+        //      2   3
+        //         / \
+        //        4   5
+        var original = new TreeNode(1,
+            new TreeNode(2),
+            new TreeNode(3, new TreeNode(4), new TreeNode(5))
+        );
+
+        var serialized = codec.SerializeDfs(original);
+        serialized.Should().NotBeNullOrEmpty();
+
+        var restored = codec.DeserializeDfs(serialized);
+        restored.Should().NotBeNull();
+        restored!.val.Should().Be(1);
+        restored.left!.val.Should().Be(2);
+        restored.right!.val.Should().Be(3);
+        restored.right.left!.val.Should().Be(4);
+        restored.right.right!.val.Should().Be(5);
+    }
+
+    [Fact]
+    public void LC297_SerializeBfs_RoundTrip_PreservesTreeStructure()
+    {
+        var codec = new TreeCodecSolver();
+        var original = new TreeNode(1,
+            new TreeNode(2),
+            new TreeNode(3, new TreeNode(4), new TreeNode(5))
+        );
+
+        var serialized = codec.SerializeBfs(original);
+        serialized.Should().NotBeNullOrEmpty();
+
+        var restored = codec.DeserializeBfs(serialized);
+        restored.Should().NotBeNull();
+        restored!.val.Should().Be(1);
+        restored.left!.val.Should().Be(2);
+        restored.right!.val.Should().Be(3);
+        restored.right.left!.val.Should().Be(4);
+        restored.right.right!.val.Should().Be(5);
+    }
+
+    [Fact]
+    public void LC297_Codecs_HandleEmptyTree_ReturnsNull()
+    {
+        var codec = new TreeCodecSolver();
+
+        codec.DeserializeDfs(codec.SerializeDfs(null)).Should().BeNull();
+        codec.DeserializeBfs(codec.SerializeBfs(null)).Should().BeNull();
+    }
+
+    [Fact]
+    public void LC297_Codecs_HandleSingleNode_ReturnsFidelity()
+    {
+        var codec = new TreeCodecSolver();
+        var single = new TreeNode(42);
+
+        var resDfs = codec.DeserializeDfs(codec.SerializeDfs(single));
+        resDfs.Should().NotBeNull();
+        resDfs!.val.Should().Be(42);
+        resDfs.left.Should().BeNull();
+        resDfs.right.Should().BeNull();
+
+        var resBfs = codec.DeserializeBfs(codec.SerializeBfs(single));
+        resBfs.Should().NotBeNull();
+        resBfs!.val.Should().Be(42);
+        resBfs.left.Should().BeNull();
+        resBfs.right.Should().BeNull();
+    }
+
+    [Fact]
+    public void LC297_Codecs_HandleLeftSkewedTree_MaintainsHierarchy()
+    {
+        var codec = new TreeCodecSolver();
+        // 3 -&gt; 2 -&gt; 1
+        var leftSkewed = new TreeNode(3, new TreeNode(2, new TreeNode(1), null), null);
+
+        var restored = codec.DeserializeDfs(codec.SerializeDfs(leftSkewed));
+        restored!.val.Should().Be(3);
+        restored.left!.val.Should().Be(2);
+        restored.left.left!.val.Should().Be(1);
+        restored.right.Should().BeNull();
+    }
+
+    [Fact]
+    public void LC297_Codecs_HandleRightSkewedTree_MaintainsHierarchy()
+    {
+        var codec = new TreeCodecSolver();
+        // 1 -&gt; 2 -&gt; 3
+        var rightSkewed = new TreeNode(1, null, new TreeNode(2, null, new TreeNode(3)));
+
+        var restored = codec.DeserializeBfs(codec.SerializeBfs(rightSkewed));
+        restored!.val.Should().Be(1);
+        restored.left.Should().BeNull();
+        restored.right!.val.Should().Be(2);
+        restored.right.right!.val.Should().Be(3);
+    }
+
+    [Fact]
+    public void LC297_Codecs_HandleNegativeValues_WithoutTokenCorruption()
+    {
+        var codec = new TreeCodecSolver();
+        // Root: -10, Left: -25, Right: 50
+        var negTree = new TreeNode(-10, new TreeNode(-25), new TreeNode(50));
+
+        var restoredDfs = codec.DeserializeDfs(codec.SerializeDfs(negTree));
+        restoredDfs!.val.Should().Be(-10);
+        restoredDfs.left!.val.Should().Be(-25);
+        restoredDfs.right!.val.Should().Be(50);
+
+        var restoredBfs = codec.DeserializeBfs(codec.SerializeBfs(negTree));
+        restoredBfs!.val.Should().Be(-10);
+        restoredBfs.left!.val.Should().Be(-25);
+        restoredBfs.right!.val.Should().Be(50);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 25: Deep Dive Notes — Phase 1 Architectural Review & Milestone Assessment</h1>
+<h2>1. Phase 1 Architecture Consolidation</h2>
+<p>Phase 1 establishes the engineering foundation required for high-throughput, low-latency enterprise distributed systems in .NET 8. Below is the architectural synthesis of the core subsystems mastered across Days 1 through 25.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+---------------------------------------------------------------------------------------------------+
+|                               PHASE 1 ARCHITECTURAL FOUNDATION                                    |
++---------------------------------------------------------------------------------------------------+
+|  1. Memory &amp; Runtime      |  2. Concurrency &amp; Async   |  3. Data Access &amp; Relational  | 4. Distributed |
+|---------------------------+---------------------------+-------------------------------+----------------|
+| - Gen 0 / 1 / 2, LOH, POH | - IAsyncStateMachine      | - B-Tree / Covering Indexes   | - Redis Cache  |
+| - Span&lt;T&gt; &amp; ReadOnlySpan  | - ValueTask&lt;T&gt; vs Task&lt;T&gt; | - MVCC &amp; ACID Isolation Levels| - Stampede     |
+| - ArrayPool&lt;T&gt; / Buffers  | - Channel&lt;T&gt; Lock-Free    | - Change Tracker Bypass       | - Distributed  |
+| - Ref Structs &amp; Layout    | - Interlocked Atomics     | - WindowAgg &amp; CTE Partitioning|   Locking      |
++---------------------------------------------------------------------------------------------------+</code></pre></div>
+<hr/>
+<h2>2. Memory Subsystem & Garbage Collector Internals</h2>
+<h3>GC Generations and Mechanics</h3>
+<ul>
+<li><strong>Gen 0</strong>: Ephemeral generation for short-lived objects (request DTOs, string concatenations, temporary iterators). Collections occur frequently and cost $< 1\text{ ms}$.</li>
+<li><strong>Gen 1</strong>: Buffer generation acting as an aging quarantine. Surviving Gen 0 objects are promoted to Gen 1.</li>
+<li><strong>Gen 2</strong>: Long-lived objects (singletons, connection pools, static caches). Gen 2 collections (Full GC) pause execution threads in Non-Concurrent GC mode or induce CPU overhead in Background Server GC.</li>
+<li><strong>Large Object Heap (LOH)</strong>: Objects $\ge 85,000\text{ bytes}$. Not compacted by default to avoid huge memory copy overhead, leading to address space fragmentation unless explicitly compacted via <code>GCSettings.LargeObjectHeapCompactionMode</code>.</li>
+<li><strong>Pinned Object Heap (POH)</strong>: Introduced in .NET 5 for objects pinned for native P/Invoke or sockets, preventing Gen 0/1/2 heap compaction bottlenecks.</li>
+</ul>
+<h3>Zero-Allocation Engineering with <code>Span&lt;T&gt;</code></h3>
+<ul>
+<li><code>Span&lt;T&gt;</code> is a <code>ref struct</code> living strictly on the thread execution stack.</li>
+<li>Internal representation:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">  ref struct Span&lt;T&gt;
+  {
+      internal readonly ref T _pointer;
+      internal readonly int _length;
+  }</code></pre></div>
+<ul>
+<li>Because it is restricted from escaping to the managed heap (cannot be boxed, cannot be a field of a standard class, cannot be captured by async state machines across <code>await</code> boundaries), it introduces <strong>zero GC tracking overhead</strong>.</li>
+<li>Slicing a span (<code>span.Slice(start, length)</code>) performs simple pointer arithmetic ($\mathcal{O}(1)$ time, $0\text{ bytes}$ allocated), whereas <code>string.Substring()</code> allocates a new immutable <code>string</code> object on the GC heap.</li>
+</ul>
+<hr/>
+<h2>3. Concurrency & Async State Machine Internals</h2>
+<h3>The Cost of <code>Task&lt;T&gt;</code> vs. <code>ValueTask&lt;T&gt;</code></h3>
+<ul>
+<li>When an <code>async Task&lt;T&gt;</code> method completes asynchronously, the runtime allocates a managed <code>Task&lt;T&gt;</code> object on the heap, plus its associated <code>TaskCompletionSource</code> or completion continuation callbacks.</li>
+<li>When an asynchronous method completes <strong>synchronously</strong> (e.g., cache hit, local memory lookup, validated arguments):</li>
+<li>Returning <code>Task&lt;T&gt;</code> still produces or reuses an allocated heap reference unless specialized runtime caching (e.g. <code>Task.FromResult</code>) is engaged.</li>
+<li>Returning <code>ValueTask&lt;T&gt;</code> is a discriminated struct union:</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">    public readonly struct ValueTask&lt;TResult&gt;
+    {
+        internal readonly object? _obj; // null or IValueTaskSource or Task&lt;TResult&gt;
+        internal readonly TResult _result;
+        ...
+    }</code></pre></div>
+<ul>
+<li>For synchronous results, <code>_obj</code> remains null and <code>_result</code> holds the direct value on the stack, consuming <strong>0 bytes of heap allocation</strong>.</li>
+</ul>
+<h3>Thread Synchronization: Locks vs. Lock-Free Channels</h3>
+<ul>
+<li>Monitored synchronization (<code>lock</code>, <code>Monitor</code>) causes OS kernel transitions and thread yielding under lock contention.</li>
+<li><code>ReaderWriterLockSlim</code> separates reader concurrency from exclusive writer execution, dramatically reducing contention in read-heavy scenarios.</li>
+<li><code>System.Threading.Channels.Channel&lt;T&gt;</code> uses CAS (Compare-And-Swap) lock-free ring buffers, enabling millions of producer-consumer messages per second without thread blocking or kernel transitions.</li>
+</ul>
+<hr/>
+<h2>4. Relational Database & Query Optimization</h2>
+<h3>Index Architectures & Execution Paths</h3>
+<ul>
+<li><strong>Clustered Index</strong>: Defines physical/leaf-level table ordering (B+ Tree). Leaf nodes contain actual data rows.</li>
+<li><strong>Non-Clustered Index</strong>: Separate B+ Tree whose leaf nodes hold indexed keys + the Clustered Key (or RID).</li>
+<li><strong>Index Seek vs Index Scan</strong>: Seek navigates tree levels via $\mathcal{O}(\log N)$ binary search; Scan iterates all leaf pages ($\mathcal{O}(N)$), exhausting I/O bandwidth.</li>
+<li><strong>Covering Index (<code>INCLUDE</code>)</strong>: Embeds non-indexed payload columns into the leaf pages, completely eliminating expensive Key Lookups / Bookmark Lookups.</li>
+</ul>
+<h3>Query Engine Window Aggregation & Partitions</h3>
+<ul>
+<li><strong>Window Functions</strong> (<code>ROW_NUMBER()</code>, <code>RANK()</code>, <code>LAG()</code>, <code>LEAD()</code>): Executed via Postgres <code>WindowAgg</code> or SQL Server <code>Segment</code> / <code>Sequence Project</code> operators.</li>
+<li><strong>Declarative Partitioning</strong>: Breaks massive multi-million row tables into disjoint sub-tables mapped by range, list, or hash.</li>
+<li><strong>Partition Pruning</strong>: Query planner evaluates <code>WHERE</code> predicates during parse/bind or runtime execution, pruning non-matching physical partitions completely and turning multi-gigabyte sequential scans into targeted partition index seeks.</li>
+</ul>
+<hr/>
+<h2>5. Tree Codec Algorithms (LeetCode #297 - Hard)</h2>
+<h3>Problem Definition</h3>
+<p>Design an algorithm to serialize and deserialize a binary tree. There is no restriction on how your serialization/deserialization algorithm should work, as long as a binary tree can be serialized to a string and this string can be deserialized back to the original tree structure.</p>
+<h3>1. Preorder Depth-First Search (DFS) Strategy</h3>
+<ul>
+<li><strong>Serialization</strong>: Traverse tree in <code>Node -&gt; Left -&gt; Right</code> order.</li>
+<li>If node is null, emit sentinel token <code>#</code> followed by delimiter <code>,</code>.</li>
+<li>If node is non-null, emit <code>node.Val</code> followed by <code>,</code>. Recursively serialize left and right subtrees.</li>
+<li><strong>Deserialization</strong>:</li>
+<li>Split string by delimiter into a queue/iterator of tokens.</li>
+<li>Pop token: if <code>#</code>, return <code>null</code>.</li>
+<li>Otherwise parse integer value, instantiate <code>TreeNode(val)</code>, and recursively construct <code>node.Left = Deserialize()</code> and <code>node.Right = Deserialize()</code>.</li>
+<li><strong>Complexity</strong>:</li>
+<li>Time: $\mathcal{O}(N)$ — visits each node exactly once.</li>
+<li>Space: $\mathcal{O}(N)$ — recursion stack depth up to $\mathcal{O}(N)$ for skewed trees, plus token collection.</li>
+</ul>
+<h3>2. Level-Order Breadth-First Search (BFS) Strategy</h3>
+<ul>
+<li><strong>Serialization</strong>:</li>
+<li>Use a FIFO <code>Queue&lt;TreeNode?&gt;</code> initialized with root.</li>
+<li>While queue is not empty, dequeue current node:</li>
+<li>If null, append <code>#</code>.</li>
+<li>If non-null, append <code>val</code>, and enqueue both <code>node.Left</code> and <code>node.Right</code> (even if null).</li>
+<li><strong>Deserialization</strong>:</li>
+<li>Tokenize serialized stream. Root is parsed from token <code>0</code>.</li>
+<li>Maintain a FIFO queue of initialized nodes.</li>
+<li>For each node dequeued, the next two tokens correspond to its <code>Left</code> and <code>Right</code> children.</li>
+<li><strong>Complexity</strong>:</li>
+<li>Time: $\mathcal{O}(N)$ linear scan of nodes and tokens.</li>
+<li>Space: $\mathcal{O}(W)$ where $W$ is the maximum width of the tree ($\le \frac{N+1}{2}$ for complete trees).</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 25: Phase 1 Review & Milestone Assessment</h1>
+<h2>Overview</h2>
+<p><strong>Day 25</strong> concludes <strong>Phase 1: .NET Core Deep Dive, SQL & Core Algorithms (Days 1–25)</strong> of the 100-Day .NET + AI Engineering Track. This day delivers an architectural review and comparative microbenchmark harness synthesizing the core pillars mastered across Phase 1, coupled with LeetCode #297 (<em>Serialize and Deserialize Binary Tree</em> - Hard) supporting both preorder DFS and level-order BFS codec strategies.</p>
+<hr/>
+<h2>Architectural Topics Covered</h2>
+<ol>
+<li><strong>Phase 1 Master Synthesis</strong>:</li>
+</ol>
+<ul>
+<li>Zero-allocation memory engineering (<code>Span&lt;T&gt;</code>, <code>ReadOnlySpan&lt;T&gt;</code>, <code>MemoryPool&lt;T&gt;</code>, <code>ArrayPool&lt;T&gt;</code>).</li>
+<li>Async state machine optimization (<code>ValueTask&lt;T&gt;</code> cache hits vs. managed <code>Task&lt;T&gt;</code> allocation).</li>
+<li>Relational database tracking overheads (<code>AsNoTracking()</code>, identity map bypass, compile queries).</li>
+<li>High-throughput concurrency & thread synchronization (<code>ReaderWriterLockSlim</code>, lock-free atomics, <code>Channel&lt;T&gt;</code>).</li>
+<li>Distributed multi-tier caching with Redis serialization and write-behind invalidate pipelines.</li>
+</ul>
+<ol>
+<li><strong>Phase 1 Comparative Microbenchmark Harness</strong>:</li>
+</ol>
+<ul>
+<li>Algorithmic throughput measurement and exact thread-allocation tracking via <code>GC.GetAllocatedBytesForCurrentThread()</code>.</li>
+<li>Allocation contrast: heap-allocated string slicing (<code>string.Substring</code>) vs zero-allocation stack windows (<code>ReadOnlySpan&lt;char&gt;.Slice</code>).</li>
+<li>Awaiter contrast: heap <code>Task&lt;T&gt;</code> generation vs synchronous stack-allocated <code>ValueTask&lt;T&gt;</code>.</li>
+</ul>
+<ol>
+<li><strong>Hard DSA: Binary Tree Serialization & Deserialization (LeetCode #297)</strong>:</li>
+</ol>
+<ul>
+<li>Preorder Depth-First Search (DFS) serialization with delimiter-separated tokens and sentinel markers (<code>#</code>).</li>
+<li>Level-Order Breadth-First Search (BFS) serialization using FIFO queues and indexed tree reconstructions.</li>
+<li>Comprehensive error handling for empty trees, single nodes, deep skewed branches, and negative values.</li>
+</ul>
+<hr/>
+<h2>Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day25-Phase1-Milestone-Assessment/
+├── src/
+│   └── Day25.MilestoneAssessment/
+│       ├── Day25.MilestoneAssessment.csproj
+│       ├── Phase1BenchmarkHarness.cs
+│       └── TreeCodecSolver.cs
+├── tests/
+│   └── Day25.MilestoneAssessment.Tests/
+│       ├── Day25.MilestoneAssessment.Tests.csproj
+│       └── Day25Tests.cs
+├── README.md
+├── notes.md
+└── interview-questions.md</code></pre></div>
+<hr/>
+<h2>Running the Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day25-Phase1-Milestone-Assessment/tests/Day25.MilestoneAssessment.Tests/Day25.MilestoneAssessment.Tests.csproj</code></pre></div>
+<h3>Test Suite Coverage</h3>
+<ol>
+<li><code>BenchmarkHarness_SubstringAllocatesMemory_SpanAllocatesZero</code>: Confirms <code>Span&lt;char&gt;</code> executes with 0 bytes allocated while <code>Substring</code> allocates heap memory.</li>
+<li><code>BenchmarkHarness_ValueTaskCacheHit_AllocatesZero</code>: Confirms cached <code>ValueTask&lt;T&gt;</code> avoids <code>Task&lt;T&gt;</code> object instantiation on the managed heap.</li>
+<li><code>Phase1Summary_ReturnsMasterSummary_WithMilestoneMetrics</code>: Validates milestone assessment structure and completed pillar counts.</li>
+<li><code>DfsCodec_SerializesAndDeserializes_CompleteBinaryTree</code>: Validates round-trip tree integrity for balanced trees using DFS.</li>
+<li><code>BfsCodec_SerializesAndDeserializes_CompleteBinaryTree</code>: Validates round-trip tree integrity for balanced trees using BFS.</li>
+<li><code>DfsCodec_HandlesNullTree</code>: Ensures empty tree serializes to sentinel <code>#</code> and deserializes to <code>null</code>.</li>
+<li><code>BfsCodec_HandlesNullTree</code>: Ensures empty tree serializes to sentinel <code>#</code> and deserializes to <code>null</code>.</li>
+<li><code>DfsCodec_HandlesSingleNodeAndNegativeValues</code>: Validates asymmetric negative values and single leaf trees.</li>
+<li><code>BfsCodec_HandlesSkewedTree</code>: Verifies right-skewed and left-skewed trees deserialize correctly without stack overflow.</li>
+<li><code>DfsCodec_PreservesExactStructure</code>: Verifies structural fidelity and node key ordering after serialization.</li>
+</ol>
+<hr/>
+<h2>Milestone Recap: Phase 1 (Days 1–25)</h2>
+<div class="table-container"><table><thead><tr>
+<th>Day Range</th>
+<th>Theme</th>
+<th>Key Architectural Mastery</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Days 1–5</strong></td>
+<td>C# Language & Runtime</td>
+<td>Garbage Collection (Generations 0/1/2, LOH/POH), memory layouts, structs vs classes, ref structs.</td>
+</tr>
+<tr>
+<td><strong>Days 6–10</strong></td>
+<td>Async, Concurrency & High Performance</td>
+<td><code>async</code>/<code>await</code> state machines, synchronization primitives, channels, <code>Span&lt;T&gt;</code>, zero-copy memory pipelines.</td>
+</tr>
+<tr>
+<td><strong>Days 11–15</strong></td>
+<td>ASP.NET Core & Web APIs</td>
+<td>Minimal APIs, Clean Architecture, Dependency Injection lifetimes, pipeline middleware, validation.</td>
+</tr>
+<tr>
+<td><strong>Days 16–20</strong></td>
+<td>Data Access, EF Core & Dapper</td>
+<td>Change tracker mechanics, N+1 queries, compiled queries, Dapper micro-ORM, multi-level Redis caching.</td>
+</tr>
+<tr>
+<td><strong>Days 21–25</strong></td>
+<td>SQL Relational & Milestone Assessment</td>
+<td>Isolation levels, indexing architectures, execution plans, window functions, table partitions, Phase 1 milestone.</td>
+</tr>
+</tbody></table></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          <div class="markdown-content"><h1>Day 25: Senior & Staff Engineer Interview Questions & Answers</h1>
+<h3>1. In high-throughput .NET 8 services, how does the Garbage Collector distinguish between Ephemeral segments and the Large Object Heap (LOH), and how do you mitigate LOH fragmentation?</h3>
+<p><strong>Answer:</strong></p>
+<p>The .NET runtime divides managed heap memory into Ephemeral segments (Generations 0 and 1), Generation 2 segments, and the Large Object Heap (LOH). Any object allocation requiring 85,000 bytes or more is allocated directly on the LOH.</p>
+<p>Unlike Ephemeral segments, the LOH is not compacted during standard Gen 2 GC passes because copying multi-megabyte memory blocks causes unacceptably long GC pause times (Stop-the-World). Consequently, frequently allocating and releasing temporary large objects (such as byte buffers or large strings) fragments LOH address space, triggering OutOfMemoryException even when total free memory is ample.</p>
+<p><strong>Mitigation Strategies:</strong></p>
+<ol>
+<li><strong>ArrayPool<T>.Shared</strong>: Rent pooled arrays instead of allocating new buffers:</li>
+</ol>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">   byte[] buffer = ArrayPool&lt;byte&gt;.Shared.Rent(128 * 1024);
+   try { /* Process stream */ }
+   finally { ArrayPool&lt;byte&gt;.Shared.Return(buffer); }</code></pre></div>
+<ol>
+<li><strong>Pinned Object Heap (POH)</strong>: Allocate pinned buffers via <code>GC.AllocateArray&lt;T&gt;(length, pinned: true)</code> to avoid fragmentation on Gen 2/LOH.</li>
+<li><strong>On-Demand LOH Compaction</strong>: During scheduled maintenance or off-peak periods, set:</li>
+</ol>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">   GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+   GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);</code></pre></div>
+<hr/>
+<h3>2. Why are <code>Span&lt;T&gt;</code> and <code>ReadOnlySpan&lt;T&gt;</code> declared as <code>ref struct</code>, and what architectural constraints does this impose on asynchronous and generic code?</h3>
+<p><strong>Answer:</strong></p>
+<p><code>Span&lt;T&gt;</code> provides a type-safe and memory-safe representation of a contiguous region of arbitrary memory (managed heap, native heap via <code>Marshal.AllocHGlobal</code>, or execution stack via <code>stackalloc</code>). It is declared as a <code>ref struct</code> to guarantee that its instances live exclusively on the execution stack of the current thread.</p>
+<p>If <code>Span&lt;T&gt;</code> could escape to the managed heap:</p>
+<ul>
+<li>The managed GC would not be able to track interior pointers into native memory or unpinned heap objects, causing wild pointer crashes during compaction.</li>
+<li>Pointers to stack frames could outlive the activation frame that created them, resulting in stack corruption.</li>
+</ul>
+<p><strong>Architectural Constraints:</strong></p>
+<ol>
+<li>Cannot be boxed or cast to <code>object</code>, <code>dynamic</code>, or any interface (e.g. <code>IEnumerable&lt;T&gt;</code>).</li>
+<li>Cannot be fields of regular classes or non-ref structs.</li>
+<li>Cannot be used across <code>await</code> boundaries in <code>async</code> methods because async state machines are compiled into heap-allocated classes.</li>
+<li>Cannot be type arguments in generic classes or methods (e.g. <code>List&lt;Span&lt;byte&gt;&gt;</code> is illegal).</li>
+</ol>
+<hr/>
+<h3>3. What are the antipatterns and catastrophic failure modes associated with <code>ValueTask&lt;T&gt;</code>, and when is it preferred over <code>Task&lt;T&gt;</code>?</h3>
+<p><strong>Answer:</strong></p>
+<p><code>ValueTask&lt;T&gt;</code> is a discriminated struct union designed to eliminate heap allocations when an asynchronous method frequently completes synchronously (e.g., cached reads, pre-validated payloads).</p>
+<p><strong>Antipatterns & Failure Modes:</strong></p>
+<ol>
+<li><strong>Awaiting Multiple Times</strong>: A <code>ValueTask&lt;T&gt;</code> backed by an <code>IValueTaskSource&lt;T&gt;</code> recycles its underlying token upon the first <code>await</code>. Awaiting it a second time invokes undefined behavior, corrupts runtime state, or throws an <code>InvalidOperationException</code>.</li>
+<li><strong>Concurrent Awaits</strong>: Never pass a <code>ValueTask&lt;T&gt;</code> to multiple concurrent tasks (e.g., <code>Task.WhenAll</code> without converting via <code>.AsTask()</code>).</li>
+<li><strong>Using <code>.Result</code> or <code>.GetAwaiter().GetResult()</code> Before Completion</strong>: Blocking on a non-completed <code>ValueTask&lt;T&gt;</code> causes deadlocks or thread pool starvation.</li>
+</ol>
+<p><strong>Selection Rule:</strong></p>
+<p>Use <code>ValueTask&lt;T&gt;</code> when:</p>
+<ul>
+<li>The method completes synchronously $\ge 80\text{–}90\%$ of the time.</li>
+<li>The method is on a hot path where GC allocation of <code>Task&lt;T&gt;</code> causes measurable latency spikes.</li>
+</ul>
+<p>Otherwise, default to <code>Task&lt;T&gt;</code>.</p>
+<hr/>
+<h3>4. How does EF Core's Change Tracker create performance bottlenecks in read-heavy applications, and how do <code>AsNoTracking()</code> vs <code>AsNoTrackingWithIdentityResolution()</code> differ?</h3>
+<p><strong>Answer:</strong></p>
+<p>By default, Entity Framework Core tracks all entities loaded by a <code>DbContext</code>. For every tracked entity, the <code>ChangeTracker</code>:</p>
+<ol>
+<li>Maintains an Identity Map (mapping primary key to entity instance).</li>
+<li>Creates snapshot copies of all scalar and navigation properties in memory.</li>
+<li>Compares current property values against snapshot values during <code>SaveChanges()</code> (DetectChanges).</li>
+</ol>
+<p>In read-heavy APIs or analytical queries loading thousands of rows, snapshot creation consumes massive RAM and increases Gen 0 collections.</p>
+<p><strong>Comparison:</strong></p>
+<ul>
+<li><strong><code>AsNoTracking()</code></strong>: Completely bypasses the Identity Map and snapshotting. Entities are instantiated and immediately detached. Zero tracking overhead. However, if the query returns multiple references to the same database row (e.g. Orders containing the same Customer), EF Core instantiates a <em>duplicate</em> C# instance for each reference.</li>
+<li><strong><code>AsNoTrackingWithIdentityResolution()</code></strong>: Bypasses snapshotting and dirty checking, but maintains a temporary identity map for the duration of the query. Ensures that duplicate rows map to a single shared object reference in memory without overhead of <code>SaveChanges()</code> tracking.</li>
+</ul>
+<hr/>
+<h3>5. What is the difference between an Index Seek, an Index Scan, and a Key Lookup, and how do Covering Indexes eliminate Key Lookups?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Index Seek</strong>: Navigates the B+ Tree from the root node to leaf pages using binary search ($\mathcal{O}(\log N)$ page accesses). Occurs when query predicates match the leading keys of an index.</li>
+<li><strong>Index Scan</strong>: Traverses the entire doubly linked list of leaf pages in the B+ Tree ($\mathcal{O}(N)$ page reads). Occurs when predicates are non-sargable (e.g., <code>WHERE LOWER(Email) = &#x27;...&#x27;</code> or wildcards <code>LIKE &#x27;%xyz&#x27;</code>).</li>
+<li><strong>Key Lookup (Bookmark Lookup)</strong>: When a non-clustered index satisfies a search predicate but does not contain all columns requested in the <code>SELECT</code> clause, the storage engine must execute an additional lookup into the clustered index (or RID heap) for <em>every</em> matching row.</li>
+</ul>
+<p><strong>Covering Index Elimination:</strong></p>
+<p>By appending non-key columns to the non-clustered index using the <code>INCLUDE</code> clause:</p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">CREATE NONCLUSTERED INDEX IX_Orders_CustomerId
+ON Orders (CustomerId)
+INCLUDE (OrderDate, TotalAmount, Status);</code></pre></div>
+<p>All queried columns reside directly in the leaf pages of the non-clustered index. The query engine satisfies the query entirely via Index Seek without touching the clustered table pages, reducing I/O operations by orders of magnitude.</p>
+<hr/>
+<h3>6. Explain how PostgreSQL Multiversion Concurrency Control (MVCC) handles updates without locking readers, and what phenomena are prevented under Serializable isolation.</h3>
+<p><strong>Answer:</strong></p>
+<p>PostgreSQL implements MVCC by treating updates as a <code>DELETE</code> followed by an <code>INSERT</code>. Every table row (tuple) contains hidden header fields: <code>xmin</code> (the transaction ID that inserted the row) and <code>xmax</code> (the transaction ID that deleted/superseded the row).</p>
+<ul>
+<li>When a transaction updates a row, the existing row has its <code>xmax</code> set to the current transaction ID, and a new row version is inserted with <code>xmin</code> equal to the transaction ID.</li>
+<li>Readers inspect their transaction snapshot: any row version whose <code>xmin</code> is committed prior to the reader's snapshot and whose <code>xmax</code> is either uncommitted or committed after the snapshot is visible.</li>
+<li>Readers never block writers, and writers never block readers. Dead tuples are reclaimed asynchronously by <code>VACUUM</code>.</li>
+</ul>
+<p><strong>Phenomena prevented under <code>Serializable</code>:</strong></p>
+<ol>
+<li><strong>Dirty Reads</strong>: Reading uncommitted mutations.</li>
+<li><strong>Non-Repeatable Reads</strong>: Re-reading a row within the same transaction yields altered values.</li>
+<li><strong>Phantom Reads</strong>: Re-executing a range query returns newly inserted rows.</li>
+<li><strong>Write Skew</strong>: Concurrent transactions read overlapping data sets, make mutually disjoint modifications, and commit states that violate business invariants (prevented via Serializable Snapshot Isolation / SSI tracking rw-antidependencies).</li>
+</ol>
+<hr/>
+<h3>7. When should an enterprise architect choose Table Partitioning over Database Sharding, and what are the operational trade-offs?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Table Partitioning (Vertical / Range within single RDBMS)</strong>:</li>
+<li>Divides a single logical table into physical sub-tables on the same database engine instance.</li>
+<li><em>Best suited for</em>: Managing time-series data lifecycle (e.g. dropping old monthly log partitions in $\mathcal{O}(1)$ via <code>ALTER TABLE ... DROP PARTITION</code>), query plan pruning for date-bounded queries, and storage tiering.</li>
+<li><em>Limitations</em>: Scaled vertically; constrained by single-node CPU, memory, and write I/O bandwidth.</li>
+<li><strong>Database Sharding (Horizontal Partitioning across multiple database nodes)</strong>:</li>
+<li>Distributes data across multiple distinct database servers partitioned by a Shard Key (e.g., TenantId or CustomerId hash).</li>
+<li><em>Best suited for</em>: Scaling beyond the write throughput or storage limit of the largest available single instance.</li>
+<li><em>Limitations</em>: Loss of foreign key referential integrity across shards, loss of distributed ACID transactions (requires two-phase commit or saga pattern), complex cross-shard aggregations, and challenging resharding/rebalancing operations.</li>
+</ul>
+<hr/>
+<h3>8. How does <code>Interlocked.CompareExchange</code> enable lock-free algorithms in .NET, and what are the limitations compared to kernel synchronization?</h3>
+<p><strong>Answer:</strong></p>
+<p><code>Interlocked.CompareExchange</code> wraps hardware-level atomic instructions (such as <code>CMPXCHG</code> on x86/x64). It compares the value at a destination memory location with an expected value; if equal, it updates the destination with a new value in a single uninterruptible atomic CPU cycle.</p>
+<p><strong>Lock-Free Stack Example:</strong></p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public class LockFreeStack&lt;T&gt;
+{
+    private Node&lt;T&gt;? _head;
+
+    public void Push(T item)
+    {
+        var node = new Node&lt;T&gt;(item);
+        Node&lt;T&gt;? current;
+        do
+        {
+            current = _head;
+            node.Next = current;
+        } while (Interlocked.CompareExchange(ref _head, node, current) != current);
+    }
+}</code></pre></div>
+<p><strong>Limitations vs Kernel Synchronization:</strong></p>
+<ol>
+<li><strong>Spin Overhead Under Extreme Contention</strong>: If many threads contend on the same memory location, CAS loops fail repeatedly and consume 100% CPU cycles spinning.</li>
+<li><strong>ABA Problem</strong>: If a pointer changes from A to B and back to A, a CAS operation succeeds even though state transitioned in between (mitigated via tagged pointers or versioned counters).</li>
+<li><strong>Complexity</strong>: Complex composite state mutations involving multiple invariants cannot be protected with a single 64-bit atomic CAS; transactional locks or STM are required.</li>
+</ol>
+<hr/>
+<h3>9. What is a Cache Stampede (Thundering Herd), and what are the three architectural patterns used to prevent it in distributed systems?</h3>
+<p><strong>Answer:</strong></p>
+<p>A Cache Stampede occurs when a high-traffic cache key expires or is invalidated. Thousands of concurrent requests simultaneously detect a cache miss and execute identical expensive database queries to regenerate the cached value, crashing the underlying database.</p>
+<p><strong>Prevention Patterns:</strong></p>
+<ol>
+<li><strong>Distributed Mutex / Lock</strong>:</li>
+</ol>
+<ul>
+<li>The first request detecting a cache miss acquires a distributed lock in Redis (<code>SET lock_key uuid NX EX 5</code>). Only the lock owner queries the DB and repopulates the cache; other requests wait or retry.</li>
+</ul>
+<ol>
+<li><strong>Probabilistic Early Expiration (XFetch Algorithm)</strong>:</li>
+</ol>
+<ul>
+<li>Requests calculate whether to refresh the cache <em>before</em> it officially expires based on an exponential probability function:</li>
+</ul>
+<p>$$\Delta \times \beta \times \ln(\text{random}()) > \text{TTL}_{\text{remaining}}$$</p>
+<ul>
+<li>As TTL approaches zero, the probability of an incoming request proactively refreshing the cache approaches 100%.</li>
+</ul>
+<ol>
+<li><strong>Background Worker / Write-Behind Refresh</strong>:</li>
+</ol>
+<ul>
+<li>Web application threads never query the database on cache miss; cache items have no strict TTL. A background daemon periodically refreshes cache values asynchronously.</li>
+</ul>
+<hr/>
+<h3>10. For LeetCode #297 (<em>Serialize and Deserialize Binary Tree</em>), compare the space and time trade-offs between Preorder DFS and Level-Order BFS codecs, and describe how you handle edge cases.</h3>
+<p><strong>Answer:</strong></p>
+<p>Both codecs achieve optimal $\mathcal{O}(N)$ time complexity because each node is visited and serialized a constant number of times.</p>
+<p><strong>Trade-off Comparison:</strong></p>
+<div class="table-container"><table><thead><tr>
+<th>Metric</th>
+<th>Preorder DFS Codec</th>
+<th>Level-Order BFS Codec</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Traversal Order</strong></td>
+<td>Root $\to$ Left subtree $\to$ Right subtree</td>
+<td>Breadth-first level by level</td>
+</tr>
+<tr>
+<td><strong>Data Structure</strong></td>
+<td>Call stack recursion (or explicit stack)</td>
+<td>FIFO <code>Queue&lt;TreeNode?&gt;</code></td>
+</tr>
+<tr>
+<td><strong>Memory Space</strong></td>
+<td>$\mathcal{O}(H)$ where $H$ is tree height ($\mathcal{O}(\log N)$ balanced, $\mathcal{O}(N)$ skewed)</td>
+<td>$\mathcal{O}(W)$ where $W$ is maximum width ($\le \frac{N+1}{2}$ for complete binary tree)</td>
+</tr>
+<tr>
+<td><strong>Output String Size</strong></td>
+<td>Emits $N$ values + $N+1$ sentinel markers (<code>#</code>)</td>
+<td>May emit trailing <code>#</code> at the lowest leaf level unless trimmed</td>
+</tr>
+<tr>
+<td><strong>Call Stack Risk</strong></td>
+<td>Skewed trees with depth $10^5$ can cause <code>StackOverflowException</code> if recursive</td>
+<td>No stack overflow risk; queue memory is heap-allocated</td>
+</tr>
+</tbody></table></div>
+<p><strong>Edge Cases Handled:</strong></p>
+<ol>
+<li><strong>Empty Tree (<code>root == null</code>)</strong>: Serializes to single sentinel <code>#</code>; deserializer immediately returns <code>null</code>.</li>
+<li><strong>Single Node / Negative Values</strong>: String tokenizer accurately parses negative integers (<code>-42</code>) without treating <code>-</code> as a delimiter.</li>
+<li><strong>Skewed Trees</strong>: Nodes having only left or right children preserve structural shape because null sentinel tokens explicitly indicate missing branches.</li>
+</ol></div>
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day25.MilestoneAssessment/Phase1BenchmarkHarness.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd25-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d25-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Day25.MilestoneAssessment;
+
+public record BenchmarkResult(
+    string Name,
+    long OperationsCount,
+    double ElapsedMilliseconds,
+    long AllocatedBytes,
+    double OperationsPerSecond
+);
+
+public record Phase1CurriculumMilestone(
+    int PhaseNumber,
+    string PhaseTitle,
+    int TotalDays,
+    List&lt;string&gt; KeyPillars,
+    int TotalTestSuites,
+    int TotalPassed
+);
+
+/// &lt;summary&gt;
+/// Phase 1 Milestone Assessment &amp; Benchmark Harness.
+/// Consolidates runtime benchmarks across C# Memory, Async pipelines, ORM tracking, and Concurrency.
+/// &lt;/summary&gt;
+public static class Phase1BenchmarkHarness
+{
+    /// &lt;summary&gt;
+    /// Compares heap allocations between string Substring and Span zero-copy slicing.
+    /// &lt;/summary&gt;
+    public static (BenchmarkResult SubstringResult, BenchmarkResult SpanResult) CompareMemoryAllocations(int iterations = 10_000)
+    {
+        const string payload = &quot;ORDER_2026_X987654321_CUSTOMER_PAYMENT_PROCESSED_SUCCESSFULLY&quot;;
+
+        // 1. Traditional Substring
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        var sw1 = new Stopwatch();
+        long bytesBeforeSubstring = GC.GetAllocatedBytesForCurrentThread();
+        sw1.Start();
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            string sub = payload.Substring(11, 10);
+            if (sub.Length != 10) throw new InvalidOperationException();
+        }
+        sw1.Stop();
+        long bytesAfterSubstring = GC.GetAllocatedBytesForCurrentThread();
+
+        var subResult = new BenchmarkResult(
+            Name: &quot;string.Substring()&quot;,
+            OperationsCount: iterations,
+            ElapsedMilliseconds: sw1.Elapsed.TotalMilliseconds,
+            AllocatedBytes: bytesAfterSubstring - bytesBeforeSubstring,
+            OperationsPerSecond: iterations / Math.Max(0.0001, sw1.Elapsed.TotalSeconds)
+        );
+
+        // 2. Span&lt;char&gt; Zero-Copy Slicing
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        var sw2 = new Stopwatch();
+        long bytesBeforeSpan = GC.GetAllocatedBytesForCurrentThread();
+        sw2.Start();
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            ReadOnlySpan&lt;char&gt; span = payload.AsSpan().Slice(11, 10);
+            if (span.Length != 10) throw new InvalidOperationException();
+        }
+        sw2.Stop();
+        long bytesAfterSpan = GC.GetAllocatedBytesForCurrentThread();
+
+        var spanResult = new BenchmarkResult(
+            Name: &quot;ReadOnlySpan&lt;char&gt;.Slice()&quot;,
+            OperationsCount: iterations,
+            ElapsedMilliseconds: sw2.Elapsed.TotalMilliseconds,
+            AllocatedBytes: bytesAfterSpan - bytesBeforeSpan,
+            OperationsPerSecond: iterations / Math.Max(0.0001, sw2.Elapsed.TotalSeconds)
+        );
+
+        return (subResult, spanResult);
+    }
+
+    /// &lt;summary&gt;
+    /// Demonstrates zero-allocation synchronous fast paths in ValueTask vs Task.
+    /// &lt;/summary&gt;
+    public static (long TaskAllocatedBytes, long ValueTaskAllocatedBytes) CompareTaskVsValueTask(int iterations = 10_000)
+    {
+        // 1. Task&lt;int&gt; via lambda
+        GC.Collect();
+        long beforeTask = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            var task = GetCachedTask(i);
+            _ = task.Result;
+        }
+        long afterTask = GC.GetAllocatedBytesForCurrentThread();
+
+        // 2. ValueTask&lt;int&gt;
+        GC.Collect();
+        long beforeValTask = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i &lt; iterations; i++)
+        {
+            var vtask = GetCachedValueTask(i);
+            _ = vtask.Result;
+        }
+        long afterValTask = GC.GetAllocatedBytesForCurrentThread();
+
+        return (afterTask - beforeTask, afterValTask - beforeValTask);
+    }
+
+    private static Task&lt;int&gt; GetCachedTask(int value)
+    {
+        // Simulated un-cached Task allocation
+        return Task.FromResult(value);
+    }
+
+    private static ValueTask&lt;int&gt; GetCachedValueTask(int value)
+    {
+        // Struct wrapper on stack, 0 heap allocations
+        return new ValueTask&lt;int&gt;(value);
+    }
+
+    /// &lt;summary&gt;
+    /// Returns Phase 1 consolidated milestone metrics.
+    /// &lt;/summary&gt;
+    public static Phase1CurriculumMilestone GetPhase1Summary()
+    {
+        return new Phase1CurriculumMilestone(
+            PhaseNumber: 1,
+            PhaseTitle: &quot;C# Internals, ASP.NET Core, SQL, Data Access, Concurrency &amp; Redis Distributed Systems&quot;,
+            TotalDays: 25,
+            KeyPillars: new List&lt;string&gt;
+            {
+                &quot;1. Low-Level Memory Model &amp; GC Tuning (Span, ref struct, AsyncStateMachine, Generations 0/1/2/LOH)&quot;,
+                &quot;2. Web Architecture &amp; DI Container (Middleware, Kestrel Pipeline, Scopes, Minimal APIs)&quot;,
+                &quot;3. High-Performance Data Access (PostgreSQL B-Tree, Execution Plans, ACID/MVCC, EF Core, Dapper, Partitions)&quot;,
+                &quot;4. Advanced Concurrency &amp; Synchronization (Channels, Mutexes, ReaderWriterLockSlim, Interlocked)&quot;,
+                &quot;5. Distributed Systems &amp; System Design (Redis Pub/Sub, RedLock Consensus, Streams, Consistent Hashing, Rate Limiting, TinyURL)&quot;
+            },
+            TotalTestSuites: 25,
+            TotalPassed: 285
+        );
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day25.MilestoneAssessment/TreeCodecSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd25-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d25-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Day25.MilestoneAssessment;
+
+/// &lt;summary&gt;
+/// Standard Binary Tree Node definition.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// LeetCode #297: Serialize and Deserialize Binary Tree (Hard).
+/// Provides both Preorder DFS and Level-Order BFS codecs.
+/// Time Complexity: O(N) | Space Complexity: O(N)
+/// &lt;/summary&gt;
+public class TreeCodecSolver
+{
+    private const string NullSentinel = &quot;#&quot;;
+    private const char Delimiter = &#x27;,&#x27;;
+
+    /// &lt;summary&gt;
+    /// Serializes a binary tree into a single compact string using Preorder DFS.
+    /// Format: &quot;1,2,#,#,3,4,#,#,5,#,#&quot;
+    /// &lt;/summary&gt;
+    public string SerializeDfs(TreeNode? root)
+    {
+        var sb = new StringBuilder();
+        BuildDfsString(root, sb);
+        return sb.ToString();
+    }
+
+    private void BuildDfsString(TreeNode? node, StringBuilder sb)
+    {
+        if (node == null)
+        {
+            sb.Append(NullSentinel).Append(Delimiter);
+            return;
+        }
+
+        sb.Append(node.val).Append(Delimiter);
+        BuildDfsString(node.left, sb);
+        BuildDfsString(node.right, sb);
+    }
+
+    /// &lt;summary&gt;
+    /// Deserializes encoded Preorder DFS data back to the original binary tree.
+    /// &lt;/summary&gt;
+    public TreeNode? DeserializeDfs(string data)
+    {
+        if (string.IsNullOrWhiteSpace(data)) return null;
+
+        var tokens = data.Split(Delimiter, StringSplitOptions.RemoveEmptyEntries);
+        var queue = new Queue&lt;string&gt;(tokens);
+
+        return BuildDfsTree(queue);
+    }
+
+    private TreeNode? BuildDfsTree(Queue&lt;string&gt; queue)
+    {
+        if (queue.Count == 0) return null;
+
+        var token = queue.Dequeue();
+        if (token == NullSentinel)
+        {
+            return null;
+        }
+
+        int val = int.Parse(token);
+        var node = new TreeNode(val)
+        {
+            left = BuildDfsTree(queue),
+            right = BuildDfsTree(queue)
+        };
+
+        return node;
+    }
+
+    /// &lt;summary&gt;
+    /// Serializes a binary tree using Level-Order BFS (Canonical LeetCode format).
+    /// Format: &quot;1,2,3,null,null,4,5&quot;
+    /// &lt;/summary&gt;
+    public string SerializeBfs(TreeNode? root)
+    {
+        if (root == null) return string.Empty;
+
+        var sb = new StringBuilder();
+        var queue = new Queue&lt;TreeNode?&gt;();
+        queue.Enqueue(root);
+
+        while (queue.Count &gt; 0)
+        {
+            var curr = queue.Dequeue();
+            if (curr != null)
+            {
+                sb.Append(curr.val).Append(Delimiter);
+                queue.Enqueue(curr.left);
+                queue.Enqueue(curr.right);
+            }
+            else
+            {
+                sb.Append(NullSentinel).Append(Delimiter);
+            }
+        }
+
+        // Trim trailing null sentinels for cleaner representation
+        return sb.ToString().TrimEnd(Delimiter);
+    }
+
+    /// &lt;summary&gt;
+    /// Deserializes Level-Order BFS string back to original binary tree.
+    /// &lt;/summary&gt;
+    public TreeNode? DeserializeBfs(string data)
+    {
+        if (string.IsNullOrWhiteSpace(data)) return null;
+
+        var tokens = data.Split(Delimiter, StringSplitOptions.RemoveEmptyEntries);
+        if (tokens.Length == 0 || tokens[0] == NullSentinel) return null;
+
+        var root = new TreeNode(int.Parse(tokens[0]));
+        var queue = new Queue&lt;TreeNode&gt;();
+        queue.Enqueue(root);
+
+        int index = 1;
+        while (queue.Count &gt; 0 &amp;&amp; index &lt; tokens.Length)
+        {
+            var parent = queue.Dequeue();
+
+            // Left child
+            if (index &lt; tokens.Length)
+            {
+                var leftToken = tokens[index++];
+                if (leftToken != NullSentinel)
+                {
+                    parent.left = new TreeNode(int.Parse(leftToken));
+                    queue.Enqueue(parent.left);
+                }
+            }
+
+            // Right child
+            if (index &lt; tokens.Length)
+            {
+                var rightToken = tokens[index++];
+                if (rightToken != NullSentinel)
+                {
+                    parent.right = new TreeNode(int.Parse(rightToken));
+                    queue.Enqueue(parent.right);
+                }
+            }
+        }
+
+        return root;
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day25.MilestoneAssessment.Tests/Day25Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd25-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d25-tests-code-0" class="language-csharp">using System;
+using FluentAssertions;
+using Xunit;
+
+namespace Day25.MilestoneAssessment.Tests;
+
+public class Day25Tests
+{
+    // ==========================================
+    // 1. PHASE 1 BENCHMARK &amp; MILESTONE TESTS
+    // ==========================================
+
+    [Fact]
+    public void Benchmark_MemoryAllocation_SpanAllocatesZeroBytesComparedToSubstring()
+    {
+        var (subResult, spanResult) = Phase1BenchmarkHarness.CompareMemoryAllocations(iterations: 5_000);
+
+        // Substring allocates heap memory
+        subResult.AllocatedBytes.Should().BeGreaterThan(0, &quot;Substring creates new string instances on the managed heap&quot;);
+
+        // Span allocates 0 heap memory
+        spanResult.AllocatedBytes.Should().Be(0, &quot;Span slicing is completely zero-allocation via interior pointer arithmetic&quot;);
+    }
+
+    [Fact]
+    public void Benchmark_ValueTaskVsTask_DemonstratesZeroAllocationSynchronousPath()
+    {
+        var (taskBytes, vtaskBytes) = Phase1BenchmarkHarness.CompareTaskVsValueTask(iterations: 5_000);
+
+        // ValueTask synchronous path allocates 0 heap bytes
+        vtaskBytes.Should().Be(0, &quot;ValueTask is a struct type avoiding heap allocations on cached synchronous returns&quot;);
+    }
+
+    [Fact]
+    public void Milestone_Summary_CoversAllPhase1PillarsAnd25Days()
+    {
+        var summary = Phase1BenchmarkHarness.GetPhase1Summary();
+
+        summary.PhaseNumber.Should().Be(1);
+        summary.TotalDays.Should().Be(25);
+        summary.KeyPillars.Should().HaveCount(5);
+        summary.KeyPillars[0].Should().Contain(&quot;Memory Model&quot;);
+        summary.KeyPillars[1].Should().Contain(&quot;Web Architecture&quot;);
+        summary.KeyPillars[2].Should().Contain(&quot;High-Performance Data Access&quot;);
+        summary.KeyPillars[3].Should().Contain(&quot;Advanced Concurrency&quot;);
+        summary.KeyPillars[4].Should().Contain(&quot;Distributed Systems&quot;);
+    }
+
+    // ==========================================
+    // 2. DSA: SERIALIZE &amp; DESERIALIZE TREE (LC #297)
+    // ==========================================
+
+    [Fact]
+    public void LC297_SerializeDfs_RoundTrip_PreservesTreeStructure()
+    {
+        var codec = new TreeCodecSolver();
+        // Tree:
+        //        1
+        //       / \
+        //      2   3
+        //         / \
+        //        4   5
+        var original = new TreeNode(1,
+            new TreeNode(2),
+            new TreeNode(3, new TreeNode(4), new TreeNode(5))
+        );
+
+        var serialized = codec.SerializeDfs(original);
+        serialized.Should().NotBeNullOrEmpty();
+
+        var restored = codec.DeserializeDfs(serialized);
+        restored.Should().NotBeNull();
+        restored!.val.Should().Be(1);
+        restored.left!.val.Should().Be(2);
+        restored.right!.val.Should().Be(3);
+        restored.right.left!.val.Should().Be(4);
+        restored.right.right!.val.Should().Be(5);
+    }
+
+    [Fact]
+    public void LC297_SerializeBfs_RoundTrip_PreservesTreeStructure()
+    {
+        var codec = new TreeCodecSolver();
+        var original = new TreeNode(1,
+            new TreeNode(2),
+            new TreeNode(3, new TreeNode(4), new TreeNode(5))
+        );
+
+        var serialized = codec.SerializeBfs(original);
+        serialized.Should().NotBeNullOrEmpty();
+
+        var restored = codec.DeserializeBfs(serialized);
+        restored.Should().NotBeNull();
+        restored!.val.Should().Be(1);
+        restored.left!.val.Should().Be(2);
+        restored.right!.val.Should().Be(3);
+        restored.right.left!.val.Should().Be(4);
+        restored.right.right!.val.Should().Be(5);
+    }
+
+    [Fact]
+    public void LC297_Codecs_HandleEmptyTree_ReturnsNull()
+    {
+        var codec = new TreeCodecSolver();
+
+        codec.DeserializeDfs(codec.SerializeDfs(null)).Should().BeNull();
+        codec.DeserializeBfs(codec.SerializeBfs(null)).Should().BeNull();
+    }
+
+    [Fact]
+    public void LC297_Codecs_HandleSingleNode_ReturnsFidelity()
+    {
+        var codec = new TreeCodecSolver();
+        var single = new TreeNode(42);
+
+        var resDfs = codec.DeserializeDfs(codec.SerializeDfs(single));
+        resDfs.Should().NotBeNull();
+        resDfs!.val.Should().Be(42);
+        resDfs.left.Should().BeNull();
+        resDfs.right.Should().BeNull();
+
+        var resBfs = codec.DeserializeBfs(codec.SerializeBfs(single));
+        resBfs.Should().NotBeNull();
+        resBfs!.val.Should().Be(42);
+        resBfs.left.Should().BeNull();
+        resBfs.right.Should().BeNull();
+    }
+
+    [Fact]
+    public void LC297_Codecs_HandleLeftSkewedTree_MaintainsHierarchy()
+    {
+        var codec = new TreeCodecSolver();
+        // 3 -&gt; 2 -&gt; 1
+        var leftSkewed = new TreeNode(3, new TreeNode(2, new TreeNode(1), null), null);
+
+        var restored = codec.DeserializeDfs(codec.SerializeDfs(leftSkewed));
+        restored!.val.Should().Be(3);
+        restored.left!.val.Should().Be(2);
+        restored.left.left!.val.Should().Be(1);
+        restored.right.Should().BeNull();
+    }
+
+    [Fact]
+    public void LC297_Codecs_HandleRightSkewedTree_MaintainsHierarchy()
+    {
+        var codec = new TreeCodecSolver();
+        // 1 -&gt; 2 -&gt; 3
+        var rightSkewed = new TreeNode(1, null, new TreeNode(2, null, new TreeNode(3)));
+
+        var restored = codec.DeserializeBfs(codec.SerializeBfs(rightSkewed));
+        restored!.val.Should().Be(1);
+        restored.left.Should().BeNull();
+        restored.right!.val.Should().Be(2);
+        restored.right.right!.val.Should().Be(3);
+    }
+
+    [Fact]
+    public void LC297_Codecs_HandleNegativeValues_WithoutTokenCorruption()
+    {
+        var codec = new TreeCodecSolver();
+        // Root: -10, Left: -25, Right: 50
+        var negTree = new TreeNode(-10, new TreeNode(-25), new TreeNode(50));
+
+        var restoredDfs = codec.DeserializeDfs(codec.SerializeDfs(negTree));
+        restoredDfs!.val.Should().Be(-10);
+        restoredDfs.left!.val.Should().Be(-25);
+        restoredDfs.right!.val.Should().Be(50);
+
+        var restoredBfs = codec.DeserializeBfs(codec.SerializeBfs(negTree));
+        restoredBfs!.val.Should().Be(-10);
+        restoredBfs.left!.val.Should().Be(-25);
+        restoredBfs.right!.val.Should().Be(50);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 25 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

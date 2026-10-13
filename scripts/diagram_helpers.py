@@ -28,6 +28,9 @@ DAYS_INFO = [
     {"num": 21, "dir": "Day21-Distributed-Cache-Architecture", "title": "System Design: Distributed Cache Architecture", "category": "System Design & DSA"},
     {"num": 22, "dir": "Day22-Rate-Limiter-Design", "title": "System Design: Rate Limiter Design", "category": "System Design & Distributed Systems"},
     {"num": 23, "dir": "Day23-Url-Shortener-TinyUrl", "title": "System Design: URL Shortener (TinyURL)", "category": "System Design & Distributed Systems"},
+    {"num": 24, "dir": "Day24-Advanced-SQL-Window-Partitions", "title": "Advanced SQL: CTEs, Window Functions & Partitions", "category": "SQL & Relational DB"},
+    {"num": 25, "dir": "Day25-Phase1-Milestone-Assessment", "title": "Phase 1 Review & Milestone Assessment", "category": "Architecture, Review & Benchmarks"},
+    {"num": 26, "dir": "Day26-Microservices-BoundedContexts", "title": "Microservices Principles & Bounded Contexts", "category": "Microservices & DDD"},
 ]
 
 def get_day_svg(day_num):
@@ -1069,6 +1072,207 @@ def get_day_svg(day_num):
           <text x="675" y="300" fill="#cbd5e1" font-size="9">Reduces split lookup to O(1)</text>
           <text x="675" y="315" fill="#34d399" font-size="9">Optimal O(N) Time | O(N) Space</text>
           <text x="675" y="330" fill="#94a3b8" font-size="8">Strictly builds left child before right</text>
+        </svg>
+        """
+
+    if day_num == 24:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d24GradWin" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d24GradPart" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#042f2e"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d24GradTree" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#451a03"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 24: Advanced SQL (CTEs, Window Functions, Table Partitions) &amp; LC #124 Max Path Sum</text>
+
+          <!-- 1. Window Functions Column -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d24GradWin)" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#a5b4fc" font-size="14" font-weight="bold">Window Functions &amp; CTEs</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Ranking Operators</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">ROW_NUMBER(): Sequential (1, 2, 3, 4)</text>
+          <text x="50" y="162" fill="#cbd5e1" font-size="9">RANK(): Ties skip (1, 2, 2, 4)</text>
+          <text x="50" y="179" fill="#cbd5e1" font-size="9">DENSE_RANK(): Ties compact (1, 2, 2, 3)</text>
+          <text x="50" y="196" fill="#34d399" font-size="9">OVER (PARTITION BY cat ORDER BY val DESC)</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Time-Series Offset &amp; Frames</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">LAG(val, 1): Prior row in window</text>
+          <text x="50" y="274" fill="#cbd5e1" font-size="9">LEAD(val, 1): Next row in window</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">ROWS BETWEEN 2 PRECEDING AND CURRENT</text>
+          <text x="50" y="306" fill="#a5b4fc" font-size="9">Zero self-join overhead | WindowAgg engine</text>
+
+          <!-- 2. Table Partitioning Column -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d24GradPart)" stroke="#2dd4bf" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#5eead4" font-size="14" font-weight="bold">Declarative Table Partitioning</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#2dd4bf" font-size="11" font-weight="bold">Range-Based Partitions</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Master: orders (order_date, total)</text>
+          <text x="340" y="162" fill="#cbd5e1" font-size="9">&#8226; orders_2026_q1: ['2026-01-01', '2026-04-01')</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">&#8226; orders_2026_q2: ['2026-04-01', '2026-07-01')</text>
+          <text x="340" y="196" fill="#34d399" font-size="9">O(1) Data Lifecycle: DROP TABLE vs DELETE</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#f43f5e" font-size="11" font-weight="bold">Query Plan Partition Pruning</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">WHERE order_date BETWEEN '2026-05-01'...</text>
+          <text x="340" y="274" fill="#fbbf24" font-size="9">Planner evaluates range constraints</text>
+          <text x="340" y="290" fill="#34d399" font-size="9">PRUNED: orders_2026_q1, q3, q4 bypassed!</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Scans 1 partition only &#8594; 90% IO reduction</text>
+
+          <!-- 3. LeetCode #124 Max Path Sum Column -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d24GradTree)" stroke="#f97316" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#fdba74" font-size="14" font-weight="bold">LC #124: Tree Max Path Sum</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#fbbf24" font-size="11" font-weight="bold">Post-Order Bottom-Up DFS</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">LeftGain = max(0, Dfs(node.left))</text>
+          <text x="630" y="162" fill="#cbd5e1" font-size="9">RightGain = max(0, Dfs(node.right))</text>
+          <text x="630" y="179" fill="#f43f5e" font-size="9">Truncate negatives: max(0, gain)</text>
+          <text x="630" y="196" fill="#34d399" font-size="9">Local Arch = node.val + Left + Right</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Complexity &amp; Invariants</text>
+          <text x="630" y="258" fill="#34d399" font-size="9">GlobalMax = max(GlobalMax, LocalArch)</text>
+          <text x="630" y="274" fill="#cbd5e1" font-size="9">Return node.val + max(Left, Right)</text>
+          <text x="630" y="290" fill="#fbbf24" font-size="9">Time: O(N) single traversal</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Space: O(H) recursion call stack</text>
+        </svg>
+        """
+
+    if day_num == 25:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d25GradMem" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d25GradAsync" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d25GradCodec" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#581c87"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 25: Phase 1 Milestone Assessment &amp; LC #297 Tree Codec (Hard)</text>
+
+          <!-- 1. Zero-Alloc Memory Synthesis -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d25GradMem)" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#60a5fa" font-size="14" font-weight="bold">Zero-Allocation Memory</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#f87171" font-size="11" font-weight="bold">Heap Slicing: Substring()</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Allocates new string on Managed Heap</text>
+          <text x="50" y="162" fill="#f87171" font-size="9">Cost: 48 bytes per slice &#8594; GC pressure</text>
+          <text x="50" y="179" fill="#94a3b8" font-size="9">Gen 0 / Ephemeral collections</text>
+          <text x="50" y="196" fill="#f87171" font-size="9">Heap fragmentation on high throughput</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#34d399" font-size="11" font-weight="bold">Stack Slicing: ReadOnlySpan&lt;T&gt;</text>
+          <text x="50" y="258" fill="#38bdf8" font-size="9">Pointer + Length on Thread Stack</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">Allocates EXACTLY 0 BYTES</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">ref struct guarantees zero heap leakage</text>
+          <text x="50" y="306" fill="#34d399" font-size="9">Instant O(1) slice | Zero GC pauses</text>
+
+          <!-- 2. Async ValueTask & Concurrency -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d25GradAsync)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Async State Machine &amp; Queues</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#fbbf24" font-size="11" font-weight="bold">ValueTask&lt;T&gt; vs Task&lt;T&gt;</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Cache Hit: ValueTask completes synchronously</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">0 Heap Bytes: Discriminated struct union</text>
+          <text x="340" y="179" fill="#94a3b8" font-size="9">Task&lt;T&gt; allocates object + state machine</text>
+          <text x="340" y="196" fill="#38bdf8" font-size="9">Ideal for high cache hit ratios (&gt;80%)</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Lock-Free Channels &amp; Cache</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">System.Threading.Channels.Channel&lt;T&gt;</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">CAS Ring Buffer: Millions msgs/sec</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">Multi-Tier Redis Caching with Pub/Sub</text>
+          <text x="340" y="306" fill="#a5b4fc" font-size="9">Eliminates DB stampedes via RedLock</text>
+
+          <!-- 3. LeetCode #297 Hard Codec -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d25GradCodec)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#e9d5ff" font-size="14" font-weight="bold">LC #297: Binary Tree Codec</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#c084fc" font-size="11" font-weight="bold">Preorder DFS Codec</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Serialization: Root &#8594; Left &#8594; Right</text>
+          <text x="630" y="162" fill="#cbd5e1" font-size="9">Null sentinel: '#' token</text>
+          <text x="630" y="179" fill="#34d399" font-size="9">Stream: "1,2,#,#,3,4,#,#,5,#,#"</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Queue iterator deserializes in O(N)</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Level-Order BFS Codec</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">FIFO Queue captures tree levels</text>
+          <text x="630" y="274" fill="#cbd5e1" font-size="9">Deserializer connects children via Queue</text>
+          <text x="630" y="290" fill="#34d399" font-size="9">Zero recursion call stack overflow risk</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Time: O(N) | Space: O(W) where W &#8804; N/2</text>
+        </svg>
+        """
+
+    if day_num == 26:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d26GradDdd" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d26GradAcl" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d26GradGrid" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 26: Microservices Principles, Bounded Contexts &amp; LC #200 Number of Islands</text>
+
+          <!-- 1. Strategic DDD & Bounded Contexts -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d26GradDdd)" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#a5b4fc" font-size="14" font-weight="bold">Strategic DDD Subdomains</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#fbbf24" font-size="11" font-weight="bold">Subdomain Classification</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">&#8226; Core: Ordering (Competitive Edge)</text>
+          <text x="50" y="162" fill="#cbd5e1" font-size="9">&#8226; Supporting: Inventory Allocation</text>
+          <text x="50" y="179" fill="#cbd5e1" font-size="9">&#8226; Generic: Payment Gateway, Auth</text>
+          <text x="50" y="196" fill="#38bdf8" font-size="9">Ubiquitous Language within context only</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#34d399" font-size="11" font-weight="bold">Aggregate Root Rules</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Order Aggregate enforces total invariants</text>
+          <text x="50" y="274" fill="#cbd5e1" font-size="9">Reference other aggregates by ID ONLY</text>
+          <text x="50" y="290" fill="#34d399" font-size="9">One aggregate modified per transaction</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Value Objects: Immutable Money, Sku</text>
+
+          <!-- 2. Context Mapping & Anti-Corruption Layer -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d26GradAcl)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Context Mapping &amp; ACL</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#f43f5e" font-size="11" font-weight="bold">Anti-Corruption Layer (ACL)</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Legacy Payload: { tx_id, amt_cents: "245000" }</text>
+          <text x="340" y="162" fill="#38bdf8" font-size="9">ACL adapts untyped vendor schema</text>
+          <text x="340" y="179" fill="#34d399" font-size="9">Produces clean: PaymentAuthorizedEvent</text>
+          <text x="340" y="196" fill="#cbd5e1" font-size="9">Zero pollution in Core Domain Model</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#fbbf24" font-size="11" font-weight="bold">In-Process Domain Events</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Order.Place() &#8594; OrderPlacedEvent</text>
+          <text x="340" y="274" fill="#cbd5e1" font-size="9">Dispatcher routes event asynchronously</text>
+          <text x="340" y="290" fill="#34d399" font-size="9">Inventory consumes &#8594; StockReserved</text>
+          <text x="340" y="306" fill="#a5b4fc" font-size="9">Outbox Pattern prepares broker publish</text>
+
+          <!-- 3. LeetCode #200 Number of Islands -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d26GradGrid)" stroke="#f472b6" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#fbcfe8" font-size="14" font-weight="bold">LC #200: Number of Islands</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#f472b6" font-size="11" font-weight="bold">DFS In-Place Sinking</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Encounter '1' &#8594; islandCount++</text>
+          <text x="630" y="162" fill="#cbd5e1" font-size="9">Sink '1' &#8594; '0' on all 4 neighbors</text>
+          <text x="630" y="179" fill="#34d399" font-size="9">Linear scan M x N cells</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Time: O(M * N) | Space: O(M * N)</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">BFS Queue Exploration</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Queue stores frontier cells (r, c)</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Mark '0' on enqueue prevents duplicates</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Memory bounded by perimeter O(min(M, N))</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Diagonals unconnected &#8594; distinct islands</text>
         </svg>
         """
     return ""

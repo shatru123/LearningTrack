@@ -1,0 +1,3152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 26: Microservices Principles &amp; Bounded Contexts | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 26</span>
+        <span class="badge badge-category">Microservices &amp; DDD</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day25-Phase1-Milestone-Assessment/index.html" class="nav-btn">← Day 25</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+
+        </select>
+        <span class="nav-btn" style="opacity:0.4; cursor:default;">Next Day →</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 26: Microservices Principles &amp; Bounded Contexts</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 3 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d26GradDdd" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d26GradAcl" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d26GradGrid" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 26: Microservices Principles, Bounded Contexts &amp; LC #200 Number of Islands</text>
+
+          <!-- 1. Strategic DDD & Bounded Contexts -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d26GradDdd)" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#a5b4fc" font-size="14" font-weight="bold">Strategic DDD Subdomains</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#fbbf24" font-size="11" font-weight="bold">Subdomain Classification</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">&#8226; Core: Ordering (Competitive Edge)</text>
+          <text x="50" y="162" fill="#cbd5e1" font-size="9">&#8226; Supporting: Inventory Allocation</text>
+          <text x="50" y="179" fill="#cbd5e1" font-size="9">&#8226; Generic: Payment Gateway, Auth</text>
+          <text x="50" y="196" fill="#38bdf8" font-size="9">Ubiquitous Language within context only</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#34d399" font-size="11" font-weight="bold">Aggregate Root Rules</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Order Aggregate enforces total invariants</text>
+          <text x="50" y="274" fill="#cbd5e1" font-size="9">Reference other aggregates by ID ONLY</text>
+          <text x="50" y="290" fill="#34d399" font-size="9">One aggregate modified per transaction</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Value Objects: Immutable Money, Sku</text>
+
+          <!-- 2. Context Mapping & Anti-Corruption Layer -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d26GradAcl)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Context Mapping &amp; ACL</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#f43f5e" font-size="11" font-weight="bold">Anti-Corruption Layer (ACL)</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Legacy Payload: { tx_id, amt_cents: "245000" }</text>
+          <text x="340" y="162" fill="#38bdf8" font-size="9">ACL adapts untyped vendor schema</text>
+          <text x="340" y="179" fill="#34d399" font-size="9">Produces clean: PaymentAuthorizedEvent</text>
+          <text x="340" y="196" fill="#cbd5e1" font-size="9">Zero pollution in Core Domain Model</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#fbbf24" font-size="11" font-weight="bold">In-Process Domain Events</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Order.Place() &#8594; OrderPlacedEvent</text>
+          <text x="340" y="274" fill="#cbd5e1" font-size="9">Dispatcher routes event asynchronously</text>
+          <text x="340" y="290" fill="#34d399" font-size="9">Inventory consumes &#8594; StockReserved</text>
+          <text x="340" y="306" fill="#a5b4fc" font-size="9">Outbox Pattern prepares broker publish</text>
+
+          <!-- 3. LeetCode #200 Number of Islands -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d26GradGrid)" stroke="#f472b6" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#fbcfe8" font-size="14" font-weight="bold">LC #200: Number of Islands</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#f472b6" font-size="11" font-weight="bold">DFS In-Place Sinking</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Encounter '1' &#8594; islandCount++</text>
+          <text x="630" y="162" fill="#cbd5e1" font-size="9">Sink '1' &#8594; '0' on all 4 neighbors</text>
+          <text x="630" y="179" fill="#34d399" font-size="9">Linear scan M x N cells</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Time: O(M * N) | Space: O(M * N)</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">BFS Queue Exploration</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Queue stores frontier cells (r, c)</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Mark '0' on enqueue prevents duplicates</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Memory bounded by perimeter O(min(M, N))</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Diagonals unconnected &#8594; distinct islands</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 26: Deep Dive Notes — Microservices Principles & Bounded Contexts</h1>
+<h2>1. Microservices Foundations & Distributed Realities</h2>
+<p>Moving from a monolithic architecture to microservices is not merely a deployment restructuring—it is an architectural partitioning of business capabilities and transactional boundaries.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+----------------------------------------------------------------------------------------------------+
+|                                    DDD CONTEXT MAPPING TOPOLOGY                                     |
++----------------------------------------------------------------------------------------------------+
+|                                                                                                    |
+|    +-----------------------------+                           +-----------------------------+       |
+|    |      Ordering Context       | --[ OrderPlacedEvent ]--&gt; |      Inventory Context      |       |
+|    |      (Core Subdomain)       |                           |   (Supporting Subdomain)    |       |
+|    +-----------------------------+                           +-----------------------------+       |
+|                   |                                                         |                      |
+|                   v                                                         v                      |
+|          [ Anti-Corruption Layer ]                                [ Stock Reservation ]            |
+|                   |                                                                                |
+|                   v                                                                                |
+|    +-----------------------------+                                                                 |
+|    |       Payment Context       |                                                                 |
+|    |      (Generic Subdomain)    |                                                                 |
+|    +-----------------------------+                                                                 |
+|                                                                                                    |
++----------------------------------------------------------------------------------------------------+</code></pre></div>
+<h3>The 8 Fallacies of Distributed Computing (Deutsch & Gosling)</h3>
+<p>Every microservices engineer must design with the following operational realities in mind:</p>
+<ol>
+<li><strong>The network is reliable</strong>: False. Packet drops, transient partition timeouts, and socket resets will occur continuously.</li>
+<li><strong>Latency is zero</strong>: In-process method calls take $\approx 2\text{–}10\text{ ns}$; network hops take $0.5\text{–}50\text{ ms}$ (a million-fold slowdown).</li>
+<li><strong>Bandwidth is infinite</strong>: Serializing excessive payloads chokes network saturation.</li>
+<li><strong>The network is secure</strong>: Zero-trust mTLS and token validation are required at every boundary.</li>
+<li><strong>Topology doesn't change</strong>: Kubernetes pods, load balancers, and nodes scale and relocate dynamically.</li>
+<li><strong>There is one administrator</strong>: Microservices span heterogeneous squads, clusters, and clouds.</li>
+<li><strong>Transport cost is zero</strong>: JSON parsing, serialization, TLS handshake, and socket overhead consume CPU.</li>
+<li><strong>The network is homogeneous</strong>: Multiple OS versions, programming languages, and network stacks interact.</li>
+</ol>
+<hr/>
+<h2>2. Domain-Driven Design (DDD): Strategic Design</h2>
+<h3>Subdomain Taxonomy</h3>
+<ul>
+<li><strong>Core Subdomain</strong>: The primary competitive engine of the enterprise. Bespoke, highly optimized, subject to frequent evolution.</li>
+<li><strong>Supporting Subdomain</strong>: Custom software essential for core operations, but not a competitive differentiator (e.g., custom warehouse racking allocation).</li>
+<li><strong>Generic Subdomain</strong>: Standardized domain problem shared across the industry (e.g., identity management, payment gateway integration, SMS notifications). Buy or integrate standard libraries whenever possible.</li>
+</ul>
+<h3>Ubiquitous Language & Bounded Contexts</h3>
+<p>A <strong>Bounded Context</strong> defines the conceptual boundary within which a specific domain model and <strong>Ubiquitous Language</strong> strictly apply.</p>
+<p>A single real-world concept (e.g., a "Product") has radically different meanings and attributes across contexts:</p>
+<ul>
+<li>In <code>CatalogContext</code>: SKU, marketing title, SEO tags, rich media, category tree.</li>
+<li>In <code>InventoryContext</code>: SKU, bin location, weight, physical dimensions, units on hand, reorder point.</li>
+<li>In <code>BillingContext</code>: Price, tax code, ledger account, discount eligibility.</li>
+</ul>
+<p><em>Unifying these into a single bloated "Universal Product Entity" creates an unmaintainable monolith.</em></p>
+<h3>Context Mapping Patterns</h3>
+<ol>
+<li><strong>Shared Kernel</strong>: Two bounded contexts share a subset of the domain model and database. Creates high coupling; should be restricted to rare shared utilities.</li>
+<li><strong>Customer / Supplier (Upstream / Downstream)</strong>: The Upstream context (Supplier) delivers services or data to the Downstream context (Customer). Downstream needs dictate delivery priority.</li>
+<li><strong>Conformist</strong>: Downstream conforms unconditionally to the Upstream schema without adaptation.</li>
+<li><strong>Anti-Corruption Layer (ACL)</strong>: Downstream implements a translation layer that maps foreign Upstream representations into clean Downstream domain concepts, preventing domain model corruption.</li>
+<li><strong>Open Host Service (OHS) / Published Language (PL)</strong>: Upstream exposes a stable, documented protocol (REST, gRPC, Protobuf, CloudEvents) for multiple consumers.</li>
+</ol>
+<hr/>
+<h2>3. Tactical DDD Principles</h2>
+<h3>1. Entities vs. Value Objects</h3>
+<ul>
+<li><strong>Value Object</strong>:</li>
+<li>Defined entirely by its attributes (immutable).</li>
+<li>No conceptual identity.</li>
+<li>Structural equality (<code>record struct</code>, <code>record</code>, or overridden <code>Equals</code>).</li>
+<li>Example: <code>Money(100, &quot;USD&quot;)</code>, <code>Sku(&quot;LAPTOP-01&quot;)</code>, <code>Address(&quot;123 Main St&quot;, &quot;NY&quot;)</code>.</li>
+<li><strong>Entity</strong>:</li>
+<li>Defined by an immutable unique identifier (<code>Id</code>).</li>
+<li>Has a lifecycle and mutable state transitions.</li>
+<li>Example: <code>OrderItem</code>, <code>Customer</code>.</li>
+</ul>
+<h3>2. Aggregate Roots & Consistency Boundaries</h3>
+<p>An <strong>Aggregate</strong> is a cluster of entities and value objects that are treated as a single transactional consistency unit:</p>
+<ul>
+<li>The <strong>Aggregate Root</strong> is the sole gatekeeper for all mutations within the aggregate.</li>
+<li><strong>External entities must never directly mutate interior aggregate entities</strong>.</li>
+<li>Aggregates reference other aggregates exclusively by identifier (<code>Guid OrderId</code>), never by direct in-memory object reference.</li>
+<li><strong>Rule of Thumb</strong>: One database transaction should modify exactly one Aggregate Root instance. Cross-aggregate coordination is handled via Domain Events and eventual consistency (Sagas / Process Managers).</li>
+</ul>
+<h3>3. In-Process Domain Events</h3>
+<ul>
+<li>Aggregates record domain events when significant state transitions occur (<code>OrderPlaced</code>, <code>PaymentAuthorized</code>).</li>
+<li>Events are dispatched either immediately in-process or persisted to an Outbox table before committing the database transaction.</li>
+</ul>
+<hr/>
+<h2>4. Graph Algorithms: Number of Islands (LeetCode #200)</h2>
+<h3>Problem Formulation</h3>
+<p>Given an $m \times n$ 2D binary grid representing '1' (land) and '0' (water), count the number of disconnected land masses (connected 4-directionally).</p>
+<h3>1. Depth-First Search (DFS) In-Place Sinking</h3>
+<ul>
+<li>Scan the 2D matrix linearly from $(0, 0)$ to $(m-1, n-1)$.</li>
+<li>When a cell with value <code>&#x27;1&#x27;</code> is encountered:</li>
+</ul>
+<ol>
+<li>Increment <code>islandCount</code>.</li>
+<li>Invoke <code>DfsSink(r, c)</code>: recursively visit its 4 cardinal neighbors (<code>(r-1, c)</code>, <code>(r+1, c)</code>, <code>(r, c-1)</code>, <code>(r, c+1)</code>).</li>
+<li>Mark visited cells by overwriting <code>&#x27;1&#x27;</code> with <code>&#x27;0&#x27;</code> (sinking the island into water).</li>
+</ol>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(M \times N)$ — each grid cell is evaluated at most 5 times (1 linear scan + 4 neighbor checks).</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(M \times N)$ worst case recursion stack depth if the grid is solid land.</li>
+</ul>
+<h3>2. Breadth-First Search (BFS) Exploration</h3>
+<ul>
+<li>When encountering <code>&#x27;1&#x27;</code>:</li>
+</ul>
+<ol>
+<li>Increment <code>islandCount</code>.</li>
+<li>Overwrite <code>&#x27;1&#x27;</code> with <code>&#x27;0&#x27;</code> immediately (prior to queue enqueue) to prevent duplicate enqueues from multiple neighbors.</li>
+<li>Enqueue <code>(r, c)</code>.</li>
+<li>While queue is non-empty, dequeue and explore all 4 cardinal neighbors. Enqueue matching unvisited lands and mark them <code>&#x27;0&#x27;</code>.</li>
+</ol>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(M \times N)$.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(\min(M, N))$ — the queue holds at most the diagonal cross-section/perimeter of the island at any point in time.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 26: Microservices Principles & Bounded Contexts</h1>
+<h2>Overview</h2>
+<p><strong>Day 26</strong> launches <strong>Phase 2: Microservices & Cloud-Native Architecture (Days 26–50)</strong> of the 100-Day .NET + AI Engineering Track. This day focuses on Domain-Driven Design (DDD) strategic decomposition, Bounded Context boundaries, Anti-Corruption Layer (ACL) patterns, and in-process Domain Event dispatching, coupled with LeetCode #200 (<em>Number of Islands</em> - Medium) using DFS sinking and BFS queue graph exploration.</p>
+<hr/>
+<h2>Architectural Topics Covered</h2>
+<ol>
+<li><strong>Strategic DDD & Subdomain Decomposition</strong>:</li>
+</ol>
+<ul>
+<li><strong>Core Subdomain</strong>: Primary competitive advantage (e.g. dynamic pricing and bespoke order workflow).</li>
+<li><strong>Supporting Subdomain</strong>: Custom-built auxiliary capabilities (e.g. inventory allocation).</li>
+<li><strong>Generic Subdomain</strong>: Off-the-shelf commoditized capabilities (e.g. payment gateway integration, authentication).</li>
+</ul>
+<ol>
+<li><strong>Bounded Contexts & Context Mapping</strong>:</li>
+</ol>
+<ul>
+<li><code>OrderingContext</code>: Manages order lifecycles, invariant validations, and domain event generation.</li>
+<li><code>InventoryContext</code>: Manages stock reservations and fulfillment availability.</li>
+<li><code>PaymentContext</code>: Integrates with external payment processors.</li>
+<li><strong>Anti-Corruption Layer (ACL)</strong>: Isolates the domain model from foreign, legacy, or vendor schemas by translating untyped upstream payloads into strongly typed domain models.</li>
+</ul>
+<ol>
+<li><strong>In-Process Domain Event Architecture</strong>:</li>
+</ol>
+<ul>
+<li>Decoupled asynchronous event dispatcher (<code>IDomainEventDispatcher</code>).</li>
+<li>Domain Events: <code>OrderPlacedEvent</code>, <code>InventoryReservedEvent</code>, <code>PaymentAuthorizedEvent</code>.</li>
+<li>Aggregate roots managing internal event collections and emitting state transitions.</li>
+</ul>
+<ol>
+<li><strong>Graph Algorithms: Number of Islands (LeetCode #200)</strong>:</li>
+</ol>
+<ul>
+<li>2D grid graph traversal treating cells as vertices and cardinal adjacencies as edges.</li>
+<li>Depth-First Search (DFS) with in-place sinking ($\mathcal{O}(M \times N)$ time).</li>
+<li>Breadth-First Search (BFS) with FIFO queue ($\mathcal{O}(\min(M, N))$ space).</li>
+</ul>
+<hr/>
+<h2>Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day26-Microservices-BoundedContexts/
+├── src/
+│   └── Day26.MicroservicesBoundedContexts/
+│       ├── Day26.MicroservicesBoundedContexts.csproj
+│       ├── DomainModels.cs
+│       ├── ContextMappingAndAcl.cs
+│       └── NumberOfIslandsSolver.cs
+├── tests/
+│   └── Day26.MicroservicesBoundedContexts.Tests/
+│       ├── Day26.MicroservicesBoundedContexts.Tests.csproj
+│       └── Day26Tests.cs
+├── README.md
+├── notes.md
+└── interview-questions.md</code></pre></div>
+<hr/>
+<h2>Running the Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day26-Microservices-BoundedContexts/tests/Day26.MicroservicesBoundedContexts.Tests/Day26.MicroservicesBoundedContexts.Tests.csproj</code></pre></div>
+<h3>Test Suite Coverage</h3>
+<ol>
+<li><code>Order_AddItem_AndCalculateTotal_AccuratelyAggregates</code>: Validates total price calculation and item aggregation.</li>
+<li><code>Order_Place_EmitsOrderPlacedDomainEvent</code>: Verifies domain event emission upon status transition to <code>Placed</code>.</li>
+<li><code>Order_Invariants_EnforceValidation</code>: Ensures validation rules for empty orders, zero quantity, negative currency, and mismatched currencies.</li>
+<li><code>InventoryItem_TryReserve_AndRelease_MaintainsInvariants</code>: Tests stock reservation, over-allocation prevention, and release.</li>
+<li><code>PaymentAntiCorruptionLayer_TranslatesLegacyGatewaySuccess</code>: Tests successful translation of snake_case legacy payment response into domain result.</li>
+<li><code>PaymentAntiCorruptionLayer_TranslatesInvalidPayloadGracefully</code>: Ensures malformed identifiers and currency amounts fail gracefully.</li>
+<li><code>OrderFulfillmentCoordinator_CoordinatesAcrossBoundedContexts</code>: Validates end-to-end event choreography and audit trail.</li>
+<li><code>NumberOfIslands_DfsAndBfs_StandardGrid_ComputesCorrectCount</code>: Validates LC #200 multi-island grid under both DFS and BFS.</li>
+<li><code>NumberOfIslands_HandlesEdgeCases_Correctly</code>: Tests null, empty, all-water, and all-land matrices.</li>
+<li><code>NumberOfIslands_HandlesDiagonalSeparation_AsDistinctIslands</code>: Confirms diagonally adjacent cells are treated as distinct islands.</li>
+</ol>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        <div class="markdown-content"><h1>Day 26: Senior & Staff Engineer Interview Questions & Answers</h1>
+<h3>1. How do you determine the correct boundaries for a Microservice, and why is premature decomposition considered an architectural catastrophe?</h3>
+<p><strong>Answer:</strong></p>
+<p>A microservice boundary should align with a <strong>Bounded Context</strong> derived from business domain subdomains, not technical layers (e.g., UI service, Database service) or arbitrary entity boundaries (e.g., UserService, OrderService, ItemService).</p>
+<p><strong>Criteria for Service Boundaries:</strong></p>
+<ol>
+<li><strong>Autonomous Business Capability</strong>: Can the service deliver its core business value independently of other services being deployed?</li>
+<li><strong>Independent Rate of Change</strong>: Does this area of the business evolve and deploy on a significantly different cadence than adjacent capabilities?</li>
+<li><strong>Data Ownership & Invariants</strong>: Does the service own its transactional consistency boundary, completely encapsulating its database?</li>
+<li><strong>Team Topology (Conway’s Law)</strong>: Can a single cross-functional team own the lifecycle of the service end-to-end?</li>
+</ol>
+<p><strong>Dangers of Premature Decomposition:</strong></p>
+<ul>
+<li><strong>Distributed Monolith</strong>: Services share synchronous request-response chains (HTTP/gRPC) where a failure in Service D cascades backwards to Service A.</li>
+<li><strong>Dual Writes & Distributed Transactions</strong>: Teams struggle to maintain consistency without 2PC, resulting in corrupted or out-of-sync data.</li>
+<li><strong>Operational Tax</strong>: Overhead of independent CI/CD pipelines, container orchestration, distributed tracing, observability, and network latency without reaping organizational autonomy.</li>
+<li><strong>Recommended Path</strong>: Start with a well-structured <strong>Modular Monolith</strong> enforcing bounded context boundaries in-process. Extract services only when organizational scale or distinct scalability profiles demand it.</li>
+</ul>
+<hr/>
+<h3>2. Is every Bounded Context guaranteed to be an independent Microservice? How do you architect multiple Bounded Contexts within a Modular Monolith?</h3>
+<p><strong>Answer:</strong></p>
+<p>No. A <strong>Bounded Context</strong> is a conceptual domain boundary in the problem/solution space, whereas a <strong>Microservice</strong> is a physical deployment and runtime boundary. A single microservice or modular monolith can host multiple bounded contexts.</p>
+<p><strong>Architecting Multiple Bounded Contexts in a Modular Monolith:</strong></p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">MyApp/
+├── Modules/
+│   ├── Ordering/
+│   │   ├── Domain/
+│   │   ├── Application/
+│   │   ├── Infrastructure/
+│   │   └── PublicApi/          &lt;-- Only exposed interface
+│   ├── Inventory/
+│   │   ├── Domain/
+│   │   ├── Application/
+│   │   └── Infrastructure/</code></pre></div>
+<p><strong>Enforcement Rules:</strong></p>
+<ol>
+<li><strong>Explicit API Contracts</strong>: Module A cannot reference Module B's internal <code>Domain</code> or <code>Infrastructure</code> assemblies. It can only reference <code>PublicApi</code> contracts or subscribe to in-process domain events.</li>
+<li><strong>Separate Database Schemas</strong>: Use distinct schemas in PostgreSQL/SQL Server (<code>ordering.orders</code>, <code>inventory.stock_items</code>). Foreign keys <em>never</em> cross schema boundaries.</li>
+<li><strong>Architecture Unit Tests</strong>: Use tools like NetArchTest or ArchUnitNET to fail CI if Module A accesses internal namespaces of Module B.</li>
+</ol>
+<hr/>
+<h3>3. How does the Anti-Corruption Layer (ACL) pattern differ from an API Gateway, and where should it be implemented?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>API Gateway</strong>:</li>
+<li>Focuses on <strong>cross-cutting technical concerns</strong>: reverse proxying, TLS termination, client routing, rate limiting, token validation (JWT), and response compression.</li>
+<li>Sits at the edge of the system between external clients (Web, Mobile) and backend services.</li>
+<li><strong>Anti-Corruption Layer (ACL)</strong>:</li>
+<li>Focuses on <strong>domain model semantic translation</strong>.</li>
+<li>Sits between two bounded contexts (specifically on the downstream side) or between a modern domain model and a legacy/third-party system.</li>
+<li>Translates foreign data structures, terminology, and quirks into clean, immutable value objects and domain entities that align with the downstream Ubiquitous Language.</li>
+</ul>
+<p><strong>Implementation Example:</strong></p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public class PaymentAntiCorruptionLayer
+{
+    public PaymentResult Adapt(LegacyVendorPayload raw)
+    {
+        // Translate untyped snake_case cents string into strong Money value object
+        var amount = decimal.Parse(raw.amt_cents) / 100m;
+        return new PaymentResult(
+            OrderId: Guid.Parse(raw.order_ref),
+            Amount: new Money(amount, raw.curr),
+            Status: raw.status == &quot;00&quot; ? PaymentStatus.Authorized : PaymentStatus.Declined
+        );
+    }
+}</code></pre></div>
+<hr/>
+<h3>4. Why must DDD Aggregate Roots reference other Aggregates strictly by identity (<code>Guid Id</code>) rather than direct object navigation properties?</h3>
+<p><strong>Answer:</strong></p>
+<p>Referencing other aggregates via direct in-memory object references (e.g., <code>public Customer Customer { get; set; }</code> inside <code>Order</code>) introduces severe architectural anti-patterns:</p>
+<ol>
+<li><strong>Undefined Transactional Consistency Boundary</strong>: When an ORM (like EF Core) saves an <code>Order</code>, developers or cascading updates might modify the loaded <code>Customer</code> instance, violating the principle that one transaction touches exactly one aggregate.</li>
+<li><strong>Massive Memory Graphs & Lazy Loading</strong>: Traversing navigation properties triggers accidental database queries (N+1 queries) or pulls multi-megabyte object graphs into memory.</li>
+<li><strong>Blocks Microservice Extraction</strong>: If <code>Order</code> holds a direct object reference to <code>Customer</code>, extracting <code>Ordering</code> into a separate microservice breaks compilation. With <code>Guid CustomerId</code>, extraction requires zero domain model changes because the boundary was already loosely coupled.</li>
+</ol>
+<hr/>
+<h3>5. What is the difference between a Domain Event and an Integration Event?</h3>
+<p><strong>Answer:</strong></p>
+<div class="table-container"><table><thead><tr>
+<th>Dimension</th>
+<th>Domain Event</th>
+<th>Integration Event</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Scope</strong></td>
+<td>In-process, within a single Bounded Context</td>
+<td>Cross-service, across Bounded Context boundaries</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Aggregates and handlers in the same service</td>
+<td>Other services and external systems</td>
+</tr>
+<tr>
+<td><strong>Transport</strong></td>
+<td>In-memory mediator (<code>MediatR</code>, <code>Channel&lt;T&gt;</code>)</td>
+<td>Distributed message broker (RabbitMQ, Kafka, Azure Service Bus)</td>
+</tr>
+<tr>
+<td><strong>Schema Stability</strong></td>
+<td>Private to the bounded context; can be refactored easily</td>
+<td>Published contract; requires strict backward compatibility (Protobuf, JSON schema)</td>
+</tr>
+<tr>
+<td><strong>Timing</strong></td>
+<td>Dispatched before or during transaction commit</td>
+<td>Dispatched after transaction commit (via Outbox Pattern)</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h3>6. What is the Dual-Write Problem, and how does the Transactional Outbox Pattern solve it?</h3>
+<p><strong>Answer:</strong></p>
+<p><strong>The Dual-Write Problem:</strong></p>
+<p>When an application updates its database and publishes a message to a broker (e.g., RabbitMQ or Kafka):</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">await _dbContext.SaveChangesAsync(); // Step 1: DB commit
+await _messageBus.PublishAsync(event); // Step 2: Message publish</code></pre></div>
+<p>If the process crashes, the network disconnects, or the message broker is unavailable between Step 1 and Step 2, the database mutation succeeds but the message is never sent, leading to permanent cross-system data inconsistency. Conversely, if Step 2 is executed first, message delivery may succeed while the DB transaction rolls back.</p>
+<p><strong>The Transactional Outbox Solution:</strong></p>
+<ol>
+<li>Store an <code>OutboxMessages</code> table in the <em>same</em> database as the business entities.</li>
+<li>Inside a single atomic ACID database transaction, insert the business state mutation AND insert the serialized event into <code>OutboxMessages</code>.</li>
+<li>A background worker (e.g., using Change Data Capture / Debezium or an asynchronous polling worker) reads unpublished outbox rows, publishes them to the message broker, and marks them as dispatched upon broker acknowledgment.</li>
+</ol>
+<hr/>
+<h3>7. How do you maintain data consistency across multiple Bounded Contexts without using Two-Phase Commit (2PC)?</h3>
+<p><strong>Answer:</strong></p>
+<p>Two-Phase Commit (2PC / XA transactions) relies on distributed locking, which degrades availability, limits throughput, and creates single points of failure across microservices. Instead, modern cloud-native systems employ <strong>Eventual Consistency</strong> via the <strong>Saga Pattern</strong>:</p>
+<p><strong>Saga Architectures:</strong></p>
+<ol>
+<li><strong>Choreography</strong>:</li>
+</ol>
+<ul>
+<li>Each service listens to domain events and executes its local transaction without a central coordinator.</li>
+<li>Example: <code>OrderService</code> places order $\to$ emits <code>OrderPlaced</code> $\to$ <code>InventoryService</code> reserves stock $\to$ emits <code>StockReserved</code> $\to$ <code>PaymentService</code> charges card.</li>
+<li>If payment fails, <code>PaymentService</code> emits <code>PaymentFailed</code> $\to$ <code>InventoryService</code> consumes it and runs <strong>Compensating Transaction</strong> to release stock.</li>
+</ul>
+<ol>
+<li><strong>Orchestration</strong>:</li>
+</ol>
+<ul>
+<li>A dedicated Orchestrator (Process Manager or workflow engine like Temporal / MassTransit State Machine) explicitly commands each participating service step-by-step and initiates compensation workflows upon errors.</li>
+</ul>
+<hr/>
+<h3>8. Explain Conway's Law and the "Inverse Conway Maneuver". How does it influence microservice design?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Conway's Law (Melvin Conway, 1967)</strong>:</li>
+</ul>
+<p><em>"Organizations which design systems are constrained to produce designs which are copies of the communication structures of these organizations."</em></p>
+<p>If an engineering department is split into a DBA team, a Backend team, and a Frontend team, the system will inevitably consist of a database layer, a backend service layer, and a frontend layer with high coordination overhead.</p>
+<ul>
+<li><strong>Inverse Conway Maneuver</strong>:</li>
+</ul>
+<p>An organization intentionally restructures its cross-functional teams around business capabilities and Bounded Contexts to drive the desired software architecture.</p>
+<p>For example, creating a dedicated "Fulfillment Team" owning the <code>Ordering</code> and <code>Shipping</code> bounded contexts results in autonomous, decoupled services with clean API contracts.</p>
+<hr/>
+<h3>9. What are the trade-offs between Synchronous HTTP/gRPC communication and Asynchronous Event-Driven communication in microservices?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Synchronous HTTP/gRPC</strong>:</li>
+<li><em>Pros</em>: Simple programming model, immediate response / error feedback, straightforward debugging and tracing.</li>
+<li><em>Cons</em>: <strong>Temporal Coupling</strong> (both caller and callee must be available simultaneously), cascading latency (latency equals sum of all downstream calls), fragile under network degradation, thundering herds.</li>
+<li><strong>Asynchronous Event-Driven (Broker)</strong>:</li>
+<li><em>Pros</em>: <strong>Temporal Decoupling</strong> (publisher produces even if consumer is down or deploying), load leveling / backpressure smoothing, high scalability, broadcast to multiple subscribers.</li>
+<li><em>Cons</em>: Eventual consistency complexity, out-of-order delivery risks, duplicate message handling (requires idempotency keys), distributed debugging and tracing require correlation IDs.</li>
+</ul>
+<hr/>
+<h3>10. For LeetCode #200 (<em>Number of Islands</em>), what are the failure modes of recursive DFS on massive grids ($10^4 \times 10^4$), and how do BFS or Disjoint Set Union (DSU / Union-Find) overcome them?</h3>
+<p><strong>Answer:</strong></p>
+<p><strong>DFS Failure Modes on Massive Grids:</strong></p>
+<p>Recursive DFS uses the thread execution stack. On an $M \times N$ grid with solid land, recursion depth can reach $\mathcal{O}(M \times N)$. In .NET, the default thread stack size is 1 MB (or 256 KB on 64-bit secondary threads). A grid of size $1000 \times 1000 = 10^6$ will exceed the stack boundary within a few thousand recursive frames, throwing a fatal, uncatchable <code>StackOverflowException</code>.</p>
+<p><strong>Alternatives:</strong></p>
+<ol>
+<li><strong>Iterative BFS with FIFO Queue</strong>:</li>
+</ol>
+<ul>
+<li>Uses managed heap memory rather than thread stack.</li>
+<li>Space complexity is bounded by the perimeter of the island ($\mathcal{O}(\min(M, N))$), which is far smaller than the total area.</li>
+</ul>
+<ol>
+<li><strong>Disjoint Set Union (Union-Find)</strong>:</li>
+</ol>
+<ul>
+<li>Treats each cell $(r, c)$ as a node $r \times N + c$.</li>
+<li>Iterates through the grid once. For every land cell, it performs <code>Union</code> with its right and down adjacent land cells.</li>
+<li>Number of islands equals total land cells minus successful union operations.</li>
+<li>Space complexity is $\mathcal{O}(M \times N)$ array allocations on the heap, with near-constant $\mathcal{O}(\alpha(N))$ time complexity per operation.</li>
+</ul></div>
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day26.MicroservicesBoundedContexts/ContextMappingAndAcl.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd26-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d26-src-code-0" class="language-csharp">namespace Day26.MicroservicesBoundedContexts;
+
+/// &lt;summary&gt;
+/// Upstream raw legacy payload from third-party payment gateway.
+/// Contains snake_case fields and stringified numeric formats.
+/// &lt;/summary&gt;
+public record LegacyPaymentGatewayPayload(
+    string tx_id,
+    string order_ref,
+    string amt_cents,
+    string curr,
+    string status_code,
+    string auth_token);
+
+/// &lt;summary&gt;
+/// Clean domain model for downstream Payment Bounded Context.
+/// &lt;/summary&gt;
+public record PaymentAuthorizationResult(
+    Guid OrderId,
+    decimal Amount,
+    string Currency,
+    string AuthorizationCode,
+    bool IsSuccessful,
+    string? FailureReason);
+
+/// &lt;summary&gt;
+/// Anti-Corruption Layer (ACL) isolating the Core Domain from legacy/third-party schemas.
+/// Protects domain models from leaking external vendor types and formatting quirks.
+/// &lt;/summary&gt;
+public class PaymentAntiCorruptionLayer
+{
+    public PaymentAuthorizationResult Translate(LegacyPaymentGatewayPayload rawPayload)
+    {
+        if (rawPayload == null)
+            throw new ArgumentNullException(nameof(rawPayload));
+
+        if (!Guid.TryParse(rawPayload.order_ref, out var orderId))
+        {
+            return new PaymentAuthorizationResult(
+                Guid.Empty,
+                0m,
+                rawPayload.curr ?? &quot;USD&quot;,
+                string.Empty,
+                IsSuccessful: false,
+                FailureReason: &quot;Invalid order identifier format.&quot;);
+        }
+
+        if (!decimal.TryParse(rawPayload.amt_cents, out var cents))
+        {
+            return new PaymentAuthorizationResult(
+                orderId,
+                0m,
+                rawPayload.curr ?? &quot;USD&quot;,
+                string.Empty,
+                IsSuccessful: false,
+                FailureReason: &quot;Invalid amount representation.&quot;);
+        }
+
+        var amount = decimal.Round(cents / 100m, 2);
+        var isSuccess = rawPayload.status_code == &quot;AUTH_200&quot; || rawPayload.status_code == &quot;SUCCESS&quot;;
+
+        return new PaymentAuthorizationResult(
+            OrderId: orderId,
+            Amount: amount,
+            Currency: (rawPayload.curr ?? &quot;USD&quot;).ToUpperInvariant(),
+            AuthorizationCode: rawPayload.auth_token ?? string.Empty,
+            IsSuccessful: isSuccess,
+            FailureReason: isSuccess ? null : $&quot;Gateway returned error code: {rawPayload.status_code}&quot;);
+    }
+}
+
+/// &lt;summary&gt;
+/// In-process asynchronous domain event dispatcher.
+/// Decouples bounded contexts while maintaining transactional observability.
+/// &lt;/summary&gt;
+public interface IDomainEventDispatcher
+{
+    void RegisterHandler&lt;TEvent&gt;(Func&lt;TEvent, CancellationToken, Task&gt; handler) where TEvent : IDomainEvent;
+    Task DispatchAsync&lt;TEvent&gt;(TEvent domainEvent, CancellationToken cancellationToken = default) where TEvent : IDomainEvent;
+    int DispatchedCount { get; }
+}
+
+public class InMemoryDomainEventDispatcher : IDomainEventDispatcher
+{
+    private readonly Dictionary&lt;Type, List&lt;Delegate&gt;&gt; _handlers = new();
+    private readonly object _lock = new();
+    private int _dispatchedCount;
+
+    public int DispatchedCount =&gt; _dispatchedCount;
+
+    public void RegisterHandler&lt;TEvent&gt;(Func&lt;TEvent, CancellationToken, Task&gt; handler) where TEvent : IDomainEvent
+    {
+        lock (_lock)
+        {
+            var eventType = typeof(TEvent);
+            if (!_handlers.TryGetValue(eventType, out var list))
+            {
+                list = new List&lt;Delegate&gt;();
+                _handlers[eventType] = list;
+            }
+            list.Add(handler);
+        }
+    }
+
+    public async Task DispatchAsync&lt;TEvent&gt;(TEvent domainEvent, CancellationToken cancellationToken = default) where TEvent : IDomainEvent
+    {
+        List&lt;Delegate&gt; targets;
+        lock (_lock)
+        {
+            var eventType = typeof(TEvent);
+            if (!_handlers.TryGetValue(eventType, out var list))
+                return;
+
+            targets = new List&lt;Delegate&gt;(list);
+        }
+
+        foreach (var d in targets)
+        {
+            if (d is Func&lt;TEvent, CancellationToken, Task&gt; typedHandler)
+            {
+                await typedHandler(domainEvent, cancellationToken).ConfigureAwait(false);
+                Interlocked.Increment(ref _dispatchedCount);
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// High-level orchestration showing Bounded Context interactions via Events and ACL.
+/// &lt;/summary&gt;
+public class OrderFulfillmentCoordinator
+{
+    private readonly IDomainEventDispatcher _dispatcher;
+    private readonly InventoryItem _inventoryItem;
+    private readonly PaymentAntiCorruptionLayer _paymentAcl;
+
+    public List&lt;string&gt; AuditLog { get; } = new();
+
+    public OrderFulfillmentCoordinator(
+        IDomainEventDispatcher dispatcher,
+        InventoryItem inventoryItem,
+        PaymentAntiCorruptionLayer paymentAcl)
+    {
+        _dispatcher = dispatcher;
+        _inventoryItem = inventoryItem;
+        _paymentAcl = paymentAcl;
+
+        _dispatcher.RegisterHandler&lt;OrderPlacedEvent&gt;(HandleOrderPlacedAsync);
+        _dispatcher.RegisterHandler&lt;InventoryReservedEvent&gt;(HandleInventoryReservedAsync);
+    }
+
+    public async Task ProcessOrderPlacementAsync(Order order)
+    {
+        order.Place();
+        foreach (var ev in order.DomainEvents)
+        {
+            if (ev is OrderPlacedEvent placed)
+            {
+                await _dispatcher.DispatchAsync(placed).ConfigureAwait(false);
+            }
+        }
+        order.ClearDomainEvents();
+    }
+
+    private Task HandleOrderPlacedAsync(OrderPlacedEvent ev, CancellationToken ct)
+    {
+        AuditLog.Add($&quot;[OrderingContext] Order {ev.OrderId} placed for {ev.Quantity}x {ev.Sku}.&quot;);
+
+        if (_inventoryItem.TryReserve(ev.Quantity, out var resId))
+        {
+            AuditLog.Add($&quot;[InventoryContext] Stock reserved: {resId} for SKU {ev.Sku}.&quot;);
+            var reservedEvent = new InventoryReservedEvent(resId, ev.OrderId, ev.Sku, ev.Quantity);
+            return _dispatcher.DispatchAsync(reservedEvent, ct);
+        }
+
+        AuditLog.Add($&quot;[InventoryContext] Out of stock for SKU {ev.Sku}.&quot;);
+        return Task.CompletedTask;
+    }
+
+    private Task HandleInventoryReservedAsync(InventoryReservedEvent ev, CancellationToken ct)
+    {
+        AuditLog.Add($&quot;[Fulfillment] Inventory confirmed for Order {ev.OrderId}. Ready for Payment Bounded Context.&quot;);
+        return Task.CompletedTask;
+    }
+
+    public bool ProcessPaymentWithAcl(Order order, LegacyPaymentGatewayPayload gatewayResponse)
+    {
+        var aclResult = _paymentAcl.Translate(gatewayResponse);
+        if (aclResult.IsSuccessful &amp;&amp; aclResult.OrderId == order.Id)
+        {
+            order.MarkPaid();
+            AuditLog.Add($&quot;[PaymentContext] Payment authorized for Order {order.Id} with Code {aclResult.AuthorizationCode}.&quot;);
+            return true;
+        }
+
+        AuditLog.Add($&quot;[PaymentContext] Payment failed for Order {order.Id}: {aclResult.FailureReason}&quot;);
+        return false;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day26.MicroservicesBoundedContexts/DomainModels.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd26-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d26-src-code-1" class="language-csharp">namespace Day26.MicroservicesBoundedContexts;
+
+/// &lt;summary&gt;
+/// DDD Strategic Classification of Subdomains.
+/// &lt;/summary&gt;
+public enum SubdomainType
+{
+    Core,        // Primary competitive differentiator (e.g., Dynamic Pricing, Proprietary Order Engine)
+    Supporting,  // Complements core domain, tailored to business (e.g., Inventory Allocation)
+    Generic      // Off-the-shelf or standardized capabilities (e.g., Identity, Payments, Notifications)
+}
+
+/// &lt;summary&gt;
+/// Domain Event marker interface.
+/// &lt;/summary&gt;
+public interface IDomainEvent
+{
+    Guid EventId { get; }
+    DateTime OccurredOnUtc { get; }
+}
+
+/// &lt;summary&gt;
+/// Order Placed Domain Event emitted by the Ordering Bounded Context.
+/// &lt;/summary&gt;
+public record OrderPlacedEvent(
+    Guid OrderId,
+    string CustomerId,
+    string Sku,
+    int Quantity,
+    decimal TotalAmount,
+    string Currency,
+    Guid EventId,
+    DateTime OccurredOnUtc) : IDomainEvent
+{
+    public OrderPlacedEvent(Guid orderId, string customerId, string sku, int quantity, decimal totalAmount, string currency)
+        : this(orderId, customerId, sku, quantity, totalAmount, currency, Guid.NewGuid(), DateTime.UtcNow) { }
+}
+
+/// &lt;summary&gt;
+/// Inventory Reserved Domain Event emitted by the Inventory Bounded Context.
+/// &lt;/summary&gt;
+public record InventoryReservedEvent(
+    Guid ReservationId,
+    Guid OrderId,
+    string Sku,
+    int QuantityReserved,
+    Guid EventId,
+    DateTime OccurredOnUtc) : IDomainEvent
+{
+    public InventoryReservedEvent(Guid reservationId, Guid orderId, string sku, int quantityReserved)
+        : this(reservationId, orderId, sku, quantityReserved, Guid.NewGuid(), DateTime.UtcNow) { }
+}
+
+/// &lt;summary&gt;
+/// Payment Authorized Domain Event emitted by the Payment Bounded Context.
+/// &lt;/summary&gt;
+public record PaymentAuthorizedEvent(
+    Guid PaymentId,
+    Guid OrderId,
+    decimal Amount,
+    string Currency,
+    string AuthCode,
+    Guid EventId,
+    DateTime OccurredOnUtc) : IDomainEvent
+{
+    public PaymentAuthorizedEvent(Guid paymentId, Guid orderId, decimal amount, string currency, string authCode)
+        : this(paymentId, orderId, amount, currency, authCode, Guid.NewGuid(), DateTime.UtcNow) { }
+}
+
+/// &lt;summary&gt;
+/// Money Value Object with immutable semantics and currency guardrails.
+/// &lt;/summary&gt;
+public readonly record struct Money
+{
+    public decimal Amount { get; }
+    public string Currency { get; }
+
+    public Money(decimal amount, string currency = &quot;USD&quot;)
+    {
+        if (amount &lt; 0)
+            throw new ArgumentException(&quot;Money amount cannot be negative.&quot;, nameof(amount));
+        if (string.IsNullOrWhiteSpace(currency))
+            throw new ArgumentException(&quot;Currency must be specified.&quot;, nameof(currency));
+
+        Amount = decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
+        Currency = currency.ToUpperInvariant();
+    }
+
+    public static Money Zero(string currency = &quot;USD&quot;) =&gt; new(0m, currency);
+
+    public static Money operator +(Money a, Money b)
+    {
+        if (a.Currency != b.Currency)
+            throw new InvalidOperationException($&quot;Cannot add mismatched currencies: {a.Currency} and {b.Currency}&quot;);
+        return new Money(a.Amount + b.Amount, a.Currency);
+    }
+
+    public static Money operator *(Money a, int multiplier)
+    {
+        if (multiplier &lt; 0)
+            throw new ArgumentException(&quot;Multiplier cannot be negative.&quot;, nameof(multiplier));
+        return new Money(a.Amount * multiplier, a.Currency);
+    }
+}
+
+/// &lt;summary&gt;
+/// Sku Value Object ensuring normalized product identifiers.
+/// &lt;/summary&gt;
+public readonly record struct Sku
+{
+    public string Value { get; }
+
+    public Sku(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException(&quot;SKU cannot be empty.&quot;, nameof(value));
+        Value = value.Trim().ToUpperInvariant();
+    }
+
+    public override string ToString() =&gt; Value;
+}
+
+public enum OrderStatus
+{
+    Draft,
+    Placed,
+    Paid,
+    Cancelled
+}
+
+/// &lt;summary&gt;
+/// Order Aggregate Root in Ordering Bounded Context.
+/// Enforces business invariants and encapsulates Domain Events.
+/// &lt;/summary&gt;
+public class Order
+{
+    private readonly List&lt;IDomainEvent&gt; _domainEvents = new();
+    private readonly List&lt;OrderItem&gt; _items = new();
+
+    public Guid Id { get; }
+    public string CustomerId { get; }
+    public OrderStatus Status { get; private set; }
+    public IReadOnlyList&lt;OrderItem&gt; Items =&gt; _items.AsReadOnly();
+    public IReadOnlyList&lt;IDomainEvent&gt; DomainEvents =&gt; _domainEvents.AsReadOnly();
+
+    public Order(Guid id, string customerId)
+    {
+        if (string.IsNullOrWhiteSpace(customerId))
+            throw new ArgumentException(&quot;Customer ID is required.&quot;, nameof(customerId));
+
+        Id = id == Guid.Empty ? Guid.NewGuid() : id;
+        CustomerId = customerId.Trim();
+        Status = OrderStatus.Draft;
+    }
+
+    public void AddItem(Sku sku, int quantity, Money unitPrice)
+    {
+        if (Status != OrderStatus.Draft)
+            throw new InvalidOperationException($&quot;Cannot modify order in status: {Status}&quot;);
+        if (quantity &lt;= 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), &quot;Quantity must be greater than zero.&quot;);
+
+        var existing = _items.FirstOrDefault(i =&gt; i.Sku == sku);
+        if (existing != null)
+        {
+            _items.Remove(existing);
+            _items.Add(new OrderItem(sku, existing.Quantity + quantity, unitPrice));
+        }
+        else
+        {
+            _items.Add(new OrderItem(sku, quantity, unitPrice));
+        }
+    }
+
+    public Money CalculateTotal()
+    {
+        if (_items.Count == 0)
+            return Money.Zero();
+
+        var currency = _items[0].UnitPrice.Currency;
+        var total = Money.Zero(currency);
+        foreach (var item in _items)
+        {
+            total += item.UnitPrice * item.Quantity;
+        }
+        return total;
+    }
+
+    public void Place()
+    {
+        if (Status != OrderStatus.Draft)
+            throw new InvalidOperationException($&quot;Cannot place order in status: {Status}&quot;);
+        if (_items.Count == 0)
+            throw new InvalidOperationException(&quot;Cannot place an order with zero line items.&quot;);
+
+        Status = OrderStatus.Placed;
+        var total = CalculateTotal();
+        var primaryItem = _items[0];
+
+        _domainEvents.Add(new OrderPlacedEvent(
+            Id,
+            CustomerId,
+            primaryItem.Sku.Value,
+            primaryItem.Quantity,
+            total.Amount,
+            total.Currency
+        ));
+    }
+
+    public void MarkPaid()
+    {
+        if (Status != OrderStatus.Placed)
+            throw new InvalidOperationException($&quot;Only placed orders can be marked paid. Current status: {Status}&quot;);
+        Status = OrderStatus.Paid;
+    }
+
+    public void Cancel()
+    {
+        if (Status == OrderStatus.Paid)
+            throw new InvalidOperationException(&quot;Cannot cancel an already paid order.&quot;);
+        Status = OrderStatus.Cancelled;
+    }
+
+    public void ClearDomainEvents() =&gt; _domainEvents.Clear();
+}
+
+public record OrderItem(Sku Sku, int Quantity, Money UnitPrice);
+
+/// &lt;summary&gt;
+/// Inventory Item Aggregate Root in Inventory Bounded Context.
+/// &lt;/summary&gt;
+public class InventoryItem
+{
+    public Sku Sku { get; }
+    public int AvailableStock { get; private set; }
+    public int ReservedStock { get; private set; }
+
+    public InventoryItem(Sku sku, int initialStock)
+    {
+        if (initialStock &lt; 0)
+            throw new ArgumentException(&quot;Initial stock cannot be negative.&quot;, nameof(initialStock));
+        Sku = sku;
+        AvailableStock = initialStock;
+        ReservedStock = 0;
+    }
+
+    public bool TryReserve(int quantity, out Guid reservationId)
+    {
+        if (quantity &lt;= 0 || AvailableStock &lt; quantity)
+        {
+            reservationId = Guid.Empty;
+            return false;
+        }
+
+        AvailableStock -= quantity;
+        ReservedStock += quantity;
+        reservationId = Guid.NewGuid();
+        return true;
+    }
+
+    public void ReleaseReservation(int quantity)
+    {
+        if (quantity &lt;= 0 || ReservedStock &lt; quantity)
+            throw new InvalidOperationException(&quot;Cannot release more stock than currently reserved.&quot;);
+
+        ReservedStock -= quantity;
+        AvailableStock += quantity;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day26.MicroservicesBoundedContexts/NumberOfIslandsSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd26-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d26-src-code-2" class="language-csharp">namespace Day26.MicroservicesBoundedContexts;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #200: Number of Islands.
+/// Given an m x n 2D binary grid grid which represents a map of &#x27;1&#x27;s (land) and &#x27;0&#x27;s (water),
+/// return the number of islands. An island is surrounded by water and is formed by connecting
+/// adjacent lands horizontally or vertically.
+/// &lt;/summary&gt;
+public class NumberOfIslandsSolver
+{
+    private static readonly int[] RowOffsets = { -1, 1, 0, 0 };
+    private static readonly int[] ColOffsets = { 0, 0, -1, 1 };
+
+    /// &lt;summary&gt;
+    /// Solves Number of Islands using Depth-First Search (DFS) with in-place sinking.
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N) in worst case (recursion call stack for all land).
+    /// &lt;/summary&gt;
+    public int NumIslandsDfs(char[][]? grid)
+    {
+        if (grid == null || grid.Length == 0 || grid[0].Length == 0)
+            return 0;
+
+        // Clone grid to preserve caller input
+        var m = grid.Length;
+        var n = grid[0].Length;
+        var workingGrid = new char[m][];
+        for (var i = 0; i &lt; m; i++)
+        {
+            workingGrid[i] = (char[])grid[i].Clone();
+        }
+
+        var islandCount = 0;
+        for (var r = 0; r &lt; m; r++)
+        {
+            for (var c = 0; c &lt; n; c++)
+            {
+                if (workingGrid[r][c] == &#x27;1&#x27;)
+                {
+                    islandCount++;
+                    DfsSink(workingGrid, r, c, m, n);
+                }
+            }
+        }
+
+        return islandCount;
+    }
+
+    private static void DfsSink(char[][] grid, int r, int c, int m, int n)
+    {
+        if (r &lt; 0 || r &gt;= m || c &lt; 0 || c &gt;= n || grid[r][c] != &#x27;1&#x27;)
+            return;
+
+        // Sink land to water (&#x27;0&#x27;) to prevent revisit
+        grid[r][c] = &#x27;0&#x27;;
+
+        for (var i = 0; i &lt; 4; i++)
+        {
+            DfsSink(grid, r + RowOffsets[i], c + ColOffsets[i], m, n);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Solves Number of Islands using Breadth-First Search (BFS) with FIFO queue.
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(min(M, N)) queue memory.
+    /// &lt;/summary&gt;
+    public int NumIslandsBfs(char[][]? grid)
+    {
+        if (grid == null || grid.Length == 0 || grid[0].Length == 0)
+            return 0;
+
+        var m = grid.Length;
+        var n = grid[0].Length;
+        var workingGrid = new char[m][];
+        for (var i = 0; i &lt; m; i++)
+        {
+            workingGrid[i] = (char[])grid[i].Clone();
+        }
+
+        var islandCount = 0;
+        var queue = new Queue&lt;(int r, int c)&gt;();
+
+        for (var r = 0; r &lt; m; r++)
+        {
+            for (var c = 0; c &lt; n; c++)
+            {
+                if (workingGrid[r][c] == &#x27;1&#x27;)
+                {
+                    islandCount++;
+                    workingGrid[r][c] = &#x27;0&#x27;; // mark visited immediately
+                    queue.Enqueue((r, c));
+
+                    while (queue.Count &gt; 0)
+                    {
+                        var (currR, currC) = queue.Dequeue();
+
+                        for (var i = 0; i &lt; 4; i++)
+                        {
+                            var nr = currR + RowOffsets[i];
+                            var nc = currC + ColOffsets[i];
+
+                            if (nr &gt;= 0 &amp;&amp; nr &lt; m &amp;&amp; nc &gt;= 0 &amp;&amp; nc &lt; n &amp;&amp; workingGrid[nr][nc] == &#x27;1&#x27;)
+                            {
+                                workingGrid[nr][nc] = &#x27;0&#x27;; // mark visited on enqueue to prevent duplicates
+                                queue.Enqueue((nr, nc));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return islandCount;
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day26.MicroservicesBoundedContexts.Tests/Day26Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd26-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d26-tests-code-0" class="language-csharp">using Day26.MicroservicesBoundedContexts;
+using Xunit;
+
+namespace Day26.MicroservicesBoundedContexts.Tests;
+
+public class Day26Tests
+{
+    [Fact]
+    public void Order_AddItem_AndCalculateTotal_AccuratelyAggregates()
+    {
+        var order = new Order(Guid.NewGuid(), &quot;CUST-1001&quot;);
+        var sku1 = new Sku(&quot;PROD-LAPTOP&quot;);
+        var sku2 = new Sku(&quot;PROD-MOUSE&quot;);
+
+        order.AddItem(sku1, 2, new Money(1200.00m, &quot;USD&quot;));
+        order.AddItem(sku2, 1, new Money(50.00m, &quot;USD&quot;));
+
+        var total = order.CalculateTotal();
+
+        Assert.Equal(2450.00m, total.Amount);
+        Assert.Equal(&quot;USD&quot;, total.Currency);
+        Assert.Equal(OrderStatus.Draft, order.Status);
+    }
+
+    [Fact]
+    public void Order_Place_EmitsOrderPlacedDomainEvent()
+    {
+        var order = new Order(Guid.NewGuid(), &quot;CUST-1002&quot;);
+        var sku = new Sku(&quot;PROD-KEYBOARD&quot;);
+        order.AddItem(sku, 1, new Money(150.00m, &quot;USD&quot;));
+
+        order.Place();
+
+        Assert.Equal(OrderStatus.Placed, order.Status);
+        Assert.Single(order.DomainEvents);
+
+        var domainEvent = Assert.IsType&lt;OrderPlacedEvent&gt;(order.DomainEvents[0]);
+        Assert.Equal(order.Id, domainEvent.OrderId);
+        Assert.Equal(&quot;CUST-1002&quot;, domainEvent.CustomerId);
+        Assert.Equal(&quot;PROD-KEYBOARD&quot;, domainEvent.Sku);
+        Assert.Equal(1, domainEvent.Quantity);
+        Assert.Equal(150.00m, domainEvent.TotalAmount);
+    }
+
+    [Fact]
+    public void Order_Invariants_EnforceValidation()
+    {
+        var order = new Order(Guid.NewGuid(), &quot;CUST-1003&quot;);
+        var sku = new Sku(&quot;PROD-MONITOR&quot;);
+
+        // Placing empty order throws
+        Assert.Throws&lt;InvalidOperationException&gt;(() =&gt; order.Place());
+
+        // Zero or negative quantity throws
+        Assert.Throws&lt;ArgumentOutOfRangeException&gt;(() =&gt; order.AddItem(sku, 0, new Money(300m)));
+
+        // Negative money throws
+        Assert.Throws&lt;ArgumentException&gt;(() =&gt; new Money(-10m));
+
+        // Mismatched currencies throw
+        var usd = new Money(100m, &quot;USD&quot;);
+        var eur = new Money(50m, &quot;EUR&quot;);
+        Assert.Throws&lt;InvalidOperationException&gt;(() =&gt; _ = usd + eur);
+    }
+
+    [Fact]
+    public void InventoryItem_TryReserve_AndRelease_MaintainsInvariants()
+    {
+        var sku = new Sku(&quot;PROD-HEADSET&quot;);
+        var inventory = new InventoryItem(sku, initialStock: 10);
+
+        var reserved = inventory.TryReserve(4, out var reservationId);
+        Assert.True(reserved);
+        Assert.NotEqual(Guid.Empty, reservationId);
+        Assert.Equal(6, inventory.AvailableStock);
+        Assert.Equal(4, inventory.ReservedStock);
+
+        // Attempting to reserve more than available fails
+        var overReserve = inventory.TryReserve(7, out _);
+        Assert.False(overReserve);
+
+        // Release stock
+        inventory.ReleaseReservation(4);
+        Assert.Equal(10, inventory.AvailableStock);
+        Assert.Equal(0, inventory.ReservedStock);
+    }
+
+    [Fact]
+    public void PaymentAntiCorruptionLayer_TranslatesLegacyGatewaySuccess()
+    {
+        var acl = new PaymentAntiCorruptionLayer();
+        var orderId = Guid.NewGuid();
+        var rawPayload = new LegacyPaymentGatewayPayload(
+            tx_id: &quot;txn_987654&quot;,
+            order_ref: orderId.ToString(),
+            amt_cents: &quot;245000&quot;,
+            curr: &quot;usd&quot;,
+            status_code: &quot;AUTH_200&quot;,
+            auth_token: &quot;AUTH_XYZ_789&quot;
+        );
+
+        var result = acl.Translate(rawPayload);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(orderId, result.OrderId);
+        Assert.Equal(2450.00m, result.Amount);
+        Assert.Equal(&quot;USD&quot;, result.Currency);
+        Assert.Equal(&quot;AUTH_XYZ_789&quot;, result.AuthorizationCode);
+        Assert.Null(result.FailureReason);
+    }
+
+    [Fact]
+    public void PaymentAntiCorruptionLayer_TranslatesInvalidPayloadGracefully()
+    {
+        var acl = new PaymentAntiCorruptionLayer();
+        var rawPayload = new LegacyPaymentGatewayPayload(
+            tx_id: &quot;txn_err&quot;,
+            order_ref: &quot;not-a-valid-guid&quot;,
+            amt_cents: &quot;invalid_cents&quot;,
+            curr: &quot;eur&quot;,
+            status_code: &quot;ERR_500&quot;,
+            auth_token: &quot;&quot;
+        );
+
+        var result = acl.Translate(rawPayload);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(Guid.Empty, result.OrderId);
+        Assert.NotNull(result.FailureReason);
+    }
+
+    [Fact]
+    public async Task OrderFulfillmentCoordinator_CoordinatesAcrossBoundedContexts()
+    {
+        var dispatcher = new InMemoryDomainEventDispatcher();
+        var sku = new Sku(&quot;PROD-SERVER&quot;);
+        var inventory = new InventoryItem(sku, initialStock: 5);
+        var paymentAcl = new PaymentAntiCorruptionLayer();
+
+        var coordinator = new OrderFulfillmentCoordinator(dispatcher, inventory, paymentAcl);
+
+        var order = new Order(Guid.NewGuid(), &quot;CUST-CORP-1&quot;);
+        order.AddItem(sku, 2, new Money(5000.00m, &quot;USD&quot;));
+
+        await coordinator.ProcessOrderPlacementAsync(order);
+
+        Assert.Equal(3, inventory.AvailableStock);
+        Assert.Equal(2, inventory.ReservedStock);
+        Assert.Equal(2, dispatcher.DispatchedCount); // OrderPlacedEvent + InventoryReservedEvent
+
+        // Now test payment through ACL
+        var gatewayResponse = new LegacyPaymentGatewayPayload(
+            tx_id: &quot;tx_112233&quot;,
+            order_ref: order.Id.ToString(),
+            amt_cents: &quot;1000000&quot;,
+            curr: &quot;usd&quot;,
+            status_code: &quot;SUCCESS&quot;,
+            auth_token: &quot;AUTH_OK&quot;
+        );
+
+        var paymentSuccess = coordinator.ProcessPaymentWithAcl(order, gatewayResponse);
+
+        Assert.True(paymentSuccess);
+        Assert.Equal(OrderStatus.Paid, order.Status);
+        Assert.Contains(coordinator.AuditLog, log =&gt; log.Contains(&quot;[PaymentContext] Payment authorized&quot;));
+    }
+
+    [Fact]
+    public void NumberOfIslands_DfsAndBfs_StandardGrid_ComputesCorrectCount()
+    {
+        var solver = new NumberOfIslandsSolver();
+
+        // 3 Islands grid:
+        // 1 1 0 0 0
+        // 1 1 0 0 0
+        // 0 0 1 0 0
+        // 0 0 0 1 1
+        var grid = new char[][]
+        {
+            new[] { &#x27;1&#x27;, &#x27;1&#x27;, &#x27;0&#x27;, &#x27;0&#x27;, &#x27;0&#x27; },
+            new[] { &#x27;1&#x27;, &#x27;1&#x27;, &#x27;0&#x27;, &#x27;0&#x27;, &#x27;0&#x27; },
+            new[] { &#x27;0&#x27;, &#x27;0&#x27;, &#x27;1&#x27;, &#x27;0&#x27;, &#x27;0&#x27; },
+            new[] { &#x27;0&#x27;, &#x27;0&#x27;, &#x27;0&#x27;, &#x27;1&#x27;, &#x27;1&#x27; }
+        };
+
+        var dfsResult = solver.NumIslandsDfs(grid);
+        var bfsResult = solver.NumIslandsBfs(grid);
+
+        Assert.Equal(3, dfsResult);
+        Assert.Equal(3, bfsResult);
+    }
+
+    [Fact]
+    public void NumberOfIslands_HandlesEdgeCases_Correctly()
+    {
+        var solver = new NumberOfIslandsSolver();
+
+        Assert.Equal(0, solver.NumIslandsDfs(null));
+        Assert.Equal(0, solver.NumIslandsBfs(null));
+        Assert.Equal(0, solver.NumIslandsDfs(Array.Empty&lt;char[]&gt;()));
+        Assert.Equal(0, solver.NumIslandsBfs(Array.Empty&lt;char[]&gt;()));
+
+        // All water
+        var waterGrid = new char[][]
+        {
+            new[] { &#x27;0&#x27;, &#x27;0&#x27; },
+            new[] { &#x27;0&#x27;, &#x27;0&#x27; }
+        };
+        Assert.Equal(0, solver.NumIslandsDfs(waterGrid));
+        Assert.Equal(0, solver.NumIslandsBfs(waterGrid));
+
+        // All land
+        var landGrid = new char[][]
+        {
+            new[] { &#x27;1&#x27;, &#x27;1&#x27; },
+            new[] { &#x27;1&#x27;, &#x27;1&#x27; }
+        };
+        Assert.Equal(1, solver.NumIslandsDfs(landGrid));
+        Assert.Equal(1, solver.NumIslandsBfs(landGrid));
+    }
+
+    [Fact]
+    public void NumberOfIslands_HandlesDiagonalSeparation_AsDistinctIslands()
+    {
+        var solver = new NumberOfIslandsSolver();
+
+        // Diagonals are NOT connected:
+        // 1 0
+        // 0 1
+        var diagonalGrid = new char[][]
+        {
+            new[] { &#x27;1&#x27;, &#x27;0&#x27; },
+            new[] { &#x27;0&#x27;, &#x27;1&#x27; }
+        };
+
+        Assert.Equal(2, solver.NumIslandsDfs(diagonalGrid));
+        Assert.Equal(2, solver.NumIslandsBfs(diagonalGrid));
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 26: Deep Dive Notes — Microservices Principles & Bounded Contexts</h1>
+<h2>1. Microservices Foundations & Distributed Realities</h2>
+<p>Moving from a monolithic architecture to microservices is not merely a deployment restructuring—it is an architectural partitioning of business capabilities and transactional boundaries.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+----------------------------------------------------------------------------------------------------+
+|                                    DDD CONTEXT MAPPING TOPOLOGY                                     |
++----------------------------------------------------------------------------------------------------+
+|                                                                                                    |
+|    +-----------------------------+                           +-----------------------------+       |
+|    |      Ordering Context       | --[ OrderPlacedEvent ]--&gt; |      Inventory Context      |       |
+|    |      (Core Subdomain)       |                           |   (Supporting Subdomain)    |       |
+|    +-----------------------------+                           +-----------------------------+       |
+|                   |                                                         |                      |
+|                   v                                                         v                      |
+|          [ Anti-Corruption Layer ]                                [ Stock Reservation ]            |
+|                   |                                                                                |
+|                   v                                                                                |
+|    +-----------------------------+                                                                 |
+|    |       Payment Context       |                                                                 |
+|    |      (Generic Subdomain)    |                                                                 |
+|    +-----------------------------+                                                                 |
+|                                                                                                    |
++----------------------------------------------------------------------------------------------------+</code></pre></div>
+<h3>The 8 Fallacies of Distributed Computing (Deutsch & Gosling)</h3>
+<p>Every microservices engineer must design with the following operational realities in mind:</p>
+<ol>
+<li><strong>The network is reliable</strong>: False. Packet drops, transient partition timeouts, and socket resets will occur continuously.</li>
+<li><strong>Latency is zero</strong>: In-process method calls take $\approx 2\text{–}10\text{ ns}$; network hops take $0.5\text{–}50\text{ ms}$ (a million-fold slowdown).</li>
+<li><strong>Bandwidth is infinite</strong>: Serializing excessive payloads chokes network saturation.</li>
+<li><strong>The network is secure</strong>: Zero-trust mTLS and token validation are required at every boundary.</li>
+<li><strong>Topology doesn't change</strong>: Kubernetes pods, load balancers, and nodes scale and relocate dynamically.</li>
+<li><strong>There is one administrator</strong>: Microservices span heterogeneous squads, clusters, and clouds.</li>
+<li><strong>Transport cost is zero</strong>: JSON parsing, serialization, TLS handshake, and socket overhead consume CPU.</li>
+<li><strong>The network is homogeneous</strong>: Multiple OS versions, programming languages, and network stacks interact.</li>
+</ol>
+<hr/>
+<h2>2. Domain-Driven Design (DDD): Strategic Design</h2>
+<h3>Subdomain Taxonomy</h3>
+<ul>
+<li><strong>Core Subdomain</strong>: The primary competitive engine of the enterprise. Bespoke, highly optimized, subject to frequent evolution.</li>
+<li><strong>Supporting Subdomain</strong>: Custom software essential for core operations, but not a competitive differentiator (e.g., custom warehouse racking allocation).</li>
+<li><strong>Generic Subdomain</strong>: Standardized domain problem shared across the industry (e.g., identity management, payment gateway integration, SMS notifications). Buy or integrate standard libraries whenever possible.</li>
+</ul>
+<h3>Ubiquitous Language & Bounded Contexts</h3>
+<p>A <strong>Bounded Context</strong> defines the conceptual boundary within which a specific domain model and <strong>Ubiquitous Language</strong> strictly apply.</p>
+<p>A single real-world concept (e.g., a "Product") has radically different meanings and attributes across contexts:</p>
+<ul>
+<li>In <code>CatalogContext</code>: SKU, marketing title, SEO tags, rich media, category tree.</li>
+<li>In <code>InventoryContext</code>: SKU, bin location, weight, physical dimensions, units on hand, reorder point.</li>
+<li>In <code>BillingContext</code>: Price, tax code, ledger account, discount eligibility.</li>
+</ul>
+<p><em>Unifying these into a single bloated "Universal Product Entity" creates an unmaintainable monolith.</em></p>
+<h3>Context Mapping Patterns</h3>
+<ol>
+<li><strong>Shared Kernel</strong>: Two bounded contexts share a subset of the domain model and database. Creates high coupling; should be restricted to rare shared utilities.</li>
+<li><strong>Customer / Supplier (Upstream / Downstream)</strong>: The Upstream context (Supplier) delivers services or data to the Downstream context (Customer). Downstream needs dictate delivery priority.</li>
+<li><strong>Conformist</strong>: Downstream conforms unconditionally to the Upstream schema without adaptation.</li>
+<li><strong>Anti-Corruption Layer (ACL)</strong>: Downstream implements a translation layer that maps foreign Upstream representations into clean Downstream domain concepts, preventing domain model corruption.</li>
+<li><strong>Open Host Service (OHS) / Published Language (PL)</strong>: Upstream exposes a stable, documented protocol (REST, gRPC, Protobuf, CloudEvents) for multiple consumers.</li>
+</ol>
+<hr/>
+<h2>3. Tactical DDD Principles</h2>
+<h3>1. Entities vs. Value Objects</h3>
+<ul>
+<li><strong>Value Object</strong>:</li>
+<li>Defined entirely by its attributes (immutable).</li>
+<li>No conceptual identity.</li>
+<li>Structural equality (<code>record struct</code>, <code>record</code>, or overridden <code>Equals</code>).</li>
+<li>Example: <code>Money(100, &quot;USD&quot;)</code>, <code>Sku(&quot;LAPTOP-01&quot;)</code>, <code>Address(&quot;123 Main St&quot;, &quot;NY&quot;)</code>.</li>
+<li><strong>Entity</strong>:</li>
+<li>Defined by an immutable unique identifier (<code>Id</code>).</li>
+<li>Has a lifecycle and mutable state transitions.</li>
+<li>Example: <code>OrderItem</code>, <code>Customer</code>.</li>
+</ul>
+<h3>2. Aggregate Roots & Consistency Boundaries</h3>
+<p>An <strong>Aggregate</strong> is a cluster of entities and value objects that are treated as a single transactional consistency unit:</p>
+<ul>
+<li>The <strong>Aggregate Root</strong> is the sole gatekeeper for all mutations within the aggregate.</li>
+<li><strong>External entities must never directly mutate interior aggregate entities</strong>.</li>
+<li>Aggregates reference other aggregates exclusively by identifier (<code>Guid OrderId</code>), never by direct in-memory object reference.</li>
+<li><strong>Rule of Thumb</strong>: One database transaction should modify exactly one Aggregate Root instance. Cross-aggregate coordination is handled via Domain Events and eventual consistency (Sagas / Process Managers).</li>
+</ul>
+<h3>3. In-Process Domain Events</h3>
+<ul>
+<li>Aggregates record domain events when significant state transitions occur (<code>OrderPlaced</code>, <code>PaymentAuthorized</code>).</li>
+<li>Events are dispatched either immediately in-process or persisted to an Outbox table before committing the database transaction.</li>
+</ul>
+<hr/>
+<h2>4. Graph Algorithms: Number of Islands (LeetCode #200)</h2>
+<h3>Problem Formulation</h3>
+<p>Given an $m \times n$ 2D binary grid representing '1' (land) and '0' (water), count the number of disconnected land masses (connected 4-directionally).</p>
+<h3>1. Depth-First Search (DFS) In-Place Sinking</h3>
+<ul>
+<li>Scan the 2D matrix linearly from $(0, 0)$ to $(m-1, n-1)$.</li>
+<li>When a cell with value <code>&#x27;1&#x27;</code> is encountered:</li>
+</ul>
+<ol>
+<li>Increment <code>islandCount</code>.</li>
+<li>Invoke <code>DfsSink(r, c)</code>: recursively visit its 4 cardinal neighbors (<code>(r-1, c)</code>, <code>(r+1, c)</code>, <code>(r, c-1)</code>, <code>(r, c+1)</code>).</li>
+<li>Mark visited cells by overwriting <code>&#x27;1&#x27;</code> with <code>&#x27;0&#x27;</code> (sinking the island into water).</li>
+</ol>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(M \times N)$ — each grid cell is evaluated at most 5 times (1 linear scan + 4 neighbor checks).</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(M \times N)$ worst case recursion stack depth if the grid is solid land.</li>
+</ul>
+<h3>2. Breadth-First Search (BFS) Exploration</h3>
+<ul>
+<li>When encountering <code>&#x27;1&#x27;</code>:</li>
+</ul>
+<ol>
+<li>Increment <code>islandCount</code>.</li>
+<li>Overwrite <code>&#x27;1&#x27;</code> with <code>&#x27;0&#x27;</code> immediately (prior to queue enqueue) to prevent duplicate enqueues from multiple neighbors.</li>
+<li>Enqueue <code>(r, c)</code>.</li>
+<li>While queue is non-empty, dequeue and explore all 4 cardinal neighbors. Enqueue matching unvisited lands and mark them <code>&#x27;0&#x27;</code>.</li>
+</ol>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(M \times N)$.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(\min(M, N))$ — the queue holds at most the diagonal cross-section/perimeter of the island at any point in time.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 26: Microservices Principles & Bounded Contexts</h1>
+<h2>Overview</h2>
+<p><strong>Day 26</strong> launches <strong>Phase 2: Microservices & Cloud-Native Architecture (Days 26–50)</strong> of the 100-Day .NET + AI Engineering Track. This day focuses on Domain-Driven Design (DDD) strategic decomposition, Bounded Context boundaries, Anti-Corruption Layer (ACL) patterns, and in-process Domain Event dispatching, coupled with LeetCode #200 (<em>Number of Islands</em> - Medium) using DFS sinking and BFS queue graph exploration.</p>
+<hr/>
+<h2>Architectural Topics Covered</h2>
+<ol>
+<li><strong>Strategic DDD & Subdomain Decomposition</strong>:</li>
+</ol>
+<ul>
+<li><strong>Core Subdomain</strong>: Primary competitive advantage (e.g. dynamic pricing and bespoke order workflow).</li>
+<li><strong>Supporting Subdomain</strong>: Custom-built auxiliary capabilities (e.g. inventory allocation).</li>
+<li><strong>Generic Subdomain</strong>: Off-the-shelf commoditized capabilities (e.g. payment gateway integration, authentication).</li>
+</ul>
+<ol>
+<li><strong>Bounded Contexts & Context Mapping</strong>:</li>
+</ol>
+<ul>
+<li><code>OrderingContext</code>: Manages order lifecycles, invariant validations, and domain event generation.</li>
+<li><code>InventoryContext</code>: Manages stock reservations and fulfillment availability.</li>
+<li><code>PaymentContext</code>: Integrates with external payment processors.</li>
+<li><strong>Anti-Corruption Layer (ACL)</strong>: Isolates the domain model from foreign, legacy, or vendor schemas by translating untyped upstream payloads into strongly typed domain models.</li>
+</ul>
+<ol>
+<li><strong>In-Process Domain Event Architecture</strong>:</li>
+</ol>
+<ul>
+<li>Decoupled asynchronous event dispatcher (<code>IDomainEventDispatcher</code>).</li>
+<li>Domain Events: <code>OrderPlacedEvent</code>, <code>InventoryReservedEvent</code>, <code>PaymentAuthorizedEvent</code>.</li>
+<li>Aggregate roots managing internal event collections and emitting state transitions.</li>
+</ul>
+<ol>
+<li><strong>Graph Algorithms: Number of Islands (LeetCode #200)</strong>:</li>
+</ol>
+<ul>
+<li>2D grid graph traversal treating cells as vertices and cardinal adjacencies as edges.</li>
+<li>Depth-First Search (DFS) with in-place sinking ($\mathcal{O}(M \times N)$ time).</li>
+<li>Breadth-First Search (BFS) with FIFO queue ($\mathcal{O}(\min(M, N))$ space).</li>
+</ul>
+<hr/>
+<h2>Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day26-Microservices-BoundedContexts/
+├── src/
+│   └── Day26.MicroservicesBoundedContexts/
+│       ├── Day26.MicroservicesBoundedContexts.csproj
+│       ├── DomainModels.cs
+│       ├── ContextMappingAndAcl.cs
+│       └── NumberOfIslandsSolver.cs
+├── tests/
+│   └── Day26.MicroservicesBoundedContexts.Tests/
+│       ├── Day26.MicroservicesBoundedContexts.Tests.csproj
+│       └── Day26Tests.cs
+├── README.md
+├── notes.md
+└── interview-questions.md</code></pre></div>
+<hr/>
+<h2>Running the Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day26-Microservices-BoundedContexts/tests/Day26.MicroservicesBoundedContexts.Tests/Day26.MicroservicesBoundedContexts.Tests.csproj</code></pre></div>
+<h3>Test Suite Coverage</h3>
+<ol>
+<li><code>Order_AddItem_AndCalculateTotal_AccuratelyAggregates</code>: Validates total price calculation and item aggregation.</li>
+<li><code>Order_Place_EmitsOrderPlacedDomainEvent</code>: Verifies domain event emission upon status transition to <code>Placed</code>.</li>
+<li><code>Order_Invariants_EnforceValidation</code>: Ensures validation rules for empty orders, zero quantity, negative currency, and mismatched currencies.</li>
+<li><code>InventoryItem_TryReserve_AndRelease_MaintainsInvariants</code>: Tests stock reservation, over-allocation prevention, and release.</li>
+<li><code>PaymentAntiCorruptionLayer_TranslatesLegacyGatewaySuccess</code>: Tests successful translation of snake_case legacy payment response into domain result.</li>
+<li><code>PaymentAntiCorruptionLayer_TranslatesInvalidPayloadGracefully</code>: Ensures malformed identifiers and currency amounts fail gracefully.</li>
+<li><code>OrderFulfillmentCoordinator_CoordinatesAcrossBoundedContexts</code>: Validates end-to-end event choreography and audit trail.</li>
+<li><code>NumberOfIslands_DfsAndBfs_StandardGrid_ComputesCorrectCount</code>: Validates LC #200 multi-island grid under both DFS and BFS.</li>
+<li><code>NumberOfIslands_HandlesEdgeCases_Correctly</code>: Tests null, empty, all-water, and all-land matrices.</li>
+<li><code>NumberOfIslands_HandlesDiagonalSeparation_AsDistinctIslands</code>: Confirms diagonally adjacent cells are treated as distinct islands.</li>
+</ol>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          <div class="markdown-content"><h1>Day 26: Senior & Staff Engineer Interview Questions & Answers</h1>
+<h3>1. How do you determine the correct boundaries for a Microservice, and why is premature decomposition considered an architectural catastrophe?</h3>
+<p><strong>Answer:</strong></p>
+<p>A microservice boundary should align with a <strong>Bounded Context</strong> derived from business domain subdomains, not technical layers (e.g., UI service, Database service) or arbitrary entity boundaries (e.g., UserService, OrderService, ItemService).</p>
+<p><strong>Criteria for Service Boundaries:</strong></p>
+<ol>
+<li><strong>Autonomous Business Capability</strong>: Can the service deliver its core business value independently of other services being deployed?</li>
+<li><strong>Independent Rate of Change</strong>: Does this area of the business evolve and deploy on a significantly different cadence than adjacent capabilities?</li>
+<li><strong>Data Ownership & Invariants</strong>: Does the service own its transactional consistency boundary, completely encapsulating its database?</li>
+<li><strong>Team Topology (Conway’s Law)</strong>: Can a single cross-functional team own the lifecycle of the service end-to-end?</li>
+</ol>
+<p><strong>Dangers of Premature Decomposition:</strong></p>
+<ul>
+<li><strong>Distributed Monolith</strong>: Services share synchronous request-response chains (HTTP/gRPC) where a failure in Service D cascades backwards to Service A.</li>
+<li><strong>Dual Writes & Distributed Transactions</strong>: Teams struggle to maintain consistency without 2PC, resulting in corrupted or out-of-sync data.</li>
+<li><strong>Operational Tax</strong>: Overhead of independent CI/CD pipelines, container orchestration, distributed tracing, observability, and network latency without reaping organizational autonomy.</li>
+<li><strong>Recommended Path</strong>: Start with a well-structured <strong>Modular Monolith</strong> enforcing bounded context boundaries in-process. Extract services only when organizational scale or distinct scalability profiles demand it.</li>
+</ul>
+<hr/>
+<h3>2. Is every Bounded Context guaranteed to be an independent Microservice? How do you architect multiple Bounded Contexts within a Modular Monolith?</h3>
+<p><strong>Answer:</strong></p>
+<p>No. A <strong>Bounded Context</strong> is a conceptual domain boundary in the problem/solution space, whereas a <strong>Microservice</strong> is a physical deployment and runtime boundary. A single microservice or modular monolith can host multiple bounded contexts.</p>
+<p><strong>Architecting Multiple Bounded Contexts in a Modular Monolith:</strong></p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">MyApp/
+├── Modules/
+│   ├── Ordering/
+│   │   ├── Domain/
+│   │   ├── Application/
+│   │   ├── Infrastructure/
+│   │   └── PublicApi/          &lt;-- Only exposed interface
+│   ├── Inventory/
+│   │   ├── Domain/
+│   │   ├── Application/
+│   │   └── Infrastructure/</code></pre></div>
+<p><strong>Enforcement Rules:</strong></p>
+<ol>
+<li><strong>Explicit API Contracts</strong>: Module A cannot reference Module B's internal <code>Domain</code> or <code>Infrastructure</code> assemblies. It can only reference <code>PublicApi</code> contracts or subscribe to in-process domain events.</li>
+<li><strong>Separate Database Schemas</strong>: Use distinct schemas in PostgreSQL/SQL Server (<code>ordering.orders</code>, <code>inventory.stock_items</code>). Foreign keys <em>never</em> cross schema boundaries.</li>
+<li><strong>Architecture Unit Tests</strong>: Use tools like NetArchTest or ArchUnitNET to fail CI if Module A accesses internal namespaces of Module B.</li>
+</ol>
+<hr/>
+<h3>3. How does the Anti-Corruption Layer (ACL) pattern differ from an API Gateway, and where should it be implemented?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>API Gateway</strong>:</li>
+<li>Focuses on <strong>cross-cutting technical concerns</strong>: reverse proxying, TLS termination, client routing, rate limiting, token validation (JWT), and response compression.</li>
+<li>Sits at the edge of the system between external clients (Web, Mobile) and backend services.</li>
+<li><strong>Anti-Corruption Layer (ACL)</strong>:</li>
+<li>Focuses on <strong>domain model semantic translation</strong>.</li>
+<li>Sits between two bounded contexts (specifically on the downstream side) or between a modern domain model and a legacy/third-party system.</li>
+<li>Translates foreign data structures, terminology, and quirks into clean, immutable value objects and domain entities that align with the downstream Ubiquitous Language.</li>
+</ul>
+<p><strong>Implementation Example:</strong></p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public class PaymentAntiCorruptionLayer
+{
+    public PaymentResult Adapt(LegacyVendorPayload raw)
+    {
+        // Translate untyped snake_case cents string into strong Money value object
+        var amount = decimal.Parse(raw.amt_cents) / 100m;
+        return new PaymentResult(
+            OrderId: Guid.Parse(raw.order_ref),
+            Amount: new Money(amount, raw.curr),
+            Status: raw.status == &quot;00&quot; ? PaymentStatus.Authorized : PaymentStatus.Declined
+        );
+    }
+}</code></pre></div>
+<hr/>
+<h3>4. Why must DDD Aggregate Roots reference other Aggregates strictly by identity (<code>Guid Id</code>) rather than direct object navigation properties?</h3>
+<p><strong>Answer:</strong></p>
+<p>Referencing other aggregates via direct in-memory object references (e.g., <code>public Customer Customer { get; set; }</code> inside <code>Order</code>) introduces severe architectural anti-patterns:</p>
+<ol>
+<li><strong>Undefined Transactional Consistency Boundary</strong>: When an ORM (like EF Core) saves an <code>Order</code>, developers or cascading updates might modify the loaded <code>Customer</code> instance, violating the principle that one transaction touches exactly one aggregate.</li>
+<li><strong>Massive Memory Graphs & Lazy Loading</strong>: Traversing navigation properties triggers accidental database queries (N+1 queries) or pulls multi-megabyte object graphs into memory.</li>
+<li><strong>Blocks Microservice Extraction</strong>: If <code>Order</code> holds a direct object reference to <code>Customer</code>, extracting <code>Ordering</code> into a separate microservice breaks compilation. With <code>Guid CustomerId</code>, extraction requires zero domain model changes because the boundary was already loosely coupled.</li>
+</ol>
+<hr/>
+<h3>5. What is the difference between a Domain Event and an Integration Event?</h3>
+<p><strong>Answer:</strong></p>
+<div class="table-container"><table><thead><tr>
+<th>Dimension</th>
+<th>Domain Event</th>
+<th>Integration Event</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Scope</strong></td>
+<td>In-process, within a single Bounded Context</td>
+<td>Cross-service, across Bounded Context boundaries</td>
+</tr>
+<tr>
+<td><strong>Audience</strong></td>
+<td>Aggregates and handlers in the same service</td>
+<td>Other services and external systems</td>
+</tr>
+<tr>
+<td><strong>Transport</strong></td>
+<td>In-memory mediator (<code>MediatR</code>, <code>Channel&lt;T&gt;</code>)</td>
+<td>Distributed message broker (RabbitMQ, Kafka, Azure Service Bus)</td>
+</tr>
+<tr>
+<td><strong>Schema Stability</strong></td>
+<td>Private to the bounded context; can be refactored easily</td>
+<td>Published contract; requires strict backward compatibility (Protobuf, JSON schema)</td>
+</tr>
+<tr>
+<td><strong>Timing</strong></td>
+<td>Dispatched before or during transaction commit</td>
+<td>Dispatched after transaction commit (via Outbox Pattern)</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h3>6. What is the Dual-Write Problem, and how does the Transactional Outbox Pattern solve it?</h3>
+<p><strong>Answer:</strong></p>
+<p><strong>The Dual-Write Problem:</strong></p>
+<p>When an application updates its database and publishes a message to a broker (e.g., RabbitMQ or Kafka):</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">await _dbContext.SaveChangesAsync(); // Step 1: DB commit
+await _messageBus.PublishAsync(event); // Step 2: Message publish</code></pre></div>
+<p>If the process crashes, the network disconnects, or the message broker is unavailable between Step 1 and Step 2, the database mutation succeeds but the message is never sent, leading to permanent cross-system data inconsistency. Conversely, if Step 2 is executed first, message delivery may succeed while the DB transaction rolls back.</p>
+<p><strong>The Transactional Outbox Solution:</strong></p>
+<ol>
+<li>Store an <code>OutboxMessages</code> table in the <em>same</em> database as the business entities.</li>
+<li>Inside a single atomic ACID database transaction, insert the business state mutation AND insert the serialized event into <code>OutboxMessages</code>.</li>
+<li>A background worker (e.g., using Change Data Capture / Debezium or an asynchronous polling worker) reads unpublished outbox rows, publishes them to the message broker, and marks them as dispatched upon broker acknowledgment.</li>
+</ol>
+<hr/>
+<h3>7. How do you maintain data consistency across multiple Bounded Contexts without using Two-Phase Commit (2PC)?</h3>
+<p><strong>Answer:</strong></p>
+<p>Two-Phase Commit (2PC / XA transactions) relies on distributed locking, which degrades availability, limits throughput, and creates single points of failure across microservices. Instead, modern cloud-native systems employ <strong>Eventual Consistency</strong> via the <strong>Saga Pattern</strong>:</p>
+<p><strong>Saga Architectures:</strong></p>
+<ol>
+<li><strong>Choreography</strong>:</li>
+</ol>
+<ul>
+<li>Each service listens to domain events and executes its local transaction without a central coordinator.</li>
+<li>Example: <code>OrderService</code> places order $\to$ emits <code>OrderPlaced</code> $\to$ <code>InventoryService</code> reserves stock $\to$ emits <code>StockReserved</code> $\to$ <code>PaymentService</code> charges card.</li>
+<li>If payment fails, <code>PaymentService</code> emits <code>PaymentFailed</code> $\to$ <code>InventoryService</code> consumes it and runs <strong>Compensating Transaction</strong> to release stock.</li>
+</ul>
+<ol>
+<li><strong>Orchestration</strong>:</li>
+</ol>
+<ul>
+<li>A dedicated Orchestrator (Process Manager or workflow engine like Temporal / MassTransit State Machine) explicitly commands each participating service step-by-step and initiates compensation workflows upon errors.</li>
+</ul>
+<hr/>
+<h3>8. Explain Conway's Law and the "Inverse Conway Maneuver". How does it influence microservice design?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Conway's Law (Melvin Conway, 1967)</strong>:</li>
+</ul>
+<p><em>"Organizations which design systems are constrained to produce designs which are copies of the communication structures of these organizations."</em></p>
+<p>If an engineering department is split into a DBA team, a Backend team, and a Frontend team, the system will inevitably consist of a database layer, a backend service layer, and a frontend layer with high coordination overhead.</p>
+<ul>
+<li><strong>Inverse Conway Maneuver</strong>:</li>
+</ul>
+<p>An organization intentionally restructures its cross-functional teams around business capabilities and Bounded Contexts to drive the desired software architecture.</p>
+<p>For example, creating a dedicated "Fulfillment Team" owning the <code>Ordering</code> and <code>Shipping</code> bounded contexts results in autonomous, decoupled services with clean API contracts.</p>
+<hr/>
+<h3>9. What are the trade-offs between Synchronous HTTP/gRPC communication and Asynchronous Event-Driven communication in microservices?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Synchronous HTTP/gRPC</strong>:</li>
+<li><em>Pros</em>: Simple programming model, immediate response / error feedback, straightforward debugging and tracing.</li>
+<li><em>Cons</em>: <strong>Temporal Coupling</strong> (both caller and callee must be available simultaneously), cascading latency (latency equals sum of all downstream calls), fragile under network degradation, thundering herds.</li>
+<li><strong>Asynchronous Event-Driven (Broker)</strong>:</li>
+<li><em>Pros</em>: <strong>Temporal Decoupling</strong> (publisher produces even if consumer is down or deploying), load leveling / backpressure smoothing, high scalability, broadcast to multiple subscribers.</li>
+<li><em>Cons</em>: Eventual consistency complexity, out-of-order delivery risks, duplicate message handling (requires idempotency keys), distributed debugging and tracing require correlation IDs.</li>
+</ul>
+<hr/>
+<h3>10. For LeetCode #200 (<em>Number of Islands</em>), what are the failure modes of recursive DFS on massive grids ($10^4 \times 10^4$), and how do BFS or Disjoint Set Union (DSU / Union-Find) overcome them?</h3>
+<p><strong>Answer:</strong></p>
+<p><strong>DFS Failure Modes on Massive Grids:</strong></p>
+<p>Recursive DFS uses the thread execution stack. On an $M \times N$ grid with solid land, recursion depth can reach $\mathcal{O}(M \times N)$. In .NET, the default thread stack size is 1 MB (or 256 KB on 64-bit secondary threads). A grid of size $1000 \times 1000 = 10^6$ will exceed the stack boundary within a few thousand recursive frames, throwing a fatal, uncatchable <code>StackOverflowException</code>.</p>
+<p><strong>Alternatives:</strong></p>
+<ol>
+<li><strong>Iterative BFS with FIFO Queue</strong>:</li>
+</ol>
+<ul>
+<li>Uses managed heap memory rather than thread stack.</li>
+<li>Space complexity is bounded by the perimeter of the island ($\mathcal{O}(\min(M, N))$), which is far smaller than the total area.</li>
+</ul>
+<ol>
+<li><strong>Disjoint Set Union (Union-Find)</strong>:</li>
+</ol>
+<ul>
+<li>Treats each cell $(r, c)$ as a node $r \times N + c$.</li>
+<li>Iterates through the grid once. For every land cell, it performs <code>Union</code> with its right and down adjacent land cells.</li>
+<li>Number of islands equals total land cells minus successful union operations.</li>
+<li>Space complexity is $\mathcal{O}(M \times N)$ array allocations on the heap, with near-constant $\mathcal{O}(\alpha(N))$ time complexity per operation.</li>
+</ul></div>
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day26.MicroservicesBoundedContexts/ContextMappingAndAcl.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd26-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d26-src-code-0" class="language-csharp">namespace Day26.MicroservicesBoundedContexts;
+
+/// &lt;summary&gt;
+/// Upstream raw legacy payload from third-party payment gateway.
+/// Contains snake_case fields and stringified numeric formats.
+/// &lt;/summary&gt;
+public record LegacyPaymentGatewayPayload(
+    string tx_id,
+    string order_ref,
+    string amt_cents,
+    string curr,
+    string status_code,
+    string auth_token);
+
+/// &lt;summary&gt;
+/// Clean domain model for downstream Payment Bounded Context.
+/// &lt;/summary&gt;
+public record PaymentAuthorizationResult(
+    Guid OrderId,
+    decimal Amount,
+    string Currency,
+    string AuthorizationCode,
+    bool IsSuccessful,
+    string? FailureReason);
+
+/// &lt;summary&gt;
+/// Anti-Corruption Layer (ACL) isolating the Core Domain from legacy/third-party schemas.
+/// Protects domain models from leaking external vendor types and formatting quirks.
+/// &lt;/summary&gt;
+public class PaymentAntiCorruptionLayer
+{
+    public PaymentAuthorizationResult Translate(LegacyPaymentGatewayPayload rawPayload)
+    {
+        if (rawPayload == null)
+            throw new ArgumentNullException(nameof(rawPayload));
+
+        if (!Guid.TryParse(rawPayload.order_ref, out var orderId))
+        {
+            return new PaymentAuthorizationResult(
+                Guid.Empty,
+                0m,
+                rawPayload.curr ?? &quot;USD&quot;,
+                string.Empty,
+                IsSuccessful: false,
+                FailureReason: &quot;Invalid order identifier format.&quot;);
+        }
+
+        if (!decimal.TryParse(rawPayload.amt_cents, out var cents))
+        {
+            return new PaymentAuthorizationResult(
+                orderId,
+                0m,
+                rawPayload.curr ?? &quot;USD&quot;,
+                string.Empty,
+                IsSuccessful: false,
+                FailureReason: &quot;Invalid amount representation.&quot;);
+        }
+
+        var amount = decimal.Round(cents / 100m, 2);
+        var isSuccess = rawPayload.status_code == &quot;AUTH_200&quot; || rawPayload.status_code == &quot;SUCCESS&quot;;
+
+        return new PaymentAuthorizationResult(
+            OrderId: orderId,
+            Amount: amount,
+            Currency: (rawPayload.curr ?? &quot;USD&quot;).ToUpperInvariant(),
+            AuthorizationCode: rawPayload.auth_token ?? string.Empty,
+            IsSuccessful: isSuccess,
+            FailureReason: isSuccess ? null : $&quot;Gateway returned error code: {rawPayload.status_code}&quot;);
+    }
+}
+
+/// &lt;summary&gt;
+/// In-process asynchronous domain event dispatcher.
+/// Decouples bounded contexts while maintaining transactional observability.
+/// &lt;/summary&gt;
+public interface IDomainEventDispatcher
+{
+    void RegisterHandler&lt;TEvent&gt;(Func&lt;TEvent, CancellationToken, Task&gt; handler) where TEvent : IDomainEvent;
+    Task DispatchAsync&lt;TEvent&gt;(TEvent domainEvent, CancellationToken cancellationToken = default) where TEvent : IDomainEvent;
+    int DispatchedCount { get; }
+}
+
+public class InMemoryDomainEventDispatcher : IDomainEventDispatcher
+{
+    private readonly Dictionary&lt;Type, List&lt;Delegate&gt;&gt; _handlers = new();
+    private readonly object _lock = new();
+    private int _dispatchedCount;
+
+    public int DispatchedCount =&gt; _dispatchedCount;
+
+    public void RegisterHandler&lt;TEvent&gt;(Func&lt;TEvent, CancellationToken, Task&gt; handler) where TEvent : IDomainEvent
+    {
+        lock (_lock)
+        {
+            var eventType = typeof(TEvent);
+            if (!_handlers.TryGetValue(eventType, out var list))
+            {
+                list = new List&lt;Delegate&gt;();
+                _handlers[eventType] = list;
+            }
+            list.Add(handler);
+        }
+    }
+
+    public async Task DispatchAsync&lt;TEvent&gt;(TEvent domainEvent, CancellationToken cancellationToken = default) where TEvent : IDomainEvent
+    {
+        List&lt;Delegate&gt; targets;
+        lock (_lock)
+        {
+            var eventType = typeof(TEvent);
+            if (!_handlers.TryGetValue(eventType, out var list))
+                return;
+
+            targets = new List&lt;Delegate&gt;(list);
+        }
+
+        foreach (var d in targets)
+        {
+            if (d is Func&lt;TEvent, CancellationToken, Task&gt; typedHandler)
+            {
+                await typedHandler(domainEvent, cancellationToken).ConfigureAwait(false);
+                Interlocked.Increment(ref _dispatchedCount);
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// High-level orchestration showing Bounded Context interactions via Events and ACL.
+/// &lt;/summary&gt;
+public class OrderFulfillmentCoordinator
+{
+    private readonly IDomainEventDispatcher _dispatcher;
+    private readonly InventoryItem _inventoryItem;
+    private readonly PaymentAntiCorruptionLayer _paymentAcl;
+
+    public List&lt;string&gt; AuditLog { get; } = new();
+
+    public OrderFulfillmentCoordinator(
+        IDomainEventDispatcher dispatcher,
+        InventoryItem inventoryItem,
+        PaymentAntiCorruptionLayer paymentAcl)
+    {
+        _dispatcher = dispatcher;
+        _inventoryItem = inventoryItem;
+        _paymentAcl = paymentAcl;
+
+        _dispatcher.RegisterHandler&lt;OrderPlacedEvent&gt;(HandleOrderPlacedAsync);
+        _dispatcher.RegisterHandler&lt;InventoryReservedEvent&gt;(HandleInventoryReservedAsync);
+    }
+
+    public async Task ProcessOrderPlacementAsync(Order order)
+    {
+        order.Place();
+        foreach (var ev in order.DomainEvents)
+        {
+            if (ev is OrderPlacedEvent placed)
+            {
+                await _dispatcher.DispatchAsync(placed).ConfigureAwait(false);
+            }
+        }
+        order.ClearDomainEvents();
+    }
+
+    private Task HandleOrderPlacedAsync(OrderPlacedEvent ev, CancellationToken ct)
+    {
+        AuditLog.Add($&quot;[OrderingContext] Order {ev.OrderId} placed for {ev.Quantity}x {ev.Sku}.&quot;);
+
+        if (_inventoryItem.TryReserve(ev.Quantity, out var resId))
+        {
+            AuditLog.Add($&quot;[InventoryContext] Stock reserved: {resId} for SKU {ev.Sku}.&quot;);
+            var reservedEvent = new InventoryReservedEvent(resId, ev.OrderId, ev.Sku, ev.Quantity);
+            return _dispatcher.DispatchAsync(reservedEvent, ct);
+        }
+
+        AuditLog.Add($&quot;[InventoryContext] Out of stock for SKU {ev.Sku}.&quot;);
+        return Task.CompletedTask;
+    }
+
+    private Task HandleInventoryReservedAsync(InventoryReservedEvent ev, CancellationToken ct)
+    {
+        AuditLog.Add($&quot;[Fulfillment] Inventory confirmed for Order {ev.OrderId}. Ready for Payment Bounded Context.&quot;);
+        return Task.CompletedTask;
+    }
+
+    public bool ProcessPaymentWithAcl(Order order, LegacyPaymentGatewayPayload gatewayResponse)
+    {
+        var aclResult = _paymentAcl.Translate(gatewayResponse);
+        if (aclResult.IsSuccessful &amp;&amp; aclResult.OrderId == order.Id)
+        {
+            order.MarkPaid();
+            AuditLog.Add($&quot;[PaymentContext] Payment authorized for Order {order.Id} with Code {aclResult.AuthorizationCode}.&quot;);
+            return true;
+        }
+
+        AuditLog.Add($&quot;[PaymentContext] Payment failed for Order {order.Id}: {aclResult.FailureReason}&quot;);
+        return false;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day26.MicroservicesBoundedContexts/DomainModels.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd26-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d26-src-code-1" class="language-csharp">namespace Day26.MicroservicesBoundedContexts;
+
+/// &lt;summary&gt;
+/// DDD Strategic Classification of Subdomains.
+/// &lt;/summary&gt;
+public enum SubdomainType
+{
+    Core,        // Primary competitive differentiator (e.g., Dynamic Pricing, Proprietary Order Engine)
+    Supporting,  // Complements core domain, tailored to business (e.g., Inventory Allocation)
+    Generic      // Off-the-shelf or standardized capabilities (e.g., Identity, Payments, Notifications)
+}
+
+/// &lt;summary&gt;
+/// Domain Event marker interface.
+/// &lt;/summary&gt;
+public interface IDomainEvent
+{
+    Guid EventId { get; }
+    DateTime OccurredOnUtc { get; }
+}
+
+/// &lt;summary&gt;
+/// Order Placed Domain Event emitted by the Ordering Bounded Context.
+/// &lt;/summary&gt;
+public record OrderPlacedEvent(
+    Guid OrderId,
+    string CustomerId,
+    string Sku,
+    int Quantity,
+    decimal TotalAmount,
+    string Currency,
+    Guid EventId,
+    DateTime OccurredOnUtc) : IDomainEvent
+{
+    public OrderPlacedEvent(Guid orderId, string customerId, string sku, int quantity, decimal totalAmount, string currency)
+        : this(orderId, customerId, sku, quantity, totalAmount, currency, Guid.NewGuid(), DateTime.UtcNow) { }
+}
+
+/// &lt;summary&gt;
+/// Inventory Reserved Domain Event emitted by the Inventory Bounded Context.
+/// &lt;/summary&gt;
+public record InventoryReservedEvent(
+    Guid ReservationId,
+    Guid OrderId,
+    string Sku,
+    int QuantityReserved,
+    Guid EventId,
+    DateTime OccurredOnUtc) : IDomainEvent
+{
+    public InventoryReservedEvent(Guid reservationId, Guid orderId, string sku, int quantityReserved)
+        : this(reservationId, orderId, sku, quantityReserved, Guid.NewGuid(), DateTime.UtcNow) { }
+}
+
+/// &lt;summary&gt;
+/// Payment Authorized Domain Event emitted by the Payment Bounded Context.
+/// &lt;/summary&gt;
+public record PaymentAuthorizedEvent(
+    Guid PaymentId,
+    Guid OrderId,
+    decimal Amount,
+    string Currency,
+    string AuthCode,
+    Guid EventId,
+    DateTime OccurredOnUtc) : IDomainEvent
+{
+    public PaymentAuthorizedEvent(Guid paymentId, Guid orderId, decimal amount, string currency, string authCode)
+        : this(paymentId, orderId, amount, currency, authCode, Guid.NewGuid(), DateTime.UtcNow) { }
+}
+
+/// &lt;summary&gt;
+/// Money Value Object with immutable semantics and currency guardrails.
+/// &lt;/summary&gt;
+public readonly record struct Money
+{
+    public decimal Amount { get; }
+    public string Currency { get; }
+
+    public Money(decimal amount, string currency = &quot;USD&quot;)
+    {
+        if (amount &lt; 0)
+            throw new ArgumentException(&quot;Money amount cannot be negative.&quot;, nameof(amount));
+        if (string.IsNullOrWhiteSpace(currency))
+            throw new ArgumentException(&quot;Currency must be specified.&quot;, nameof(currency));
+
+        Amount = decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
+        Currency = currency.ToUpperInvariant();
+    }
+
+    public static Money Zero(string currency = &quot;USD&quot;) =&gt; new(0m, currency);
+
+    public static Money operator +(Money a, Money b)
+    {
+        if (a.Currency != b.Currency)
+            throw new InvalidOperationException($&quot;Cannot add mismatched currencies: {a.Currency} and {b.Currency}&quot;);
+        return new Money(a.Amount + b.Amount, a.Currency);
+    }
+
+    public static Money operator *(Money a, int multiplier)
+    {
+        if (multiplier &lt; 0)
+            throw new ArgumentException(&quot;Multiplier cannot be negative.&quot;, nameof(multiplier));
+        return new Money(a.Amount * multiplier, a.Currency);
+    }
+}
+
+/// &lt;summary&gt;
+/// Sku Value Object ensuring normalized product identifiers.
+/// &lt;/summary&gt;
+public readonly record struct Sku
+{
+    public string Value { get; }
+
+    public Sku(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException(&quot;SKU cannot be empty.&quot;, nameof(value));
+        Value = value.Trim().ToUpperInvariant();
+    }
+
+    public override string ToString() =&gt; Value;
+}
+
+public enum OrderStatus
+{
+    Draft,
+    Placed,
+    Paid,
+    Cancelled
+}
+
+/// &lt;summary&gt;
+/// Order Aggregate Root in Ordering Bounded Context.
+/// Enforces business invariants and encapsulates Domain Events.
+/// &lt;/summary&gt;
+public class Order
+{
+    private readonly List&lt;IDomainEvent&gt; _domainEvents = new();
+    private readonly List&lt;OrderItem&gt; _items = new();
+
+    public Guid Id { get; }
+    public string CustomerId { get; }
+    public OrderStatus Status { get; private set; }
+    public IReadOnlyList&lt;OrderItem&gt; Items =&gt; _items.AsReadOnly();
+    public IReadOnlyList&lt;IDomainEvent&gt; DomainEvents =&gt; _domainEvents.AsReadOnly();
+
+    public Order(Guid id, string customerId)
+    {
+        if (string.IsNullOrWhiteSpace(customerId))
+            throw new ArgumentException(&quot;Customer ID is required.&quot;, nameof(customerId));
+
+        Id = id == Guid.Empty ? Guid.NewGuid() : id;
+        CustomerId = customerId.Trim();
+        Status = OrderStatus.Draft;
+    }
+
+    public void AddItem(Sku sku, int quantity, Money unitPrice)
+    {
+        if (Status != OrderStatus.Draft)
+            throw new InvalidOperationException($&quot;Cannot modify order in status: {Status}&quot;);
+        if (quantity &lt;= 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), &quot;Quantity must be greater than zero.&quot;);
+
+        var existing = _items.FirstOrDefault(i =&gt; i.Sku == sku);
+        if (existing != null)
+        {
+            _items.Remove(existing);
+            _items.Add(new OrderItem(sku, existing.Quantity + quantity, unitPrice));
+        }
+        else
+        {
+            _items.Add(new OrderItem(sku, quantity, unitPrice));
+        }
+    }
+
+    public Money CalculateTotal()
+    {
+        if (_items.Count == 0)
+            return Money.Zero();
+
+        var currency = _items[0].UnitPrice.Currency;
+        var total = Money.Zero(currency);
+        foreach (var item in _items)
+        {
+            total += item.UnitPrice * item.Quantity;
+        }
+        return total;
+    }
+
+    public void Place()
+    {
+        if (Status != OrderStatus.Draft)
+            throw new InvalidOperationException($&quot;Cannot place order in status: {Status}&quot;);
+        if (_items.Count == 0)
+            throw new InvalidOperationException(&quot;Cannot place an order with zero line items.&quot;);
+
+        Status = OrderStatus.Placed;
+        var total = CalculateTotal();
+        var primaryItem = _items[0];
+
+        _domainEvents.Add(new OrderPlacedEvent(
+            Id,
+            CustomerId,
+            primaryItem.Sku.Value,
+            primaryItem.Quantity,
+            total.Amount,
+            total.Currency
+        ));
+    }
+
+    public void MarkPaid()
+    {
+        if (Status != OrderStatus.Placed)
+            throw new InvalidOperationException($&quot;Only placed orders can be marked paid. Current status: {Status}&quot;);
+        Status = OrderStatus.Paid;
+    }
+
+    public void Cancel()
+    {
+        if (Status == OrderStatus.Paid)
+            throw new InvalidOperationException(&quot;Cannot cancel an already paid order.&quot;);
+        Status = OrderStatus.Cancelled;
+    }
+
+    public void ClearDomainEvents() =&gt; _domainEvents.Clear();
+}
+
+public record OrderItem(Sku Sku, int Quantity, Money UnitPrice);
+
+/// &lt;summary&gt;
+/// Inventory Item Aggregate Root in Inventory Bounded Context.
+/// &lt;/summary&gt;
+public class InventoryItem
+{
+    public Sku Sku { get; }
+    public int AvailableStock { get; private set; }
+    public int ReservedStock { get; private set; }
+
+    public InventoryItem(Sku sku, int initialStock)
+    {
+        if (initialStock &lt; 0)
+            throw new ArgumentException(&quot;Initial stock cannot be negative.&quot;, nameof(initialStock));
+        Sku = sku;
+        AvailableStock = initialStock;
+        ReservedStock = 0;
+    }
+
+    public bool TryReserve(int quantity, out Guid reservationId)
+    {
+        if (quantity &lt;= 0 || AvailableStock &lt; quantity)
+        {
+            reservationId = Guid.Empty;
+            return false;
+        }
+
+        AvailableStock -= quantity;
+        ReservedStock += quantity;
+        reservationId = Guid.NewGuid();
+        return true;
+    }
+
+    public void ReleaseReservation(int quantity)
+    {
+        if (quantity &lt;= 0 || ReservedStock &lt; quantity)
+            throw new InvalidOperationException(&quot;Cannot release more stock than currently reserved.&quot;);
+
+        ReservedStock -= quantity;
+        AvailableStock += quantity;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day26.MicroservicesBoundedContexts/NumberOfIslandsSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd26-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d26-src-code-2" class="language-csharp">namespace Day26.MicroservicesBoundedContexts;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #200: Number of Islands.
+/// Given an m x n 2D binary grid grid which represents a map of &#x27;1&#x27;s (land) and &#x27;0&#x27;s (water),
+/// return the number of islands. An island is surrounded by water and is formed by connecting
+/// adjacent lands horizontally or vertically.
+/// &lt;/summary&gt;
+public class NumberOfIslandsSolver
+{
+    private static readonly int[] RowOffsets = { -1, 1, 0, 0 };
+    private static readonly int[] ColOffsets = { 0, 0, -1, 1 };
+
+    /// &lt;summary&gt;
+    /// Solves Number of Islands using Depth-First Search (DFS) with in-place sinking.
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N) in worst case (recursion call stack for all land).
+    /// &lt;/summary&gt;
+    public int NumIslandsDfs(char[][]? grid)
+    {
+        if (grid == null || grid.Length == 0 || grid[0].Length == 0)
+            return 0;
+
+        // Clone grid to preserve caller input
+        var m = grid.Length;
+        var n = grid[0].Length;
+        var workingGrid = new char[m][];
+        for (var i = 0; i &lt; m; i++)
+        {
+            workingGrid[i] = (char[])grid[i].Clone();
+        }
+
+        var islandCount = 0;
+        for (var r = 0; r &lt; m; r++)
+        {
+            for (var c = 0; c &lt; n; c++)
+            {
+                if (workingGrid[r][c] == &#x27;1&#x27;)
+                {
+                    islandCount++;
+                    DfsSink(workingGrid, r, c, m, n);
+                }
+            }
+        }
+
+        return islandCount;
+    }
+
+    private static void DfsSink(char[][] grid, int r, int c, int m, int n)
+    {
+        if (r &lt; 0 || r &gt;= m || c &lt; 0 || c &gt;= n || grid[r][c] != &#x27;1&#x27;)
+            return;
+
+        // Sink land to water (&#x27;0&#x27;) to prevent revisit
+        grid[r][c] = &#x27;0&#x27;;
+
+        for (var i = 0; i &lt; 4; i++)
+        {
+            DfsSink(grid, r + RowOffsets[i], c + ColOffsets[i], m, n);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Solves Number of Islands using Breadth-First Search (BFS) with FIFO queue.
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(min(M, N)) queue memory.
+    /// &lt;/summary&gt;
+    public int NumIslandsBfs(char[][]? grid)
+    {
+        if (grid == null || grid.Length == 0 || grid[0].Length == 0)
+            return 0;
+
+        var m = grid.Length;
+        var n = grid[0].Length;
+        var workingGrid = new char[m][];
+        for (var i = 0; i &lt; m; i++)
+        {
+            workingGrid[i] = (char[])grid[i].Clone();
+        }
+
+        var islandCount = 0;
+        var queue = new Queue&lt;(int r, int c)&gt;();
+
+        for (var r = 0; r &lt; m; r++)
+        {
+            for (var c = 0; c &lt; n; c++)
+            {
+                if (workingGrid[r][c] == &#x27;1&#x27;)
+                {
+                    islandCount++;
+                    workingGrid[r][c] = &#x27;0&#x27;; // mark visited immediately
+                    queue.Enqueue((r, c));
+
+                    while (queue.Count &gt; 0)
+                    {
+                        var (currR, currC) = queue.Dequeue();
+
+                        for (var i = 0; i &lt; 4; i++)
+                        {
+                            var nr = currR + RowOffsets[i];
+                            var nc = currC + ColOffsets[i];
+
+                            if (nr &gt;= 0 &amp;&amp; nr &lt; m &amp;&amp; nc &gt;= 0 &amp;&amp; nc &lt; n &amp;&amp; workingGrid[nr][nc] == &#x27;1&#x27;)
+                            {
+                                workingGrid[nr][nc] = &#x27;0&#x27;; // mark visited on enqueue to prevent duplicates
+                                queue.Enqueue((nr, nc));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return islandCount;
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day26.MicroservicesBoundedContexts.Tests/Day26Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd26-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d26-tests-code-0" class="language-csharp">using Day26.MicroservicesBoundedContexts;
+using Xunit;
+
+namespace Day26.MicroservicesBoundedContexts.Tests;
+
+public class Day26Tests
+{
+    [Fact]
+    public void Order_AddItem_AndCalculateTotal_AccuratelyAggregates()
+    {
+        var order = new Order(Guid.NewGuid(), &quot;CUST-1001&quot;);
+        var sku1 = new Sku(&quot;PROD-LAPTOP&quot;);
+        var sku2 = new Sku(&quot;PROD-MOUSE&quot;);
+
+        order.AddItem(sku1, 2, new Money(1200.00m, &quot;USD&quot;));
+        order.AddItem(sku2, 1, new Money(50.00m, &quot;USD&quot;));
+
+        var total = order.CalculateTotal();
+
+        Assert.Equal(2450.00m, total.Amount);
+        Assert.Equal(&quot;USD&quot;, total.Currency);
+        Assert.Equal(OrderStatus.Draft, order.Status);
+    }
+
+    [Fact]
+    public void Order_Place_EmitsOrderPlacedDomainEvent()
+    {
+        var order = new Order(Guid.NewGuid(), &quot;CUST-1002&quot;);
+        var sku = new Sku(&quot;PROD-KEYBOARD&quot;);
+        order.AddItem(sku, 1, new Money(150.00m, &quot;USD&quot;));
+
+        order.Place();
+
+        Assert.Equal(OrderStatus.Placed, order.Status);
+        Assert.Single(order.DomainEvents);
+
+        var domainEvent = Assert.IsType&lt;OrderPlacedEvent&gt;(order.DomainEvents[0]);
+        Assert.Equal(order.Id, domainEvent.OrderId);
+        Assert.Equal(&quot;CUST-1002&quot;, domainEvent.CustomerId);
+        Assert.Equal(&quot;PROD-KEYBOARD&quot;, domainEvent.Sku);
+        Assert.Equal(1, domainEvent.Quantity);
+        Assert.Equal(150.00m, domainEvent.TotalAmount);
+    }
+
+    [Fact]
+    public void Order_Invariants_EnforceValidation()
+    {
+        var order = new Order(Guid.NewGuid(), &quot;CUST-1003&quot;);
+        var sku = new Sku(&quot;PROD-MONITOR&quot;);
+
+        // Placing empty order throws
+        Assert.Throws&lt;InvalidOperationException&gt;(() =&gt; order.Place());
+
+        // Zero or negative quantity throws
+        Assert.Throws&lt;ArgumentOutOfRangeException&gt;(() =&gt; order.AddItem(sku, 0, new Money(300m)));
+
+        // Negative money throws
+        Assert.Throws&lt;ArgumentException&gt;(() =&gt; new Money(-10m));
+
+        // Mismatched currencies throw
+        var usd = new Money(100m, &quot;USD&quot;);
+        var eur = new Money(50m, &quot;EUR&quot;);
+        Assert.Throws&lt;InvalidOperationException&gt;(() =&gt; _ = usd + eur);
+    }
+
+    [Fact]
+    public void InventoryItem_TryReserve_AndRelease_MaintainsInvariants()
+    {
+        var sku = new Sku(&quot;PROD-HEADSET&quot;);
+        var inventory = new InventoryItem(sku, initialStock: 10);
+
+        var reserved = inventory.TryReserve(4, out var reservationId);
+        Assert.True(reserved);
+        Assert.NotEqual(Guid.Empty, reservationId);
+        Assert.Equal(6, inventory.AvailableStock);
+        Assert.Equal(4, inventory.ReservedStock);
+
+        // Attempting to reserve more than available fails
+        var overReserve = inventory.TryReserve(7, out _);
+        Assert.False(overReserve);
+
+        // Release stock
+        inventory.ReleaseReservation(4);
+        Assert.Equal(10, inventory.AvailableStock);
+        Assert.Equal(0, inventory.ReservedStock);
+    }
+
+    [Fact]
+    public void PaymentAntiCorruptionLayer_TranslatesLegacyGatewaySuccess()
+    {
+        var acl = new PaymentAntiCorruptionLayer();
+        var orderId = Guid.NewGuid();
+        var rawPayload = new LegacyPaymentGatewayPayload(
+            tx_id: &quot;txn_987654&quot;,
+            order_ref: orderId.ToString(),
+            amt_cents: &quot;245000&quot;,
+            curr: &quot;usd&quot;,
+            status_code: &quot;AUTH_200&quot;,
+            auth_token: &quot;AUTH_XYZ_789&quot;
+        );
+
+        var result = acl.Translate(rawPayload);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(orderId, result.OrderId);
+        Assert.Equal(2450.00m, result.Amount);
+        Assert.Equal(&quot;USD&quot;, result.Currency);
+        Assert.Equal(&quot;AUTH_XYZ_789&quot;, result.AuthorizationCode);
+        Assert.Null(result.FailureReason);
+    }
+
+    [Fact]
+    public void PaymentAntiCorruptionLayer_TranslatesInvalidPayloadGracefully()
+    {
+        var acl = new PaymentAntiCorruptionLayer();
+        var rawPayload = new LegacyPaymentGatewayPayload(
+            tx_id: &quot;txn_err&quot;,
+            order_ref: &quot;not-a-valid-guid&quot;,
+            amt_cents: &quot;invalid_cents&quot;,
+            curr: &quot;eur&quot;,
+            status_code: &quot;ERR_500&quot;,
+            auth_token: &quot;&quot;
+        );
+
+        var result = acl.Translate(rawPayload);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(Guid.Empty, result.OrderId);
+        Assert.NotNull(result.FailureReason);
+    }
+
+    [Fact]
+    public async Task OrderFulfillmentCoordinator_CoordinatesAcrossBoundedContexts()
+    {
+        var dispatcher = new InMemoryDomainEventDispatcher();
+        var sku = new Sku(&quot;PROD-SERVER&quot;);
+        var inventory = new InventoryItem(sku, initialStock: 5);
+        var paymentAcl = new PaymentAntiCorruptionLayer();
+
+        var coordinator = new OrderFulfillmentCoordinator(dispatcher, inventory, paymentAcl);
+
+        var order = new Order(Guid.NewGuid(), &quot;CUST-CORP-1&quot;);
+        order.AddItem(sku, 2, new Money(5000.00m, &quot;USD&quot;));
+
+        await coordinator.ProcessOrderPlacementAsync(order);
+
+        Assert.Equal(3, inventory.AvailableStock);
+        Assert.Equal(2, inventory.ReservedStock);
+        Assert.Equal(2, dispatcher.DispatchedCount); // OrderPlacedEvent + InventoryReservedEvent
+
+        // Now test payment through ACL
+        var gatewayResponse = new LegacyPaymentGatewayPayload(
+            tx_id: &quot;tx_112233&quot;,
+            order_ref: order.Id.ToString(),
+            amt_cents: &quot;1000000&quot;,
+            curr: &quot;usd&quot;,
+            status_code: &quot;SUCCESS&quot;,
+            auth_token: &quot;AUTH_OK&quot;
+        );
+
+        var paymentSuccess = coordinator.ProcessPaymentWithAcl(order, gatewayResponse);
+
+        Assert.True(paymentSuccess);
+        Assert.Equal(OrderStatus.Paid, order.Status);
+        Assert.Contains(coordinator.AuditLog, log =&gt; log.Contains(&quot;[PaymentContext] Payment authorized&quot;));
+    }
+
+    [Fact]
+    public void NumberOfIslands_DfsAndBfs_StandardGrid_ComputesCorrectCount()
+    {
+        var solver = new NumberOfIslandsSolver();
+
+        // 3 Islands grid:
+        // 1 1 0 0 0
+        // 1 1 0 0 0
+        // 0 0 1 0 0
+        // 0 0 0 1 1
+        var grid = new char[][]
+        {
+            new[] { &#x27;1&#x27;, &#x27;1&#x27;, &#x27;0&#x27;, &#x27;0&#x27;, &#x27;0&#x27; },
+            new[] { &#x27;1&#x27;, &#x27;1&#x27;, &#x27;0&#x27;, &#x27;0&#x27;, &#x27;0&#x27; },
+            new[] { &#x27;0&#x27;, &#x27;0&#x27;, &#x27;1&#x27;, &#x27;0&#x27;, &#x27;0&#x27; },
+            new[] { &#x27;0&#x27;, &#x27;0&#x27;, &#x27;0&#x27;, &#x27;1&#x27;, &#x27;1&#x27; }
+        };
+
+        var dfsResult = solver.NumIslandsDfs(grid);
+        var bfsResult = solver.NumIslandsBfs(grid);
+
+        Assert.Equal(3, dfsResult);
+        Assert.Equal(3, bfsResult);
+    }
+
+    [Fact]
+    public void NumberOfIslands_HandlesEdgeCases_Correctly()
+    {
+        var solver = new NumberOfIslandsSolver();
+
+        Assert.Equal(0, solver.NumIslandsDfs(null));
+        Assert.Equal(0, solver.NumIslandsBfs(null));
+        Assert.Equal(0, solver.NumIslandsDfs(Array.Empty&lt;char[]&gt;()));
+        Assert.Equal(0, solver.NumIslandsBfs(Array.Empty&lt;char[]&gt;()));
+
+        // All water
+        var waterGrid = new char[][]
+        {
+            new[] { &#x27;0&#x27;, &#x27;0&#x27; },
+            new[] { &#x27;0&#x27;, &#x27;0&#x27; }
+        };
+        Assert.Equal(0, solver.NumIslandsDfs(waterGrid));
+        Assert.Equal(0, solver.NumIslandsBfs(waterGrid));
+
+        // All land
+        var landGrid = new char[][]
+        {
+            new[] { &#x27;1&#x27;, &#x27;1&#x27; },
+            new[] { &#x27;1&#x27;, &#x27;1&#x27; }
+        };
+        Assert.Equal(1, solver.NumIslandsDfs(landGrid));
+        Assert.Equal(1, solver.NumIslandsBfs(landGrid));
+    }
+
+    [Fact]
+    public void NumberOfIslands_HandlesDiagonalSeparation_AsDistinctIslands()
+    {
+        var solver = new NumberOfIslandsSolver();
+
+        // Diagonals are NOT connected:
+        // 1 0
+        // 0 1
+        var diagonalGrid = new char[][]
+        {
+            new[] { &#x27;1&#x27;, &#x27;0&#x27; },
+            new[] { &#x27;0&#x27;, &#x27;1&#x27; }
+        };
+
+        Assert.Equal(2, solver.NumIslandsDfs(diagonalGrid));
+        Assert.Equal(2, solver.NumIslandsBfs(diagonalGrid));
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 26 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

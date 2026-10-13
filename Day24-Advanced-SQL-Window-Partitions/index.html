@@ -1,0 +1,2628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 24: Advanced SQL: CTEs, Window Functions &amp; Partitions | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 24</span>
+        <span class="badge badge-category">SQL &amp; Relational DB</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day23-Url-Shortener-TinyUrl/index.html" class="nav-btn">← Day 23</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+
+        </select>
+        <a href="../Day25-Phase1-Milestone-Assessment/index.html" class="nav-btn">Day 25 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 24: Advanced SQL: CTEs, Window Functions &amp; Partitions</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 3 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d24GradWin" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d24GradPart" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#042f2e"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d24GradTree" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#451a03"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 24: Advanced SQL (CTEs, Window Functions, Table Partitions) &amp; LC #124 Max Path Sum</text>
+
+          <!-- 1. Window Functions Column -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d24GradWin)" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#a5b4fc" font-size="14" font-weight="bold">Window Functions &amp; CTEs</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Ranking Operators</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">ROW_NUMBER(): Sequential (1, 2, 3, 4)</text>
+          <text x="50" y="162" fill="#cbd5e1" font-size="9">RANK(): Ties skip (1, 2, 2, 4)</text>
+          <text x="50" y="179" fill="#cbd5e1" font-size="9">DENSE_RANK(): Ties compact (1, 2, 2, 3)</text>
+          <text x="50" y="196" fill="#34d399" font-size="9">OVER (PARTITION BY cat ORDER BY val DESC)</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Time-Series Offset &amp; Frames</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">LAG(val, 1): Prior row in window</text>
+          <text x="50" y="274" fill="#cbd5e1" font-size="9">LEAD(val, 1): Next row in window</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">ROWS BETWEEN 2 PRECEDING AND CURRENT</text>
+          <text x="50" y="306" fill="#a5b4fc" font-size="9">Zero self-join overhead | WindowAgg engine</text>
+
+          <!-- 2. Table Partitioning Column -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d24GradPart)" stroke="#2dd4bf" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#5eead4" font-size="14" font-weight="bold">Declarative Table Partitioning</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#2dd4bf" font-size="11" font-weight="bold">Range-Based Partitions</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Master: orders (order_date, total)</text>
+          <text x="340" y="162" fill="#cbd5e1" font-size="9">&#8226; orders_2026_q1: ['2026-01-01', '2026-04-01')</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">&#8226; orders_2026_q2: ['2026-04-01', '2026-07-01')</text>
+          <text x="340" y="196" fill="#34d399" font-size="9">O(1) Data Lifecycle: DROP TABLE vs DELETE</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#f43f5e" font-size="11" font-weight="bold">Query Plan Partition Pruning</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">WHERE order_date BETWEEN '2026-05-01'...</text>
+          <text x="340" y="274" fill="#fbbf24" font-size="9">Planner evaluates range constraints</text>
+          <text x="340" y="290" fill="#34d399" font-size="9">PRUNED: orders_2026_q1, q3, q4 bypassed!</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Scans 1 partition only &#8594; 90% IO reduction</text>
+
+          <!-- 3. LeetCode #124 Max Path Sum Column -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d24GradTree)" stroke="#f97316" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#fdba74" font-size="14" font-weight="bold">LC #124: Tree Max Path Sum</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#fbbf24" font-size="11" font-weight="bold">Post-Order Bottom-Up DFS</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">LeftGain = max(0, Dfs(node.left))</text>
+          <text x="630" y="162" fill="#cbd5e1" font-size="9">RightGain = max(0, Dfs(node.right))</text>
+          <text x="630" y="179" fill="#f43f5e" font-size="9">Truncate negatives: max(0, gain)</text>
+          <text x="630" y="196" fill="#34d399" font-size="9">Local Arch = node.val + Left + Right</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Complexity &amp; Invariants</text>
+          <text x="630" y="258" fill="#34d399" font-size="9">GlobalMax = max(GlobalMax, LocalArch)</text>
+          <text x="630" y="274" fill="#cbd5e1" font-size="9">Return node.val + max(Left, Right)</text>
+          <text x="630" y="290" fill="#fbbf24" font-size="9">Time: O(N) single traversal</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Space: O(H) recursion call stack</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 24: Deep Dive — SQL Windowing, Partitioning & Tree Path Optimization</h1>
+<h2>1. Window Functions Internals in PostgreSQL</h2>
+<p>Window functions perform calculations across sets of table rows related to the current row without collapsing multiple rows into a single summary row (unlike <code>GROUP BY</code>).</p>
+<h3>1.1 The PostgreSQL WindowAgg Node</h3>
+<ul>
+<li>In an <code>EXPLAIN (ANALYZE, BUFFERS)</code> execution plan, window functions introduce a <strong><code>WindowAgg</code></strong> node.</li>
+<li><strong>Pre-requisite</strong>: The input rows must be sorted according to <code>PARTITION BY</code> and <code>ORDER BY</code>. If no index matches the ordering, PostgreSQL inserts an explicit <code>Sort</code> node.</li>
+<li><strong>Memory Impact</strong>: The sorted rows are spooled into a tuplestore in memory (<code>work_mem</code>). If the partition size exceeds <code>work_mem</code>, it spills to temporary disk files (<code>Sort Method: external merge Disk</code>), causing severe I/O degradation.</li>
+</ul>
+<h3>1.2 Window Framing: <code>ROWS</code> vs <code>RANGE</code></h3>
+<ul>
+<li><strong>Default Framing</strong>: When <code>ORDER BY</code> is specified without an explicit frame, SQL defaults to:</li>
+</ul>
+<p>$$\text{RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW}$$</p>
+<ul>
+<li><strong>Performance Hazard</strong>: <code>RANGE</code> evaluates duplicate peer values (all rows with the same <code>ORDER BY</code> value belong to the same range). This requires looking ahead and buffering rows.</li>
+<li><strong>Best Practice</strong>: Always specify <code>ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code> (or custom bounds) if exact physical rows are desired. <code>ROWS</code> executes in a single streaming pass ($O(N)$), saving CPU and memory.</li>
+</ul>
+<hr/>
+<h2>2. Declarative Table Partitioning Architecture</h2>
+<p>PostgreSQL declarative partitioning splits large tables into smaller physical chunks while presenting a single virtual relation to applications.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                  ┌─────────────────────────────────┐
+                  │ sensor_readings (Virtual Parent)│
+                  │   PARTITION BY RANGE (recorded) │
+                  └────────────────┬────────────────┘
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         ▼                         ▼                         ▼
+┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
+│  sensor_2026_m08 │      │  sensor_2026_m09 │      │  sensor_2026_m10 │
+│ [Aug 1 - Sep 1)  │      │ [Sep 1 - Oct 1)  │      │ [Oct 1 - Nov 1)  │
+└──────────────────┘      └──────────────────┘      └──────────────────┘</code></pre></div>
+<h3>2.1 Partition Pruning Mechanics</h3>
+<ul>
+<li><strong>Static Pruning</strong>: Occurs during query planning when query constants are known (<code>WHERE recorded_at &gt;= &#x27;2026-10-01&#x27;</code>). The optimizer removes non-matching partitions from the plan before execution begins.</li>
+<li><strong>Run-Time Pruning</strong>: Occurs during execution when filters involve parameters or volatile functions (<code>WHERE recorded_at &gt;= CURRENT_DATE - 7</code>). The executor evaluates bounds on the fly and skips entire sub-table scans.</li>
+</ul>
+<h3>2.2 Maintenance: <code>DROP TABLE</code> vs. <code>DELETE</code></h3>
+<ul>
+<li><strong>Why <code>DELETE</code> Fails on Big Data</strong>:</li>
+<li><code>DELETE FROM sensor_readings WHERE recorded_at &lt; &#x27;2025-01-01&#x27;</code> writes an MVCC dead tuple marker for every deleted row.</li>
+<li>Generates massive Write-Ahead Log (WAL) traffic, saturating replication bandwidth.</li>
+<li>Leaves table and index disk pages bloated until costly <code>VACUUM FULL</code> is performed.</li>
+<li><strong>The Partitioning Advantage</strong>:</li>
+<li><code>DROP TABLE sensor_readings_y2025m01;</code></li>
+<li>Instantly unlinks the underlying disk file in $O(1)$ time.</li>
+<li>Generates negligible WAL entries, causes zero disk fragmentation, and requires zero vacuum debt.</li>
+</ul>
+<hr/>
+<h2>3. DSA: LeetCode #124 (Binary Tree Maximum Path Sum)</h2>
+<h3>3.1 The Two Distinctions of a Node's Value</h3>
+<p>In a binary tree, a valid path can turn at most once at its highest peak node:</p>
+<ol>
+<li><strong>The Peak Anchor Path</strong>:</li>
+</ol>
+<p>$$\text{Price}_{\text{peak}} = \text{node.val} + \max(0, \text{leftGain}) + \max(0, \text{rightGain})$$</p>
+<p>This path cannot be extended further upward to the parent because doing so would form a branch fork, violating the path constraint.</p>
+<ol>
+<li><strong>The Branch Gain Contributed to Parent</strong>:</li>
+</ol>
+<p>$$\text{Gain}_{\text{parent}} = \text{node.val} + \max(0, \max(\text{leftGain}, \text{rightGain}))$$</p>
+<p>This selects at most ONE child branch so the parent can extend the path upward.</p>
+<h3>3.2 Complexity</h3>
+<ul>
+<li><strong>Time Complexity</strong>: $O(N)$ — Each node is visited exactly once via post-order DFS.</li>
+<li><strong>Space Complexity</strong>: $O(H)$ — Recursion call stack bounded by tree height ($O(\log N)$ balanced, $O(N)$ skewed).</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 24: Advanced SQL — CTEs, Window Functions & Table Partitions</h1>
+<p>Comprehensive analytical SQL engineering lab implementing ANSI window functions, declarative table partitioning with partition pruning simulation, and LeetCode #124 (Binary Tree Maximum Path Sum - Hard).</p>
+<hr/>
+<h2>🎯 Architecture & Objectives</h2>
+<ol>
+<li><strong>SQL Window Functions</strong>:</li>
+</ol>
+<ul>
+<li><code>ROW_NUMBER()</code>: Strict sequential numbering per partition without gaps.</li>
+<li><code>RANK()</code> vs <code>DENSE_RANK()</code>: Ordinal ranking with tie gap skipping (<code>1, 2, 2, 4</code>) vs contiguous ranking (<code>1, 2, 2, 3</code>).</li>
+<li><code>LAG()</code> and <code>LEAD()</code>: Inter-row metric comparisons (e.g. daily time-series deltas).</li>
+<li>Rolling Window Aggregates: Running totals and moving averages over custom frames (<code>ROWS BETWEEN N PRECEDING AND CURRENT ROW</code>).</li>
+</ul>
+<ol>
+<li><strong>PostgreSQL Declarative Table Partitioning</strong>:</li>
+</ol>
+<ul>
+<li>Time-series range partitioning (<code>PARTITION BY RANGE (recorded_at)</code>).</li>
+<li>Query planner partition pruning reducing table scan I/O by orders of magnitude.</li>
+<li>High-throughput zero-downtime data archival (<code>DROP TABLE</code> vs <code>DELETE</code>).</li>
+</ul>
+<ol>
+<li><strong>DSA: Binary Tree Maximum Path Sum (LeetCode #124 - Hard)</strong>:</li>
+</ol>
+<ul>
+<li>Post-order DFS computing bottom-up maximum branch gains while updating global peak path sums.</li>
+<li>Handles negative roots, clamping negative branch contributions in optimal $O(N)$ time and $O(H)$ stack space.</li>
+</ul>
+<hr/>
+<h2>📁 Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day24-Advanced-SQL-Window-Partitions/
+├── src/
+│   └── Day24.AdvancedSql/
+│       ├── Day24.AdvancedSql.csproj
+│       ├── WindowFunctionsEngine.cs         # In-memory window engine &amp; analytical generator
+│       ├── TablePartitioningStrategy.cs     # PostgreSQL range partitioning &amp; pruning simulator
+│       └── MaxPathSumSolver.cs              # LC #124 Binary Tree Max Path Sum (Hard)
+├── tests/
+│   └── Day24.AdvancedSql.Tests/
+│       ├── Day24.AdvancedSql.Tests.csproj
+│       └── Day24Tests.cs                    # 10 unit tests covering window functions &amp; DSA
+├── README.md
+├── notes.md                                 # Deep dive architectural notes
+├── interview-questions.md                   # 10 Senior/Staff interview Q&amp;As
+└── index.html                               # Standalone offline web guide</code></pre></div>
+<hr/>
+<h2>🧪 Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day24.AdvancedSql.Tests/Day24.AdvancedSql.Tests.csproj</code></pre></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the exact semantic difference between `ROW_NUMBER()`, `RANK()`, and `DENSE_RANK()`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>Given duplicate values in the <code>ORDER BY</code> clause (e.g., scores <code>[100, 90, 90, 80]</code>):</p>
+<ul>
+<li><strong><code>ROW_NUMBER()</code></strong>: Generates a strictly unique, contiguous sequence of integers (<code>1, 2, 3, 4</code>) regardless of value ties. The ordering among tied rows is non-deterministic unless additional tie-breaker columns are specified.</li>
+<li><strong><code>RANK()</code></strong>: Assigns identical ranks to tied rows, but skips subsequent rank numbers to match the row's 1-based ordinal position (<code>1, 2, 2, 4</code>). It leaves gaps in the sequence.</li>
+<li><strong><code>DENSE_RANK()</code></strong>: Assigns identical ranks to tied rows without leaving gaps in the sequence (<code>1, 2, 2, 3</code>).</li>
+<li><em>Use cases</em>:</li>
+<li>Pagination / de-duplication: Use <code>ROW_NUMBER()</code>.</li>
+<li>Competition leaderboards (Olympic medal ties): Use <code>RANK()</code>.</li>
+<li>Salary bands / tier categories: Use <code>DENSE_RANK()</code>.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How does the PostgreSQL query engine execute window functions, and how do you optimize them?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ol>
+<li><strong>Execution Steps</strong>:</li>
+</ol>
+<ul>
+<li>The query planner groups rows via <code>PARTITION BY</code> and sorts them by <code>ORDER BY</code>.</li>
+<li>Rows flow into a <code>WindowAgg</code> execution node which tracks state across the partitioned frame.</li>
+</ul>
+<ol>
+<li><strong>Optimization Techniques</strong>:</li>
+</ol>
+<ul>
+<li><strong>Composite Index Matching</strong>: Create an index with the exact column order: <code>CREATE INDEX idx_data ON my_table (partition_col, order_col)</code>. This allows the engine to stream rows directly into <code>WindowAgg</code> without an expensive <code>Sort</code> step.</li>
+<li><strong><code>work_mem</code> Tuning</strong>: If the partition data exceeds <code>work_mem</code>, PostgreSQL spills sorted batches to disk (<code>external merge Disk</code>), multiplying query execution time. Increase <code>work_mem</code> specifically for analytical workloads.</li>
+<li><strong>Filter Pushdown via CTE / Subquery</strong>: Window functions cannot appear in <code>WHERE</code> clauses. Wrap in a subquery or CTE and filter on the outer query (e.g. <code>WHERE row_num = 1</code>).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why is specifying `ROWS` instead of the default `RANGE` framing critical for window query performance?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Pitfall</strong>: In SQL, specifying <code>ORDER BY</code> without a frame clause defaults to <code>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code>.</li>
+<li><strong>The Problem with <code>RANGE</code></strong>: <code>RANGE</code> groups rows with identical order values as "peers". The engine must read ahead to verify whether the next row has the same value before emitting a result. This forces buffering and prevents single-pass streaming.</li>
+<li><strong>The Fix with <code>ROWS</code></strong>: Explicitly specify <code>ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code> or <code>ROWS BETWEEN 5 PRECEDING AND CURRENT ROW</code>. <code>ROWS</code> operates purely on row counts regardless of duplicates, executing in a high-speed $O(N)$ streaming pass with minimal memory overhead.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Explain the difference between Materialized and Inlined CTEs (`WITH` clauses) in PostgreSQL.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Prior to PostgreSQL 12</strong>: All CTEs acted as optimization fences—PostgreSQL always materialized CTE results into a temporary table in memory, preventing the optimizer from pushing outer <code>WHERE</code> predicates into the CTE.</li>
+<li><strong>PostgreSQL 12+ Behavior</strong>: By default, simple CTEs referenced only once are <strong>inlined</strong> into the main query plan, allowing predicate pushdown and index scans across CTE boundaries.</li>
+<li><strong>Explicit Keywords</strong>:</li>
+<li><code>WITH data AS MATERIALIZED (...)</code>: Forces PostgreSQL to evaluate the CTE once and store the result set in memory, preventing repeated execution if referenced multiple times in union or joins.</li>
+<li><code>WITH data AS NOT MATERIALIZED (...)</code>: Explicitly forces inlining, allowing the optimizer to push join conditions and indexes deep into the subquery.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How does declarative table partitioning work in PostgreSQL, and how does the planner perform Partition Pruning?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Architecture</strong>: A root parent table defines partition keys (<code>PARTITION BY RANGE (recorded_at)</code>), while child tables store actual physical tuples.</li>
+<li><strong>Partition Pruning</strong>:</li>
+<li><strong>Static Pruning (Plan-Time)</strong>: If the query specifies literal constants (<code>WHERE recorded_at &gt;= &#x27;2026-10-01&#x27; AND recorded_at &lt; &#x27;2026-11-01&#x27;</code>), the optimizer evaluates partition constraints and excludes child tables from the generated plan.</li>
+<li><strong>Dynamic Pruning (Run-Time)</strong>: If queries use parameterized values or dynamic functions (<code>WHERE recorded_at &gt;= $1</code>), pruning occurs at execution time as parameters bind.</li>
+<li><strong>Impact</strong>: Transforms full table scans over multi-terabyte datasets into localized scans over a single 10 GB partition, reducing disk I/O and buffer cache churn by 99%+.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you perform zero-downtime data archival on high-volume tables (e.g. dropping data older than 90 days)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Anti-Pattern (<code>DELETE WHERE</code>)</strong>:</li>
+<li>Executing <code>DELETE FROM logs WHERE created_at &lt; NOW() - INTERVAL &#x27;90 days&#x27;</code> locks rows, writes massive dead tuples to WAL, exhausts replication bandwidth, and leaves table bloat that requires intrusive vacuum operations.</li>
+<li><strong>Partitioning Strategy (<code>DROP TABLE</code>)</strong>:</li>
+<li>Partition the table by month or week.</li>
+<li>To retire data older than 90 days, run:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">    ALTER TABLE logs DETACH PARTITION logs_y2025m01;
+    DROP TABLE logs_y2025m01;</code></pre></div>
+<ul>
+<li><code>DETACH CONCURRENTLY</code> decouples the partition without taking an exclusive lock on the parent table.</li>
+<li><code>DROP TABLE</code> instantaneously unlinks the underlying disk files at the filesystem level in milliseconds with zero WAL bloat.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Does PostgreSQL support global indexes across partitioned tables? How should indexes be designed?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>No Global Indexes</strong>: Unlike Oracle, PostgreSQL does <strong>not</strong> support global indexes spanning across multiple partitions. Every index in PostgreSQL is local to its specific child partition.</li>
+<li><strong>Implications for Primary Keys</strong>:</li>
+<li>Any <code>PRIMARY KEY</code> or <code>UNIQUE</code> constraint on a partitioned table <strong>must include the partition key columns</strong> (e.g. <code>PRIMARY KEY (recorded_at, id)</code>).</li>
+<li>Without the partition key, PostgreSQL cannot enforce uniqueness across different child tables without scanning all partitions.</li>
+<li><strong>Local Index Optimization</strong>: Each child table can have specialized local indexes tailored to its data access patterns (e.g. partial indexes or BRIN indexes for older read-only archival partitions vs B-Trees for recent partitions).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How do you write an analytical query to calculate rolling 7-day moving averages and daily growth deltas on time-series data?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">WITH DailyTotals AS (
+    SELECT 
+        account_id,
+        DATE_TRUNC(&#x27;day&#x27;, trans_time) AS trans_day,
+        SUM(amount) AS daily_amount
+    FROM transactions
+    WHERE trans_time &gt;= NOW() - INTERVAL &#x27;60 days&#x27;
+    GROUP BY account_id, DATE_TRUNC(&#x27;day&#x27;, trans_time)
+)
+SELECT 
+    account_id,
+    trans_day,
+    daily_amount,
+    -- 1. Day-over-day delta using LAG
+    daily_amount - LAG(daily_amount, 1, 0) OVER (
+        PARTITION BY account_id ORDER BY trans_day
+    ) AS daily_delta,
+    -- 2. 7-day moving average using frame specification
+    AVG(daily_amount) OVER (
+        PARTITION BY account_id 
+        ORDER BY trans_day 
+        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+    ) AS rolling_7day_avg
+FROM DailyTotals
+ORDER BY account_id, trans_day;</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Walk through LeetCode #124 (Binary Tree Maximum Path Sum). Why does a node calculate two different sums during traversal?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Core Constraint</strong>: A valid tree path cannot fork; a node can only connect to at most one parent and at most one child branch when extended.</li>
+<li><strong>The Two Sums</strong>:</li>
+</ul>
+<ol>
+<li><strong>Peak Anchor Sum (Internal Candidate)</strong>:</li>
+</ol>
+<p>$$\text{PathSum} = \text{node.val} + \max(0, \text{leftGain}) + \max(0, \text{rightGain})$$</p>
+<p>Here, the path turns around <code>node</code> (traveling from the left child, through <code>node</code>, down to the right child). This path cannot be extended further up to the parent. We update the global maximum with this value.</p>
+<ol>
+<li><strong>Branch Contribution (Returned to Parent)</strong>:</li>
+</ol>
+<p>$$\text{Gain}_{\text{return}} = \text{node.val} + \max(0, \max(\text{leftGain}, \text{rightGain}))$$</p>
+<p>The node can extend only ONE branch to its parent. Negative branch sums are clamped to $0$ to avoid diminishing the total.</p>
+<ul>
+<li><strong>Complexity</strong>: $O(N)$ time visiting each node once; $O(H)$ recursion stack space.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you handle edge cases in LeetCode #124 when all node values in the tree are negative?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Edge Case</strong>: Consider a tree where every node is negative, e.g. <code>[-5, -10, -2]</code>.</li>
+<li><strong>Handling</strong>:</li>
+<li>The problem requires a non-empty path (at least one node must be picked).</li>
+<li>If we initialize <code>maxSum = 0</code>, the solver would erroneously return <code>0</code> instead of <code>-2</code>!</li>
+<li><strong>Correct Approach</strong>:</li>
+</ul>
+<ol>
+<li>Initialize <code>maxSum = int.MinValue</code>.</li>
+<li>Clamp subtree gains with <code>Math.Max(0, childGain)</code>. For leaf nodes with negative values, <code>leftGain = 0</code> and <code>rightGain = 0</code>.</li>
+<li>The peak anchor sum is <code>node.val + 0 + 0 = node.val</code>.</li>
+<li>The global maximum updates to <code>Math.Max(int.MinValue, -2) = -2</code>.</li>
+<li>The result correctly selects the single least negative node.</li>
+</ol>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day24.AdvancedSql/MaxPathSumSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd24-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d24-src-code-0" class="language-csharp">using System;
+
+namespace Day24.AdvancedSql;
+
+/// &lt;summary&gt;
+/// Standard Binary Tree Node definition.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// LeetCode #124: Binary Tree Maximum Path Sum (Hard).
+/// Solved via Post-Order DFS with bottom-up dynamic programming.
+/// Computes maximum contribution gain from child subtrees while tracking the optimal peak path sum.
+/// Time Complexity: O(N) | Space Complexity: O(H) recursion stack.
+/// &lt;/summary&gt;
+public class MaxPathSumSolver
+{
+    private int _maxPathSum;
+
+    public int MaxPathSum(TreeNode? root)
+    {
+        if (root == null) return 0;
+
+        _maxPathSum = int.MinValue;
+        CalculateMaxGain(root);
+        return _maxPathSum;
+    }
+
+    private int CalculateMaxGain(TreeNode? node)
+    {
+        if (node == null) return 0;
+
+        // Post-order: Evaluate subtrees first. Ignore negative path branches (clamp to 0).
+        int leftGain = Math.Max(0, CalculateMaxGain(node.left));
+        int rightGain = Math.Max(0, CalculateMaxGain(node.right));
+
+        // Path passing through current node as the peak anchor
+        int currentPathSum = node.val + leftGain + rightGain;
+
+        // Update global maximum path sum
+        _maxPathSum = Math.Max(_maxPathSum, currentPathSum);
+
+        // Return maximum branch gain current node can contribute to its parent
+        return node.val + Math.Max(leftGain, rightGain);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day24.AdvancedSql/TablePartitioningStrategy.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd24-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d24-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day24.AdvancedSql;
+
+public record PartitionMetadata(
+    string TableName,
+    DateTime RangeStartUtc,
+    DateTime RangeEndUtc,
+    long RowCount,
+    double SizeMb
+);
+
+public record PartitionPruningPlan(
+    DateTime QueryStartUtc,
+    DateTime QueryEndUtc,
+    List&lt;string&gt; ScannedPartitions,
+    List&lt;string&gt; PrunedPartitions,
+    double TotalScannedSizeMb,
+    double TotalSavingsSizeMb
+);
+
+/// &lt;summary&gt;
+/// PostgreSQL Declarative Table Partitioning Architecture Simulator.
+/// Models range partitioning, query planner partition pruning, and zero-downtime maintenance.
+/// &lt;/summary&gt;
+public class TablePartitioningStrategy
+{
+    private readonly List&lt;PartitionMetadata&gt; _partitions = new();
+
+    public IReadOnlyList&lt;PartitionMetadata&gt; Partitions =&gt; _partitions;
+
+    public void RegisterPartition(string tableName, DateTime startUtc, DateTime endUtc, long rowCount, double sizeMb)
+    {
+        _partitions.Add(new PartitionMetadata(tableName, startUtc, endUtc, rowCount, sizeMb));
+    }
+
+    /// &lt;summary&gt;
+    /// Simulates PostgreSQL EXPLAIN query plan partition pruning for a given time interval filter.
+    /// &lt;/summary&gt;
+    public PartitionPruningPlan SimulatePruning(DateTime queryStartUtc, DateTime queryEndUtc)
+    {
+        var scanned = new List&lt;string&gt;();
+        var pruned = new List&lt;string&gt;();
+        double scannedMb = 0;
+        double savedMb = 0;
+
+        foreach (var p in _partitions)
+        {
+            // Partition overlaps query range if:
+            // p.RangeStart &lt; queryEnd AND p.RangeEnd &gt; queryStart
+            bool overlaps = p.RangeStartUtc &lt; queryEndUtc &amp;&amp; p.RangeEndUtc &gt; queryStartUtc;
+
+            if (overlaps)
+            {
+                scanned.Add(p.TableName);
+                scannedMb += p.SizeMb;
+            }
+            else
+            {
+                pruned.Add(p.TableName);
+                savedMb += p.SizeMb;
+            }
+        }
+
+        return new PartitionPruningPlan(
+            QueryStartUtc: queryStartUtc,
+            QueryEndUtc: queryEndUtc,
+            ScannedPartitions: scanned,
+            PrunedPartitions: pruned,
+            TotalScannedSizeMb: Math.Round(scannedMb, 2),
+            TotalSavingsSizeMb: Math.Round(savedMb, 2)
+        );
+    }
+
+    /// &lt;summary&gt;
+    /// Generates DDL scripts for declarative range partitioning in PostgreSQL.
+    /// &lt;/summary&gt;
+    public static string GeneratePostgreSqlDdl(int year, int month)
+    {
+        var nextMonthDate = new DateTime(year, month, 1).AddMonths(1);
+        var partName = $&quot;sensor_readings_y{year:0000}m{month:00}&quot;;
+        var startStr = $&quot;{year:0000}-{month:00}-01 00:00:00+00&quot;;
+        var endStr = $&quot;{nextMonthDate.Year:0000}-{nextMonthDate.Month:00}-01 00:00:00+00&quot;;
+
+        return $@&quot;
+-- 1. Create Root Partitioned Table (Parent)
+CREATE TABLE IF NOT EXISTS sensor_readings (
+    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    device_id VARCHAR(64) NOT NULL,
+    recorded_at TIMESTAMPTZ NOT NULL,
+    temperature NUMERIC(5, 2) NOT NULL,
+    voltage NUMERIC(6, 3) NOT NULL,
+    PRIMARY KEY (recorded_at, id)
+) PARTITION BY RANGE (recorded_at);
+
+-- 2. Create Child Range Partition for {year}-{month:00}
+CREATE TABLE IF NOT EXISTS {partName}
+PARTITION OF sensor_readings
+FOR VALUES FROM (&#x27;{startStr}&#x27;) TO (&#x27;{endStr}&#x27;);
+
+-- 3. Create Index Local to Partition
+CREATE INDEX IF NOT EXISTS idx_{partName}_device_time 
+ON {partName} (device_id, recorded_at DESC);
+&quot;.Trim();
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day24.AdvancedSql/WindowFunctionsEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd24-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d24-src-code-2" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day24.AdvancedSql;
+
+public record WindowRowResult&lt;T&gt;(
+    T Item,
+    long RowNumber,
+    long Rank,
+    long DenseRank,
+    decimal RunningTotal,
+    decimal MovingAverage,
+    decimal? LagValue,
+    decimal? LeadValue
+);
+
+/// &lt;summary&gt;
+/// In-Memory Analytical SQL Window Functions Engine &amp; Query Generator.
+/// Implements standard SQL ANSI:2003 window function semantics:
+/// - ROW_NUMBER(): Strict sequential increment per partition
+/// - RANK(): Tied ranks with ordinal gap skipping
+/// - DENSE_RANK(): Tied ranks without ordinal gaps
+/// - LAG() / LEAD(): Inter-row comparative lookups
+/// - Moving averages &amp; cumulative running frames
+/// &lt;/summary&gt;
+public static class WindowFunctionsEngine
+{
+    public static List&lt;WindowRowResult&lt;T&gt;&gt; EvaluateWindowFunctions&lt;T, TKey, TOrder&gt;(
+        IEnumerable&lt;T&gt; source,
+        Func&lt;T, TKey&gt; partitionSelector,
+        Func&lt;T, TOrder&gt; orderSelector,
+        Func&lt;T, decimal&gt; metricSelector,
+        int movingAverageWindow = 3,
+        bool ascending = true)
+        where TKey : notnull
+        where TOrder : IComparable&lt;TOrder&gt;
+    {
+        var results = new List&lt;WindowRowResult&lt;T&gt;&gt;();
+
+        var grouped = source.GroupBy(partitionSelector);
+
+        foreach (var group in grouped)
+        {
+            var orderedList = ascending
+                ? group.OrderBy(orderSelector).ToList()
+                : group.OrderByDescending(orderSelector).ToList();
+
+            decimal runningSum = 0m;
+            var metricHistory = new List&lt;decimal&gt;();
+
+            long denseRankCounter = 0;
+            TOrder? lastOrderVal = default;
+            bool isFirst = true;
+
+            for (int i = 0; i &lt; orderedList.Count; i++)
+            {
+                var item = orderedList[i];
+                var orderVal = orderSelector(item);
+                var metric = metricSelector(item);
+
+                // 1. ROW_NUMBER(): 1-based sequential index
+                long rowNumber = i + 1;
+
+                // 2 &amp; 3. RANK() and DENSE_RANK()
+                long rank;
+                if (isFirst || !EqualityComparer&lt;TOrder&gt;.Default.Equals(orderVal, lastOrderVal))
+                {
+                    rank = i + 1;
+                    denseRankCounter++;
+                    lastOrderVal = orderVal;
+                    isFirst = false;
+                }
+                else
+                {
+                    // Tied rank: duplicate previous rank
+                    rank = results.Count &gt; 0 ? results[^1].Rank : 1;
+                }
+                long denseRank = denseRankCounter;
+
+                // 4. Running Total
+                runningSum += metric;
+
+                // 5. Moving Average (ROWS BETWEEN (windowSize-1) PRECEDING AND CURRENT ROW)
+                metricHistory.Add(metric);
+                var windowSlice = metricHistory.TakeLast(movingAverageWindow).ToList();
+                decimal movingAvg = Math.Round(windowSlice.Average(), 4);
+
+                // 6. LAG(1)
+                decimal? lag = i &gt; 0 ? metricSelector(orderedList[i - 1]) : null;
+
+                // 7. LEAD(1)
+                decimal? lead = i &lt; orderedList.Count - 1 ? metricSelector(orderedList[i + 1]) : null;
+
+                results.Add(new WindowRowResult&lt;T&gt;(
+                    Item: item,
+                    RowNumber: rowNumber,
+                    Rank: rank,
+                    DenseRank: denseRank,
+                    RunningTotal: runningSum,
+                    MovingAverage: movingAvg,
+                    LagValue: lag,
+                    LeadValue: lead
+                ));
+            }
+        }
+
+        return results;
+    }
+
+    /// &lt;summary&gt;
+    /// Generates reference production-grade PostgreSQL analytical query featuring CTEs, Windowing, and Partitions.
+    /// &lt;/summary&gt;
+    public static string GeneratePostgreSqlAnalyticalQuery()
+    {
+        return @&quot;
+WITH TimeSeriesDailyAggregates AS (
+    SELECT 
+        device_id,
+        DATE_TRUNC(&#x27;day&#x27;, recorded_at) AS reading_day,
+        AVG(temperature) AS avg_daily_temp,
+        MAX(voltage) AS max_voltage
+    FROM sensor_readings
+    WHERE recorded_at &gt;= NOW() - INTERVAL &#x27;30 days&#x27;
+    GROUP BY device_id, DATE_TRUNC(&#x27;day&#x27;, recorded_at)
+),
+WindowRankings AS (
+    SELECT
+        device_id,
+        reading_day,
+        avg_daily_temp,
+        ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY reading_day ASC) AS row_num,
+        RANK() OVER (PARTITION BY device_id ORDER BY avg_daily_temp DESC) AS temp_rank,
+        DENSE_RANK() OVER (PARTITION BY device_id ORDER BY avg_daily_temp DESC) AS dense_temp_rank,
+        LAG(avg_daily_temp, 1) OVER (PARTITION BY device_id ORDER BY reading_day ASC) AS prev_day_temp,
+        LEAD(avg_daily_temp, 1) OVER (PARTITION BY device_id ORDER BY reading_day ASC) AS next_day_temp,
+        AVG(avg_daily_temp) OVER (
+            PARTITION BY device_id 
+            ORDER BY reading_day ASC 
+            ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+        ) AS seven_day_moving_avg
+    FROM TimeSeriesDailyAggregates
+)
+SELECT 
+    device_id,
+    reading_day,
+    avg_daily_temp,
+    (avg_daily_temp - prev_day_temp) AS daily_temp_delta,
+    seven_day_moving_avg,
+    temp_rank,
+    dense_temp_rank
+FROM WindowRankings
+ORDER BY device_id, reading_day;&quot;.Trim();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day24.AdvancedSql.Tests/Day24Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd24-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d24-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using FluentAssertions;
+using Xunit;
+
+namespace Day24.AdvancedSql.Tests;
+
+public class Day24Tests
+{
+    private record TestReading(string DeviceId, DateTime RecordedAt, decimal Value);
+
+    // ==========================================
+    // 1. WINDOW FUNCTIONS TESTS
+    // ==========================================
+
+    [Fact]
+    public void WindowFunctions_RowNumber_GeneratesSequentialIndexPerPartition()
+    {
+        var t0 = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        var readings = new List&lt;TestReading&gt;
+        {
+            new(&quot;DeviceA&quot;, t0.AddHours(1), 10m),
+            new(&quot;DeviceA&quot;, t0.AddHours(2), 20m),
+            new(&quot;DeviceB&quot;, t0.AddHours(1), 50m),
+            new(&quot;DeviceB&quot;, t0.AddHours(2), 60m),
+            new(&quot;DeviceA&quot;, t0.AddHours(3), 30m)
+        };
+
+        var evaluated = WindowFunctionsEngine.EvaluateWindowFunctions(
+            readings,
+            r =&gt; r.DeviceId,
+            r =&gt; r.RecordedAt,
+            r =&gt; r.Value
+        );
+
+        var deviceARows = evaluated.FindAll(x =&gt; x.Item.DeviceId == &quot;DeviceA&quot;);
+        deviceARows.ConvertAll(x =&gt; x.RowNumber).Should().Equal(1, 2, 3);
+
+        var deviceBRows = evaluated.FindAll(x =&gt; x.Item.DeviceId == &quot;DeviceB&quot;);
+        deviceBRows.ConvertAll(x =&gt; x.RowNumber).Should().Equal(1, 2);
+    }
+
+    [Fact]
+    public void WindowFunctions_RankAndDenseRank_HandleTiesCorrectly()
+    {
+        // Scores: 100, 90, 90, 80
+        // Expected RANK():       1, 2, 2, 4 (skips 3 due to tie)
+        // Expected DENSE_RANK(): 1, 2, 2, 3 (no gap)
+        var scores = new List&lt;TestReading&gt;
+        {
+            new(&quot;G1&quot;, DateTime.UtcNow, 100m),
+            new(&quot;G1&quot;, DateTime.UtcNow.AddSeconds(1), 90m),
+            new(&quot;G1&quot;, DateTime.UtcNow.AddSeconds(2), 90m),
+            new(&quot;G1&quot;, DateTime.UtcNow.AddSeconds(3), 80m),
+        };
+
+        var evaluated = WindowFunctionsEngine.EvaluateWindowFunctions(
+            scores,
+            r =&gt; r.DeviceId,
+            r =&gt; r.Value,
+            r =&gt; r.Value,
+            ascending: false
+        );
+
+        evaluated.ConvertAll(x =&gt; x.Rank).Should().Equal(1, 2, 2, 4);
+        evaluated.ConvertAll(x =&gt; x.DenseRank).Should().Equal(1, 2, 2, 3);
+    }
+
+    [Fact]
+    public void WindowFunctions_LagAndLead_AccessAdjacentRowMetrics()
+    {
+        var t0 = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        var series = new List&lt;TestReading&gt;
+        {
+            new(&quot;Dev1&quot;, t0, 10m),
+            new(&quot;Dev1&quot;, t0.AddDays(1), 15m),
+            new(&quot;Dev1&quot;, t0.AddDays(2), 25m)
+        };
+
+        var results = WindowFunctionsEngine.EvaluateWindowFunctions(
+            series,
+            r =&gt; r.DeviceId,
+            r =&gt; r.RecordedAt,
+            r =&gt; r.Value
+        );
+
+        // Row 1: Lag is null, Lead is 15
+        results[0].LagValue.Should().BeNull();
+        results[0].LeadValue.Should().Be(15m);
+
+        // Row 2: Lag is 10, Lead is 25
+        results[1].LagValue.Should().Be(10m);
+        results[1].LeadValue.Should().Be(25m);
+
+        // Row 3: Lag is 15, Lead is null
+        results[2].LagValue.Should().Be(15m);
+        results[2].LeadValue.Should().BeNull();
+    }
+
+    [Fact]
+    public void WindowFunctions_RunningTotalAndMovingAverage_CalculateFrameCorrectly()
+    {
+        var t0 = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        var series = new List&lt;TestReading&gt;
+        {
+            new(&quot;D1&quot;, t0, 10m),
+            new(&quot;D1&quot;, t0.AddMinutes(1), 20m),
+            new(&quot;D1&quot;, t0.AddMinutes(2), 30m),
+            new(&quot;D1&quot;, t0.AddMinutes(3), 40m)
+        };
+
+        var results = WindowFunctionsEngine.EvaluateWindowFunctions(
+            series,
+            r =&gt; r.DeviceId,
+            r =&gt; r.RecordedAt,
+            r =&gt; r.Value,
+            movingAverageWindow: 3
+        );
+
+        // Running totals: 10, 30, 60, 100
+        results.ConvertAll(x =&gt; x.RunningTotal).Should().Equal(10m, 30m, 60m, 100m);
+
+        // 3-point moving average:
+        // row 0: avg(10) = 10
+        // row 1: avg(10, 20) = 15
+        // row 2: avg(10, 20, 30) = 20
+        // row 3: avg(20, 30, 40) = 30
+        results.ConvertAll(x =&gt; x.MovingAverage).Should().Equal(10m, 15m, 20m, 30m);
+    }
+
+    [Fact]
+    public void WindowFunctions_GeneratesValidPostgreSqlQueryWithCte()
+    {
+        var sql = WindowFunctionsEngine.GeneratePostgreSqlAnalyticalQuery();
+        sql.Should().Contain(&quot;WITH TimeSeriesDailyAggregates AS&quot;);
+        sql.Should().Contain(&quot;ROW_NUMBER() OVER&quot;);
+        sql.Should().Contain(&quot;DENSE_RANK() OVER&quot;);
+        sql.Should().Contain(&quot;LAG(avg_daily_temp, 1) OVER&quot;);
+        sql.Should().Contain(&quot;ROWS BETWEEN 6 PRECEDING AND CURRENT ROW&quot;);
+    }
+
+    // ==========================================
+    // 2. TABLE PARTITIONING TESTS
+    // ==========================================
+
+    [Fact]
+    public void PartitioningStrategy_PrunesIrrelevantPartitions_ForDateRange()
+    {
+        var strategy = new TablePartitioningStrategy();
+        strategy.RegisterPartition(&quot;p_2026_08&quot;, new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), 1_000_000, 120.0);
+        strategy.RegisterPartition(&quot;p_2026_09&quot;, new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), 1_200_000, 145.0);
+        strategy.RegisterPartition(&quot;p_2026_10&quot;, new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc), 1_500_000, 180.0);
+
+        // Query only targets October 2026
+        var plan = strategy.SimulatePruning(
+            new DateTime(2026, 10, 5, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc)
+        );
+
+        plan.ScannedPartitions.Should().ContainSingle().Which.Should().Be(&quot;p_2026_10&quot;);
+        plan.PrunedPartitions.Should().Equal(&quot;p_2026_08&quot;, &quot;p_2026_09&quot;);
+        plan.TotalScannedSizeMb.Should().Be(180.0);
+        plan.TotalSavingsSizeMb.Should().Be(265.0);
+    }
+
+    [Fact]
+    public void PartitioningStrategy_MultiMonthQuery_ScansOnlyRequiredPartitions()
+    {
+        var strategy = new TablePartitioningStrategy();
+        strategy.RegisterPartition(&quot;p_2026_07&quot;, new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc), 100_000, 10.0);
+        strategy.RegisterPartition(&quot;p_2026_08&quot;, new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), 200_000, 20.0);
+        strategy.RegisterPartition(&quot;p_2026_09&quot;, new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), 300_000, 30.0);
+        strategy.RegisterPartition(&quot;p_2026_10&quot;, new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc), 400_000, 40.0);
+
+        // Query spans mid-August to mid-September
+        var plan = strategy.SimulatePruning(
+            new DateTime(2026, 8, 15, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc)
+        );
+
+        plan.ScannedPartitions.Should().Equal(&quot;p_2026_08&quot;, &quot;p_2026_09&quot;);
+        plan.PrunedPartitions.Should().Equal(&quot;p_2026_07&quot;, &quot;p_2026_10&quot;);
+    }
+
+    // ==========================================
+    // 3. DSA: BINARY TREE MAXIMUM PATH SUM (LC #124)
+    // ==========================================
+
+    [Fact]
+    public void LC124_MaxPathSum_PositiveTree_ReturnsCorrectSum()
+    {
+        var solver = new MaxPathSumSolver();
+        // Tree:
+        //     1
+        //    / \
+        //   2   3
+        // Max path: 2 + 1 + 3 = 6
+        var root = new TreeNode(1, new TreeNode(2), new TreeNode(3));
+        solver.MaxPathSum(root).Should().Be(6);
+    }
+
+    [Fact]
+    public void LC124_MaxPathSum_NegativeBranchesAndRoot_ClampsCorrectly()
+    {
+        var solver = new MaxPathSumSolver();
+        // Tree:
+        //       -10
+        //       /  \
+        //      9   20
+        //         /  \
+        //        15   7
+        // Max path: 15 + 20 + 7 = 42
+        var root = new TreeNode(-10,
+            new TreeNode(9),
+            new TreeNode(20, new TreeNode(15), new TreeNode(7))
+        );
+        solver.MaxPathSum(root).Should().Be(42);
+    }
+
+    [Fact]
+    public void LC124_MaxPathSum_AllNegativeNodes_ReturnsLeastNegativeNode()
+    {
+        var solver = new MaxPathSumSolver();
+        // Tree:
+        //      -3
+        //      / \
+        //    -5  -1
+        // Max path: -1 (must select at least 1 node)
+        var root = new TreeNode(-3, new TreeNode(-5), new TreeNode(-1));
+        solver.MaxPathSum(root).Should().Be(-1);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 24: Deep Dive — SQL Windowing, Partitioning & Tree Path Optimization</h1>
+<h2>1. Window Functions Internals in PostgreSQL</h2>
+<p>Window functions perform calculations across sets of table rows related to the current row without collapsing multiple rows into a single summary row (unlike <code>GROUP BY</code>).</p>
+<h3>1.1 The PostgreSQL WindowAgg Node</h3>
+<ul>
+<li>In an <code>EXPLAIN (ANALYZE, BUFFERS)</code> execution plan, window functions introduce a <strong><code>WindowAgg</code></strong> node.</li>
+<li><strong>Pre-requisite</strong>: The input rows must be sorted according to <code>PARTITION BY</code> and <code>ORDER BY</code>. If no index matches the ordering, PostgreSQL inserts an explicit <code>Sort</code> node.</li>
+<li><strong>Memory Impact</strong>: The sorted rows are spooled into a tuplestore in memory (<code>work_mem</code>). If the partition size exceeds <code>work_mem</code>, it spills to temporary disk files (<code>Sort Method: external merge Disk</code>), causing severe I/O degradation.</li>
+</ul>
+<h3>1.2 Window Framing: <code>ROWS</code> vs <code>RANGE</code></h3>
+<ul>
+<li><strong>Default Framing</strong>: When <code>ORDER BY</code> is specified without an explicit frame, SQL defaults to:</li>
+</ul>
+<p>$$\text{RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW}$$</p>
+<ul>
+<li><strong>Performance Hazard</strong>: <code>RANGE</code> evaluates duplicate peer values (all rows with the same <code>ORDER BY</code> value belong to the same range). This requires looking ahead and buffering rows.</li>
+<li><strong>Best Practice</strong>: Always specify <code>ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code> (or custom bounds) if exact physical rows are desired. <code>ROWS</code> executes in a single streaming pass ($O(N)$), saving CPU and memory.</li>
+</ul>
+<hr/>
+<h2>2. Declarative Table Partitioning Architecture</h2>
+<p>PostgreSQL declarative partitioning splits large tables into smaller physical chunks while presenting a single virtual relation to applications.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                  ┌─────────────────────────────────┐
+                  │ sensor_readings (Virtual Parent)│
+                  │   PARTITION BY RANGE (recorded) │
+                  └────────────────┬────────────────┘
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         ▼                         ▼                         ▼
+┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
+│  sensor_2026_m08 │      │  sensor_2026_m09 │      │  sensor_2026_m10 │
+│ [Aug 1 - Sep 1)  │      │ [Sep 1 - Oct 1)  │      │ [Oct 1 - Nov 1)  │
+└──────────────────┘      └──────────────────┘      └──────────────────┘</code></pre></div>
+<h3>2.1 Partition Pruning Mechanics</h3>
+<ul>
+<li><strong>Static Pruning</strong>: Occurs during query planning when query constants are known (<code>WHERE recorded_at &gt;= &#x27;2026-10-01&#x27;</code>). The optimizer removes non-matching partitions from the plan before execution begins.</li>
+<li><strong>Run-Time Pruning</strong>: Occurs during execution when filters involve parameters or volatile functions (<code>WHERE recorded_at &gt;= CURRENT_DATE - 7</code>). The executor evaluates bounds on the fly and skips entire sub-table scans.</li>
+</ul>
+<h3>2.2 Maintenance: <code>DROP TABLE</code> vs. <code>DELETE</code></h3>
+<ul>
+<li><strong>Why <code>DELETE</code> Fails on Big Data</strong>:</li>
+<li><code>DELETE FROM sensor_readings WHERE recorded_at &lt; &#x27;2025-01-01&#x27;</code> writes an MVCC dead tuple marker for every deleted row.</li>
+<li>Generates massive Write-Ahead Log (WAL) traffic, saturating replication bandwidth.</li>
+<li>Leaves table and index disk pages bloated until costly <code>VACUUM FULL</code> is performed.</li>
+<li><strong>The Partitioning Advantage</strong>:</li>
+<li><code>DROP TABLE sensor_readings_y2025m01;</code></li>
+<li>Instantly unlinks the underlying disk file in $O(1)$ time.</li>
+<li>Generates negligible WAL entries, causes zero disk fragmentation, and requires zero vacuum debt.</li>
+</ul>
+<hr/>
+<h2>3. DSA: LeetCode #124 (Binary Tree Maximum Path Sum)</h2>
+<h3>3.1 The Two Distinctions of a Node's Value</h3>
+<p>In a binary tree, a valid path can turn at most once at its highest peak node:</p>
+<ol>
+<li><strong>The Peak Anchor Path</strong>:</li>
+</ol>
+<p>$$\text{Price}_{\text{peak}} = \text{node.val} + \max(0, \text{leftGain}) + \max(0, \text{rightGain})$$</p>
+<p>This path cannot be extended further upward to the parent because doing so would form a branch fork, violating the path constraint.</p>
+<ol>
+<li><strong>The Branch Gain Contributed to Parent</strong>:</li>
+</ol>
+<p>$$\text{Gain}_{\text{parent}} = \text{node.val} + \max(0, \max(\text{leftGain}, \text{rightGain}))$$</p>
+<p>This selects at most ONE child branch so the parent can extend the path upward.</p>
+<h3>3.2 Complexity</h3>
+<ul>
+<li><strong>Time Complexity</strong>: $O(N)$ — Each node is visited exactly once via post-order DFS.</li>
+<li><strong>Space Complexity</strong>: $O(H)$ — Recursion call stack bounded by tree height ($O(\log N)$ balanced, $O(N)$ skewed).</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 24: Advanced SQL — CTEs, Window Functions & Table Partitions</h1>
+<p>Comprehensive analytical SQL engineering lab implementing ANSI window functions, declarative table partitioning with partition pruning simulation, and LeetCode #124 (Binary Tree Maximum Path Sum - Hard).</p>
+<hr/>
+<h2>🎯 Architecture & Objectives</h2>
+<ol>
+<li><strong>SQL Window Functions</strong>:</li>
+</ol>
+<ul>
+<li><code>ROW_NUMBER()</code>: Strict sequential numbering per partition without gaps.</li>
+<li><code>RANK()</code> vs <code>DENSE_RANK()</code>: Ordinal ranking with tie gap skipping (<code>1, 2, 2, 4</code>) vs contiguous ranking (<code>1, 2, 2, 3</code>).</li>
+<li><code>LAG()</code> and <code>LEAD()</code>: Inter-row metric comparisons (e.g. daily time-series deltas).</li>
+<li>Rolling Window Aggregates: Running totals and moving averages over custom frames (<code>ROWS BETWEEN N PRECEDING AND CURRENT ROW</code>).</li>
+</ul>
+<ol>
+<li><strong>PostgreSQL Declarative Table Partitioning</strong>:</li>
+</ol>
+<ul>
+<li>Time-series range partitioning (<code>PARTITION BY RANGE (recorded_at)</code>).</li>
+<li>Query planner partition pruning reducing table scan I/O by orders of magnitude.</li>
+<li>High-throughput zero-downtime data archival (<code>DROP TABLE</code> vs <code>DELETE</code>).</li>
+</ul>
+<ol>
+<li><strong>DSA: Binary Tree Maximum Path Sum (LeetCode #124 - Hard)</strong>:</li>
+</ol>
+<ul>
+<li>Post-order DFS computing bottom-up maximum branch gains while updating global peak path sums.</li>
+<li>Handles negative roots, clamping negative branch contributions in optimal $O(N)$ time and $O(H)$ stack space.</li>
+</ul>
+<hr/>
+<h2>📁 Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day24-Advanced-SQL-Window-Partitions/
+├── src/
+│   └── Day24.AdvancedSql/
+│       ├── Day24.AdvancedSql.csproj
+│       ├── WindowFunctionsEngine.cs         # In-memory window engine &amp; analytical generator
+│       ├── TablePartitioningStrategy.cs     # PostgreSQL range partitioning &amp; pruning simulator
+│       └── MaxPathSumSolver.cs              # LC #124 Binary Tree Max Path Sum (Hard)
+├── tests/
+│   └── Day24.AdvancedSql.Tests/
+│       ├── Day24.AdvancedSql.Tests.csproj
+│       └── Day24Tests.cs                    # 10 unit tests covering window functions &amp; DSA
+├── README.md
+├── notes.md                                 # Deep dive architectural notes
+├── interview-questions.md                   # 10 Senior/Staff interview Q&amp;As
+└── index.html                               # Standalone offline web guide</code></pre></div>
+<hr/>
+<h2>🧪 Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day24.AdvancedSql.Tests/Day24.AdvancedSql.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the exact semantic difference between `ROW_NUMBER()`, `RANK()`, and `DENSE_RANK()`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>Given duplicate values in the <code>ORDER BY</code> clause (e.g., scores <code>[100, 90, 90, 80]</code>):</p>
+<ul>
+<li><strong><code>ROW_NUMBER()</code></strong>: Generates a strictly unique, contiguous sequence of integers (<code>1, 2, 3, 4</code>) regardless of value ties. The ordering among tied rows is non-deterministic unless additional tie-breaker columns are specified.</li>
+<li><strong><code>RANK()</code></strong>: Assigns identical ranks to tied rows, but skips subsequent rank numbers to match the row's 1-based ordinal position (<code>1, 2, 2, 4</code>). It leaves gaps in the sequence.</li>
+<li><strong><code>DENSE_RANK()</code></strong>: Assigns identical ranks to tied rows without leaving gaps in the sequence (<code>1, 2, 2, 3</code>).</li>
+<li><em>Use cases</em>:</li>
+<li>Pagination / de-duplication: Use <code>ROW_NUMBER()</code>.</li>
+<li>Competition leaderboards (Olympic medal ties): Use <code>RANK()</code>.</li>
+<li>Salary bands / tier categories: Use <code>DENSE_RANK()</code>.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How does the PostgreSQL query engine execute window functions, and how do you optimize them?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ol>
+<li><strong>Execution Steps</strong>:</li>
+</ol>
+<ul>
+<li>The query planner groups rows via <code>PARTITION BY</code> and sorts them by <code>ORDER BY</code>.</li>
+<li>Rows flow into a <code>WindowAgg</code> execution node which tracks state across the partitioned frame.</li>
+</ul>
+<ol>
+<li><strong>Optimization Techniques</strong>:</li>
+</ol>
+<ul>
+<li><strong>Composite Index Matching</strong>: Create an index with the exact column order: <code>CREATE INDEX idx_data ON my_table (partition_col, order_col)</code>. This allows the engine to stream rows directly into <code>WindowAgg</code> without an expensive <code>Sort</code> step.</li>
+<li><strong><code>work_mem</code> Tuning</strong>: If the partition data exceeds <code>work_mem</code>, PostgreSQL spills sorted batches to disk (<code>external merge Disk</code>), multiplying query execution time. Increase <code>work_mem</code> specifically for analytical workloads.</li>
+<li><strong>Filter Pushdown via CTE / Subquery</strong>: Window functions cannot appear in <code>WHERE</code> clauses. Wrap in a subquery or CTE and filter on the outer query (e.g. <code>WHERE row_num = 1</code>).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why is specifying `ROWS` instead of the default `RANGE` framing critical for window query performance?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Pitfall</strong>: In SQL, specifying <code>ORDER BY</code> without a frame clause defaults to <code>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code>.</li>
+<li><strong>The Problem with <code>RANGE</code></strong>: <code>RANGE</code> groups rows with identical order values as "peers". The engine must read ahead to verify whether the next row has the same value before emitting a result. This forces buffering and prevents single-pass streaming.</li>
+<li><strong>The Fix with <code>ROWS</code></strong>: Explicitly specify <code>ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code> or <code>ROWS BETWEEN 5 PRECEDING AND CURRENT ROW</code>. <code>ROWS</code> operates purely on row counts regardless of duplicates, executing in a high-speed $O(N)$ streaming pass with minimal memory overhead.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Explain the difference between Materialized and Inlined CTEs (`WITH` clauses) in PostgreSQL.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Prior to PostgreSQL 12</strong>: All CTEs acted as optimization fences—PostgreSQL always materialized CTE results into a temporary table in memory, preventing the optimizer from pushing outer <code>WHERE</code> predicates into the CTE.</li>
+<li><strong>PostgreSQL 12+ Behavior</strong>: By default, simple CTEs referenced only once are <strong>inlined</strong> into the main query plan, allowing predicate pushdown and index scans across CTE boundaries.</li>
+<li><strong>Explicit Keywords</strong>:</li>
+<li><code>WITH data AS MATERIALIZED (...)</code>: Forces PostgreSQL to evaluate the CTE once and store the result set in memory, preventing repeated execution if referenced multiple times in union or joins.</li>
+<li><code>WITH data AS NOT MATERIALIZED (...)</code>: Explicitly forces inlining, allowing the optimizer to push join conditions and indexes deep into the subquery.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How does declarative table partitioning work in PostgreSQL, and how does the planner perform Partition Pruning?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Architecture</strong>: A root parent table defines partition keys (<code>PARTITION BY RANGE (recorded_at)</code>), while child tables store actual physical tuples.</li>
+<li><strong>Partition Pruning</strong>:</li>
+<li><strong>Static Pruning (Plan-Time)</strong>: If the query specifies literal constants (<code>WHERE recorded_at &gt;= &#x27;2026-10-01&#x27; AND recorded_at &lt; &#x27;2026-11-01&#x27;</code>), the optimizer evaluates partition constraints and excludes child tables from the generated plan.</li>
+<li><strong>Dynamic Pruning (Run-Time)</strong>: If queries use parameterized values or dynamic functions (<code>WHERE recorded_at &gt;= $1</code>), pruning occurs at execution time as parameters bind.</li>
+<li><strong>Impact</strong>: Transforms full table scans over multi-terabyte datasets into localized scans over a single 10 GB partition, reducing disk I/O and buffer cache churn by 99%+.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you perform zero-downtime data archival on high-volume tables (e.g. dropping data older than 90 days)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Anti-Pattern (<code>DELETE WHERE</code>)</strong>:</li>
+<li>Executing <code>DELETE FROM logs WHERE created_at &lt; NOW() - INTERVAL &#x27;90 days&#x27;</code> locks rows, writes massive dead tuples to WAL, exhausts replication bandwidth, and leaves table bloat that requires intrusive vacuum operations.</li>
+<li><strong>Partitioning Strategy (<code>DROP TABLE</code>)</strong>:</li>
+<li>Partition the table by month or week.</li>
+<li>To retire data older than 90 days, run:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">    ALTER TABLE logs DETACH PARTITION logs_y2025m01;
+    DROP TABLE logs_y2025m01;</code></pre></div>
+<ul>
+<li><code>DETACH CONCURRENTLY</code> decouples the partition without taking an exclusive lock on the parent table.</li>
+<li><code>DROP TABLE</code> instantaneously unlinks the underlying disk files at the filesystem level in milliseconds with zero WAL bloat.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Does PostgreSQL support global indexes across partitioned tables? How should indexes be designed?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>No Global Indexes</strong>: Unlike Oracle, PostgreSQL does <strong>not</strong> support global indexes spanning across multiple partitions. Every index in PostgreSQL is local to its specific child partition.</li>
+<li><strong>Implications for Primary Keys</strong>:</li>
+<li>Any <code>PRIMARY KEY</code> or <code>UNIQUE</code> constraint on a partitioned table <strong>must include the partition key columns</strong> (e.g. <code>PRIMARY KEY (recorded_at, id)</code>).</li>
+<li>Without the partition key, PostgreSQL cannot enforce uniqueness across different child tables without scanning all partitions.</li>
+<li><strong>Local Index Optimization</strong>: Each child table can have specialized local indexes tailored to its data access patterns (e.g. partial indexes or BRIN indexes for older read-only archival partitions vs B-Trees for recent partitions).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How do you write an analytical query to calculate rolling 7-day moving averages and daily growth deltas on time-series data?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">WITH DailyTotals AS (
+    SELECT 
+        account_id,
+        DATE_TRUNC(&#x27;day&#x27;, trans_time) AS trans_day,
+        SUM(amount) AS daily_amount
+    FROM transactions
+    WHERE trans_time &gt;= NOW() - INTERVAL &#x27;60 days&#x27;
+    GROUP BY account_id, DATE_TRUNC(&#x27;day&#x27;, trans_time)
+)
+SELECT 
+    account_id,
+    trans_day,
+    daily_amount,
+    -- 1. Day-over-day delta using LAG
+    daily_amount - LAG(daily_amount, 1, 0) OVER (
+        PARTITION BY account_id ORDER BY trans_day
+    ) AS daily_delta,
+    -- 2. 7-day moving average using frame specification
+    AVG(daily_amount) OVER (
+        PARTITION BY account_id 
+        ORDER BY trans_day 
+        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+    ) AS rolling_7day_avg
+FROM DailyTotals
+ORDER BY account_id, trans_day;</code></pre></div>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Walk through LeetCode #124 (Binary Tree Maximum Path Sum). Why does a node calculate two different sums during traversal?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Core Constraint</strong>: A valid tree path cannot fork; a node can only connect to at most one parent and at most one child branch when extended.</li>
+<li><strong>The Two Sums</strong>:</li>
+</ul>
+<ol>
+<li><strong>Peak Anchor Sum (Internal Candidate)</strong>:</li>
+</ol>
+<p>$$\text{PathSum} = \text{node.val} + \max(0, \text{leftGain}) + \max(0, \text{rightGain})$$</p>
+<p>Here, the path turns around <code>node</code> (traveling from the left child, through <code>node</code>, down to the right child). This path cannot be extended further up to the parent. We update the global maximum with this value.</p>
+<ol>
+<li><strong>Branch Contribution (Returned to Parent)</strong>:</li>
+</ol>
+<p>$$\text{Gain}_{\text{return}} = \text{node.val} + \max(0, \max(\text{leftGain}, \text{rightGain}))$$</p>
+<p>The node can extend only ONE branch to its parent. Negative branch sums are clamped to $0$ to avoid diminishing the total.</p>
+<ul>
+<li><strong>Complexity</strong>: $O(N)$ time visiting each node once; $O(H)$ recursion stack space.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you handle edge cases in LeetCode #124 when all node values in the tree are negative?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Edge Case</strong>: Consider a tree where every node is negative, e.g. <code>[-5, -10, -2]</code>.</li>
+<li><strong>Handling</strong>:</li>
+<li>The problem requires a non-empty path (at least one node must be picked).</li>
+<li>If we initialize <code>maxSum = 0</code>, the solver would erroneously return <code>0</code> instead of <code>-2</code>!</li>
+<li><strong>Correct Approach</strong>:</li>
+</ul>
+<ol>
+<li>Initialize <code>maxSum = int.MinValue</code>.</li>
+<li>Clamp subtree gains with <code>Math.Max(0, childGain)</code>. For leaf nodes with negative values, <code>leftGain = 0</code> and <code>rightGain = 0</code>.</li>
+<li>The peak anchor sum is <code>node.val + 0 + 0 = node.val</code>.</li>
+<li>The global maximum updates to <code>Math.Max(int.MinValue, -2) = -2</code>.</li>
+<li>The result correctly selects the single least negative node.</li>
+</ol>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day24.AdvancedSql/MaxPathSumSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd24-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d24-src-code-0" class="language-csharp">using System;
+
+namespace Day24.AdvancedSql;
+
+/// &lt;summary&gt;
+/// Standard Binary Tree Node definition.
+/// &lt;/summary&gt;
+public class TreeNode
+{
+    public int val;
+    public TreeNode? left;
+    public TreeNode? right;
+
+    public TreeNode(int val = 0, TreeNode? left = null, TreeNode? right = null)
+    {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+/// &lt;summary&gt;
+/// LeetCode #124: Binary Tree Maximum Path Sum (Hard).
+/// Solved via Post-Order DFS with bottom-up dynamic programming.
+/// Computes maximum contribution gain from child subtrees while tracking the optimal peak path sum.
+/// Time Complexity: O(N) | Space Complexity: O(H) recursion stack.
+/// &lt;/summary&gt;
+public class MaxPathSumSolver
+{
+    private int _maxPathSum;
+
+    public int MaxPathSum(TreeNode? root)
+    {
+        if (root == null) return 0;
+
+        _maxPathSum = int.MinValue;
+        CalculateMaxGain(root);
+        return _maxPathSum;
+    }
+
+    private int CalculateMaxGain(TreeNode? node)
+    {
+        if (node == null) return 0;
+
+        // Post-order: Evaluate subtrees first. Ignore negative path branches (clamp to 0).
+        int leftGain = Math.Max(0, CalculateMaxGain(node.left));
+        int rightGain = Math.Max(0, CalculateMaxGain(node.right));
+
+        // Path passing through current node as the peak anchor
+        int currentPathSum = node.val + leftGain + rightGain;
+
+        // Update global maximum path sum
+        _maxPathSum = Math.Max(_maxPathSum, currentPathSum);
+
+        // Return maximum branch gain current node can contribute to its parent
+        return node.val + Math.Max(leftGain, rightGain);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day24.AdvancedSql/TablePartitioningStrategy.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd24-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d24-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day24.AdvancedSql;
+
+public record PartitionMetadata(
+    string TableName,
+    DateTime RangeStartUtc,
+    DateTime RangeEndUtc,
+    long RowCount,
+    double SizeMb
+);
+
+public record PartitionPruningPlan(
+    DateTime QueryStartUtc,
+    DateTime QueryEndUtc,
+    List&lt;string&gt; ScannedPartitions,
+    List&lt;string&gt; PrunedPartitions,
+    double TotalScannedSizeMb,
+    double TotalSavingsSizeMb
+);
+
+/// &lt;summary&gt;
+/// PostgreSQL Declarative Table Partitioning Architecture Simulator.
+/// Models range partitioning, query planner partition pruning, and zero-downtime maintenance.
+/// &lt;/summary&gt;
+public class TablePartitioningStrategy
+{
+    private readonly List&lt;PartitionMetadata&gt; _partitions = new();
+
+    public IReadOnlyList&lt;PartitionMetadata&gt; Partitions =&gt; _partitions;
+
+    public void RegisterPartition(string tableName, DateTime startUtc, DateTime endUtc, long rowCount, double sizeMb)
+    {
+        _partitions.Add(new PartitionMetadata(tableName, startUtc, endUtc, rowCount, sizeMb));
+    }
+
+    /// &lt;summary&gt;
+    /// Simulates PostgreSQL EXPLAIN query plan partition pruning for a given time interval filter.
+    /// &lt;/summary&gt;
+    public PartitionPruningPlan SimulatePruning(DateTime queryStartUtc, DateTime queryEndUtc)
+    {
+        var scanned = new List&lt;string&gt;();
+        var pruned = new List&lt;string&gt;();
+        double scannedMb = 0;
+        double savedMb = 0;
+
+        foreach (var p in _partitions)
+        {
+            // Partition overlaps query range if:
+            // p.RangeStart &lt; queryEnd AND p.RangeEnd &gt; queryStart
+            bool overlaps = p.RangeStartUtc &lt; queryEndUtc &amp;&amp; p.RangeEndUtc &gt; queryStartUtc;
+
+            if (overlaps)
+            {
+                scanned.Add(p.TableName);
+                scannedMb += p.SizeMb;
+            }
+            else
+            {
+                pruned.Add(p.TableName);
+                savedMb += p.SizeMb;
+            }
+        }
+
+        return new PartitionPruningPlan(
+            QueryStartUtc: queryStartUtc,
+            QueryEndUtc: queryEndUtc,
+            ScannedPartitions: scanned,
+            PrunedPartitions: pruned,
+            TotalScannedSizeMb: Math.Round(scannedMb, 2),
+            TotalSavingsSizeMb: Math.Round(savedMb, 2)
+        );
+    }
+
+    /// &lt;summary&gt;
+    /// Generates DDL scripts for declarative range partitioning in PostgreSQL.
+    /// &lt;/summary&gt;
+    public static string GeneratePostgreSqlDdl(int year, int month)
+    {
+        var nextMonthDate = new DateTime(year, month, 1).AddMonths(1);
+        var partName = $&quot;sensor_readings_y{year:0000}m{month:00}&quot;;
+        var startStr = $&quot;{year:0000}-{month:00}-01 00:00:00+00&quot;;
+        var endStr = $&quot;{nextMonthDate.Year:0000}-{nextMonthDate.Month:00}-01 00:00:00+00&quot;;
+
+        return $@&quot;
+-- 1. Create Root Partitioned Table (Parent)
+CREATE TABLE IF NOT EXISTS sensor_readings (
+    id BIGINT GENERATED ALWAYS AS IDENTITY,
+    device_id VARCHAR(64) NOT NULL,
+    recorded_at TIMESTAMPTZ NOT NULL,
+    temperature NUMERIC(5, 2) NOT NULL,
+    voltage NUMERIC(6, 3) NOT NULL,
+    PRIMARY KEY (recorded_at, id)
+) PARTITION BY RANGE (recorded_at);
+
+-- 2. Create Child Range Partition for {year}-{month:00}
+CREATE TABLE IF NOT EXISTS {partName}
+PARTITION OF sensor_readings
+FOR VALUES FROM (&#x27;{startStr}&#x27;) TO (&#x27;{endStr}&#x27;);
+
+-- 3. Create Index Local to Partition
+CREATE INDEX IF NOT EXISTS idx_{partName}_device_time 
+ON {partName} (device_id, recorded_at DESC);
+&quot;.Trim();
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day24.AdvancedSql/WindowFunctionsEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd24-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d24-src-code-2" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day24.AdvancedSql;
+
+public record WindowRowResult&lt;T&gt;(
+    T Item,
+    long RowNumber,
+    long Rank,
+    long DenseRank,
+    decimal RunningTotal,
+    decimal MovingAverage,
+    decimal? LagValue,
+    decimal? LeadValue
+);
+
+/// &lt;summary&gt;
+/// In-Memory Analytical SQL Window Functions Engine &amp; Query Generator.
+/// Implements standard SQL ANSI:2003 window function semantics:
+/// - ROW_NUMBER(): Strict sequential increment per partition
+/// - RANK(): Tied ranks with ordinal gap skipping
+/// - DENSE_RANK(): Tied ranks without ordinal gaps
+/// - LAG() / LEAD(): Inter-row comparative lookups
+/// - Moving averages &amp; cumulative running frames
+/// &lt;/summary&gt;
+public static class WindowFunctionsEngine
+{
+    public static List&lt;WindowRowResult&lt;T&gt;&gt; EvaluateWindowFunctions&lt;T, TKey, TOrder&gt;(
+        IEnumerable&lt;T&gt; source,
+        Func&lt;T, TKey&gt; partitionSelector,
+        Func&lt;T, TOrder&gt; orderSelector,
+        Func&lt;T, decimal&gt; metricSelector,
+        int movingAverageWindow = 3,
+        bool ascending = true)
+        where TKey : notnull
+        where TOrder : IComparable&lt;TOrder&gt;
+    {
+        var results = new List&lt;WindowRowResult&lt;T&gt;&gt;();
+
+        var grouped = source.GroupBy(partitionSelector);
+
+        foreach (var group in grouped)
+        {
+            var orderedList = ascending
+                ? group.OrderBy(orderSelector).ToList()
+                : group.OrderByDescending(orderSelector).ToList();
+
+            decimal runningSum = 0m;
+            var metricHistory = new List&lt;decimal&gt;();
+
+            long denseRankCounter = 0;
+            TOrder? lastOrderVal = default;
+            bool isFirst = true;
+
+            for (int i = 0; i &lt; orderedList.Count; i++)
+            {
+                var item = orderedList[i];
+                var orderVal = orderSelector(item);
+                var metric = metricSelector(item);
+
+                // 1. ROW_NUMBER(): 1-based sequential index
+                long rowNumber = i + 1;
+
+                // 2 &amp; 3. RANK() and DENSE_RANK()
+                long rank;
+                if (isFirst || !EqualityComparer&lt;TOrder&gt;.Default.Equals(orderVal, lastOrderVal))
+                {
+                    rank = i + 1;
+                    denseRankCounter++;
+                    lastOrderVal = orderVal;
+                    isFirst = false;
+                }
+                else
+                {
+                    // Tied rank: duplicate previous rank
+                    rank = results.Count &gt; 0 ? results[^1].Rank : 1;
+                }
+                long denseRank = denseRankCounter;
+
+                // 4. Running Total
+                runningSum += metric;
+
+                // 5. Moving Average (ROWS BETWEEN (windowSize-1) PRECEDING AND CURRENT ROW)
+                metricHistory.Add(metric);
+                var windowSlice = metricHistory.TakeLast(movingAverageWindow).ToList();
+                decimal movingAvg = Math.Round(windowSlice.Average(), 4);
+
+                // 6. LAG(1)
+                decimal? lag = i &gt; 0 ? metricSelector(orderedList[i - 1]) : null;
+
+                // 7. LEAD(1)
+                decimal? lead = i &lt; orderedList.Count - 1 ? metricSelector(orderedList[i + 1]) : null;
+
+                results.Add(new WindowRowResult&lt;T&gt;(
+                    Item: item,
+                    RowNumber: rowNumber,
+                    Rank: rank,
+                    DenseRank: denseRank,
+                    RunningTotal: runningSum,
+                    MovingAverage: movingAvg,
+                    LagValue: lag,
+                    LeadValue: lead
+                ));
+            }
+        }
+
+        return results;
+    }
+
+    /// &lt;summary&gt;
+    /// Generates reference production-grade PostgreSQL analytical query featuring CTEs, Windowing, and Partitions.
+    /// &lt;/summary&gt;
+    public static string GeneratePostgreSqlAnalyticalQuery()
+    {
+        return @&quot;
+WITH TimeSeriesDailyAggregates AS (
+    SELECT 
+        device_id,
+        DATE_TRUNC(&#x27;day&#x27;, recorded_at) AS reading_day,
+        AVG(temperature) AS avg_daily_temp,
+        MAX(voltage) AS max_voltage
+    FROM sensor_readings
+    WHERE recorded_at &gt;= NOW() - INTERVAL &#x27;30 days&#x27;
+    GROUP BY device_id, DATE_TRUNC(&#x27;day&#x27;, recorded_at)
+),
+WindowRankings AS (
+    SELECT
+        device_id,
+        reading_day,
+        avg_daily_temp,
+        ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY reading_day ASC) AS row_num,
+        RANK() OVER (PARTITION BY device_id ORDER BY avg_daily_temp DESC) AS temp_rank,
+        DENSE_RANK() OVER (PARTITION BY device_id ORDER BY avg_daily_temp DESC) AS dense_temp_rank,
+        LAG(avg_daily_temp, 1) OVER (PARTITION BY device_id ORDER BY reading_day ASC) AS prev_day_temp,
+        LEAD(avg_daily_temp, 1) OVER (PARTITION BY device_id ORDER BY reading_day ASC) AS next_day_temp,
+        AVG(avg_daily_temp) OVER (
+            PARTITION BY device_id 
+            ORDER BY reading_day ASC 
+            ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+        ) AS seven_day_moving_avg
+    FROM TimeSeriesDailyAggregates
+)
+SELECT 
+    device_id,
+    reading_day,
+    avg_daily_temp,
+    (avg_daily_temp - prev_day_temp) AS daily_temp_delta,
+    seven_day_moving_avg,
+    temp_rank,
+    dense_temp_rank
+FROM WindowRankings
+ORDER BY device_id, reading_day;&quot;.Trim();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day24.AdvancedSql.Tests/Day24Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd24-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d24-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using FluentAssertions;
+using Xunit;
+
+namespace Day24.AdvancedSql.Tests;
+
+public class Day24Tests
+{
+    private record TestReading(string DeviceId, DateTime RecordedAt, decimal Value);
+
+    // ==========================================
+    // 1. WINDOW FUNCTIONS TESTS
+    // ==========================================
+
+    [Fact]
+    public void WindowFunctions_RowNumber_GeneratesSequentialIndexPerPartition()
+    {
+        var t0 = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        var readings = new List&lt;TestReading&gt;
+        {
+            new(&quot;DeviceA&quot;, t0.AddHours(1), 10m),
+            new(&quot;DeviceA&quot;, t0.AddHours(2), 20m),
+            new(&quot;DeviceB&quot;, t0.AddHours(1), 50m),
+            new(&quot;DeviceB&quot;, t0.AddHours(2), 60m),
+            new(&quot;DeviceA&quot;, t0.AddHours(3), 30m)
+        };
+
+        var evaluated = WindowFunctionsEngine.EvaluateWindowFunctions(
+            readings,
+            r =&gt; r.DeviceId,
+            r =&gt; r.RecordedAt,
+            r =&gt; r.Value
+        );
+
+        var deviceARows = evaluated.FindAll(x =&gt; x.Item.DeviceId == &quot;DeviceA&quot;);
+        deviceARows.ConvertAll(x =&gt; x.RowNumber).Should().Equal(1, 2, 3);
+
+        var deviceBRows = evaluated.FindAll(x =&gt; x.Item.DeviceId == &quot;DeviceB&quot;);
+        deviceBRows.ConvertAll(x =&gt; x.RowNumber).Should().Equal(1, 2);
+    }
+
+    [Fact]
+    public void WindowFunctions_RankAndDenseRank_HandleTiesCorrectly()
+    {
+        // Scores: 100, 90, 90, 80
+        // Expected RANK():       1, 2, 2, 4 (skips 3 due to tie)
+        // Expected DENSE_RANK(): 1, 2, 2, 3 (no gap)
+        var scores = new List&lt;TestReading&gt;
+        {
+            new(&quot;G1&quot;, DateTime.UtcNow, 100m),
+            new(&quot;G1&quot;, DateTime.UtcNow.AddSeconds(1), 90m),
+            new(&quot;G1&quot;, DateTime.UtcNow.AddSeconds(2), 90m),
+            new(&quot;G1&quot;, DateTime.UtcNow.AddSeconds(3), 80m),
+        };
+
+        var evaluated = WindowFunctionsEngine.EvaluateWindowFunctions(
+            scores,
+            r =&gt; r.DeviceId,
+            r =&gt; r.Value,
+            r =&gt; r.Value,
+            ascending: false
+        );
+
+        evaluated.ConvertAll(x =&gt; x.Rank).Should().Equal(1, 2, 2, 4);
+        evaluated.ConvertAll(x =&gt; x.DenseRank).Should().Equal(1, 2, 2, 3);
+    }
+
+    [Fact]
+    public void WindowFunctions_LagAndLead_AccessAdjacentRowMetrics()
+    {
+        var t0 = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        var series = new List&lt;TestReading&gt;
+        {
+            new(&quot;Dev1&quot;, t0, 10m),
+            new(&quot;Dev1&quot;, t0.AddDays(1), 15m),
+            new(&quot;Dev1&quot;, t0.AddDays(2), 25m)
+        };
+
+        var results = WindowFunctionsEngine.EvaluateWindowFunctions(
+            series,
+            r =&gt; r.DeviceId,
+            r =&gt; r.RecordedAt,
+            r =&gt; r.Value
+        );
+
+        // Row 1: Lag is null, Lead is 15
+        results[0].LagValue.Should().BeNull();
+        results[0].LeadValue.Should().Be(15m);
+
+        // Row 2: Lag is 10, Lead is 25
+        results[1].LagValue.Should().Be(10m);
+        results[1].LeadValue.Should().Be(25m);
+
+        // Row 3: Lag is 15, Lead is null
+        results[2].LagValue.Should().Be(15m);
+        results[2].LeadValue.Should().BeNull();
+    }
+
+    [Fact]
+    public void WindowFunctions_RunningTotalAndMovingAverage_CalculateFrameCorrectly()
+    {
+        var t0 = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+        var series = new List&lt;TestReading&gt;
+        {
+            new(&quot;D1&quot;, t0, 10m),
+            new(&quot;D1&quot;, t0.AddMinutes(1), 20m),
+            new(&quot;D1&quot;, t0.AddMinutes(2), 30m),
+            new(&quot;D1&quot;, t0.AddMinutes(3), 40m)
+        };
+
+        var results = WindowFunctionsEngine.EvaluateWindowFunctions(
+            series,
+            r =&gt; r.DeviceId,
+            r =&gt; r.RecordedAt,
+            r =&gt; r.Value,
+            movingAverageWindow: 3
+        );
+
+        // Running totals: 10, 30, 60, 100
+        results.ConvertAll(x =&gt; x.RunningTotal).Should().Equal(10m, 30m, 60m, 100m);
+
+        // 3-point moving average:
+        // row 0: avg(10) = 10
+        // row 1: avg(10, 20) = 15
+        // row 2: avg(10, 20, 30) = 20
+        // row 3: avg(20, 30, 40) = 30
+        results.ConvertAll(x =&gt; x.MovingAverage).Should().Equal(10m, 15m, 20m, 30m);
+    }
+
+    [Fact]
+    public void WindowFunctions_GeneratesValidPostgreSqlQueryWithCte()
+    {
+        var sql = WindowFunctionsEngine.GeneratePostgreSqlAnalyticalQuery();
+        sql.Should().Contain(&quot;WITH TimeSeriesDailyAggregates AS&quot;);
+        sql.Should().Contain(&quot;ROW_NUMBER() OVER&quot;);
+        sql.Should().Contain(&quot;DENSE_RANK() OVER&quot;);
+        sql.Should().Contain(&quot;LAG(avg_daily_temp, 1) OVER&quot;);
+        sql.Should().Contain(&quot;ROWS BETWEEN 6 PRECEDING AND CURRENT ROW&quot;);
+    }
+
+    // ==========================================
+    // 2. TABLE PARTITIONING TESTS
+    // ==========================================
+
+    [Fact]
+    public void PartitioningStrategy_PrunesIrrelevantPartitions_ForDateRange()
+    {
+        var strategy = new TablePartitioningStrategy();
+        strategy.RegisterPartition(&quot;p_2026_08&quot;, new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), 1_000_000, 120.0);
+        strategy.RegisterPartition(&quot;p_2026_09&quot;, new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), 1_200_000, 145.0);
+        strategy.RegisterPartition(&quot;p_2026_10&quot;, new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc), 1_500_000, 180.0);
+
+        // Query only targets October 2026
+        var plan = strategy.SimulatePruning(
+            new DateTime(2026, 10, 5, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc)
+        );
+
+        plan.ScannedPartitions.Should().ContainSingle().Which.Should().Be(&quot;p_2026_10&quot;);
+        plan.PrunedPartitions.Should().Equal(&quot;p_2026_08&quot;, &quot;p_2026_09&quot;);
+        plan.TotalScannedSizeMb.Should().Be(180.0);
+        plan.TotalSavingsSizeMb.Should().Be(265.0);
+    }
+
+    [Fact]
+    public void PartitioningStrategy_MultiMonthQuery_ScansOnlyRequiredPartitions()
+    {
+        var strategy = new TablePartitioningStrategy();
+        strategy.RegisterPartition(&quot;p_2026_07&quot;, new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc), 100_000, 10.0);
+        strategy.RegisterPartition(&quot;p_2026_08&quot;, new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), 200_000, 20.0);
+        strategy.RegisterPartition(&quot;p_2026_09&quot;, new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), 300_000, 30.0);
+        strategy.RegisterPartition(&quot;p_2026_10&quot;, new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc), 400_000, 40.0);
+
+        // Query spans mid-August to mid-September
+        var plan = strategy.SimulatePruning(
+            new DateTime(2026, 8, 15, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc)
+        );
+
+        plan.ScannedPartitions.Should().Equal(&quot;p_2026_08&quot;, &quot;p_2026_09&quot;);
+        plan.PrunedPartitions.Should().Equal(&quot;p_2026_07&quot;, &quot;p_2026_10&quot;);
+    }
+
+    // ==========================================
+    // 3. DSA: BINARY TREE MAXIMUM PATH SUM (LC #124)
+    // ==========================================
+
+    [Fact]
+    public void LC124_MaxPathSum_PositiveTree_ReturnsCorrectSum()
+    {
+        var solver = new MaxPathSumSolver();
+        // Tree:
+        //     1
+        //    / \
+        //   2   3
+        // Max path: 2 + 1 + 3 = 6
+        var root = new TreeNode(1, new TreeNode(2), new TreeNode(3));
+        solver.MaxPathSum(root).Should().Be(6);
+    }
+
+    [Fact]
+    public void LC124_MaxPathSum_NegativeBranchesAndRoot_ClampsCorrectly()
+    {
+        var solver = new MaxPathSumSolver();
+        // Tree:
+        //       -10
+        //       /  \
+        //      9   20
+        //         /  \
+        //        15   7
+        // Max path: 15 + 20 + 7 = 42
+        var root = new TreeNode(-10,
+            new TreeNode(9),
+            new TreeNode(20, new TreeNode(15), new TreeNode(7))
+        );
+        solver.MaxPathSum(root).Should().Be(42);
+    }
+
+    [Fact]
+    public void LC124_MaxPathSum_AllNegativeNodes_ReturnsLeastNegativeNode()
+    {
+        var solver = new MaxPathSumSolver();
+        // Tree:
+        //      -3
+        //      / \
+        //    -5  -1
+        // Max path: -1 (must select at least 1 node)
+        var root = new TreeNode(-3, new TreeNode(-5), new TreeNode(-1));
+        solver.MaxPathSum(root).Should().Be(-1);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 24 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,2995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 29: RabbitMQ Core Concepts: Exchanges &amp; Queues | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 29</span>
+        <span class="badge badge-category">RabbitMQ &amp; Messaging</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day28-Resilient-Http-Refit-Polly/index.html" class="nav-btn">← Day 28</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+
+        </select>
+        <span class="nav-btn" style="opacity:0.4; cursor:default;">Next Day →</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 29: RabbitMQ Core Concepts: Exchanges &amp; Queues</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d29GradRmq" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ea580c"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d29GradRel" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d29GradBfs" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#042f2e"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 29: RabbitMQ Core Concepts: Exchanges, Queues &amp; LC #130 / #994</text>
+
+          <!-- 1. The 4 AMQP Exchanges -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d29GradRmq)" stroke="#f97316" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#fdba74" font-size="14" font-weight="bold">The 4 AMQP Exchange Types</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#fbbf24" font-size="11" font-weight="bold">Direct &amp; Fanout Exchanges</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Direct: Exact match (order.created)</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">Fanout: Broadcast to ALL bound queues</text>
+          <text x="50" y="179" fill="#cbd5e1" font-size="9">Bypasses routing key &#8594; High throughput</text>
+          <text x="50" y="196" fill="#a5b4fc" font-size="9">Multiplexed channels over single TCP</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Topic &amp; Headers Exchanges</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Topic: * = 1 word | # = 0+ words</text>
+          <text x="50" y="274" fill="#cbd5e1" font-size="9">Pattern: orders.eu.* matches orders.eu.paid</text>
+          <text x="50" y="290" fill="#34d399" font-size="9">Headers: x-match all/any attribute match</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Trie prefix tree internal routing</text>
+
+          <!-- 2. Reliability, DLX & QoS -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d29GradRel)" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#a5b4fc" font-size="14" font-weight="bold">Reliability, DLX &amp; QoS</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Publisher Confirms &amp; Acks</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Publisher Confirms: Broker ACK on disk sync</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Consumer BasicAck clears unacked state</text>
+          <text x="340" y="179" fill="#fbbf24" font-size="9">BasicNack(requeue:true) &#8594; Head of queue</text>
+          <text x="340" y="196" fill="#a5b4fc" font-size="9">Eliminates message loss on node crash</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#f43f5e" font-size="11" font-weight="bold">Dead Letter Exchange &amp; QoS</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">BasicNack(requeue:false) &#8594; Routes to DLX</text>
+          <text x="340" y="274" fill="#cbd5e1" font-size="9">x-dead-letter-exchange for poison messages</text>
+          <text x="340" y="290" fill="#34d399" font-size="9">basic.qos(prefetch=1) fair dispatching</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Prevents worker buffer memory bloat</text>
+
+          <!-- 3. LeetCode #130 & #994 -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d29GradBfs)" stroke="#2dd4bf" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#5eead4" font-size="14" font-weight="bold">LC #130 &amp; #994 Grid Algorithms</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#2dd4bf" font-size="11" font-weight="bold">LC #130: Surrounded Regions</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Boundary 'O' cells can never be captured</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Reverse DFS marks boundary 'O' &#8594; '#'</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Flip remaining 'O' &#8594; 'X' (captured)</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Restore '#' &#8594; 'O' in linear O(M*N) time</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#fbbf24" font-size="11" font-weight="bold">LC #994: Rotting Oranges</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Multi-Source BFS from rotten oranges (2)</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Level-by-level = Minute-by-minute wave</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Fresh count == 0 &#8594; Return minutes</text>
+          <text x="630" y="306" fill="#f87171" font-size="9">Unreachable fresh &#8594; Return -1</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 29: Deep Dive Notes — RabbitMQ Core Concepts: Exchanges & Queues</h1>
+<h2>1. AMQP 0-9-1 Architectural Model</h2>
+<p>RabbitMQ implements the <strong>Advanced Message Queuing Protocol (AMQP 0-9-1)</strong>, an open standard wire-level protocol for enterprise asynchronous messaging.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+----------------------------------------------------------------------------------------------------+
+|                                    AMQP 0-9-1 MESSAGING TOPOLOGY                                   |
++----------------------------------------------------------------------------------------------------+
+|                                                                                                    |
+|    [ Producer ]                                                                                    |
+|         |                                                                                          |
+|    (Publish with RoutingKey)                                                                       |
+|         v                                                                                          |
+|    +------------------------------------------------------------------------------------------+    |
+|    |                                        EXCHANGE                                          |    |
+|    |------------------------------------------------------------------------------------------|    |
+|    |  • Direct: Exact match                                                                   |    |
+|    |  • Topic: Wildcard patterns (* = 1 word, # = 0+ words)                                   |    |
+|    |  • Fanout: Unconditional broadcast                                                       |    |
+|    |  • Headers: x-match all/any metadata                                                     |    |
+|    +------------------------------------------------------------------------------------------+    |
+|               |                                      |                                             |
+|          (Binding 1)                            (Binding 2)                                        |
+|               v                                      v                                             |
+|    +---------------------+                +---------------------+                                  |
+|    |     Work Queue      |                |    Audit Log Queue  |                                  |
+|    | (PrefetchCount = 1) |                | (PrefetchCount = 5) |                                  |
+|    +---------------------+                +---------------------+                                  |
+|         |          |                                 |                                             |
+|      (Ack)      (Nack + requeue=false)            (Ack)                                            |
+|         |          v                                 |                                             |
+|         |     +-------------------------+            |                                             |
+|         |     | Dead Letter Exchange    |            |                                             |
+|         |     | (DLX -&gt; Poison Queue)   |            |                                             |
+|         |     +-------------------------+            |                                             |
+|         v                                            v                                             |
+|    [ Consumer 1 ]                             [ Consumer 2 ]                                       |
+|                                                                                                    |
++----------------------------------------------------------------------------------------------------+</code></pre></div>
+<h3>Connection vs. Channel</h3>
+<ul>
+<li><strong>Connection</strong>: A persistent TCP/IP socket between the client application and RabbitMQ broker. Establishing a connection involves a full TCP handshake, TLS negotiation, and authentication challenge (expensive).</li>
+<li><strong>Channel</strong>: A lightweight virtual connection multiplexed inside a single physical TCP connection. Applications open and close hundreds of channels concurrently for publishing and consuming, completely avoiding TCP handshake overhead.</li>
+</ul>
+<hr/>
+<h2>2. The 4 AMQP Exchange Types</h2>
+<p>An exchange acts as an internal message router. Producers <strong>never</strong> send messages directly to queues; they publish to an Exchange with an optional <strong>Routing Key</strong>.</p>
+<h3>1. Direct Exchange</h3>
+<p>Routes messages to queues whose <strong>Binding Key</strong> exactly matches the message's <strong>Routing Key</strong>.</p>
+<ul>
+<li>Example:</li>
+<li>Queue A bound with <code>orders.created</code></li>
+<li>Queue B bound with <code>orders.cancelled</code></li>
+<li>Publishing with <code>orders.created</code> goes exclusively to Queue A.</li>
+</ul>
+<h3>2. Fanout Exchange</h3>
+<p>Routinely ignores routing keys and duplicates incoming messages to <strong>all queues</strong> bound to the exchange.</p>
+<ul>
+<li>Blazingly fast ($\mathcal{O}(1)$ routing table lookup).</li>
+<li>Ideal for publish-subscribe broadcast patterns (e.g., distributed cache invalidation, live price feeds).</li>
+</ul>
+<h3>3. Topic Exchange</h3>
+<p>Performs routing based on dot-delimited tokens in the routing key using wildcard tokens:</p>
+<ul>
+<li><code>*</code> (asterisk): Matches <strong>exactly one</strong> word.</li>
+<li><code>#</code> (hash): Matches <strong>zero or more</strong> words.</li>
+<li>Examples:</li>
+<li><code>orders.eu.*</code>: Matches <code>orders.eu.created</code>, <code>orders.eu.paid</code>; does NOT match <code>orders.eu.b2b.created</code>.</li>
+<li><code>orders.#</code>: Matches <code>orders</code>, <code>orders.us</code>, <code>orders.us.california.expedited</code>.</li>
+<li><code>#.critical</code>: Matches any routing key ending with <code>.critical</code>.</li>
+</ul>
+<h3>4. Headers Exchange</h3>
+<p>Routes messages based on message header attributes rather than the routing key string.</p>
+<ul>
+<li>Uses <code>x-match</code>:</li>
+<li><code>x-match = all</code>: Every header key/value pair specified in the binding must be present in the message.</li>
+<li><code>x-match = any</code>: At least one matching header key/value pair routes the message.</li>
+</ul>
+<hr/>
+<h2>3. Reliability, Confirmations & DLX</h2>
+<h3>1. Publisher Confirms</h3>
+<p>In standard fire-and-forget publishing, a producer does not know if a message was successfully accepted, written to disk, or rejected by the broker.</p>
+<ul>
+<li><strong>Publisher Confirms</strong>: Once enabled on a channel, the broker asynchronously sends an <code>Ack</code> back to the publisher with the message's sequence number once:</li>
+</ul>
+<ol>
+<li>The message is persisted to disk on all durable queues, or</li>
+<li>The message is consumed and acknowledged by downstream workers.</li>
+</ol>
+<ul>
+<li>If the broker encounters disk full errors or internal node crashes, it emits a <code>Nack</code>.</li>
+</ul>
+<h3>2. Consumer Acknowledgments (Ack / Nack)</h3>
+<ul>
+<li><code>autoAck = true</code>: The broker removes the message from the queue the instant it sends it over the socket. If the worker process crashes before processing the payload, the message is permanently lost.</li>
+<li><code>autoAck = false</code> (Manual Ack):</li>
+<li><code>basic.ack(delivery_tag)</code>: Worker successfully processed the message; broker removes it from memory.</li>
+<li><code>basic.nack(delivery_tag, requeue = true)</code>: Worker encountered a transient failure (e.g., DB lock timeout); broker re-enqueues the message at the head of the queue.</li>
+<li><code>basic.nack(delivery_tag, requeue = false)</code>: Poison message; discarded or forwarded to a Dead Letter Exchange.</li>
+</ul>
+<h3>3. Dead Letter Exchange (DLX)</h3>
+<p>Queues configured with <code>x-dead-letter-exchange</code> automatically re-route messages to the DLX when:</p>
+<ol>
+<li>The message is rejected via <code>basic.nack(requeue: false)</code> or <code>basic.reject(requeue: false)</code>.</li>
+<li>The message's Time-To-Live (<code>x-message-ttl</code>) expires in the queue.</li>
+<li>The queue reaches its maximum capacity (<code>x-max-length</code>).</li>
+</ol>
+<hr/>
+<h2>4. Consumer QoS & Fair Dispatch</h2>
+<p>By default, RabbitMQ dispatches messages round-robin in large batches to all connected consumers without checking how many unacknowledged messages each consumer currently holds.</p>
+<ul>
+<li><strong>The Problem</strong>: If Consumer A gets heavy, slow jobs while Consumer B gets quick jobs, Consumer A becomes saturated with hundreds of queued messages while Consumer B sits idle.</li>
+<li><strong>The Solution (<code>basic.qos(prefetch_count)</code>)</strong>:</li>
+<li><code>prefetch_count = 1</code>: Tells RabbitMQ never to give more than 1 unacknowledged message to a worker at a time.</li>
+<li>RabbitMQ only assigns a new message to that worker after receiving <code>basic.ack</code>.</li>
+<li>Achieves optimal load leveling across heterogeneous workers.</li>
+</ul>
+<hr/>
+<h2>5. Graph Algorithms: LeetCode #130 & #994</h2>
+<h3>LeetCode #130: Surrounded Regions (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Given an $m \times n$ matrix containing <code>&#x27;X&#x27;</code> and <code>&#x27;O&#x27;</code>, flip all <code>&#x27;O&#x27;</code>s that are 4-directionally surrounded by <code>&#x27;X&#x27;</code> into <code>&#x27;X&#x27;</code>.</li>
+<li><strong>Key Insight</strong>: Any <code>&#x27;O&#x27;</code> connected to the border can never be surrounded.</li>
+<li><strong>Reverse Algorithm</strong>:</li>
+</ul>
+<ol>
+<li>Iterate along the 4 borders of the matrix (row $0$, row $m-1$, col $0$, col $n-1$).</li>
+<li>For every <code>&#x27;O&#x27;</code> on the boundary, run DFS/BFS to mark all connected <code>&#x27;O&#x27;</code>s as a safe sentinel character (<code>&#x27;#&#x27;</code>).</li>
+<li>Scan the entire grid:</li>
+</ol>
+<ul>
+<li>Flip all remaining <code>&#x27;O&#x27;</code>s to <code>&#x27;X&#x27;</code> (these are truly surrounded).</li>
+<li>Restore all <code>&#x27;#&#x27;</code> back to <code>&#x27;O&#x27;</code> (these were border-connected).</li>
+<li><strong>Complexity</strong>: $\mathcal{O}(M \times N)$ time, $\mathcal{O}(M \times N)$ space.</li>
+</ul>
+<h3>LeetCode #994: Rotting Oranges (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: In an $m \times n$ grid of 0 (empty), 1 (fresh), and 2 (rotten), every minute any fresh orange adjacent to a rotten orange becomes rotten. Return minimum minutes until no fresh oranges remain, or -1.</li>
+<li><strong>Algorithm (Multi-Source BFS)</strong>:</li>
+</ul>
+<ol>
+<li>Scan the grid to enqueue all initially rotten oranges (2) into a FIFO queue and count the total number of fresh oranges (1).</li>
+<li>If <code>freshCount == 0</code>, return <code>0</code> immediately.</li>
+<li>While queue is not empty and <code>freshCount &gt; 0</code>:</li>
+</ol>
+<ul>
+<li>Increment <code>minutes</code>.</li>
+<li>Process the current level snapshot (size of queue at this minute).</li>
+<li>For each rotten orange, inspect 4 cardinal neighbors. If neighbor is fresh (1):</li>
+<li>Mark as rotten (2), decrement <code>freshCount</code>, and enqueue.</li>
+</ul>
+<ol>
+<li>If <code>freshCount == 0</code>, return <code>minutes</code>; else return <code>-1</code> (unreachable fresh oranges).</li>
+</ol>
+<ul>
+<li><strong>Complexity</strong>: $\mathcal{O}(M \times N)$ time, $\mathcal{O}(M \times N)$ space.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 29: RabbitMQ Core Concepts: Exchanges & Queues</h1>
+<h2>Overview</h2>
+<p><strong>Day 29</strong> explores enterprise asynchronous messaging fundamentals with <strong>RabbitMQ</strong> and the <strong>AMQP 0-9-1</strong> protocol. We implement and simulate all four AMQP exchange types (<code>Direct</code>, <code>Topic</code> with wildcard pattern matching, <code>Fanout</code> broadcast, and <code>Headers</code> multi-attribute matching), reliable delivery mechanisms (Publisher Confirms, manual consumer acknowledgments via <code>BasicAck</code>/<code>BasicNack</code>, and Dead Letter Exchanges / DLX), and Quality of Service (QoS) <code>PrefetchCount</code> backpressure controls. For DSA, we solve **LeetCode #130 (<em>Surrounded Regions</em>)<strong> using reverse boundary DFS and </strong>LeetCode #994 (<em>Rotting Oranges</em>)** using multi-source BFS contagion modeling.</p>
+<hr/>
+<h2>Architectural Topics Covered</h2>
+<ol>
+<li><strong>AMQP 0-9-1 Exchange Architectures</strong>:</li>
+</ol>
+<ul>
+<li><strong>Direct Exchange</strong>: Strict 1:1 routing key equality (<code>order.created</code>).</li>
+<li><strong>Topic Exchange</strong>: Wildcard pattern routing with <code>*</code> (matching exactly one word) and <code>#</code> (matching zero or more words).</li>
+<li><strong>Fanout Exchange</strong>: High-speed broadcast forwarding to all bound queues, completely bypassing routing keys.</li>
+<li><strong>Headers Exchange</strong>: Multi-attribute header dictionary matching with <code>x-match: all</code> or <code>x-match: any</code>.</li>
+</ul>
+<ol>
+<li><strong>Reliable Messaging & Failure Handling</strong>:</li>
+</ol>
+<ul>
+<li><strong>Publisher Confirms</strong>: Asynchronous ACKs/NACKs returned from the broker guaranteeing disk persistence and queue delivery.</li>
+<li><strong>Consumer Acknowledgments</strong>: Manual <code>BasicAck</code>, <code>BasicNack(requeue: true)</code> (pushing redelivered message back to head of queue), and <code>BasicNack(requeue: false)</code> (discarding or forwarding).</li>
+<li><strong>Dead Letter Exchange (DLX)</strong>: Automated dead-lettering of rejected, expired, or unprocessable messages into dedicated dead-letter queues (<code>x-dead-letter-exchange</code>).</li>
+</ul>
+<ol>
+<li><strong>Consumer QoS & Fair Dispatch</strong>:</li>
+</ol>
+<ul>
+<li><code>basic.qos(prefetch_count)</code> limiting in-flight unacknowledged messages to prevent worker buffer bloat and ensure balanced distribution across heterogeneous consumers.</li>
+</ul>
+<ol>
+<li><strong>Graph & Grid Traversal Algorithms</strong>:</li>
+</ol>
+<ul>
+<li><strong>LeetCode #130: Surrounded Regions (Medium)</strong>: Reverse boundary DFS preserving border-connected <code>&#x27;O&#x27;</code> cells while flipping enclosed regions to <code>&#x27;X&#x27;</code>.</li>
+<li><strong>LeetCode #994: Rotting Oranges (Medium)</strong>: Multi-source BFS simulating minute-by-minute infection propagation, returning minimum elapsed minutes or -1.</li>
+</ul>
+<hr/>
+<h2>Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day29-RabbitMQ-Core-Exchanges-Queues/
+├── src/
+│   └── Day29.RabbitMQCoreExchanges/
+│       ├── Day29.RabbitMQCoreExchanges.csproj
+│       ├── AmqpBrokerSimulator.cs
+│       └── SurroundedRegionsAndOrangesSolver.cs
+├── tests/
+│   └── Day29.RabbitMQCoreExchanges.Tests/
+│       ├── Day29.RabbitMQCoreExchanges.Tests.csproj
+│       └── Day29Tests.cs
+├── README.md
+├── notes.md
+└── interview-questions.md</code></pre></div>
+<hr/>
+<h2>Running the Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day29-RabbitMQ-Core-Exchanges-Queues/tests/Day29.RabbitMQCoreExchanges.Tests/Day29.RabbitMQCoreExchanges.Tests.csproj</code></pre></div>
+<h3>Test Suite Coverage</h3>
+<ol>
+<li><code>DirectExchange_RoutesToExactMatchingQueue</code>: Validates exact routing key delivery to targeted queues without cross-talk.</li>
+<li><code>FanoutExchange_BroadcastsToAllBoundQueues</code>: Validates unconditional broadcast across all bound queues.</li>
+<li><code>TopicExchange_RoutesWithWildcards_StarAndHash</code>: Validates wildcard matching (<code>orders.*</code> vs <code>#.critical</code>).</li>
+<li><code>HeadersExchange_RoutesMatchingHeaders_AllAndAny</code>: Validates <code>x-match: all</code> and <code>x-match: any</code> header evaluation.</li>
+<li><code>PublisherConfirms_ReturnsAckOnRoutedMessage_AndNackOnMandatoryUnrouted</code>: Verifies publisher confirm ACK on successful queue routing and NACK on mandatory unrouted messages.</li>
+<li><code>ConsumerAck_RemovesMessageFromUnackedQueue</code>: Verifies manual BasicAck clears unacknowledged tracking.</li>
+<li><code>ConsumerNack_WithRequeue_PushesBackToHeadOfQueue</code>: Validates BasicNack with <code>requeue = true</code> flag and <code>Redelivered</code> state.</li>
+<li><code>DeadLetterExchange_RoutesRejectedMessageToDlx</code>: Verifies un-requeued rejected messages route automatically to DLX.</li>
+<li><code>SurroundedRegions_CapturesEnclosedO_AndPreservesBorderConnected</code>: Validates LC #130 matrix region capture.</li>
+<li><code>RottingOranges_MultiSourceBfs_CalculatesMinimumMinutesOrNegativeOne</code>: Validates LC #994 multi-source BFS contagion, edge cases, and unreachable cells.</li>
+</ol>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        <div class="markdown-content"><h1>Day 29: Senior & Staff Engineer Interview Questions & Answers</h1>
+<h3>1. What are the core architectural trade-offs between RabbitMQ and Apache Kafka?</h3>
+<p><strong>Answer:</strong></p>
+<div class="table-container"><table><thead><tr>
+<th>Architectural Dimension</th>
+<th>RabbitMQ</th>
+<th>Apache Kafka</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Architectural Model</strong></td>
+<td><strong>Smart Broker / Dumb Consumer</strong>: Broker tracks message state, delivery tags, queue indexes, and consumer acks. Deletes messages upon acknowledgment.</td>
+<td><strong>Dumb Broker / Smart Consumer</strong>: Broker is an immutable distributed commit log. Consumers track their own offsets. Messages persist until retention policy expires.</td>
+</tr>
+<tr>
+<td><strong>Routing Flexibility</strong></td>
+<td>Complex in-broker routing (Direct, Topic, Fanout, Headers, Dead-lettering).</td>
+<td>Partition key hashing (<code>Hash(Key) % Partitions</code>). Filtering happens client-side.</td>
+</tr>
+<tr>
+<td><strong>Ordering Guarantees</strong></td>
+<td>FIFO per queue. Concurrency (<code>prefetch &gt; 1</code> or multiple consumers) breaks strict order.</td>
+<td>Strict FIFO order guaranteed within each partition.</td>
+</tr>
+<tr>
+<td><strong>Throughput & Scale</strong></td>
+<td>Tens to hundreds of thousands of messages/sec. Memory-intensive broker state.</td>
+<td>Millions of messages/sec. Sequential disk I/O, zero-copy OS page cache (<code>sendfile</code>).</td>
+</tr>
+<tr>
+<td><strong>Replayability</strong></td>
+<td>No message replay (once acked, it is gone).</td>
+<td>High replayability (consumers can reset offsets to reprocess historic logs).</td>
+</tr>
+<tr>
+<td><strong>Best Suited For</strong></td>
+<td>Complex task routing, microservices commands, RPC, dynamic work queues.</td>
+<td>High-volume telemetry, clickstreams, event sourcing, CDC stream processing.</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h3>2. How do modern RabbitMQ Quorum Queues (Raft Consensus) overcome the vulnerabilities of Classic Mirrored Queues?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Classic Mirrored Queues (Deprecated)</strong>:</li>
+<li>Relied on a proprietary primary-mirror synchronization mechanism.</li>
+<li>Vulnerable to network partitions (Split-Brain). When a partition healed, non-synchronized mirrors either dropped messages or blocked the primary while replicating the entire queue from scratch, causing cluster-wide latency pauses.</li>
+<li><strong>Quorum Queues (RabbitMQ 3.8+)</strong>:</li>
+<li>Implemented using the formal <strong>Raft Consensus Algorithm</strong>.</li>
+<li>A quorum queue consists of a Raft leader and followers across cluster nodes.</li>
+<li>State replication requires acknowledgment from a majority of nodes ($\lfloor N/2 \rfloor + 1$) before confirming publishes to clients.</li>
+<li>Tolerates $F$ node failures in an $2F+1$ node cluster with zero message loss and deterministic leader election without cluster-wide stalling.</li>
+</ul>
+<hr/>
+<h3>3. What is the impact of <code>basic.qos(prefetch_count)</code> on consumer throughput, latency, and memory footprint?</h3>
+<p><strong>Answer:</strong></p>
+<p><code>prefetch_count</code> dictates how many unacknowledged messages the broker can deliver to a consumer channel before waiting for an ACK.</p>
+<ul>
+<li><strong>Prefetch = 0 (Unlimited)</strong>:</li>
+<li>The broker pushes all available queue messages over the TCP connection into the consumer process's RAM buffer.</li>
+<li><em>Risk</em>: Consumer process experiences Out-Of-Memory (OOM) crashes under high volume. Fast workers starve while slow workers buffer thousands of messages.</li>
+<li><strong>Prefetch = 1 (Strict Fair Dispatch)</strong>:</li>
+<li>The broker delivers exactly one message and waits for an ACK before sending another.</li>
+<li><em>Advantage</em>: Maximum work balancing across uneven workloads.</li>
+<li><em>Disadvantage</em>: High network round-trip time (RTT) latency overhead. The consumer thread remains idle between ACKing message $N$ and receiving message $N+1$.</li>
+<li><strong>Production Sweet Spot (<code>prefetch_count = 50–200</code>)</strong>:</li>
+<li>Pipelining allows the consumer to process incoming messages continuously while prior ACKs travel back over the wire, optimizing throughput without risking memory saturation.</li>
+</ul>
+<hr/>
+<h3>4. How do Publisher Confirms guarantee zero message loss during broker node crashes and disk flushes?</h3>
+<p><strong>Answer:</strong></p>
+<p>When a producer publishes a message without confirms, the socket write succeeds the moment bytes leave the client OS network buffer, giving no guarantee that the broker received, routed, or stored the message.</p>
+<p><strong>With Publisher Confirms:</strong></p>
+<ol>
+<li>The client issues <code>confirm.select</code> on the AMQP channel.</li>
+<li>The broker assigns an incrementing 64-bit integer sequence number to each incoming message on that channel.</li>
+<li>The broker asynchronously returns <code>basic.ack(sequenceNumber)</code> to the publisher only after:</li>
+</ol>
+<ul>
+<li>For a persistent message on a durable queue: The message has been written and fsynced to disk (or replicated to a Raft quorum).</li>
+<li>If the queue is transient or already consumed: The message is accepted by the consumer.</li>
+</ul>
+<ol>
+<li>If a disk write fails, the broker returns <code>basic.nack(sequenceNumber)</code>.</li>
+<li>The publisher maintains a pending dictionary of unconfirmed sequence numbers and retries or alerts upon receiving Nack or a confirmation timeout.</li>
+</ol>
+<hr/>
+<h3>5. What causes "Unacknowledged Message Creep" in RabbitMQ, and how does it manifest in production?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Cause</strong>:</li>
+</ul>
+<p>When consumer applications consume messages with <code>autoAck = false</code> but fail to call <code>basic.ack</code> or <code>basic.nack</code> due to:</p>
+<ol>
+<li>An unhandled exception that bypasses the acknowledgment block.</li>
+<li>Infinite loops or asynchronous deadlocks in worker processing logic.</li>
+<li>Swallowing exceptions without invoking <code>basic.nack(requeue: false)</code>.</li>
+</ol>
+<ul>
+<li><strong>The Impact</strong>:</li>
+<li>The broker must keep unacknowledged messages stored in RAM and tracked in memory metadata in case the consumer disconnects and messages must be re-queued.</li>
+<li>As unacked messages accumulate into the millions, broker RAM consumption hits the <strong>High Memory Watermark</strong> (<code>vm_memory_high_watermark</code>).</li>
+<li>RabbitMQ initiates alarms, blocks all incoming publishers (TCP backpressure), and halts message throughput across the entire cluster.</li>
+</ul>
+<hr/>
+<h3>6. How do you implement non-blocking exponential backoff retries using Dead Letter Exchanges (DLX) in RabbitMQ?</h3>
+<p><strong>Answer:</strong></p>
+<p>Directly retrying failed messages with <code>basic.nack(requeue: true)</code> immediately puts the message at the front of the same queue. If the failure is persistent (e.g., database down), the worker immediately re-consumes it, causing a 100% CPU busy-spin loop that blocks all other legitimate queue messages.</p>
+<p><strong>Dead-Letter Exponential Backoff Topology:</strong></p>
+<ol>
+<li><strong>Main Queue</strong> (<code>orders.queue</code>): Consumed by application workers.</li>
+<li>When processing fails, worker calls <code>basic.nack(requeue: false)</code>.</li>
+<li>The main queue's <code>x-dead-letter-exchange</code> forwards the message to a <strong>Retry Exchange</strong>.</li>
+<li>The message routes to a series of delay queues with Message TTL (e.g. <code>retry.10s</code>, <code>retry.60s</code>, <code>retry.5m</code>):</li>
+</ol>
+<ul>
+<li>Delay queues have <strong>no consumers</strong>.</li>
+<li>Configured with <code>x-message-ttl: 10000</code> and <code>x-dead-letter-exchange: main.exchange</code>.</li>
+</ul>
+<ol>
+<li>When the 10-second TTL expires, RabbitMQ automatically dead-letters the message <em>back</em> into the Main Queue for another processing attempt without blocking any concurrent traffic.</li>
+<li>Messages exceeding maximum retry counts are forwarded to a permanent <code>orders.poison.dlq</code>.</li>
+</ol>
+<hr/>
+<h3>7. How does a Topic Exchange match routing keys, and what is the difference between <code>*</code> and <code>#</code>?</h3>
+<p><strong>Answer:</strong></p>
+<p>Routing keys in AMQP Topic Exchanges consist of dot-delimited words (e.g., <code>us.shipping.express</code>).</p>
+<ul>
+<li><code>*</code> (asterisk): Substitutes for <strong>exactly one</strong> word.</li>
+<li>Pattern: <code>*.shipping.*</code> matches <code>us.shipping.express</code> and <code>eu.shipping.standard</code>.</li>
+<li>Does NOT match <code>shipping.express</code> or <code>us.west.shipping.express</code>.</li>
+<li><code>#</code> (hash): Substitutes for <strong>zero or more</strong> words.</li>
+<li>Pattern: <code>orders.#</code> matches <code>orders</code>, <code>orders.created</code>, <code>orders.us.california.b2b.priority</code>.</li>
+<li><strong>Internal Optimization</strong>:</li>
+</ul>
+<p>RabbitMQ indexes topic bindings using a <strong>Trie (Prefix Tree)</strong> data structure. Incoming routing keys traverse the trie in $\mathcal{O}(K)$ time where $K$ is the number of words in the routing key, rather than performing slow sequential regex evaluations across thousands of queues.</p>
+<hr/>
+<h3>8. When should an architect choose a Headers Exchange over a Topic Exchange?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Topic Exchange Limitations</strong>:</li>
+<li>Requires a single linear dot-separated hierarchy (e.g., <code>format.vendor.region</code>).</li>
+<li>Cannot cleanly express non-hierarchical, multi-dimensional queries. For example, if a message has format <code>json</code>, region <code>us</code>, vendor <code>acme</code>, and encrypted <code>true</code>, routing keys become combinatorial (<code>json.us.acme.true</code>).</li>
+<li><strong>Headers Exchange Advantages</strong>:</li>
+<li>Operates on arbitrary key-value metadata dictionaries.</li>
+<li>Supports <code>x-match: all</code> (AND logic) and <code>x-match: any</code> (OR logic).</li>
+<li><em>Best Suited For</em>: Multi-tenant architectures where messages have disparate dimensions (e.g., <code>tenant_id</code>, <code>environment: staging</code>, <code>data_classification: pii</code>), or when the payload structure naturally maps to HTTP headers.</li>
+</ul>
+<hr/>
+<h3>9. For LeetCode #130 (<em>Surrounded Regions</em>), why is reverse boundary flood fill superior to searching from every interior cell?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Forward Interior Search</strong>:</li>
+<li>Testing each <code>&#x27;O&#x27;</code> cell requires checking whether its connected component can reach any boundary.</li>
+<li>If a large connected component of size $K$ does not touch the boundary, we must track and flip all its cells. If it does touch the boundary, all explored paths must be retained without flipping.</li>
+<li>Requires maintaining temporary component lists, tracking visited states, and handling multiple rollbacks.</li>
+<li><strong>Reverse Boundary Flood Fill</strong>:</li>
+<li>We observe that <strong>only</strong> cells connected to the boundary survive.</li>
+<li>We initiate DFS/BFS strictly from the boundary <code>&#x27;O&#x27;</code> cells (at most $2M + 2N$ perimeter cells).</li>
+<li>Any cell reached is marked with a safe sentinel (<code>&#x27;#&#x27;</code>).</li>
+<li>A single linear $\mathcal{O}(M \times N)$ pass flips all remaining <code>&#x27;O&#x27;</code>s (which are guaranteed to be captured) to <code>&#x27;X&#x27;</code>, and restores <code>&#x27;#&#x27;</code> to <code>&#x27;O&#x27;</code>.</li>
+<li>Zero rollback overhead and optimal cache-friendly linear memory access.</li>
+</ul>
+<hr/>
+<h3>10. For LeetCode #994 (<em>Rotting Oranges</em>), why must the contagion simulation be solved with Multi-Source BFS rather than DFS?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Multi-Source BFS</strong>:</li>
+<li>BFS explores a graph in concentric waves of equal distance (Level-by-Level).</li>
+<li>In Rotting Oranges, all initially rotten oranges spread infection <strong>simultaneously in parallel</strong> at minute $1$, minute $2$, etc.</li>
+<li>By enqueuing all initial rotten oranges into the BFS queue at minute $0$, the BFS naturally simulates this simultaneous parallel expansion. The number of BFS level expansions equals the exact minimum minutes required.</li>
+<li><strong>Why DFS Fails</strong>:</li>
+<li>DFS explores one deep path to its termination before backtracking.</li>
+<li>A single rotten orange might take a 20-step path to rot an orange that was actually adjacent to another rotten orange that would have reached it in minute 1.</li>
+<li>DFS cannot easily calculate the minimum parallel time without complex, expensive minimum timestamp relaxation across all cells.</li>
+</ul></div>
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day29.RabbitMQCoreExchanges/AmqpBrokerSimulator.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd29-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d29-src-code-0" class="language-csharp">using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
+
+namespace Day29.RabbitMQCoreExchanges;
+
+public enum ExchangeType
+{
+    Direct,
+    Topic,
+    Fanout,
+    Headers
+}
+
+public enum HeadersMatchMode
+{
+    All,
+    Any
+}
+
+public record AmqpMessage(
+    ulong DeliveryTag,
+    string MessageId,
+    string RoutingKey,
+    string Payload,
+    IReadOnlyDictionary&lt;string, object&gt; Headers,
+    bool Redelivered,
+    DateTime TimestampUtc);
+
+public class QueueBinding
+{
+    public string QueueName { get; }
+    public string RoutingKeyPattern { get; }
+    public IReadOnlyDictionary&lt;string, object&gt;? HeaderFilter { get; }
+    public HeadersMatchMode MatchMode { get; }
+
+    public QueueBinding(
+        string queueName,
+        string routingKeyPattern = &quot;&quot;,
+        IReadOnlyDictionary&lt;string, object&gt;? headerFilter = null,
+        HeadersMatchMode matchMode = HeadersMatchMode.All)
+    {
+        QueueName = queueName;
+        RoutingKeyPattern = routingKeyPattern;
+        HeaderFilter = headerFilter;
+        MatchMode = matchMode;
+    }
+}
+
+public class AmqpQueue
+{
+    public string Name { get; }
+    public string? DeadLetterExchange { get; }
+    public string? DeadLetterRoutingKey { get; }
+    public int PrefetchCount { get; set; } = 10;
+
+    private readonly ConcurrentQueue&lt;AmqpMessage&gt; _messages = new();
+    private readonly ConcurrentDictionary&lt;ulong, AmqpMessage&gt; _unackedMessages = new();
+
+    public int ReadyMessageCount =&gt; _messages.Count;
+    public int UnackedMessageCount =&gt; _unackedMessages.Count;
+
+    public AmqpQueue(string name, string? deadLetterExchange = null, string? deadLetterRoutingKey = null)
+    {
+        Name = name;
+        DeadLetterExchange = deadLetterExchange;
+        DeadLetterRoutingKey = deadLetterRoutingKey;
+    }
+
+    public void Enqueue(AmqpMessage message, bool toFront = false)
+    {
+        if (toFront)
+        {
+            // Requeue to head: snapshot, clear, push redelivered, restore remaining
+            var list = _messages.ToList();
+            while (_messages.TryDequeue(out _)) { }
+            _messages.Enqueue(message);
+            foreach (var item in list)
+            {
+                _messages.Enqueue(item);
+            }
+        }
+        else
+        {
+            _messages.Enqueue(message);
+        }
+    }
+
+    public AmqpMessage? Dequeue()
+    {
+        if (_unackedMessages.Count &gt;= PrefetchCount)
+        {
+            // QoS Prefetch limit reached: hold message delivery until ACK/NACK
+            return null;
+        }
+
+        if (_messages.TryDequeue(out var msg))
+        {
+            _unackedMessages[msg.DeliveryTag] = msg;
+            return msg;
+        }
+        return null;
+    }
+
+    public bool Ack(ulong deliveryTag)
+    {
+        return _unackedMessages.TryRemove(deliveryTag, out _);
+    }
+
+    public AmqpMessage? Nack(ulong deliveryTag, bool requeue)
+    {
+        if (!_unackedMessages.TryRemove(deliveryTag, out var msg))
+            return null;
+
+        if (requeue)
+        {
+            Enqueue(msg with { Redelivered = true }, toFront: true);
+        }
+
+        return msg;
+    }
+}
+
+/// &lt;summary&gt;
+/// High-fidelity in-memory AMQP 0-9-1 Message Broker Simulator.
+/// Simulates Direct, Topic, Fanout, and Headers exchanges, Publisher Confirms,
+/// Consumer Ack/Nack, Dead Letter Exchanges (DLX), and Prefetch QoS.
+/// &lt;/summary&gt;
+public class AmqpBrokerSimulator
+{
+    private readonly ConcurrentDictionary&lt;string, (ExchangeType Type, List&lt;QueueBinding&gt; Bindings)&gt; _exchanges = new();
+    private readonly ConcurrentDictionary&lt;string, AmqpQueue&gt; _queues = new();
+    private ulong _deliveryTagSequence;
+
+    public int PublishedCount { get; private set; }
+    public int AckedCount { get; private set; }
+    public int NackedCount { get; private set; }
+    public int DeadLetteredCount { get; private set; }
+
+    public void DeclareExchange(string name, ExchangeType type)
+    {
+        _exchanges.TryAdd(name, (type, new List&lt;QueueBinding&gt;()));
+    }
+
+    public void DeclareQueue(string name, string? deadLetterExchange = null, string? deadLetterRoutingKey = null, int prefetchCount = 10)
+    {
+        var queue = new AmqpQueue(name, deadLetterExchange, deadLetterRoutingKey) { PrefetchCount = prefetchCount };
+        _queues.TryAdd(name, queue);
+    }
+
+    public void BindQueue(
+        string queueName,
+        string exchangeName,
+        string routingKey = &quot;&quot;,
+        IReadOnlyDictionary&lt;string, object&gt;? headers = null,
+        HeadersMatchMode matchMode = HeadersMatchMode.All)
+    {
+        if (!_exchanges.TryGetValue(exchangeName, out var exchange))
+            throw new InvalidOperationException($&quot;Exchange &#x27;{exchangeName}&#x27; does not exist.&quot;);
+        if (!_queues.ContainsKey(queueName))
+            throw new InvalidOperationException($&quot;Queue &#x27;{queueName}&#x27; does not exist.&quot;);
+
+        lock (exchange.Bindings)
+        {
+            exchange.Bindings.Add(new QueueBinding(queueName, routingKey, headers, matchMode));
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Publishes a message to an exchange with Publisher Confirms semantics.
+    /// Returns true (ACK) if successfully delivered to matching queues, or false (NACK) if unrouted on mandatory.
+    /// &lt;/summary&gt;
+    public bool Publish(
+        string exchangeName,
+        string routingKey,
+        string payload,
+        IReadOnlyDictionary&lt;string, object&gt;? headers = null,
+        bool mandatory = false)
+    {
+        if (!_exchanges.TryGetValue(exchangeName, out var exchange))
+            throw new InvalidOperationException($&quot;Exchange &#x27;{exchangeName}&#x27; not declared.&quot;);
+
+        headers ??= new Dictionary&lt;string, object&gt;();
+        var matchingQueueNames = GetMatchingQueues(exchange.Type, exchange.Bindings, routingKey, headers);
+
+        if (matchingQueueNames.Count == 0 &amp;&amp; mandatory)
+        {
+            return false; // Publisher confirm NACK for unroutable mandatory message
+        }
+
+        var tag = Interlocked.Increment(ref _deliveryTagSequence);
+        var message = new AmqpMessage(
+            DeliveryTag: tag,
+            MessageId: Guid.NewGuid().ToString(&quot;N&quot;),
+            RoutingKey: routingKey,
+            Payload: payload,
+            Headers: headers,
+            Redelivered: false,
+            TimestampUtc: DateTime.UtcNow);
+
+        foreach (var qName in matchingQueueNames)
+        {
+            if (_queues.TryGetValue(qName, out var queue))
+            {
+                queue.Enqueue(message);
+            }
+        }
+
+        PublishedCount++;
+        return true; // Publisher confirm ACK
+    }
+
+    public AmqpMessage? BasicGet(string queueName)
+    {
+        if (!_queues.TryGetValue(queueName, out var queue))
+            return null;
+
+        return queue.Dequeue();
+    }
+
+    public bool BasicAck(string queueName, ulong deliveryTag)
+    {
+        if (_queues.TryGetValue(queueName, out var queue))
+        {
+            var success = queue.Ack(deliveryTag);
+            if (success) AckedCount++;
+            return success;
+        }
+        return false;
+    }
+
+    public bool BasicNack(string queueName, ulong deliveryTag, bool requeue)
+    {
+        if (!_queues.TryGetValue(queueName, out var queue))
+            return false;
+
+        var message = queue.Nack(deliveryTag, requeue);
+        if (message == null) return false;
+
+        NackedCount++;
+
+        if (!requeue &amp;&amp; !string.IsNullOrEmpty(queue.DeadLetterExchange))
+        {
+            // Route to Dead Letter Exchange (DLX)
+            DeadLetteredCount++;
+            var dlxRoutingKey = queue.DeadLetterRoutingKey ?? message.RoutingKey;
+            Publish(queue.DeadLetterExchange, dlxRoutingKey, message.Payload, message.Headers);
+        }
+
+        return true;
+    }
+
+    public AmqpQueue? GetQueue(string name)
+    {
+        _queues.TryGetValue(name, out var queue);
+        return queue;
+    }
+
+    private HashSet&lt;string&gt; GetMatchingQueues(
+        ExchangeType type,
+        List&lt;QueueBinding&gt; bindings,
+        string routingKey,
+        IReadOnlyDictionary&lt;string, object&gt; headers)
+    {
+        var matched = new HashSet&lt;string&gt;();
+        lock (bindings)
+        {
+            foreach (var b in bindings)
+            {
+                if (IsBindingMatch(type, b, routingKey, headers))
+                {
+                    matched.Add(b.QueueName);
+                }
+            }
+        }
+        return matched;
+    }
+
+    private bool IsBindingMatch(
+        ExchangeType type,
+        QueueBinding binding,
+        string routingKey,
+        IReadOnlyDictionary&lt;string, object&gt; headers)
+    {
+        return type switch
+        {
+            ExchangeType.Fanout =&gt; true,
+            ExchangeType.Direct =&gt; string.Equals(binding.RoutingKeyPattern, routingKey, StringComparison.Ordinal),
+            ExchangeType.Topic =&gt; MatchTopicPattern(binding.RoutingKeyPattern, routingKey),
+            ExchangeType.Headers =&gt; MatchHeaders(binding.HeaderFilter, headers, binding.MatchMode),
+            _ =&gt; false
+        };
+    }
+
+    private static bool MatchTopicPattern(string pattern, string routingKey)
+    {
+        // AMQP 0-9-1 Topic Exchange rules:
+        // * matches exactly one word
+        // # matches zero or more words
+        var regexPattern = &quot;^&quot; + Regex.Escape(pattern)
+            .Replace(&quot;\\*&quot;, &quot;[^.]+&quot;)
+            .Replace(&quot;\\#&quot;, &quot;.*&quot;) + &quot;$&quot;;
+
+        return Regex.IsMatch(routingKey, regexPattern);
+    }
+
+    private static bool MatchHeaders(
+        IReadOnlyDictionary&lt;string, object&gt;? filter,
+        IReadOnlyDictionary&lt;string, object&gt; headers,
+        HeadersMatchMode mode)
+    {
+        if (filter == null || filter.Count == 0) return true;
+
+        if (mode == HeadersMatchMode.All)
+        {
+            foreach (var (k, v) in filter)
+            {
+                if (!headers.TryGetValue(k, out var actual) || !object.Equals(v, actual))
+                    return false;
+            }
+            return true;
+        }
+        else // Any
+        {
+            foreach (var (k, v) in filter)
+            {
+                if (headers.TryGetValue(k, out var actual) &amp;&amp; object.Equals(v, actual))
+                    return true;
+            }
+            return false;
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day29.RabbitMQCoreExchanges/SurroundedRegionsAndOrangesSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd29-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d29-src-code-1" class="language-csharp">namespace Day29.RabbitMQCoreExchanges;
+
+/// &lt;summary&gt;
+/// Solvers for Graph / Grid algorithms:
+/// 1. LeetCode #130: Surrounded Regions (Medium)
+/// 2. LeetCode #994: Rotting Oranges (Medium)
+/// &lt;/summary&gt;
+public class SurroundedRegionsAndOrangesSolver
+{
+    private static readonly int[] RowOffsets = { -1, 1, 0, 0 };
+    private static readonly int[] ColOffsets = { 0, 0, -1, 1 };
+
+    /// &lt;summary&gt;
+    /// Solves LeetCode #130: Surrounded Regions using reverse boundary DFS.
+    /// Captures all regions surrounded by &#x27;X&#x27; by preserving boundary-connected &#x27;O&#x27;s.
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N) recursion stack.
+    /// &lt;/summary&gt;
+    public void SolveSurroundedRegions(char[][]? board)
+    {
+        if (board == null || board.Length == 0 || board[0].Length == 0)
+            return;
+
+        int m = board.Length;
+        int n = board[0].Length;
+
+        // 1. Mark boundary &#x27;O&#x27;s and their connected component as &#x27;#&#x27; (protected)
+        for (int r = 0; r &lt; m; r++)
+        {
+            if (board[r][0] == &#x27;O&#x27;) DfsMarkSafe(board, r, 0, m, n);
+            if (board[r][n - 1] == &#x27;O&#x27;) DfsMarkSafe(board, r, n - 1, m, n);
+        }
+
+        for (int c = 0; c &lt; n; c++)
+        {
+            if (board[0][c] == &#x27;O&#x27;) DfsMarkSafe(board, 0, c, m, n);
+            if (board[m - 1][c] == &#x27;O&#x27;) DfsMarkSafe(board, m - 1, c, m, n);
+        }
+
+        // 2. Flip all unprotected &#x27;O&#x27;s to &#x27;X&#x27;, and restore &#x27;#&#x27; back to &#x27;O&#x27;
+        for (int r = 0; r &lt; m; r++)
+        {
+            for (int c = 0; c &lt; n; c++)
+            {
+                if (board[r][c] == &#x27;O&#x27;)
+                {
+                    board[r][c] = &#x27;X&#x27;; // Captured
+                }
+                else if (board[r][c] == &#x27;#&#x27;)
+                {
+                    board[r][c] = &#x27;O&#x27;; // Restored
+                }
+            }
+        }
+    }
+
+    private void DfsMarkSafe(char[][] board, int r, int c, int m, int n)
+    {
+        if (r &lt; 0 || r &gt;= m || c &lt; 0 || c &gt;= n || board[r][c] != &#x27;O&#x27;)
+            return;
+
+        board[r][c] = &#x27;#&#x27;; // Mark safe
+
+        for (int i = 0; i &lt; 4; i++)
+        {
+            DfsMarkSafe(board, r + RowOffsets[i], c + ColOffsets[i], m, n);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Solves LeetCode #994: Rotting Oranges using level-by-level Multi-Source Breadth-First Search (BFS).
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N)
+    /// &lt;/summary&gt;
+    public int OrangesRotting(int[][]? grid)
+    {
+        if (grid == null || grid.Length == 0 || grid[0].Length == 0)
+            return 0;
+
+        int m = grid.Length;
+        int n = grid[0].Length;
+
+        var queue = new Queue&lt;(int r, int c)&gt;();
+        int freshCount = 0;
+
+        // Clone grid to preserve caller input
+        var workingGrid = new int[m][];
+        for (int i = 0; i &lt; m; i++)
+        {
+            workingGrid[i] = (int[])grid[i].Clone();
+            for (int j = 0; j &lt; n; j++)
+            {
+                if (workingGrid[i][j] == 2)
+                {
+                    queue.Enqueue((i, j));
+                }
+                else if (workingGrid[i][j] == 1)
+                {
+                    freshCount++;
+                }
+            }
+        }
+
+        if (freshCount == 0) return 0;
+
+        int minutesElapsed = 0;
+
+        while (queue.Count &gt; 0 &amp;&amp; freshCount &gt; 0)
+        {
+            int currentBatchSize = queue.Count;
+            minutesElapsed++;
+
+            for (int i = 0; i &lt; currentBatchSize; i++)
+            {
+                var (r, c) = queue.Dequeue();
+
+                for (int d = 0; d &lt; 4; d++)
+                {
+                    int nr = r + RowOffsets[d];
+                    int nc = c + ColOffsets[d];
+
+                    if (nr &gt;= 0 &amp;&amp; nr &lt; m &amp;&amp; nc &gt;= 0 &amp;&amp; nc &lt; n &amp;&amp; workingGrid[nr][nc] == 1)
+                    {
+                        workingGrid[nr][nc] = 2; // Infect to rotten
+                        freshCount--;
+                        queue.Enqueue((nr, nc));
+                    }
+                }
+            }
+        }
+
+        return freshCount == 0 ? minutesElapsed : -1;
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day29.RabbitMQCoreExchanges.Tests/Day29Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd29-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d29-tests-code-0" class="language-csharp">using Day29.RabbitMQCoreExchanges;
+using Xunit;
+
+namespace Day29.RabbitMQCoreExchanges.Tests;
+
+public class Day29Tests
+{
+    [Fact]
+    public void DirectExchange_RoutesToExactMatchingQueue()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;orders.direct&quot;, ExchangeType.Direct);
+        broker.DeclareQueue(&quot;orders.created.queue&quot;);
+        broker.DeclareQueue(&quot;orders.cancelled.queue&quot;);
+
+        broker.BindQueue(&quot;orders.created.queue&quot;, &quot;orders.direct&quot;, routingKey: &quot;order.created&quot;);
+        broker.BindQueue(&quot;orders.cancelled.queue&quot;, &quot;orders.direct&quot;, routingKey: &quot;order.cancelled&quot;);
+
+        broker.Publish(&quot;orders.direct&quot;, &quot;order.created&quot;, &quot;{ id: 101, status: &#x27;created&#x27; }&quot;);
+
+        var msgCreated = broker.BasicGet(&quot;orders.created.queue&quot;);
+        var msgCancelled = broker.BasicGet(&quot;orders.cancelled.queue&quot;);
+
+        Assert.NotNull(msgCreated);
+        Assert.Equal(&quot;order.created&quot;, msgCreated.RoutingKey);
+        Assert.Null(msgCancelled); // Did not route to cancelled queue
+    }
+
+    [Fact]
+    public void FanoutExchange_BroadcastsToAllBoundQueues()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;notifications.fanout&quot;, ExchangeType.Fanout);
+        broker.DeclareQueue(&quot;email.notifications&quot;);
+        broker.DeclareQueue(&quot;sms.notifications&quot;);
+
+        broker.BindQueue(&quot;email.notifications&quot;, &quot;notifications.fanout&quot;);
+        broker.BindQueue(&quot;sms.notifications&quot;, &quot;notifications.fanout&quot;);
+
+        broker.Publish(&quot;notifications.fanout&quot;, routingKey: &quot;irrelevant.key&quot;, &quot;{ alert: &#x27;Server Down&#x27; }&quot;);
+
+        var emailMsg = broker.BasicGet(&quot;email.notifications&quot;);
+        var smsMsg = broker.BasicGet(&quot;sms.notifications&quot;);
+
+        Assert.NotNull(emailMsg);
+        Assert.NotNull(smsMsg);
+        Assert.Equal(emailMsg.Payload, smsMsg.Payload);
+    }
+
+    [Fact]
+    public void TopicExchange_RoutesWithWildcards_StarAndHash()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;events.topic&quot;, ExchangeType.Topic);
+        broker.DeclareQueue(&quot;us.orders.queue&quot;);
+        broker.DeclareQueue(&quot;all.critical.queue&quot;);
+
+        // * matches exactly one word; # matches zero or more words
+        broker.BindQueue(&quot;us.orders.queue&quot;, &quot;events.topic&quot;, routingKey: &quot;orders.us.*&quot;);
+        broker.BindQueue(&quot;all.critical.queue&quot;, &quot;events.topic&quot;, routingKey: &quot;#.critical&quot;);
+
+        // 1. Matches us.orders.queue only
+        broker.Publish(&quot;events.topic&quot;, &quot;orders.us.created&quot;, &quot;Order 1&quot;);
+        // 2. Matches both
+        broker.Publish(&quot;events.topic&quot;, &quot;orders.us.critical&quot;, &quot;Order 2 Critical&quot;);
+        // 3. Matches all.critical.queue only
+        broker.Publish(&quot;events.topic&quot;, &quot;europe.payments.failed.critical&quot;, &quot;Payment Critical&quot;);
+
+        var q1 = broker.GetQueue(&quot;us.orders.queue&quot;)!;
+        var q2 = broker.GetQueue(&quot;all.critical.queue&quot;)!;
+
+        Assert.Equal(2, q1.ReadyMessageCount); // orders.us.created, orders.us.critical
+        Assert.Equal(2, q2.ReadyMessageCount); // orders.us.critical, europe.payments.failed.critical
+    }
+
+    [Fact]
+    public void HeadersExchange_RoutesMatchingHeaders_AllAndAny()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;headers.exchange&quot;, ExchangeType.Headers);
+        broker.DeclareQueue(&quot;vip.finance.queue&quot;);
+        broker.DeclareQueue(&quot;any.alert.queue&quot;);
+
+        broker.BindQueue(
+            &quot;vip.finance.queue&quot;,
+            &quot;headers.exchange&quot;,
+            headers: new Dictionary&lt;string, object&gt; { [&quot;department&quot;] = &quot;finance&quot;, [&quot;vip&quot;] = true },
+            matchMode: HeadersMatchMode.All);
+
+        broker.BindQueue(
+            &quot;any.alert.queue&quot;,
+            &quot;headers.exchange&quot;,
+            headers: new Dictionary&lt;string, object&gt; { [&quot;urgent&quot;] = true, [&quot;p1&quot;] = true },
+            matchMode: HeadersMatchMode.Any);
+
+        // 1. Matches vip.finance.queue (all match)
+        broker.Publish(&quot;headers.exchange&quot;, &quot;&quot;, &quot;Finance VIP report&quot;, new Dictionary&lt;string, object&gt;
+        {
+            [&quot;department&quot;] = &quot;finance&quot;,
+            [&quot;vip&quot;] = true
+        });
+
+        // 2. Matches any.alert.queue (urgent matches)
+        broker.Publish(&quot;headers.exchange&quot;, &quot;&quot;, &quot;Urgent System Ping&quot;, new Dictionary&lt;string, object&gt;
+        {
+            [&quot;urgent&quot;] = true
+        });
+
+        Assert.Equal(1, broker.GetQueue(&quot;vip.finance.queue&quot;)!.ReadyMessageCount);
+        Assert.Equal(1, broker.GetQueue(&quot;any.alert.queue&quot;)!.ReadyMessageCount);
+    }
+
+    [Fact]
+    public void PublisherConfirms_ReturnsAckOnRoutedMessage_AndNackOnMandatoryUnrouted()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;direct.ack&quot;, ExchangeType.Direct);
+        broker.DeclareQueue(&quot;target.queue&quot;);
+        broker.BindQueue(&quot;target.queue&quot;, &quot;direct.ack&quot;, &quot;valid.key&quot;);
+
+        // Routed message returns true (ACK)
+        var confirmed = broker.Publish(&quot;direct.ack&quot;, &quot;valid.key&quot;, &quot;Payload&quot;, mandatory: true);
+        Assert.True(confirmed);
+
+        // Unrouted message with mandatory=true returns false (NACK)
+        var unroutedConfirmed = broker.Publish(&quot;direct.ack&quot;, &quot;unbound.key&quot;, &quot;Lost Payload&quot;, mandatory: true);
+        Assert.False(unroutedConfirmed);
+    }
+
+    [Fact]
+    public void ConsumerAck_RemovesMessageFromUnackedQueue()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;work.direct&quot;, ExchangeType.Direct);
+        broker.DeclareQueue(&quot;work.queue&quot;);
+        broker.BindQueue(&quot;work.queue&quot;, &quot;work.direct&quot;, &quot;task&quot;);
+
+        broker.Publish(&quot;work.direct&quot;, &quot;task&quot;, &quot;Job 1&quot;);
+        var msg = broker.BasicGet(&quot;work.queue&quot;);
+
+        Assert.NotNull(msg);
+        var q = broker.GetQueue(&quot;work.queue&quot;)!;
+        Assert.Equal(0, q.ReadyMessageCount);
+        Assert.Equal(1, q.UnackedMessageCount);
+
+        var acked = broker.BasicAck(&quot;work.queue&quot;, msg.DeliveryTag);
+        Assert.True(acked);
+        Assert.Equal(0, q.UnackedMessageCount);
+        Assert.Equal(1, broker.AckedCount);
+    }
+
+    [Fact]
+    public void ConsumerNack_WithRequeue_PushesBackToHeadOfQueue()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;work.direct&quot;, ExchangeType.Direct);
+        broker.DeclareQueue(&quot;retry.queue&quot;);
+        broker.BindQueue(&quot;retry.queue&quot;, &quot;work.direct&quot;, &quot;task&quot;);
+
+        broker.Publish(&quot;work.direct&quot;, &quot;task&quot;, &quot;Job A&quot;);
+        var msg = broker.BasicGet(&quot;retry.queue&quot;)!;
+
+        var nacked = broker.BasicNack(&quot;retry.queue&quot;, msg.DeliveryTag, requeue: true);
+        Assert.True(nacked);
+        Assert.Equal(1, broker.NackedCount);
+
+        // Redelivered message is available again
+        var redelivered = broker.BasicGet(&quot;retry.queue&quot;);
+        Assert.NotNull(redelivered);
+        Assert.Equal(msg.Payload, redelivered.Payload);
+        Assert.True(redelivered.Redelivered);
+    }
+
+    [Fact]
+    public void DeadLetterExchange_RoutesRejectedMessageToDlx()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;primary.exchange&quot;, ExchangeType.Direct);
+        broker.DeclareExchange(&quot;dlx.exchange&quot;, ExchangeType.Fanout);
+
+        broker.DeclareQueue(&quot;dead.letter.queue&quot;);
+        broker.BindQueue(&quot;dead.letter.queue&quot;, &quot;dlx.exchange&quot;);
+
+        broker.DeclareQueue(&quot;main.work.queue&quot;, deadLetterExchange: &quot;dlx.exchange&quot;);
+        broker.BindQueue(&quot;main.work.queue&quot;, &quot;primary.exchange&quot;, &quot;work&quot;);
+
+        broker.Publish(&quot;primary.exchange&quot;, &quot;work&quot;, &quot;Poison Message&quot;);
+        var msg = broker.BasicGet(&quot;main.work.queue&quot;)!;
+
+        // Reject without requeue -&gt; routed to DLX
+        broker.BasicNack(&quot;main.work.queue&quot;, msg.DeliveryTag, requeue: false);
+
+        Assert.Equal(1, broker.DeadLetteredCount);
+        var poisonMsg = broker.BasicGet(&quot;dead.letter.queue&quot;);
+        Assert.NotNull(poisonMsg);
+        Assert.Equal(&quot;Poison Message&quot;, poisonMsg.Payload);
+    }
+
+    [Fact]
+    public void SurroundedRegions_CapturesEnclosedO_AndPreservesBorderConnected()
+    {
+        var solver = new SurroundedRegionsAndOrangesSolver();
+
+        // Standard LeetCode #130 test matrix:
+        // X X X X
+        // X O O X
+        // X X O X
+        // X O X X
+        var board = new char[][]
+        {
+            new[] { &#x27;X&#x27;, &#x27;X&#x27;, &#x27;X&#x27;, &#x27;X&#x27; },
+            new[] { &#x27;X&#x27;, &#x27;O&#x27;, &#x27;O&#x27;, &#x27;X&#x27; },
+            new[] { &#x27;X&#x27;, &#x27;X&#x27;, &#x27;O&#x27;, &#x27;X&#x27; },
+            new[] { &#x27;X&#x27;, &#x27;O&#x27;, &#x27;X&#x27;, &#x27;X&#x27; }
+        };
+
+        solver.SolveSurroundedRegions(board);
+
+        // Expected output:
+        // X X X X
+        // X X X X
+        // X X X X
+        // X O X X
+        Assert.Equal(&#x27;X&#x27;, board[1][1]);
+        Assert.Equal(&#x27;X&#x27;, board[1][2]);
+        Assert.Equal(&#x27;X&#x27;, board[2][2]);
+        Assert.Equal(&#x27;O&#x27;, board[3][1]); // Connected to bottom border
+    }
+
+    [Fact]
+    public void RottingOranges_MultiSourceBfs_CalculatesMinimumMinutesOrNegativeOne()
+    {
+        var solver = new SurroundedRegionsAndOrangesSolver();
+
+        // Standard LeetCode #994 test grid:
+        // 2 1 1
+        // 1 1 0
+        // 0 1 1
+        // Expected minutes: 4
+        var grid = new int[][]
+        {
+            new[] { 2, 1, 1 },
+            new[] { 1, 1, 0 },
+            new[] { 0, 1, 1 }
+        };
+
+        var minutes = solver.OrangesRotting(grid);
+        Assert.Equal(4, minutes);
+
+        // Impossible grid with isolated fresh orange:
+        // 2 1 0
+        // 0 2 0
+        // 0 0 1
+        var impossibleGrid = new int[][]
+        {
+            new[] { 2, 1, 0 },
+            new[] { 0, 2, 0 },
+            new[] { 0, 0, 1 }
+        };
+        Assert.Equal(-1, solver.OrangesRotting(impossibleGrid));
+
+        // Already fully rotten or all empty
+        var zeroGrid = new int[][] { new[] { 0, 2 } };
+        Assert.Equal(0, solver.OrangesRotting(zeroGrid));
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 29: Deep Dive Notes — RabbitMQ Core Concepts: Exchanges & Queues</h1>
+<h2>1. AMQP 0-9-1 Architectural Model</h2>
+<p>RabbitMQ implements the <strong>Advanced Message Queuing Protocol (AMQP 0-9-1)</strong>, an open standard wire-level protocol for enterprise asynchronous messaging.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+----------------------------------------------------------------------------------------------------+
+|                                    AMQP 0-9-1 MESSAGING TOPOLOGY                                   |
++----------------------------------------------------------------------------------------------------+
+|                                                                                                    |
+|    [ Producer ]                                                                                    |
+|         |                                                                                          |
+|    (Publish with RoutingKey)                                                                       |
+|         v                                                                                          |
+|    +------------------------------------------------------------------------------------------+    |
+|    |                                        EXCHANGE                                          |    |
+|    |------------------------------------------------------------------------------------------|    |
+|    |  • Direct: Exact match                                                                   |    |
+|    |  • Topic: Wildcard patterns (* = 1 word, # = 0+ words)                                   |    |
+|    |  • Fanout: Unconditional broadcast                                                       |    |
+|    |  • Headers: x-match all/any metadata                                                     |    |
+|    +------------------------------------------------------------------------------------------+    |
+|               |                                      |                                             |
+|          (Binding 1)                            (Binding 2)                                        |
+|               v                                      v                                             |
+|    +---------------------+                +---------------------+                                  |
+|    |     Work Queue      |                |    Audit Log Queue  |                                  |
+|    | (PrefetchCount = 1) |                | (PrefetchCount = 5) |                                  |
+|    +---------------------+                +---------------------+                                  |
+|         |          |                                 |                                             |
+|      (Ack)      (Nack + requeue=false)            (Ack)                                            |
+|         |          v                                 |                                             |
+|         |     +-------------------------+            |                                             |
+|         |     | Dead Letter Exchange    |            |                                             |
+|         |     | (DLX -&gt; Poison Queue)   |            |                                             |
+|         |     +-------------------------+            |                                             |
+|         v                                            v                                             |
+|    [ Consumer 1 ]                             [ Consumer 2 ]                                       |
+|                                                                                                    |
++----------------------------------------------------------------------------------------------------+</code></pre></div>
+<h3>Connection vs. Channel</h3>
+<ul>
+<li><strong>Connection</strong>: A persistent TCP/IP socket between the client application and RabbitMQ broker. Establishing a connection involves a full TCP handshake, TLS negotiation, and authentication challenge (expensive).</li>
+<li><strong>Channel</strong>: A lightweight virtual connection multiplexed inside a single physical TCP connection. Applications open and close hundreds of channels concurrently for publishing and consuming, completely avoiding TCP handshake overhead.</li>
+</ul>
+<hr/>
+<h2>2. The 4 AMQP Exchange Types</h2>
+<p>An exchange acts as an internal message router. Producers <strong>never</strong> send messages directly to queues; they publish to an Exchange with an optional <strong>Routing Key</strong>.</p>
+<h3>1. Direct Exchange</h3>
+<p>Routes messages to queues whose <strong>Binding Key</strong> exactly matches the message's <strong>Routing Key</strong>.</p>
+<ul>
+<li>Example:</li>
+<li>Queue A bound with <code>orders.created</code></li>
+<li>Queue B bound with <code>orders.cancelled</code></li>
+<li>Publishing with <code>orders.created</code> goes exclusively to Queue A.</li>
+</ul>
+<h3>2. Fanout Exchange</h3>
+<p>Routinely ignores routing keys and duplicates incoming messages to <strong>all queues</strong> bound to the exchange.</p>
+<ul>
+<li>Blazingly fast ($\mathcal{O}(1)$ routing table lookup).</li>
+<li>Ideal for publish-subscribe broadcast patterns (e.g., distributed cache invalidation, live price feeds).</li>
+</ul>
+<h3>3. Topic Exchange</h3>
+<p>Performs routing based on dot-delimited tokens in the routing key using wildcard tokens:</p>
+<ul>
+<li><code>*</code> (asterisk): Matches <strong>exactly one</strong> word.</li>
+<li><code>#</code> (hash): Matches <strong>zero or more</strong> words.</li>
+<li>Examples:</li>
+<li><code>orders.eu.*</code>: Matches <code>orders.eu.created</code>, <code>orders.eu.paid</code>; does NOT match <code>orders.eu.b2b.created</code>.</li>
+<li><code>orders.#</code>: Matches <code>orders</code>, <code>orders.us</code>, <code>orders.us.california.expedited</code>.</li>
+<li><code>#.critical</code>: Matches any routing key ending with <code>.critical</code>.</li>
+</ul>
+<h3>4. Headers Exchange</h3>
+<p>Routes messages based on message header attributes rather than the routing key string.</p>
+<ul>
+<li>Uses <code>x-match</code>:</li>
+<li><code>x-match = all</code>: Every header key/value pair specified in the binding must be present in the message.</li>
+<li><code>x-match = any</code>: At least one matching header key/value pair routes the message.</li>
+</ul>
+<hr/>
+<h2>3. Reliability, Confirmations & DLX</h2>
+<h3>1. Publisher Confirms</h3>
+<p>In standard fire-and-forget publishing, a producer does not know if a message was successfully accepted, written to disk, or rejected by the broker.</p>
+<ul>
+<li><strong>Publisher Confirms</strong>: Once enabled on a channel, the broker asynchronously sends an <code>Ack</code> back to the publisher with the message's sequence number once:</li>
+</ul>
+<ol>
+<li>The message is persisted to disk on all durable queues, or</li>
+<li>The message is consumed and acknowledged by downstream workers.</li>
+</ol>
+<ul>
+<li>If the broker encounters disk full errors or internal node crashes, it emits a <code>Nack</code>.</li>
+</ul>
+<h3>2. Consumer Acknowledgments (Ack / Nack)</h3>
+<ul>
+<li><code>autoAck = true</code>: The broker removes the message from the queue the instant it sends it over the socket. If the worker process crashes before processing the payload, the message is permanently lost.</li>
+<li><code>autoAck = false</code> (Manual Ack):</li>
+<li><code>basic.ack(delivery_tag)</code>: Worker successfully processed the message; broker removes it from memory.</li>
+<li><code>basic.nack(delivery_tag, requeue = true)</code>: Worker encountered a transient failure (e.g., DB lock timeout); broker re-enqueues the message at the head of the queue.</li>
+<li><code>basic.nack(delivery_tag, requeue = false)</code>: Poison message; discarded or forwarded to a Dead Letter Exchange.</li>
+</ul>
+<h3>3. Dead Letter Exchange (DLX)</h3>
+<p>Queues configured with <code>x-dead-letter-exchange</code> automatically re-route messages to the DLX when:</p>
+<ol>
+<li>The message is rejected via <code>basic.nack(requeue: false)</code> or <code>basic.reject(requeue: false)</code>.</li>
+<li>The message's Time-To-Live (<code>x-message-ttl</code>) expires in the queue.</li>
+<li>The queue reaches its maximum capacity (<code>x-max-length</code>).</li>
+</ol>
+<hr/>
+<h2>4. Consumer QoS & Fair Dispatch</h2>
+<p>By default, RabbitMQ dispatches messages round-robin in large batches to all connected consumers without checking how many unacknowledged messages each consumer currently holds.</p>
+<ul>
+<li><strong>The Problem</strong>: If Consumer A gets heavy, slow jobs while Consumer B gets quick jobs, Consumer A becomes saturated with hundreds of queued messages while Consumer B sits idle.</li>
+<li><strong>The Solution (<code>basic.qos(prefetch_count)</code>)</strong>:</li>
+<li><code>prefetch_count = 1</code>: Tells RabbitMQ never to give more than 1 unacknowledged message to a worker at a time.</li>
+<li>RabbitMQ only assigns a new message to that worker after receiving <code>basic.ack</code>.</li>
+<li>Achieves optimal load leveling across heterogeneous workers.</li>
+</ul>
+<hr/>
+<h2>5. Graph Algorithms: LeetCode #130 & #994</h2>
+<h3>LeetCode #130: Surrounded Regions (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Given an $m \times n$ matrix containing <code>&#x27;X&#x27;</code> and <code>&#x27;O&#x27;</code>, flip all <code>&#x27;O&#x27;</code>s that are 4-directionally surrounded by <code>&#x27;X&#x27;</code> into <code>&#x27;X&#x27;</code>.</li>
+<li><strong>Key Insight</strong>: Any <code>&#x27;O&#x27;</code> connected to the border can never be surrounded.</li>
+<li><strong>Reverse Algorithm</strong>:</li>
+</ul>
+<ol>
+<li>Iterate along the 4 borders of the matrix (row $0$, row $m-1$, col $0$, col $n-1$).</li>
+<li>For every <code>&#x27;O&#x27;</code> on the boundary, run DFS/BFS to mark all connected <code>&#x27;O&#x27;</code>s as a safe sentinel character (<code>&#x27;#&#x27;</code>).</li>
+<li>Scan the entire grid:</li>
+</ol>
+<ul>
+<li>Flip all remaining <code>&#x27;O&#x27;</code>s to <code>&#x27;X&#x27;</code> (these are truly surrounded).</li>
+<li>Restore all <code>&#x27;#&#x27;</code> back to <code>&#x27;O&#x27;</code> (these were border-connected).</li>
+<li><strong>Complexity</strong>: $\mathcal{O}(M \times N)$ time, $\mathcal{O}(M \times N)$ space.</li>
+</ul>
+<h3>LeetCode #994: Rotting Oranges (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: In an $m \times n$ grid of 0 (empty), 1 (fresh), and 2 (rotten), every minute any fresh orange adjacent to a rotten orange becomes rotten. Return minimum minutes until no fresh oranges remain, or -1.</li>
+<li><strong>Algorithm (Multi-Source BFS)</strong>:</li>
+</ul>
+<ol>
+<li>Scan the grid to enqueue all initially rotten oranges (2) into a FIFO queue and count the total number of fresh oranges (1).</li>
+<li>If <code>freshCount == 0</code>, return <code>0</code> immediately.</li>
+<li>While queue is not empty and <code>freshCount &gt; 0</code>:</li>
+</ol>
+<ul>
+<li>Increment <code>minutes</code>.</li>
+<li>Process the current level snapshot (size of queue at this minute).</li>
+<li>For each rotten orange, inspect 4 cardinal neighbors. If neighbor is fresh (1):</li>
+<li>Mark as rotten (2), decrement <code>freshCount</code>, and enqueue.</li>
+</ul>
+<ol>
+<li>If <code>freshCount == 0</code>, return <code>minutes</code>; else return <code>-1</code> (unreachable fresh oranges).</li>
+</ol>
+<ul>
+<li><strong>Complexity</strong>: $\mathcal{O}(M \times N)$ time, $\mathcal{O}(M \times N)$ space.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 29: RabbitMQ Core Concepts: Exchanges & Queues</h1>
+<h2>Overview</h2>
+<p><strong>Day 29</strong> explores enterprise asynchronous messaging fundamentals with <strong>RabbitMQ</strong> and the <strong>AMQP 0-9-1</strong> protocol. We implement and simulate all four AMQP exchange types (<code>Direct</code>, <code>Topic</code> with wildcard pattern matching, <code>Fanout</code> broadcast, and <code>Headers</code> multi-attribute matching), reliable delivery mechanisms (Publisher Confirms, manual consumer acknowledgments via <code>BasicAck</code>/<code>BasicNack</code>, and Dead Letter Exchanges / DLX), and Quality of Service (QoS) <code>PrefetchCount</code> backpressure controls. For DSA, we solve **LeetCode #130 (<em>Surrounded Regions</em>)<strong> using reverse boundary DFS and </strong>LeetCode #994 (<em>Rotting Oranges</em>)** using multi-source BFS contagion modeling.</p>
+<hr/>
+<h2>Architectural Topics Covered</h2>
+<ol>
+<li><strong>AMQP 0-9-1 Exchange Architectures</strong>:</li>
+</ol>
+<ul>
+<li><strong>Direct Exchange</strong>: Strict 1:1 routing key equality (<code>order.created</code>).</li>
+<li><strong>Topic Exchange</strong>: Wildcard pattern routing with <code>*</code> (matching exactly one word) and <code>#</code> (matching zero or more words).</li>
+<li><strong>Fanout Exchange</strong>: High-speed broadcast forwarding to all bound queues, completely bypassing routing keys.</li>
+<li><strong>Headers Exchange</strong>: Multi-attribute header dictionary matching with <code>x-match: all</code> or <code>x-match: any</code>.</li>
+</ul>
+<ol>
+<li><strong>Reliable Messaging & Failure Handling</strong>:</li>
+</ol>
+<ul>
+<li><strong>Publisher Confirms</strong>: Asynchronous ACKs/NACKs returned from the broker guaranteeing disk persistence and queue delivery.</li>
+<li><strong>Consumer Acknowledgments</strong>: Manual <code>BasicAck</code>, <code>BasicNack(requeue: true)</code> (pushing redelivered message back to head of queue), and <code>BasicNack(requeue: false)</code> (discarding or forwarding).</li>
+<li><strong>Dead Letter Exchange (DLX)</strong>: Automated dead-lettering of rejected, expired, or unprocessable messages into dedicated dead-letter queues (<code>x-dead-letter-exchange</code>).</li>
+</ul>
+<ol>
+<li><strong>Consumer QoS & Fair Dispatch</strong>:</li>
+</ol>
+<ul>
+<li><code>basic.qos(prefetch_count)</code> limiting in-flight unacknowledged messages to prevent worker buffer bloat and ensure balanced distribution across heterogeneous consumers.</li>
+</ul>
+<ol>
+<li><strong>Graph & Grid Traversal Algorithms</strong>:</li>
+</ol>
+<ul>
+<li><strong>LeetCode #130: Surrounded Regions (Medium)</strong>: Reverse boundary DFS preserving border-connected <code>&#x27;O&#x27;</code> cells while flipping enclosed regions to <code>&#x27;X&#x27;</code>.</li>
+<li><strong>LeetCode #994: Rotting Oranges (Medium)</strong>: Multi-source BFS simulating minute-by-minute infection propagation, returning minimum elapsed minutes or -1.</li>
+</ul>
+<hr/>
+<h2>Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day29-RabbitMQ-Core-Exchanges-Queues/
+├── src/
+│   └── Day29.RabbitMQCoreExchanges/
+│       ├── Day29.RabbitMQCoreExchanges.csproj
+│       ├── AmqpBrokerSimulator.cs
+│       └── SurroundedRegionsAndOrangesSolver.cs
+├── tests/
+│   └── Day29.RabbitMQCoreExchanges.Tests/
+│       ├── Day29.RabbitMQCoreExchanges.Tests.csproj
+│       └── Day29Tests.cs
+├── README.md
+├── notes.md
+└── interview-questions.md</code></pre></div>
+<hr/>
+<h2>Running the Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day29-RabbitMQ-Core-Exchanges-Queues/tests/Day29.RabbitMQCoreExchanges.Tests/Day29.RabbitMQCoreExchanges.Tests.csproj</code></pre></div>
+<h3>Test Suite Coverage</h3>
+<ol>
+<li><code>DirectExchange_RoutesToExactMatchingQueue</code>: Validates exact routing key delivery to targeted queues without cross-talk.</li>
+<li><code>FanoutExchange_BroadcastsToAllBoundQueues</code>: Validates unconditional broadcast across all bound queues.</li>
+<li><code>TopicExchange_RoutesWithWildcards_StarAndHash</code>: Validates wildcard matching (<code>orders.*</code> vs <code>#.critical</code>).</li>
+<li><code>HeadersExchange_RoutesMatchingHeaders_AllAndAny</code>: Validates <code>x-match: all</code> and <code>x-match: any</code> header evaluation.</li>
+<li><code>PublisherConfirms_ReturnsAckOnRoutedMessage_AndNackOnMandatoryUnrouted</code>: Verifies publisher confirm ACK on successful queue routing and NACK on mandatory unrouted messages.</li>
+<li><code>ConsumerAck_RemovesMessageFromUnackedQueue</code>: Verifies manual BasicAck clears unacknowledged tracking.</li>
+<li><code>ConsumerNack_WithRequeue_PushesBackToHeadOfQueue</code>: Validates BasicNack with <code>requeue = true</code> flag and <code>Redelivered</code> state.</li>
+<li><code>DeadLetterExchange_RoutesRejectedMessageToDlx</code>: Verifies un-requeued rejected messages route automatically to DLX.</li>
+<li><code>SurroundedRegions_CapturesEnclosedO_AndPreservesBorderConnected</code>: Validates LC #130 matrix region capture.</li>
+<li><code>RottingOranges_MultiSourceBfs_CalculatesMinimumMinutesOrNegativeOne</code>: Validates LC #994 multi-source BFS contagion, edge cases, and unreachable cells.</li>
+</ol>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          <div class="markdown-content"><h1>Day 29: Senior & Staff Engineer Interview Questions & Answers</h1>
+<h3>1. What are the core architectural trade-offs between RabbitMQ and Apache Kafka?</h3>
+<p><strong>Answer:</strong></p>
+<div class="table-container"><table><thead><tr>
+<th>Architectural Dimension</th>
+<th>RabbitMQ</th>
+<th>Apache Kafka</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Architectural Model</strong></td>
+<td><strong>Smart Broker / Dumb Consumer</strong>: Broker tracks message state, delivery tags, queue indexes, and consumer acks. Deletes messages upon acknowledgment.</td>
+<td><strong>Dumb Broker / Smart Consumer</strong>: Broker is an immutable distributed commit log. Consumers track their own offsets. Messages persist until retention policy expires.</td>
+</tr>
+<tr>
+<td><strong>Routing Flexibility</strong></td>
+<td>Complex in-broker routing (Direct, Topic, Fanout, Headers, Dead-lettering).</td>
+<td>Partition key hashing (<code>Hash(Key) % Partitions</code>). Filtering happens client-side.</td>
+</tr>
+<tr>
+<td><strong>Ordering Guarantees</strong></td>
+<td>FIFO per queue. Concurrency (<code>prefetch &gt; 1</code> or multiple consumers) breaks strict order.</td>
+<td>Strict FIFO order guaranteed within each partition.</td>
+</tr>
+<tr>
+<td><strong>Throughput & Scale</strong></td>
+<td>Tens to hundreds of thousands of messages/sec. Memory-intensive broker state.</td>
+<td>Millions of messages/sec. Sequential disk I/O, zero-copy OS page cache (<code>sendfile</code>).</td>
+</tr>
+<tr>
+<td><strong>Replayability</strong></td>
+<td>No message replay (once acked, it is gone).</td>
+<td>High replayability (consumers can reset offsets to reprocess historic logs).</td>
+</tr>
+<tr>
+<td><strong>Best Suited For</strong></td>
+<td>Complex task routing, microservices commands, RPC, dynamic work queues.</td>
+<td>High-volume telemetry, clickstreams, event sourcing, CDC stream processing.</td>
+</tr>
+</tbody></table></div>
+<hr/>
+<h3>2. How do modern RabbitMQ Quorum Queues (Raft Consensus) overcome the vulnerabilities of Classic Mirrored Queues?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Classic Mirrored Queues (Deprecated)</strong>:</li>
+<li>Relied on a proprietary primary-mirror synchronization mechanism.</li>
+<li>Vulnerable to network partitions (Split-Brain). When a partition healed, non-synchronized mirrors either dropped messages or blocked the primary while replicating the entire queue from scratch, causing cluster-wide latency pauses.</li>
+<li><strong>Quorum Queues (RabbitMQ 3.8+)</strong>:</li>
+<li>Implemented using the formal <strong>Raft Consensus Algorithm</strong>.</li>
+<li>A quorum queue consists of a Raft leader and followers across cluster nodes.</li>
+<li>State replication requires acknowledgment from a majority of nodes ($\lfloor N/2 \rfloor + 1$) before confirming publishes to clients.</li>
+<li>Tolerates $F$ node failures in an $2F+1$ node cluster with zero message loss and deterministic leader election without cluster-wide stalling.</li>
+</ul>
+<hr/>
+<h3>3. What is the impact of <code>basic.qos(prefetch_count)</code> on consumer throughput, latency, and memory footprint?</h3>
+<p><strong>Answer:</strong></p>
+<p><code>prefetch_count</code> dictates how many unacknowledged messages the broker can deliver to a consumer channel before waiting for an ACK.</p>
+<ul>
+<li><strong>Prefetch = 0 (Unlimited)</strong>:</li>
+<li>The broker pushes all available queue messages over the TCP connection into the consumer process's RAM buffer.</li>
+<li><em>Risk</em>: Consumer process experiences Out-Of-Memory (OOM) crashes under high volume. Fast workers starve while slow workers buffer thousands of messages.</li>
+<li><strong>Prefetch = 1 (Strict Fair Dispatch)</strong>:</li>
+<li>The broker delivers exactly one message and waits for an ACK before sending another.</li>
+<li><em>Advantage</em>: Maximum work balancing across uneven workloads.</li>
+<li><em>Disadvantage</em>: High network round-trip time (RTT) latency overhead. The consumer thread remains idle between ACKing message $N$ and receiving message $N+1$.</li>
+<li><strong>Production Sweet Spot (<code>prefetch_count = 50–200</code>)</strong>:</li>
+<li>Pipelining allows the consumer to process incoming messages continuously while prior ACKs travel back over the wire, optimizing throughput without risking memory saturation.</li>
+</ul>
+<hr/>
+<h3>4. How do Publisher Confirms guarantee zero message loss during broker node crashes and disk flushes?</h3>
+<p><strong>Answer:</strong></p>
+<p>When a producer publishes a message without confirms, the socket write succeeds the moment bytes leave the client OS network buffer, giving no guarantee that the broker received, routed, or stored the message.</p>
+<p><strong>With Publisher Confirms:</strong></p>
+<ol>
+<li>The client issues <code>confirm.select</code> on the AMQP channel.</li>
+<li>The broker assigns an incrementing 64-bit integer sequence number to each incoming message on that channel.</li>
+<li>The broker asynchronously returns <code>basic.ack(sequenceNumber)</code> to the publisher only after:</li>
+</ol>
+<ul>
+<li>For a persistent message on a durable queue: The message has been written and fsynced to disk (or replicated to a Raft quorum).</li>
+<li>If the queue is transient or already consumed: The message is accepted by the consumer.</li>
+</ul>
+<ol>
+<li>If a disk write fails, the broker returns <code>basic.nack(sequenceNumber)</code>.</li>
+<li>The publisher maintains a pending dictionary of unconfirmed sequence numbers and retries or alerts upon receiving Nack or a confirmation timeout.</li>
+</ol>
+<hr/>
+<h3>5. What causes "Unacknowledged Message Creep" in RabbitMQ, and how does it manifest in production?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>The Cause</strong>:</li>
+</ul>
+<p>When consumer applications consume messages with <code>autoAck = false</code> but fail to call <code>basic.ack</code> or <code>basic.nack</code> due to:</p>
+<ol>
+<li>An unhandled exception that bypasses the acknowledgment block.</li>
+<li>Infinite loops or asynchronous deadlocks in worker processing logic.</li>
+<li>Swallowing exceptions without invoking <code>basic.nack(requeue: false)</code>.</li>
+</ol>
+<ul>
+<li><strong>The Impact</strong>:</li>
+<li>The broker must keep unacknowledged messages stored in RAM and tracked in memory metadata in case the consumer disconnects and messages must be re-queued.</li>
+<li>As unacked messages accumulate into the millions, broker RAM consumption hits the <strong>High Memory Watermark</strong> (<code>vm_memory_high_watermark</code>).</li>
+<li>RabbitMQ initiates alarms, blocks all incoming publishers (TCP backpressure), and halts message throughput across the entire cluster.</li>
+</ul>
+<hr/>
+<h3>6. How do you implement non-blocking exponential backoff retries using Dead Letter Exchanges (DLX) in RabbitMQ?</h3>
+<p><strong>Answer:</strong></p>
+<p>Directly retrying failed messages with <code>basic.nack(requeue: true)</code> immediately puts the message at the front of the same queue. If the failure is persistent (e.g., database down), the worker immediately re-consumes it, causing a 100% CPU busy-spin loop that blocks all other legitimate queue messages.</p>
+<p><strong>Dead-Letter Exponential Backoff Topology:</strong></p>
+<ol>
+<li><strong>Main Queue</strong> (<code>orders.queue</code>): Consumed by application workers.</li>
+<li>When processing fails, worker calls <code>basic.nack(requeue: false)</code>.</li>
+<li>The main queue's <code>x-dead-letter-exchange</code> forwards the message to a <strong>Retry Exchange</strong>.</li>
+<li>The message routes to a series of delay queues with Message TTL (e.g. <code>retry.10s</code>, <code>retry.60s</code>, <code>retry.5m</code>):</li>
+</ol>
+<ul>
+<li>Delay queues have <strong>no consumers</strong>.</li>
+<li>Configured with <code>x-message-ttl: 10000</code> and <code>x-dead-letter-exchange: main.exchange</code>.</li>
+</ul>
+<ol>
+<li>When the 10-second TTL expires, RabbitMQ automatically dead-letters the message <em>back</em> into the Main Queue for another processing attempt without blocking any concurrent traffic.</li>
+<li>Messages exceeding maximum retry counts are forwarded to a permanent <code>orders.poison.dlq</code>.</li>
+</ol>
+<hr/>
+<h3>7. How does a Topic Exchange match routing keys, and what is the difference between <code>*</code> and <code>#</code>?</h3>
+<p><strong>Answer:</strong></p>
+<p>Routing keys in AMQP Topic Exchanges consist of dot-delimited words (e.g., <code>us.shipping.express</code>).</p>
+<ul>
+<li><code>*</code> (asterisk): Substitutes for <strong>exactly one</strong> word.</li>
+<li>Pattern: <code>*.shipping.*</code> matches <code>us.shipping.express</code> and <code>eu.shipping.standard</code>.</li>
+<li>Does NOT match <code>shipping.express</code> or <code>us.west.shipping.express</code>.</li>
+<li><code>#</code> (hash): Substitutes for <strong>zero or more</strong> words.</li>
+<li>Pattern: <code>orders.#</code> matches <code>orders</code>, <code>orders.created</code>, <code>orders.us.california.b2b.priority</code>.</li>
+<li><strong>Internal Optimization</strong>:</li>
+</ul>
+<p>RabbitMQ indexes topic bindings using a <strong>Trie (Prefix Tree)</strong> data structure. Incoming routing keys traverse the trie in $\mathcal{O}(K)$ time where $K$ is the number of words in the routing key, rather than performing slow sequential regex evaluations across thousands of queues.</p>
+<hr/>
+<h3>8. When should an architect choose a Headers Exchange over a Topic Exchange?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Topic Exchange Limitations</strong>:</li>
+<li>Requires a single linear dot-separated hierarchy (e.g., <code>format.vendor.region</code>).</li>
+<li>Cannot cleanly express non-hierarchical, multi-dimensional queries. For example, if a message has format <code>json</code>, region <code>us</code>, vendor <code>acme</code>, and encrypted <code>true</code>, routing keys become combinatorial (<code>json.us.acme.true</code>).</li>
+<li><strong>Headers Exchange Advantages</strong>:</li>
+<li>Operates on arbitrary key-value metadata dictionaries.</li>
+<li>Supports <code>x-match: all</code> (AND logic) and <code>x-match: any</code> (OR logic).</li>
+<li><em>Best Suited For</em>: Multi-tenant architectures where messages have disparate dimensions (e.g., <code>tenant_id</code>, <code>environment: staging</code>, <code>data_classification: pii</code>), or when the payload structure naturally maps to HTTP headers.</li>
+</ul>
+<hr/>
+<h3>9. For LeetCode #130 (<em>Surrounded Regions</em>), why is reverse boundary flood fill superior to searching from every interior cell?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Forward Interior Search</strong>:</li>
+<li>Testing each <code>&#x27;O&#x27;</code> cell requires checking whether its connected component can reach any boundary.</li>
+<li>If a large connected component of size $K$ does not touch the boundary, we must track and flip all its cells. If it does touch the boundary, all explored paths must be retained without flipping.</li>
+<li>Requires maintaining temporary component lists, tracking visited states, and handling multiple rollbacks.</li>
+<li><strong>Reverse Boundary Flood Fill</strong>:</li>
+<li>We observe that <strong>only</strong> cells connected to the boundary survive.</li>
+<li>We initiate DFS/BFS strictly from the boundary <code>&#x27;O&#x27;</code> cells (at most $2M + 2N$ perimeter cells).</li>
+<li>Any cell reached is marked with a safe sentinel (<code>&#x27;#&#x27;</code>).</li>
+<li>A single linear $\mathcal{O}(M \times N)$ pass flips all remaining <code>&#x27;O&#x27;</code>s (which are guaranteed to be captured) to <code>&#x27;X&#x27;</code>, and restores <code>&#x27;#&#x27;</code> to <code>&#x27;O&#x27;</code>.</li>
+<li>Zero rollback overhead and optimal cache-friendly linear memory access.</li>
+</ul>
+<hr/>
+<h3>10. For LeetCode #994 (<em>Rotting Oranges</em>), why must the contagion simulation be solved with Multi-Source BFS rather than DFS?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Multi-Source BFS</strong>:</li>
+<li>BFS explores a graph in concentric waves of equal distance (Level-by-Level).</li>
+<li>In Rotting Oranges, all initially rotten oranges spread infection <strong>simultaneously in parallel</strong> at minute $1$, minute $2$, etc.</li>
+<li>By enqueuing all initial rotten oranges into the BFS queue at minute $0$, the BFS naturally simulates this simultaneous parallel expansion. The number of BFS level expansions equals the exact minimum minutes required.</li>
+<li><strong>Why DFS Fails</strong>:</li>
+<li>DFS explores one deep path to its termination before backtracking.</li>
+<li>A single rotten orange might take a 20-step path to rot an orange that was actually adjacent to another rotten orange that would have reached it in minute 1.</li>
+<li>DFS cannot easily calculate the minimum parallel time without complex, expensive minimum timestamp relaxation across all cells.</li>
+</ul></div>
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day29.RabbitMQCoreExchanges/AmqpBrokerSimulator.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd29-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d29-src-code-0" class="language-csharp">using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
+
+namespace Day29.RabbitMQCoreExchanges;
+
+public enum ExchangeType
+{
+    Direct,
+    Topic,
+    Fanout,
+    Headers
+}
+
+public enum HeadersMatchMode
+{
+    All,
+    Any
+}
+
+public record AmqpMessage(
+    ulong DeliveryTag,
+    string MessageId,
+    string RoutingKey,
+    string Payload,
+    IReadOnlyDictionary&lt;string, object&gt; Headers,
+    bool Redelivered,
+    DateTime TimestampUtc);
+
+public class QueueBinding
+{
+    public string QueueName { get; }
+    public string RoutingKeyPattern { get; }
+    public IReadOnlyDictionary&lt;string, object&gt;? HeaderFilter { get; }
+    public HeadersMatchMode MatchMode { get; }
+
+    public QueueBinding(
+        string queueName,
+        string routingKeyPattern = &quot;&quot;,
+        IReadOnlyDictionary&lt;string, object&gt;? headerFilter = null,
+        HeadersMatchMode matchMode = HeadersMatchMode.All)
+    {
+        QueueName = queueName;
+        RoutingKeyPattern = routingKeyPattern;
+        HeaderFilter = headerFilter;
+        MatchMode = matchMode;
+    }
+}
+
+public class AmqpQueue
+{
+    public string Name { get; }
+    public string? DeadLetterExchange { get; }
+    public string? DeadLetterRoutingKey { get; }
+    public int PrefetchCount { get; set; } = 10;
+
+    private readonly ConcurrentQueue&lt;AmqpMessage&gt; _messages = new();
+    private readonly ConcurrentDictionary&lt;ulong, AmqpMessage&gt; _unackedMessages = new();
+
+    public int ReadyMessageCount =&gt; _messages.Count;
+    public int UnackedMessageCount =&gt; _unackedMessages.Count;
+
+    public AmqpQueue(string name, string? deadLetterExchange = null, string? deadLetterRoutingKey = null)
+    {
+        Name = name;
+        DeadLetterExchange = deadLetterExchange;
+        DeadLetterRoutingKey = deadLetterRoutingKey;
+    }
+
+    public void Enqueue(AmqpMessage message, bool toFront = false)
+    {
+        if (toFront)
+        {
+            // Requeue to head: snapshot, clear, push redelivered, restore remaining
+            var list = _messages.ToList();
+            while (_messages.TryDequeue(out _)) { }
+            _messages.Enqueue(message);
+            foreach (var item in list)
+            {
+                _messages.Enqueue(item);
+            }
+        }
+        else
+        {
+            _messages.Enqueue(message);
+        }
+    }
+
+    public AmqpMessage? Dequeue()
+    {
+        if (_unackedMessages.Count &gt;= PrefetchCount)
+        {
+            // QoS Prefetch limit reached: hold message delivery until ACK/NACK
+            return null;
+        }
+
+        if (_messages.TryDequeue(out var msg))
+        {
+            _unackedMessages[msg.DeliveryTag] = msg;
+            return msg;
+        }
+        return null;
+    }
+
+    public bool Ack(ulong deliveryTag)
+    {
+        return _unackedMessages.TryRemove(deliveryTag, out _);
+    }
+
+    public AmqpMessage? Nack(ulong deliveryTag, bool requeue)
+    {
+        if (!_unackedMessages.TryRemove(deliveryTag, out var msg))
+            return null;
+
+        if (requeue)
+        {
+            Enqueue(msg with { Redelivered = true }, toFront: true);
+        }
+
+        return msg;
+    }
+}
+
+/// &lt;summary&gt;
+/// High-fidelity in-memory AMQP 0-9-1 Message Broker Simulator.
+/// Simulates Direct, Topic, Fanout, and Headers exchanges, Publisher Confirms,
+/// Consumer Ack/Nack, Dead Letter Exchanges (DLX), and Prefetch QoS.
+/// &lt;/summary&gt;
+public class AmqpBrokerSimulator
+{
+    private readonly ConcurrentDictionary&lt;string, (ExchangeType Type, List&lt;QueueBinding&gt; Bindings)&gt; _exchanges = new();
+    private readonly ConcurrentDictionary&lt;string, AmqpQueue&gt; _queues = new();
+    private ulong _deliveryTagSequence;
+
+    public int PublishedCount { get; private set; }
+    public int AckedCount { get; private set; }
+    public int NackedCount { get; private set; }
+    public int DeadLetteredCount { get; private set; }
+
+    public void DeclareExchange(string name, ExchangeType type)
+    {
+        _exchanges.TryAdd(name, (type, new List&lt;QueueBinding&gt;()));
+    }
+
+    public void DeclareQueue(string name, string? deadLetterExchange = null, string? deadLetterRoutingKey = null, int prefetchCount = 10)
+    {
+        var queue = new AmqpQueue(name, deadLetterExchange, deadLetterRoutingKey) { PrefetchCount = prefetchCount };
+        _queues.TryAdd(name, queue);
+    }
+
+    public void BindQueue(
+        string queueName,
+        string exchangeName,
+        string routingKey = &quot;&quot;,
+        IReadOnlyDictionary&lt;string, object&gt;? headers = null,
+        HeadersMatchMode matchMode = HeadersMatchMode.All)
+    {
+        if (!_exchanges.TryGetValue(exchangeName, out var exchange))
+            throw new InvalidOperationException($&quot;Exchange &#x27;{exchangeName}&#x27; does not exist.&quot;);
+        if (!_queues.ContainsKey(queueName))
+            throw new InvalidOperationException($&quot;Queue &#x27;{queueName}&#x27; does not exist.&quot;);
+
+        lock (exchange.Bindings)
+        {
+            exchange.Bindings.Add(new QueueBinding(queueName, routingKey, headers, matchMode));
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Publishes a message to an exchange with Publisher Confirms semantics.
+    /// Returns true (ACK) if successfully delivered to matching queues, or false (NACK) if unrouted on mandatory.
+    /// &lt;/summary&gt;
+    public bool Publish(
+        string exchangeName,
+        string routingKey,
+        string payload,
+        IReadOnlyDictionary&lt;string, object&gt;? headers = null,
+        bool mandatory = false)
+    {
+        if (!_exchanges.TryGetValue(exchangeName, out var exchange))
+            throw new InvalidOperationException($&quot;Exchange &#x27;{exchangeName}&#x27; not declared.&quot;);
+
+        headers ??= new Dictionary&lt;string, object&gt;();
+        var matchingQueueNames = GetMatchingQueues(exchange.Type, exchange.Bindings, routingKey, headers);
+
+        if (matchingQueueNames.Count == 0 &amp;&amp; mandatory)
+        {
+            return false; // Publisher confirm NACK for unroutable mandatory message
+        }
+
+        var tag = Interlocked.Increment(ref _deliveryTagSequence);
+        var message = new AmqpMessage(
+            DeliveryTag: tag,
+            MessageId: Guid.NewGuid().ToString(&quot;N&quot;),
+            RoutingKey: routingKey,
+            Payload: payload,
+            Headers: headers,
+            Redelivered: false,
+            TimestampUtc: DateTime.UtcNow);
+
+        foreach (var qName in matchingQueueNames)
+        {
+            if (_queues.TryGetValue(qName, out var queue))
+            {
+                queue.Enqueue(message);
+            }
+        }
+
+        PublishedCount++;
+        return true; // Publisher confirm ACK
+    }
+
+    public AmqpMessage? BasicGet(string queueName)
+    {
+        if (!_queues.TryGetValue(queueName, out var queue))
+            return null;
+
+        return queue.Dequeue();
+    }
+
+    public bool BasicAck(string queueName, ulong deliveryTag)
+    {
+        if (_queues.TryGetValue(queueName, out var queue))
+        {
+            var success = queue.Ack(deliveryTag);
+            if (success) AckedCount++;
+            return success;
+        }
+        return false;
+    }
+
+    public bool BasicNack(string queueName, ulong deliveryTag, bool requeue)
+    {
+        if (!_queues.TryGetValue(queueName, out var queue))
+            return false;
+
+        var message = queue.Nack(deliveryTag, requeue);
+        if (message == null) return false;
+
+        NackedCount++;
+
+        if (!requeue &amp;&amp; !string.IsNullOrEmpty(queue.DeadLetterExchange))
+        {
+            // Route to Dead Letter Exchange (DLX)
+            DeadLetteredCount++;
+            var dlxRoutingKey = queue.DeadLetterRoutingKey ?? message.RoutingKey;
+            Publish(queue.DeadLetterExchange, dlxRoutingKey, message.Payload, message.Headers);
+        }
+
+        return true;
+    }
+
+    public AmqpQueue? GetQueue(string name)
+    {
+        _queues.TryGetValue(name, out var queue);
+        return queue;
+    }
+
+    private HashSet&lt;string&gt; GetMatchingQueues(
+        ExchangeType type,
+        List&lt;QueueBinding&gt; bindings,
+        string routingKey,
+        IReadOnlyDictionary&lt;string, object&gt; headers)
+    {
+        var matched = new HashSet&lt;string&gt;();
+        lock (bindings)
+        {
+            foreach (var b in bindings)
+            {
+                if (IsBindingMatch(type, b, routingKey, headers))
+                {
+                    matched.Add(b.QueueName);
+                }
+            }
+        }
+        return matched;
+    }
+
+    private bool IsBindingMatch(
+        ExchangeType type,
+        QueueBinding binding,
+        string routingKey,
+        IReadOnlyDictionary&lt;string, object&gt; headers)
+    {
+        return type switch
+        {
+            ExchangeType.Fanout =&gt; true,
+            ExchangeType.Direct =&gt; string.Equals(binding.RoutingKeyPattern, routingKey, StringComparison.Ordinal),
+            ExchangeType.Topic =&gt; MatchTopicPattern(binding.RoutingKeyPattern, routingKey),
+            ExchangeType.Headers =&gt; MatchHeaders(binding.HeaderFilter, headers, binding.MatchMode),
+            _ =&gt; false
+        };
+    }
+
+    private static bool MatchTopicPattern(string pattern, string routingKey)
+    {
+        // AMQP 0-9-1 Topic Exchange rules:
+        // * matches exactly one word
+        // # matches zero or more words
+        var regexPattern = &quot;^&quot; + Regex.Escape(pattern)
+            .Replace(&quot;\\*&quot;, &quot;[^.]+&quot;)
+            .Replace(&quot;\\#&quot;, &quot;.*&quot;) + &quot;$&quot;;
+
+        return Regex.IsMatch(routingKey, regexPattern);
+    }
+
+    private static bool MatchHeaders(
+        IReadOnlyDictionary&lt;string, object&gt;? filter,
+        IReadOnlyDictionary&lt;string, object&gt; headers,
+        HeadersMatchMode mode)
+    {
+        if (filter == null || filter.Count == 0) return true;
+
+        if (mode == HeadersMatchMode.All)
+        {
+            foreach (var (k, v) in filter)
+            {
+                if (!headers.TryGetValue(k, out var actual) || !object.Equals(v, actual))
+                    return false;
+            }
+            return true;
+        }
+        else // Any
+        {
+            foreach (var (k, v) in filter)
+            {
+                if (headers.TryGetValue(k, out var actual) &amp;&amp; object.Equals(v, actual))
+                    return true;
+            }
+            return false;
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day29.RabbitMQCoreExchanges/SurroundedRegionsAndOrangesSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd29-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d29-src-code-1" class="language-csharp">namespace Day29.RabbitMQCoreExchanges;
+
+/// &lt;summary&gt;
+/// Solvers for Graph / Grid algorithms:
+/// 1. LeetCode #130: Surrounded Regions (Medium)
+/// 2. LeetCode #994: Rotting Oranges (Medium)
+/// &lt;/summary&gt;
+public class SurroundedRegionsAndOrangesSolver
+{
+    private static readonly int[] RowOffsets = { -1, 1, 0, 0 };
+    private static readonly int[] ColOffsets = { 0, 0, -1, 1 };
+
+    /// &lt;summary&gt;
+    /// Solves LeetCode #130: Surrounded Regions using reverse boundary DFS.
+    /// Captures all regions surrounded by &#x27;X&#x27; by preserving boundary-connected &#x27;O&#x27;s.
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N) recursion stack.
+    /// &lt;/summary&gt;
+    public void SolveSurroundedRegions(char[][]? board)
+    {
+        if (board == null || board.Length == 0 || board[0].Length == 0)
+            return;
+
+        int m = board.Length;
+        int n = board[0].Length;
+
+        // 1. Mark boundary &#x27;O&#x27;s and their connected component as &#x27;#&#x27; (protected)
+        for (int r = 0; r &lt; m; r++)
+        {
+            if (board[r][0] == &#x27;O&#x27;) DfsMarkSafe(board, r, 0, m, n);
+            if (board[r][n - 1] == &#x27;O&#x27;) DfsMarkSafe(board, r, n - 1, m, n);
+        }
+
+        for (int c = 0; c &lt; n; c++)
+        {
+            if (board[0][c] == &#x27;O&#x27;) DfsMarkSafe(board, 0, c, m, n);
+            if (board[m - 1][c] == &#x27;O&#x27;) DfsMarkSafe(board, m - 1, c, m, n);
+        }
+
+        // 2. Flip all unprotected &#x27;O&#x27;s to &#x27;X&#x27;, and restore &#x27;#&#x27; back to &#x27;O&#x27;
+        for (int r = 0; r &lt; m; r++)
+        {
+            for (int c = 0; c &lt; n; c++)
+            {
+                if (board[r][c] == &#x27;O&#x27;)
+                {
+                    board[r][c] = &#x27;X&#x27;; // Captured
+                }
+                else if (board[r][c] == &#x27;#&#x27;)
+                {
+                    board[r][c] = &#x27;O&#x27;; // Restored
+                }
+            }
+        }
+    }
+
+    private void DfsMarkSafe(char[][] board, int r, int c, int m, int n)
+    {
+        if (r &lt; 0 || r &gt;= m || c &lt; 0 || c &gt;= n || board[r][c] != &#x27;O&#x27;)
+            return;
+
+        board[r][c] = &#x27;#&#x27;; // Mark safe
+
+        for (int i = 0; i &lt; 4; i++)
+        {
+            DfsMarkSafe(board, r + RowOffsets[i], c + ColOffsets[i], m, n);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Solves LeetCode #994: Rotting Oranges using level-by-level Multi-Source Breadth-First Search (BFS).
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N)
+    /// &lt;/summary&gt;
+    public int OrangesRotting(int[][]? grid)
+    {
+        if (grid == null || grid.Length == 0 || grid[0].Length == 0)
+            return 0;
+
+        int m = grid.Length;
+        int n = grid[0].Length;
+
+        var queue = new Queue&lt;(int r, int c)&gt;();
+        int freshCount = 0;
+
+        // Clone grid to preserve caller input
+        var workingGrid = new int[m][];
+        for (int i = 0; i &lt; m; i++)
+        {
+            workingGrid[i] = (int[])grid[i].Clone();
+            for (int j = 0; j &lt; n; j++)
+            {
+                if (workingGrid[i][j] == 2)
+                {
+                    queue.Enqueue((i, j));
+                }
+                else if (workingGrid[i][j] == 1)
+                {
+                    freshCount++;
+                }
+            }
+        }
+
+        if (freshCount == 0) return 0;
+
+        int minutesElapsed = 0;
+
+        while (queue.Count &gt; 0 &amp;&amp; freshCount &gt; 0)
+        {
+            int currentBatchSize = queue.Count;
+            minutesElapsed++;
+
+            for (int i = 0; i &lt; currentBatchSize; i++)
+            {
+                var (r, c) = queue.Dequeue();
+
+                for (int d = 0; d &lt; 4; d++)
+                {
+                    int nr = r + RowOffsets[d];
+                    int nc = c + ColOffsets[d];
+
+                    if (nr &gt;= 0 &amp;&amp; nr &lt; m &amp;&amp; nc &gt;= 0 &amp;&amp; nc &lt; n &amp;&amp; workingGrid[nr][nc] == 1)
+                    {
+                        workingGrid[nr][nc] = 2; // Infect to rotten
+                        freshCount--;
+                        queue.Enqueue((nr, nc));
+                    }
+                }
+            }
+        }
+
+        return freshCount == 0 ? minutesElapsed : -1;
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day29.RabbitMQCoreExchanges.Tests/Day29Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd29-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d29-tests-code-0" class="language-csharp">using Day29.RabbitMQCoreExchanges;
+using Xunit;
+
+namespace Day29.RabbitMQCoreExchanges.Tests;
+
+public class Day29Tests
+{
+    [Fact]
+    public void DirectExchange_RoutesToExactMatchingQueue()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;orders.direct&quot;, ExchangeType.Direct);
+        broker.DeclareQueue(&quot;orders.created.queue&quot;);
+        broker.DeclareQueue(&quot;orders.cancelled.queue&quot;);
+
+        broker.BindQueue(&quot;orders.created.queue&quot;, &quot;orders.direct&quot;, routingKey: &quot;order.created&quot;);
+        broker.BindQueue(&quot;orders.cancelled.queue&quot;, &quot;orders.direct&quot;, routingKey: &quot;order.cancelled&quot;);
+
+        broker.Publish(&quot;orders.direct&quot;, &quot;order.created&quot;, &quot;{ id: 101, status: &#x27;created&#x27; }&quot;);
+
+        var msgCreated = broker.BasicGet(&quot;orders.created.queue&quot;);
+        var msgCancelled = broker.BasicGet(&quot;orders.cancelled.queue&quot;);
+
+        Assert.NotNull(msgCreated);
+        Assert.Equal(&quot;order.created&quot;, msgCreated.RoutingKey);
+        Assert.Null(msgCancelled); // Did not route to cancelled queue
+    }
+
+    [Fact]
+    public void FanoutExchange_BroadcastsToAllBoundQueues()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;notifications.fanout&quot;, ExchangeType.Fanout);
+        broker.DeclareQueue(&quot;email.notifications&quot;);
+        broker.DeclareQueue(&quot;sms.notifications&quot;);
+
+        broker.BindQueue(&quot;email.notifications&quot;, &quot;notifications.fanout&quot;);
+        broker.BindQueue(&quot;sms.notifications&quot;, &quot;notifications.fanout&quot;);
+
+        broker.Publish(&quot;notifications.fanout&quot;, routingKey: &quot;irrelevant.key&quot;, &quot;{ alert: &#x27;Server Down&#x27; }&quot;);
+
+        var emailMsg = broker.BasicGet(&quot;email.notifications&quot;);
+        var smsMsg = broker.BasicGet(&quot;sms.notifications&quot;);
+
+        Assert.NotNull(emailMsg);
+        Assert.NotNull(smsMsg);
+        Assert.Equal(emailMsg.Payload, smsMsg.Payload);
+    }
+
+    [Fact]
+    public void TopicExchange_RoutesWithWildcards_StarAndHash()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;events.topic&quot;, ExchangeType.Topic);
+        broker.DeclareQueue(&quot;us.orders.queue&quot;);
+        broker.DeclareQueue(&quot;all.critical.queue&quot;);
+
+        // * matches exactly one word; # matches zero or more words
+        broker.BindQueue(&quot;us.orders.queue&quot;, &quot;events.topic&quot;, routingKey: &quot;orders.us.*&quot;);
+        broker.BindQueue(&quot;all.critical.queue&quot;, &quot;events.topic&quot;, routingKey: &quot;#.critical&quot;);
+
+        // 1. Matches us.orders.queue only
+        broker.Publish(&quot;events.topic&quot;, &quot;orders.us.created&quot;, &quot;Order 1&quot;);
+        // 2. Matches both
+        broker.Publish(&quot;events.topic&quot;, &quot;orders.us.critical&quot;, &quot;Order 2 Critical&quot;);
+        // 3. Matches all.critical.queue only
+        broker.Publish(&quot;events.topic&quot;, &quot;europe.payments.failed.critical&quot;, &quot;Payment Critical&quot;);
+
+        var q1 = broker.GetQueue(&quot;us.orders.queue&quot;)!;
+        var q2 = broker.GetQueue(&quot;all.critical.queue&quot;)!;
+
+        Assert.Equal(2, q1.ReadyMessageCount); // orders.us.created, orders.us.critical
+        Assert.Equal(2, q2.ReadyMessageCount); // orders.us.critical, europe.payments.failed.critical
+    }
+
+    [Fact]
+    public void HeadersExchange_RoutesMatchingHeaders_AllAndAny()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;headers.exchange&quot;, ExchangeType.Headers);
+        broker.DeclareQueue(&quot;vip.finance.queue&quot;);
+        broker.DeclareQueue(&quot;any.alert.queue&quot;);
+
+        broker.BindQueue(
+            &quot;vip.finance.queue&quot;,
+            &quot;headers.exchange&quot;,
+            headers: new Dictionary&lt;string, object&gt; { [&quot;department&quot;] = &quot;finance&quot;, [&quot;vip&quot;] = true },
+            matchMode: HeadersMatchMode.All);
+
+        broker.BindQueue(
+            &quot;any.alert.queue&quot;,
+            &quot;headers.exchange&quot;,
+            headers: new Dictionary&lt;string, object&gt; { [&quot;urgent&quot;] = true, [&quot;p1&quot;] = true },
+            matchMode: HeadersMatchMode.Any);
+
+        // 1. Matches vip.finance.queue (all match)
+        broker.Publish(&quot;headers.exchange&quot;, &quot;&quot;, &quot;Finance VIP report&quot;, new Dictionary&lt;string, object&gt;
+        {
+            [&quot;department&quot;] = &quot;finance&quot;,
+            [&quot;vip&quot;] = true
+        });
+
+        // 2. Matches any.alert.queue (urgent matches)
+        broker.Publish(&quot;headers.exchange&quot;, &quot;&quot;, &quot;Urgent System Ping&quot;, new Dictionary&lt;string, object&gt;
+        {
+            [&quot;urgent&quot;] = true
+        });
+
+        Assert.Equal(1, broker.GetQueue(&quot;vip.finance.queue&quot;)!.ReadyMessageCount);
+        Assert.Equal(1, broker.GetQueue(&quot;any.alert.queue&quot;)!.ReadyMessageCount);
+    }
+
+    [Fact]
+    public void PublisherConfirms_ReturnsAckOnRoutedMessage_AndNackOnMandatoryUnrouted()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;direct.ack&quot;, ExchangeType.Direct);
+        broker.DeclareQueue(&quot;target.queue&quot;);
+        broker.BindQueue(&quot;target.queue&quot;, &quot;direct.ack&quot;, &quot;valid.key&quot;);
+
+        // Routed message returns true (ACK)
+        var confirmed = broker.Publish(&quot;direct.ack&quot;, &quot;valid.key&quot;, &quot;Payload&quot;, mandatory: true);
+        Assert.True(confirmed);
+
+        // Unrouted message with mandatory=true returns false (NACK)
+        var unroutedConfirmed = broker.Publish(&quot;direct.ack&quot;, &quot;unbound.key&quot;, &quot;Lost Payload&quot;, mandatory: true);
+        Assert.False(unroutedConfirmed);
+    }
+
+    [Fact]
+    public void ConsumerAck_RemovesMessageFromUnackedQueue()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;work.direct&quot;, ExchangeType.Direct);
+        broker.DeclareQueue(&quot;work.queue&quot;);
+        broker.BindQueue(&quot;work.queue&quot;, &quot;work.direct&quot;, &quot;task&quot;);
+
+        broker.Publish(&quot;work.direct&quot;, &quot;task&quot;, &quot;Job 1&quot;);
+        var msg = broker.BasicGet(&quot;work.queue&quot;);
+
+        Assert.NotNull(msg);
+        var q = broker.GetQueue(&quot;work.queue&quot;)!;
+        Assert.Equal(0, q.ReadyMessageCount);
+        Assert.Equal(1, q.UnackedMessageCount);
+
+        var acked = broker.BasicAck(&quot;work.queue&quot;, msg.DeliveryTag);
+        Assert.True(acked);
+        Assert.Equal(0, q.UnackedMessageCount);
+        Assert.Equal(1, broker.AckedCount);
+    }
+
+    [Fact]
+    public void ConsumerNack_WithRequeue_PushesBackToHeadOfQueue()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;work.direct&quot;, ExchangeType.Direct);
+        broker.DeclareQueue(&quot;retry.queue&quot;);
+        broker.BindQueue(&quot;retry.queue&quot;, &quot;work.direct&quot;, &quot;task&quot;);
+
+        broker.Publish(&quot;work.direct&quot;, &quot;task&quot;, &quot;Job A&quot;);
+        var msg = broker.BasicGet(&quot;retry.queue&quot;)!;
+
+        var nacked = broker.BasicNack(&quot;retry.queue&quot;, msg.DeliveryTag, requeue: true);
+        Assert.True(nacked);
+        Assert.Equal(1, broker.NackedCount);
+
+        // Redelivered message is available again
+        var redelivered = broker.BasicGet(&quot;retry.queue&quot;);
+        Assert.NotNull(redelivered);
+        Assert.Equal(msg.Payload, redelivered.Payload);
+        Assert.True(redelivered.Redelivered);
+    }
+
+    [Fact]
+    public void DeadLetterExchange_RoutesRejectedMessageToDlx()
+    {
+        var broker = new AmqpBrokerSimulator();
+        broker.DeclareExchange(&quot;primary.exchange&quot;, ExchangeType.Direct);
+        broker.DeclareExchange(&quot;dlx.exchange&quot;, ExchangeType.Fanout);
+
+        broker.DeclareQueue(&quot;dead.letter.queue&quot;);
+        broker.BindQueue(&quot;dead.letter.queue&quot;, &quot;dlx.exchange&quot;);
+
+        broker.DeclareQueue(&quot;main.work.queue&quot;, deadLetterExchange: &quot;dlx.exchange&quot;);
+        broker.BindQueue(&quot;main.work.queue&quot;, &quot;primary.exchange&quot;, &quot;work&quot;);
+
+        broker.Publish(&quot;primary.exchange&quot;, &quot;work&quot;, &quot;Poison Message&quot;);
+        var msg = broker.BasicGet(&quot;main.work.queue&quot;)!;
+
+        // Reject without requeue -&gt; routed to DLX
+        broker.BasicNack(&quot;main.work.queue&quot;, msg.DeliveryTag, requeue: false);
+
+        Assert.Equal(1, broker.DeadLetteredCount);
+        var poisonMsg = broker.BasicGet(&quot;dead.letter.queue&quot;);
+        Assert.NotNull(poisonMsg);
+        Assert.Equal(&quot;Poison Message&quot;, poisonMsg.Payload);
+    }
+
+    [Fact]
+    public void SurroundedRegions_CapturesEnclosedO_AndPreservesBorderConnected()
+    {
+        var solver = new SurroundedRegionsAndOrangesSolver();
+
+        // Standard LeetCode #130 test matrix:
+        // X X X X
+        // X O O X
+        // X X O X
+        // X O X X
+        var board = new char[][]
+        {
+            new[] { &#x27;X&#x27;, &#x27;X&#x27;, &#x27;X&#x27;, &#x27;X&#x27; },
+            new[] { &#x27;X&#x27;, &#x27;O&#x27;, &#x27;O&#x27;, &#x27;X&#x27; },
+            new[] { &#x27;X&#x27;, &#x27;X&#x27;, &#x27;O&#x27;, &#x27;X&#x27; },
+            new[] { &#x27;X&#x27;, &#x27;O&#x27;, &#x27;X&#x27;, &#x27;X&#x27; }
+        };
+
+        solver.SolveSurroundedRegions(board);
+
+        // Expected output:
+        // X X X X
+        // X X X X
+        // X X X X
+        // X O X X
+        Assert.Equal(&#x27;X&#x27;, board[1][1]);
+        Assert.Equal(&#x27;X&#x27;, board[1][2]);
+        Assert.Equal(&#x27;X&#x27;, board[2][2]);
+        Assert.Equal(&#x27;O&#x27;, board[3][1]); // Connected to bottom border
+    }
+
+    [Fact]
+    public void RottingOranges_MultiSourceBfs_CalculatesMinimumMinutesOrNegativeOne()
+    {
+        var solver = new SurroundedRegionsAndOrangesSolver();
+
+        // Standard LeetCode #994 test grid:
+        // 2 1 1
+        // 1 1 0
+        // 0 1 1
+        // Expected minutes: 4
+        var grid = new int[][]
+        {
+            new[] { 2, 1, 1 },
+            new[] { 1, 1, 0 },
+            new[] { 0, 1, 1 }
+        };
+
+        var minutes = solver.OrangesRotting(grid);
+        Assert.Equal(4, minutes);
+
+        // Impossible grid with isolated fresh orange:
+        // 2 1 0
+        // 0 2 0
+        // 0 0 1
+        var impossibleGrid = new int[][]
+        {
+            new[] { 2, 1, 0 },
+            new[] { 0, 2, 0 },
+            new[] { 0, 0, 1 }
+        };
+        Assert.Equal(-1, solver.OrangesRotting(impossibleGrid));
+
+        // Already fully rotten or all empty
+        var zeroGrid = new int[][] { new[] { 0, 2 } };
+        Assert.Equal(0, solver.OrangesRotting(zeroGrid));
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 29 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

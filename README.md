@@ -1,8 +1,8 @@
 # 100-Day .NET + AI Engineering Track
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
-[![Status](https://img.shields.io/badge/Roadmap-Days%201--26%20Completed-brightgreen.svg)](#completed-curriculum-days-126)
-[![Tests](https://img.shields.io/badge/Tests-295%20Passed-brightgreen.svg)](#running-builds-and-tests)
+[![Status](https://img.shields.io/badge/Roadmap-Days%201--29%20Completed-brightgreen.svg)](#completed-curriculum-days-129)
+[![Tests](https://img.shields.io/badge/Tests-325%20Passed-brightgreen.svg)](#running-builds-and-tests)
 
 Practical engineering implementations, performance benchmarks, systems architecture labs, and Data Structures & Algorithms (DSA) exercises across the 100-Day .NET + AI Engineering journey.
 
@@ -17,7 +17,7 @@ Practical engineering implementations, performance benchmarks, systems architect
 
 ## Status
 
-**Days 1–26: Completed** (Phase 1 [Days 1–25] concluded; Phase 2 [Day 26] started)
+**Days 1–29: Completed** (Phase 1 [Days 1–25] concluded; Phase 2 [Days 26–29] in progress)
 
 Detailed status table: [roadmap/progress.md](roadmap/progress.md)  
 Roadmap overview: [roadmap/100-day-roadmap.md](roadmap/100-day-roadmap.md)
@@ -33,7 +33,7 @@ Read complete daily guides, deep architectural notes, interview questions, and c
 
 ---
 
-## Completed Curriculum (Days 1–26)
+## Completed Curriculum (Days 1–29)
 
 Each day includes complete practical implementations, xUnit test suites, comprehensive engineering notes, and practical scenarios.
 
@@ -65,6 +65,9 @@ Each day includes complete practical implementations, xUnit test suites, compreh
 | **Day 24** | Advanced SQL: CTEs, Window Functions & Partitions | `ROW_NUMBER()`, `RANK()`, `DENSE_RANK()`, `LAG()`, `LEAD()`, moving averages, declarative range partitioning, query planner partition pruning simulator, DSA (LeetCode #124 Binary Tree Maximum Path Sum - Hard) | [Day24-Advanced-SQL-Window-Partitions](Day24-Advanced-SQL-Window-Partitions/) • [README](Day24-Advanced-SQL-Window-Partitions/README.md) • [Notes](Day24-Advanced-SQL-Window-Partitions/notes.md) • [Interview Qs](Day24-Advanced-SQL-Window-Partitions/interview-questions.md) |
 | **Day 25** | Phase 1 Review & Milestone Assessment | Phase 1 architectural consolidation, zero-allocation microbenchmarks (`Span<T>` 0B vs `Substring` 48B, `ValueTask` 0B cache hit vs `Task`), DSA (LeetCode #297 Serialize and Deserialize Binary Tree - Hard via Preorder DFS & BFS) | [Day25-Phase1-Milestone-Assessment](Day25-Phase1-Milestone-Assessment/) • [README](Day25-Phase1-Milestone-Assessment/README.md) • [Notes](Day25-Phase1-Milestone-Assessment/notes.md) • [Interview Qs](Day25-Phase1-Milestone-Assessment/interview-questions.md) |
 | **Day 26** | Microservices Principles & Bounded Contexts | Phase 2 launch: DDD strategic subdomains (Core, Supporting, Generic), Bounded Contexts (`OrderingContext`, `InventoryContext`, `PaymentContext`), Anti-Corruption Layer (ACL), in-process Domain Events, DSA (LeetCode #200 Number of Islands via DFS & BFS) | [Day26-Microservices-BoundedContexts](Day26-Microservices-BoundedContexts/) • [README](Day26-Microservices-BoundedContexts/README.md) • [Notes](Day26-Microservices-BoundedContexts/notes.md) • [Interview Qs](Day26-Microservices-BoundedContexts/interview-questions.md) |
+| **Day 27** | API Gateway Architecture with YARP | YARP Reverse Proxy engine, Route & Cluster mapping, Header & Path transforms, active/passive health checks, token bucket rate limiter, DSA (LeetCode #133 Clone Graph & #695 Max Area of Island) | [Day27-ApiGateway-Yarp](Day27-ApiGateway-Yarp/) • [README](Day27-ApiGateway-Yarp/README.md) • [Notes](Day27-ApiGateway-Yarp/notes.md) • [Interview Qs](Day27-ApiGateway-Yarp/interview-questions.md) |
+| **Day 28** | Resilient Service-to-Service HTTP with Refit & Polly | Refit type-safe REST clients, Polly v8 zero-allocation `ResiliencePipeline`, Exponential Backoff + Jitter, Circuit Breaker with state monitor, Hedging, Timeouts, DSA (LeetCode #417 Pacific Atlantic Water Flow) | [Day28-Resilient-Http-Refit-Polly](Day28-Resilient-Http-Refit-Polly/) • [README](Day28-Resilient-Http-Refit-Polly/README.md) • [Notes](Day28-Resilient-Http-Refit-Polly/notes.md) • [Interview Qs](Day28-Resilient-Http-Refit-Polly/interview-questions.md) |
+| **Day 29** | RabbitMQ Core Concepts: Exchanges & Queues | AMQP 0-9-1 architecture simulator: Exchanges (`Direct`, `Topic` with `*` & `#`, `Fanout`, `Headers`), Publisher Confirms, Consumer Manual Ack/Nack, DLX, Prefetch QoS fair dispatch, DSA (LeetCode #130 Surrounded Regions & #994 Rotting Oranges) | [Day29-RabbitMQ-Core-Exchanges-Queues](Day29-RabbitMQ-Core-Exchanges-Queues/) • [README](Day29-RabbitMQ-Core-Exchanges-Queues/README.md) • [Notes](Day29-RabbitMQ-Core-Exchanges-Queues/notes.md) • [Interview Qs](Day29-RabbitMQ-Core-Exchanges-Queues/interview-questions.md) |
 
 ---
 
@@ -78,5 +81,6 @@ dotnet build
 dotnet test LearningTrack.sln
 ```
 
-All 295 automated unit and integration tests validate the implementations across Days 1–26.
+All 325 automated unit and integration tests validate the implementations across Days 1–29.
+
 

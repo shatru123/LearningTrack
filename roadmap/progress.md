@@ -40,8 +40,11 @@
 | Day | Topic | Status |
 |---|---|---|
 | Day 26 | Microservices Principles & Bounded Contexts (LC #200) | ✅ Completed |
+| Day 27 | API Gateway Architecture with YARP (LC #133 & #695) | ✅ Completed |
+| Day 28 | Resilient Service-to-Service HTTP with Refit & Polly (LC #417) | ✅ Completed |
+| Day 29 | RabbitMQ Core Concepts: Exchanges & Queues (LC #130 & #994) | ✅ Completed |
 
 ## Next
 
-Day 27 — API Gateway Pattern, Reverse Proxy (YARP), and Service Discovery.
+Day 30 — RabbitMQ Advanced Patterns: Dead Letter Exchanges, Retry Strategies & Worker Queues.
 

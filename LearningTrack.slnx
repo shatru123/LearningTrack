@@ -181,4 +181,25 @@
   <Folder Name="/Day26-Microservices-BoundedContexts/tests/">
     <Project Path="Day26-Microservices-BoundedContexts/tests/Day26.MicroservicesBoundedContexts.Tests/Day26.MicroservicesBoundedContexts.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day27-ApiGateway-Yarp/" />
+  <Folder Name="/Day27-ApiGateway-Yarp/src/">
+    <Project Path="Day27-ApiGateway-Yarp/src/Day27.ApiGatewayYarp/Day27.ApiGatewayYarp.csproj" />
+  </Folder>
+  <Folder Name="/Day27-ApiGateway-Yarp/tests/">
+    <Project Path="Day27-ApiGateway-Yarp/tests/Day27.ApiGatewayYarp.Tests/Day27.ApiGatewayYarp.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day28-Resilient-Http-Refit-Polly/" />
+  <Folder Name="/Day28-Resilient-Http-Refit-Polly/src/">
+    <Project Path="Day28-Resilient-Http-Refit-Polly/src/Day28.ResilientHttpRefitPolly/Day28.ResilientHttpRefitPolly.csproj" />
+  </Folder>
+  <Folder Name="/Day28-Resilient-Http-Refit-Polly/tests/">
+    <Project Path="Day28-Resilient-Http-Refit-Polly/tests/Day28.ResilientHttpRefitPolly.Tests/Day28.ResilientHttpRefitPolly.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day29-RabbitMQ-Core-Exchanges-Queues/" />
+  <Folder Name="/Day29-RabbitMQ-Core-Exchanges-Queues/src/">
+    <Project Path="Day29-RabbitMQ-Core-Exchanges-Queues/src/Day29.RabbitMQCoreExchanges/Day29.RabbitMQCoreExchanges.csproj" />
+  </Folder>
+  <Folder Name="/Day29-RabbitMQ-Core-Exchanges-Queues/tests/">
+    <Project Path="Day29-RabbitMQ-Core-Exchanges-Queues/tests/Day29.RabbitMQCoreExchanges.Tests/Day29.RabbitMQCoreExchanges.Tests.csproj" />
+  </Folder>
 </Solution>

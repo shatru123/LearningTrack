@@ -1,0 +1,3149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 27: API Gateway Architecture with YARP | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 27</span>
+        <span class="badge badge-category">Microservices &amp; YARP</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day26-Microservices-BoundedContexts/index.html" class="nav-btn">← Day 26</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+
+        </select>
+        <a href="../Day28-Resilient-Http-Refit-Polly/index.html" class="nav-btn">Day 28 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 27: API Gateway Architecture with YARP</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d27GradYarp" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d27GradHealth" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d27GradGraph" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#581c87"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 27: API Gateway Architecture with YARP &amp; LC #133 Clone Graph / #695 Max Area</text>
+
+          <!-- 1. YARP Routing & Transforms -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d27GradYarp)" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#a5b4fc" font-size="14" font-weight="bold">YARP Routing &amp; Transforms</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Route &amp; Cluster Config</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Match: /api/orders/{**catch-all}</text>
+          <text x="50" y="162" fill="#cbd5e1" font-size="9">Clusters &#8594; Destinations [Node1, Node2]</text>
+          <text x="50" y="179" fill="#34d399" font-size="9">IProxyConfigProvider dynamic reload</text>
+          <text x="50" y="196" fill="#a5b4fc" font-size="9">Zero-copy ASP.NET Core Kestrel sockets</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Pipeline Transforms</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Add: X-Forwarded-*, X-Correlation-ID</text>
+          <text x="50" y="274" fill="#f87171" font-size="9">Strip: X-Client-Secret, Internal-Token</text>
+          <text x="50" y="290" fill="#38bdf8" font-size="9">PathRemovePrefix: /api/v1 &#8594; /orders</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Prevents header spoofing &amp; smuggling</text>
+
+          <!-- 2. Health Checks & Rate Limiting -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d27GradHealth)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Health Checks &amp; Rate Limiting</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#34d399" font-size="11" font-weight="bold">Active &amp; Passive Health Checks</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Active: Probes GET /health every 10s</text>
+          <text x="340" y="162" fill="#cbd5e1" font-size="9">Passive: Real-time 5xx &amp; timeout detection</text>
+          <text x="340" y="179" fill="#f43f5e" font-size="9">Unhealthy destinations pruned dynamically</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Load balancing: RoundRobin / P2C</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Gateway Rate Limiter</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Token Bucket partitioned by Client IP</text>
+          <text x="340" y="274" fill="#f87171" font-size="9">HTTP 429 Too Many Requests</text>
+          <text x="340" y="290" fill="#38bdf8" font-size="9">Headers: Retry-After, X-RateLimit-Left</text>
+          <text x="340" y="306" fill="#a5b4fc" font-size="9">Protects edge before backend saturation</text>
+
+          <!-- 3. LeetCode #133 & #695 -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d27GradGraph)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#e9d5ff" font-size="14" font-weight="bold">LC #133 &amp; #695 Graph Algorithms</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#c084fc" font-size="11" font-weight="bold">LC #133: Clone Graph</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Dictionary&lt;Node, Node&gt; visited clone map</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Handles cyclic references seamlessly</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">DFS / BFS traversal order</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Time: O(V + E) | Space: O(V)</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">LC #695: Max Area of Island</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Grid cell (r, c) = 1 &#8594; sink to 0</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Accumulate area across 4 directions</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Global maxArea = max(maxArea, area)</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Time: O(M * N) | Space: O(M * N)</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 27: Deep Dive Notes — API Gateway Architecture with YARP</h1>
+<h2>1. The API Gateway Architectural Pattern</h2>
+<p>In a microservices topology, client applications (web SPAs, mobile apps, IoT devices, third-party partners) should not directly communicate with dozens of discrete backend microservices. Doing so leaks internal service topology, creates tight coupling, and requires each service to reimplement authentication, rate limiting, and SSL termination.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+----------------------------------------------------------------------------------------------------+
+|                                    API GATEWAY ARCHITECTURE                                        |
++----------------------------------------------------------------------------------------------------+
+|                                                                                                    |
+|    [ Web / Mobile Clients ]                                                                        |
+|               |                                                                                    |
+|               v                                                                                    |
+|    +------------------------------------------------------------------------------------------+    |
+|    |                             YARP REVERSE PROXY GATEWAY                                   |    |
+|    |------------------------------------------------------------------------------------------|    |
+|    |  • TLS Termination         • Route Matcher (/api/v1/orders/*)                            |    |
+|    |  • JWT Validation          • Request Transforms (Header injection, path stripping)      |    |
+|    |  • Token Bucket Limiter    • Active/Passive Health Checking                              |    |
+|    |  • Distributed Tracing     • Load Balancing (RoundRobin / PowerOfTwoChoices)             |    |
+|    +------------------------------------------------------------------------------------------+    |
+|               |                                      |                                             |
+|               v                                      v                                             |
+|    +---------------------+                +---------------------+                                  |
+|    |   Ordering Cluster  |                |  Inventory Cluster  |                                  |
+|    | (Node 1, Node 2...) |                | (Node 1, Node 2...) |                                  |
+|    +---------------------+                +---------------------+                                  |
+|                                                                                                    |
++----------------------------------------------------------------------------------------------------+</code></pre></div>
+<h3>Key Gateway Topologies</h3>
+<ol>
+<li><strong>Edge Gateway</strong>: Central entry point handling public internet traffic, DDoS mitigation, and global TLS termination.</li>
+<li><strong>Backend for Frontend (BFF)</strong>: Tailored gateways for specific client experiences (e.g., Mobile BFF vs Desktop Web BFF), aggregating multiple downstream calls into client-optimized DTOs.</li>
+<li><strong>Internal Gateway / Service Mesh Ingress</strong>: Routes East-West traffic between internal VPCs or Kubernetes clusters.</li>
+</ol>
+<h3>Layer 4 vs. Layer 7 Reverse Proxies</h3>
+<ul>
+<li><strong>Layer 4 (Transport Layer)</strong>: Proxies raw TCP/UDP byte streams. Extremely high throughput and low CPU overhead, but cannot inspect HTTP paths, headers, cookies, or payloads.</li>
+<li><strong>Layer 7 (Application Layer)</strong>: Proxies HTTP/1.1, HTTP/2, HTTP/3, and gRPC. Full visibility into URL paths, headers, and request bodies, enabling intelligent routing, header rewriting, rate limiting, and circuit breaking.</li>
+</ul>
+<hr/>
+<h2>2. YARP (Yet Another Reverse Proxy) Internals</h2>
+<p><strong>YARP</strong> is Microsoft's high-performance reverse proxy toolkit built on top of ASP.NET Core and <code>.NET Kestrel</code>.</p>
+<h3>1. Route and Cluster Configuration</h3>
+<ul>
+<li><strong>Route (<code>RouteConfig</code>)</strong>: Defines the incoming match conditions (e.g., path pattern <code>/api/orders/{**catch-all}</code>, allowed HTTP methods, host headers) and links to a target Cluster.</li>
+<li><strong>Cluster (<code>ClusterConfig</code>)</strong>: Represents a logical microservice comprised of one or more physical <strong>Destinations</strong> (IP/port or DNS name).</li>
+<li><strong>Destinations (<code>DestinationConfig</code>)</strong>: Individual instances of the service.</li>
+</ul>
+<h3>2. Request Transform Pipeline</h3>
+<p>Transforms execute sequentially before the request is forwarded:</p>
+<ul>
+<li><strong>Header Transforms</strong>:</li>
+<li><code>RequestHeaderAdd</code>: Injects headers such as <code>X-Forwarded-Prefix</code>, <code>X-Forwarded-For</code>, <code>X-Correlation-ID</code>.</li>
+<li><code>RequestHeaderRemove</code>: Strips sensitive internal authentication tokens or client secrets.</li>
+<li><strong>Path Transforms</strong>:</li>
+<li><code>PathRemovePrefix</code>: Strips gateway API versioning (e.g., <code>/api/v1/orders/1</code> $\to$ <code>/orders/1</code>).</li>
+<li><code>PathPrefix</code>: Prepends a backend-specific namespace.</li>
+<li><strong>Query Transforms</strong>: Append or sanitize query parameters.</li>
+</ul>
+<h3>3. Destination Health Checking</h3>
+<ul>
+<li><strong>Active Health Checks</strong>: YARP's background worker periodically sends probes (e.g. <code>GET /health</code>) to every registered destination at configured intervals. Destinations that fail consecutive probes are removed from the healthy routing pool.</li>
+<li><strong>Passive Health Checks</strong>: Monitored inline during live traffic. If an attempt to reach a destination results in a connection timeout or 5xx response, YARP immediately marks that destination as degraded without waiting for the next active probe.</li>
+</ul>
+<h3>4. Load Balancing Policies</h3>
+<ul>
+<li><code>RoundRobin</code>: Distributes requests sequentially across all healthy destinations.</li>
+<li><code>PowerOfTwoChoices</code>: Selects two random healthy destinations and picks the one with the fewest active requests (prevents thundering herd).</li>
+<li><code>LeastRequests</code>: Scans all destinations and chooses the one with the lowest active connection count.</li>
+</ul>
+<hr/>
+<h2>3. Graph Algorithms: LeetCode #133 & #695</h2>
+<h3>LeetCode #133: Clone Graph (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Given a reference of a node in a connected undirected graph, return a deep copy (clone) of the graph.</li>
+<li><strong>Cyclic Hazard</strong>: Graphs often contain cycles ($A \leftrightarrow B$). A naive recursive traversal results in infinite recursion and <code>StackOverflowException</code>.</li>
+<li><strong>Solution Strategy</strong>:</li>
+<li>Use a hash table <code>Dictionary&lt;Node, Node&gt;</code> mapping each original node to its newly allocated clone.</li>
+<li>When visiting a node:</li>
+</ul>
+<ol>
+<li>If already present in <code>visited</code>, immediately return the clone.</li>
+<li>Otherwise, allocate <code>clone = new Node(node.val)</code>, register in <code>visited[node] = clone</code>.</li>
+<li>Recursively (or via BFS queue) clone each neighbor and append to <code>clone.neighbors</code>.</li>
+</ol>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(V + E)$ where $V$ is vertices and $E$ is edges.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(V)$ for the hash map and traversal stack.</li>
+</ul>
+<h3>LeetCode #695: Max Area of Island (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Given an $m \times n$ binary matrix <code>grid</code>, an island is a 4-directionally connected group of <code>1</code>s. Return the maximum area of an island.</li>
+<li><strong>Solution Strategy</strong>:</li>
+<li>Iterate through every cell $(r, c)$ in the matrix.</li>
+<li>When encountering <code>grid[r][c] == 1</code>:</li>
+<li>Run DFS or BFS to traverse the entire connected component.</li>
+<li>Sink visited land cells by mutating <code>grid[r][c] = 0</code> (or using a <code>bool[][] visited</code> set) to ensure every cell is evaluated in $\mathcal{O}(1)$ amortized operations.</li>
+<li>Accumulate the area (<code>1 + sum(neighbors)</code>) and update <code>maxArea = max(maxArea, currentArea)</code>.</li>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(M \times N)$ — every cell is processed at most once.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(M \times N)$ worst-case DFS call stack (or $\mathcal{O}(\min(M, N))$ for BFS queue).</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 27: API Gateway Architecture with YARP</h1>
+<h2>Overview</h2>
+<p><strong>Day 27</strong> dives into cloud-native API Gateway patterns using <strong>YARP (Yet Another Reverse Proxy)</strong> in .NET 8. We explore reverse proxy routing architectures, transform pipelines (header forwarding/removal, path rewriting), active & passive health check monitoring, and distributed token bucket rate limiting at the gateway layer. For DSA, we tackle **LeetCode #133 (<em>Clone Graph</em>)<strong> using visited hash map node tracking across cyclic graphs and </strong>LeetCode #695 (<em>Max Area of Island</em>)** using recursive DFS and iterative BFS.</p>
+<hr/>
+<h2>Architectural Topics Covered</h2>
+<ol>
+<li><strong>YARP (Yet Another Reverse Proxy) Architecture</strong>:</li>
+</ol>
+<ul>
+<li>Routes, Clusters, Destinations, and Match Criteria (<code>Path</code>, <code>Hosts</code>, <code>Headers</code>).</li>
+<li>Active Health Checks (<code>Interval</code>, <code>Timeout</code>, <code>ConsecutiveFailuresPolicy</code>, <code>/health</code> probes) vs Passive Failure detection.</li>
+<li>Load Balancing Policies: <code>RoundRobin</code>, <code>PowerOfTwoChoices</code>, <code>LeastRequests</code>.</li>
+</ul>
+<ol>
+<li><strong>Gateway Transform Pipeline</strong>:</li>
+</ol>
+<ul>
+<li>Header enrichment: Injecting <code>X-Forwarded-Prefix</code>, <code>X-Forwarded-For</code>, <code>X-Forwarded-Host</code>, <code>X-Correlation-ID</code>.</li>
+<li>Header sanitization: Stripping internal secrets, confidential tokens, and sensitive headers before forwarding downstream.</li>
+<li>Path transformations: <code>PathRemovePrefix</code> and prefix routing to backends.</li>
+</ul>
+<ol>
+<li><strong>Gateway Rate Limiting</strong>:</li>
+</ol>
+<ul>
+<li>Token Bucket rate limiting partitioned by Client IP or API Key.</li>
+<li>Emission of standard RFC headers (<code>Retry-After</code>, <code>X-RateLimit-Remaining</code>) and HTTP 429 Too Many Requests.</li>
+</ul>
+<ol>
+<li><strong>Graph Algorithms</strong>:</li>
+</ol>
+<ul>
+<li><strong>LeetCode #133: Clone Graph (Medium)</strong>: Deep copy of an undirected cyclic graph using a <code>Dictionary&lt;Node, Node&gt;</code> to resolve cyclic dependencies in $\mathcal{O}(V + E)$ time.</li>
+<li><strong>LeetCode #695: Max Area of Island (Medium)</strong>: Finding the largest connected 4-directional component on a 2D binary grid in $\mathcal{O}(M \times N)$ time.</li>
+</ul>
+<hr/>
+<h2>Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day27-ApiGateway-Yarp/
+├── src/
+│   └── Day27.ApiGatewayYarp/
+│       ├── Day27.ApiGatewayYarp.csproj
+│       ├── YarpGatewayEngine.cs
+│       └── GraphAndIslandSolver.cs
+├── tests/
+│   └── Day27.ApiGatewayYarp.Tests/
+│       ├── Day27.ApiGatewayYarp.Tests.csproj
+│       └── Day27Tests.cs
+├── README.md
+├── notes.md
+└── interview-questions.md</code></pre></div>
+<hr/>
+<h2>Running the Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day27-ApiGateway-Yarp/tests/Day27.ApiGatewayYarp.Tests/Day27.ApiGatewayYarp.Tests.csproj</code></pre></div>
+<h3>Test Suite Coverage</h3>
+<ol>
+<li><code>YarpConfigBuilder_ConstructsValidRoutesAndClusters</code>: Validates programmatic construction of route and cluster configurations with active health check parameters.</li>
+<li><code>YarpGatewayEngine_ForwardsRequest_ToMatchingCluster</code>: Verifies route prefix matching, destination URI synthesis, and correlation header injection.</li>
+<li><code>YarpGatewayEngine_AppliesTransforms_HeadersAndPath</code>: Validates header removal (client secrets), header addition, and path prefix rewriting.</li>
+<li><code>YarpGatewayEngine_FiltersOutUnhealthyDestinations</code>: Verifies that traffic automatically bypasses destinations flagged as <code>Unhealthy</code>.</li>
+<li><code>YarpGatewayEngine_Returns503_WhenAllDestinationsUnhealthy</code>: Verifies HTTP 503 response when all destinations in a cluster fail.</li>
+<li><code>GatewayRateLimiter_EnforcesLimitAndEmits429</code>: Tests token bucket depletion, emission of HTTP 429, and <code>Retry-After</code> calculation.</li>
+<li><code>CloneGraph_Dfs_ClonesCyclicGraphAccurately</code>: Tests LC #133 recursive DFS deep clone preserving cyclic neighbor references.</li>
+<li><code>CloneGraph_Bfs_ClonesCyclicGraphAccurately</code>: Tests LC #133 iterative BFS deep clone.</li>
+<li><code>CloneGraph_HandlesEdgeCases</code>: Validates null inputs, isolated single nodes, and self-loop nodes.</li>
+<li><code>MaxAreaOfIsland_DfsAndBfs_CalculatesCorrectMaxArea</code>: Tests LC #695 across standard multi-island grids, water-only grids, and single-cell grids.</li>
+</ol>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        <div class="markdown-content"><h1>Day 27: Senior & Staff Engineer Interview Questions & Answers</h1>
+<h3>1. What are the definitive architectural distinctions between a Reverse Proxy, an API Gateway, and a Service Mesh?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Reverse Proxy (e.g., NGINX, HAProxy, basic YARP)</strong>:</li>
+<li>Operates primarily at Layer 4 and Layer 7.</li>
+<li>Sits in front of a pool of servers to provide load balancing, SSL/TLS termination, static caching, and basic route forwarding.</li>
+<li>Generally stateless, with limited awareness of business domain semantics.</li>
+<li><strong>API Gateway (e.g., Kong, Apisix, Enterprise YARP)</strong>:</li>
+<li>Sits at the perimeter (North-South traffic) between external clients and backend microservices.</li>
+<li>Provides advanced cross-cutting business and security capabilities: centralized OAuth2/JWT token validation, granular API key rate limiting, request aggregation (BFF pattern), schema validation, response transformation, and monetization metering.</li>
+<li><strong>Service Mesh (e.g., Istio, Linkerd, Envoy sidecars)</strong>:</li>
+<li>Operates entirely internally (East-West traffic) between microservices within a private network or Kubernetes cluster.</li>
+<li>Uses transparent sidecar proxies to provide mutual TLS (mTLS) with cryptographic identity, distributed tracing, canary traffic splitting, and service-to-service circuit breaking without altering application code.</li>
+</ul>
+<hr/>
+<h3>2. How does YARP achieve competitive performance with NGINX and Envoy despite running on the managed .NET runtime?</h3>
+<p><strong>Answer:</strong></p>
+<p>Historically, managed reverse proxies suffered from Garbage Collection pause times and memory copying overhead. YARP achieves near-C/C++ parity through foundational runtime improvements:</p>
+<ol>
+<li><strong>ASP.NET Core Kestrel & SocketsHttpHandler</strong>: Built directly on non-allocating socket layers using libuv/epoll/kqueue.</li>
+<li><strong>Zero-Copy Pipelines (<code>System.IO.Pipelines</code>)</strong>: Request and response streams are transferred using rented byte buffers (<code>MemoryPool&lt;byte&gt;</code>) and <code>ReadOnlySequence&lt;byte&gt;</code>, streaming data directly from incoming network sockets to downstream sockets without buffering entire request bodies on the managed heap.</li>
+<li><strong>Hardware Intrinsic SIMD & POH</strong>: Pinned Object Heap (POH) and vector-accelerated UTF-8 parsing avoid GC compaction latency during heavy header parsing.</li>
+<li><strong>C# Extensibility</strong>: Unlike NGINX (requiring C modules or Lua) or Envoy (requiring C++ filters), YARP allows .NET engineers to write native C# middleware, dependency injection, and health checks with full debugger support.</li>
+</ol>
+<hr/>
+<h3>3. How does YARP support zero-downtime dynamic configuration reloading without terminating in-flight HTTP requests?</h3>
+<p><strong>Answer:</strong></p>
+<p>YARP decouples proxy configuration from active request processing using the <code>IProxyConfigProvider</code> and change token pattern (<code>IChangeToken</code>).</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public class DynamicConfigProvider : IProxyConfigProvider
+{
+    private volatile CustomMemoryConfig _config;
+    public IProxyConfig GetConfig() =&gt; _config;
+
+    public void Update(IReadOnlyList&lt;RouteConfig&gt; routes, IReadOnlyList&lt;ClusterConfig&gt; clusters)
+    {
+        var oldConfig = _config;
+        _config = new CustomMemoryConfig(routes, clusters);
+        oldConfig.SignalChange(); // Notifies YARP to swap snapshot atomically
+    }
+}</code></pre></div>
+<p><strong>Reload Mechanics:</strong></p>
+<ul>
+<li>YARP maintains an immutable snapshot of routes, clusters, and destinations.</li>
+<li>When <code>SignalChange()</code> fires, YARP compiles a new routing tree in memory and verifies routing syntax.</li>
+<li>The reference is swapped atomically (<code>Interlocked.Exchange</code>).</li>
+<li>In-flight requests continue executing against the prior snapshot's destination pools until completed. New incoming requests are dispatched immediately against the newly activated snapshot.</li>
+</ul>
+<hr/>
+<h3>4. What is the difference between Active and Passive Health Checks in YARP, and how do they prevent "Black Hole" cascading failures?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Active Health Checks</strong>:</li>
+<li>The gateway initiates proactive periodic probes (e.g., <code>GET /health</code> every 10 seconds).</li>
+<li><em>Limitation</em>: If a downstream service instance crashes between probe intervals (e.g., second 2 of a 10s interval), requests sent during that 8-second window will fail.</li>
+<li><strong>Passive Health Checks</strong>:</li>
+<li>The gateway monitors real-time client traffic.</li>
+<li>If a destination returns transport errors (e.g., connection refused, socket reset) or consecutive HTTP 503s, YARP immediately flags the destination as unhealthy in real time.</li>
+<li><strong>Preventing "Black Hole" Cascading Failures</strong>:</li>
+<li>If a destination becomes slow or unresponsive, naive active probing might still consider it healthy if it responds to simple <code>/health</code> probes. Passive health checks detect increasing latency or transport timeouts on actual business endpoints and divert traffic immediately.</li>
+<li>To prevent cascading thundering herd failures where failing one instance overburdens the rest, YARP supports setting minimum healthy percentage thresholds.</li>
+</ul>
+<hr/>
+<h3>5. Why is the "Power of Two Random Choices (P2C)" load balancing policy superior to standard Round-Robin in distributed systems?</h3>
+<p><strong>Answer:</strong></p>
+<p>In simple Round-Robin or Least-Connections:</p>
+<ul>
+<li>Under rapid concurrent requests, multiple threads or gateway instances read the same connection counter and concurrently assign new requests to the same destination before its active count updates, causing severe latency spikes (herd effect).</li>
+<li>Round-Robin assumes all requests have equal processing cost and all downstream nodes have identical CPU capacity.</li>
+</ul>
+<p><strong>Power of Two Random Choices (P2C) Mechanics:</strong></p>
+<ol>
+<li>Pick two candidate destinations at random from the healthy destination pool: $D_1$ and $D_2$.</li>
+<li>Inspect their active request counters.</li>
+<li>Forward the request to whichever candidate has fewer active requests.</li>
+</ol>
+<ul>
+<li><em>Mathematical Foundation (Mitzenmacher, 2001)</em>: Selecting the minimum of just two random choices exponentially reduces the maximum queue length from $\mathcal{O}(\frac{\ln N}{\ln \ln N})$ to $\mathcal{O}(\ln \ln N)$, yielding near-optimal load distribution with $\mathcal{O}(1)$ overhead and zero global lock contention.</li>
+</ul>
+<hr/>
+<h3>6. What request transformations must an enterprise API Gateway enforce to prevent Header Smuggling and Spoofing?</h3>
+<p><strong>Answer:</strong></p>
+<ol>
+<li><strong>Sanitize Untrusted Headers</strong>: Strip client-supplied internal metadata (e.g. <code>X-User-Id</code>, <code>X-User-Roles</code>, <code>X-Tenant-Id</code>) to prevent malicious clients from impersonating administrators.</li>
+<li><strong>Normalize Forwarded Headers</strong>: Override <code>X-Forwarded-For</code> with the true TCP remote IP, or append client IP to the existing comma-delimited chain.</li>
+<li><strong>Inject Trace Context</strong>: Ensure every incoming request receives a W3C <code>traceparent</code> or <code>X-Correlation-ID</code> header for distributed tracing.</li>
+<li><strong>Prevent HTTP Request Smuggling</strong>: Normalize <code>Transfer-Encoding</code> and <code>Content-Length</code> headers; reject requests containing ambiguous or duplicate framing headers.</li>
+</ol>
+<hr/>
+<h3>7. How does a Gateway-level Token Bucket Rate Limiter differ from downstream service rate limiting?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Gateway-level Rate Limiting</strong>:</li>
+<li>Acts as the first line of defense against volumetric denial-of-service (DDoS), credential stuffing, and abusive scraping.</li>
+<li>Rejects excess traffic at the network edge before requests consume internal bandwidth, TLS handshakes with microservices, or database connection pool leases.</li>
+<li>Partitioned coarse-grained: by Client IP, API Key, or Client Certificate Thumbprint.</li>
+<li><strong>Downstream Service Rate Limiting</strong>:</li>
+<li>Enforces fine-grained domain constraints (e.g., maximum 5 password reset attempts per user account per hour, maximum 10 checkout submissions per minute).</li>
+<li>Understands authenticated business domain entities (<code>UserId</code>, <code>AccountId</code>).</li>
+<li><strong>Best Practice</strong>: Defense-in-depth—use coarse-grained Token Bucket rate limiting at the Gateway to protect infrastructure, combined with domain-specific rate limiting in microservices.</li>
+</ul>
+<hr/>
+<h3>8. How does YARP handle protocol upgrading for WebSockets and gRPC?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>WebSockets</strong>:</li>
+<li>YARP inspects the <code>Upgrade: websocket</code> and <code>Connection: Upgrade</code> headers.</li>
+<li>Once validated, YARP facilitates an opaque, full-duplex TCP/TLS byte stream tunnel between client and downstream server.</li>
+<li>YARP keeps the connection open until either client or backend initiates closure.</li>
+<li><strong>gRPC</strong>:</li>
+<li>gRPC requires HTTP/2 with trailer headers (<code>grpc-status</code>, <code>grpc-message</code>).</li>
+<li>YARP fully supports HTTP/2 end-to-end (Client $\to$ Gateway $\to$ Microservice).</li>
+<li>YARP preserves HTTP/2 multiplexing and accurately forwards trailing headers, allowing bidirectional streaming RPCs to operate transparently.</li>
+</ul>
+<hr/>
+<h3>9. For LeetCode #133 (<em>Clone Graph</em>), how do you prevent infinite recursion in cyclic graphs, and what is the optimal complexity?</h3>
+<p><strong>Answer:</strong></p>
+<p><strong>Cycle Handling:</strong></p>
+<p>An undirected graph containing a cycle (e.g., Node 1 connected to Node 2, which connects back to Node 1) will trap a naive DFS in an infinite loop.</p>
+<p>To guarantee termination:</p>
+<ol>
+<li>Maintain a hash table <code>Dictionary&lt;Node, Node&gt;</code> mapping original node instances to their newly constructed clones.</li>
+<li>Before traversing any neighbor, check if the neighbor has already been cloned.</li>
+<li>If already cloned, retrieve the clone from the dictionary and link it immediately.</li>
+<li>If not cloned, allocate the clone, insert it into the map <em>before</em> recursing, and then visit its neighbors.</li>
+</ol>
+<p><strong>Complexity:</strong></p>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(V + E)$ where $V$ is vertices and $E$ is edges. Every node and edge is traversed once.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(V)$ to store the hash map and call stack recursion.</li>
+</ul>
+<hr/>
+<h3>10. For LeetCode #695 (<em>Max Area of Island</em>), compare in-place grid mutation vs an auxiliary <code>visited</code> set in production environments.</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>In-Place Mutation (<code>grid[r][c] = 0</code>)</strong>:</li>
+<li><em>Pros</em>: $\mathcal{O}(1)$ auxiliary space overhead (excluding recursion stack); avoids allocating an $M \times N$ boolean array or hash set.</li>
+<li><em>Cons</em>: Mutates input data. In production environments or multi-threaded pipelines, mutating shared data creates race conditions and violates caller immutability expectations.</li>
+<li><strong>Auxiliary Set / Array (<code>bool[m, n] visited</code>)</strong>:</li>
+<li><em>Pros</em>: Leaves input grid immutable and thread-safe.</li>
+<li><em>Cons</em>: Allocates $\mathcal{O}(M \times N)$ additional heap memory, increasing GC ephemeral allocation pressure.</li>
+<li><strong>Production Standard</strong>: If the input grid is disposable or local, in-place sinking is optimal; if exposed via a shared API or cached memory buffer, clone the grid or use a bit array (<code>BitArray</code> or rented memory) to preserve caller data integrity.</li>
+</ul></div>
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day27.ApiGatewayYarp/GraphAndIslandSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd27-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d27-src-code-0" class="language-csharp">namespace Day27.ApiGatewayYarp;
+
+/// &lt;summary&gt;
+/// Node definition for LeetCode #133: Clone Graph.
+/// &lt;/summary&gt;
+public class Node
+{
+    public int val;
+    public IList&lt;Node&gt; neighbors;
+
+    public Node()
+    {
+        val = 0;
+        neighbors = new List&lt;Node&gt;();
+    }
+
+    public Node(int _val)
+    {
+        val = _val;
+        neighbors = new List&lt;Node&gt;();
+    }
+
+    public Node(int _val, IList&lt;Node&gt; _neighbors)
+    {
+        val = _val;
+        neighbors = _neighbors;
+    }
+}
+
+/// &lt;summary&gt;
+/// Graph and 2D Grid Solvers:
+/// 1. LeetCode #133: Clone Graph (Medium)
+/// 2. LeetCode #695: Max Area of Island (Medium)
+/// &lt;/summary&gt;
+public class GraphAndIslandSolver
+{
+    private static readonly int[] RowOffsets = { -1, 1, 0, 0 };
+    private static readonly int[] ColOffsets = { 0, 0, -1, 1 };
+
+    /// &lt;summary&gt;
+    /// Clones an undirected graph using Depth-First Search (DFS) with a visited lookup map.
+    /// Time Complexity: O(V + E) where V is vertices and E is edges.
+    /// Space Complexity: O(V) for clone map and recursion stack.
+    /// &lt;/summary&gt;
+    public Node? CloneGraphDfs(Node? node)
+    {
+        if (node == null) return null;
+        var visited = new Dictionary&lt;Node, Node&gt;();
+        return DfsClone(node, visited);
+    }
+
+    private Node DfsClone(Node node, Dictionary&lt;Node, Node&gt; visited)
+    {
+        if (visited.TryGetValue(node, out var existingClone))
+        {
+            return existingClone;
+        }
+
+        var clone = new Node(node.val);
+        visited[node] = clone;
+
+        foreach (var neighbor in node.neighbors)
+        {
+            clone.neighbors.Add(DfsClone(neighbor, visited));
+        }
+
+        return clone;
+    }
+
+    /// &lt;summary&gt;
+    /// Clones an undirected graph using Breadth-First Search (BFS) with a FIFO queue.
+    /// Time Complexity: O(V + E)
+    /// Space Complexity: O(V)
+    /// &lt;/summary&gt;
+    public Node? CloneGraphBfs(Node? node)
+    {
+        if (node == null) return null;
+
+        var visited = new Dictionary&lt;Node, Node&gt;();
+        var queue = new Queue&lt;Node&gt;();
+
+        var cloneRoot = new Node(node.val);
+        visited[node] = cloneRoot;
+        queue.Enqueue(node);
+
+        while (queue.Count &gt; 0)
+        {
+            var current = queue.Dequeue();
+
+            foreach (var neighbor in current.neighbors)
+            {
+                if (!visited.TryGetValue(neighbor, out var neighborClone))
+                {
+                    neighborClone = new Node(neighbor.val);
+                    visited[neighbor] = neighborClone;
+                    queue.Enqueue(neighbor);
+                }
+
+                visited[current].neighbors.Add(neighborClone);
+            }
+        }
+
+        return cloneRoot;
+    }
+
+    /// &lt;summary&gt;
+    /// Computes the maximum area of an island using Depth-First Search (DFS).
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N) recursion stack.
+    /// &lt;/summary&gt;
+    public int MaxAreaOfIslandDfs(int[][]? grid)
+    {
+        if (grid == null || grid.Length == 0 || grid[0].Length == 0) return 0;
+
+        var m = grid.Length;
+        var n = grid[0].Length;
+        var workingGrid = new int[m][];
+        for (var i = 0; i &lt; m; i++)
+        {
+            workingGrid[i] = (int[])grid[i].Clone();
+        }
+
+        var maxArea = 0;
+        for (var r = 0; r &lt; m; r++)
+        {
+            for (var c = 0; c &lt; n; c++)
+            {
+                if (workingGrid[r][c] == 1)
+                {
+                    var area = DfsSinkArea(workingGrid, r, c, m, n);
+                    maxArea = Math.Max(maxArea, area);
+                }
+            }
+        }
+
+        return maxArea;
+    }
+
+    private int DfsSinkArea(int[][] grid, int r, int c, int m, int n)
+    {
+        if (r &lt; 0 || r &gt;= m || c &lt; 0 || c &gt;= n || grid[r][c] != 1)
+            return 0;
+
+        // Sink cell to 0 to prevent re-counting
+        grid[r][c] = 0;
+        var area = 1;
+
+        for (var i = 0; i &lt; 4; i++)
+        {
+            area += DfsSinkArea(grid, r + RowOffsets[i], c + ColOffsets[i], m, n);
+        }
+
+        return area;
+    }
+
+    /// &lt;summary&gt;
+    /// Computes the maximum area of an island using Breadth-First Search (BFS).
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(min(M, N))
+    /// &lt;/summary&gt;
+    public int MaxAreaOfIslandBfs(int[][]? grid)
+    {
+        if (grid == null || grid.Length == 0 || grid[0].Length == 0) return 0;
+
+        var m = grid.Length;
+        var n = grid[0].Length;
+        var workingGrid = new int[m][];
+        for (var i = 0; i &lt; m; i++)
+        {
+            workingGrid[i] = (int[])grid[i].Clone();
+        }
+
+        var maxArea = 0;
+        var queue = new Queue&lt;(int r, int c)&gt;();
+
+        for (var r = 0; r &lt; m; r++)
+        {
+            for (var c = 0; c &lt; n; c++)
+            {
+                if (workingGrid[r][c] == 1)
+                {
+                    workingGrid[r][c] = 0; // sink immediately
+                    queue.Enqueue((r, c));
+                    var currentArea = 0;
+
+                    while (queue.Count &gt; 0)
+                    {
+                        var (currR, currC) = queue.Dequeue();
+                        currentArea++;
+
+                        for (var i = 0; i &lt; 4; i++)
+                        {
+                            var nr = currR + RowOffsets[i];
+                            var nc = currC + ColOffsets[i];
+
+                            if (nr &gt;= 0 &amp;&amp; nr &lt; m &amp;&amp; nc &gt;= 0 &amp;&amp; nc &lt; n &amp;&amp; workingGrid[nr][nc] == 1)
+                            {
+                                workingGrid[nr][nc] = 0;
+                                queue.Enqueue((nr, nc));
+                            }
+                        }
+                    }
+
+                    maxArea = Math.Max(maxArea, currentArea);
+                }
+            }
+        }
+
+        return maxArea;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day27.ApiGatewayYarp/YarpGatewayEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd27-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d27-src-code-1" class="language-csharp">using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
+using Yarp.ReverseProxy.Configuration;
+using Yarp.ReverseProxy.Forwarder;
+
+namespace Day27.ApiGatewayYarp;
+
+/// &lt;summary&gt;
+/// Status of a downstream microservice destination.
+/// &lt;/summary&gt;
+public enum DestinationHealthStatus
+{
+    Healthy,
+    Degraded,
+    Unhealthy
+}
+
+/// &lt;summary&gt;
+/// Represents a downstream service destination with health tracking.
+/// &lt;/summary&gt;
+public class DownstreamDestination
+{
+    public string Id { get; }
+    public Uri Address { get; }
+    public DestinationHealthStatus HealthStatus { get; set; } = DestinationHealthStatus.Healthy;
+    public int ActiveConnections { get; private set; }
+
+    public DownstreamDestination(string id, Uri address)
+    {
+        Id = id;
+        Address = address;
+    }
+
+    public void IncrementConnections() =&gt; Interlocked.Increment(ref _activeConnections);
+    public void DecrementConnections() =&gt; Interlocked.Decrement(ref _activeConnections);
+    private int _activeConnections;
+}
+
+/// &lt;summary&gt;
+/// Defines transform rules applied to requests passing through the API Gateway.
+/// &lt;/summary&gt;
+public record TransformRule
+{
+    public Dictionary&lt;string, string&gt; AddHeaders { get; init; } = new();
+    public HashSet&lt;string&gt; RemoveHeaders { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+    public string? PathRemovePrefix { get; init; }
+    public string? PathAddPrefix { get; init; }
+}
+
+/// &lt;summary&gt;
+/// Programmatic YARP Route and Cluster Configuration Builder.
+/// &lt;/summary&gt;
+public class YarpConfigBuilder
+{
+    private readonly List&lt;RouteConfig&gt; _routes = new();
+    private readonly List&lt;ClusterConfig&gt; _clusters = new();
+
+    public YarpConfigBuilder AddCluster(
+        string clusterId,
+        IReadOnlyDictionary&lt;string, string&gt; destinationAddresses,
+        string loadBalancingPolicy = &quot;RoundRobin&quot;,
+        bool enableHealthChecks = true)
+    {
+        var destinations = destinationAddresses.ToDictionary(
+            kvp =&gt; kvp.Key,
+            kvp =&gt; new DestinationConfig { Address = kvp.Value });
+
+        var cluster = new ClusterConfig
+        {
+            ClusterId = clusterId,
+            LoadBalancingPolicy = loadBalancingPolicy,
+            Destinations = destinations,
+            HealthCheck = enableHealthChecks ? new HealthCheckConfig
+            {
+                Active = new ActiveHealthCheckConfig
+                {
+                    Enabled = true,
+                    Interval = TimeSpan.FromSeconds(10),
+                    Timeout = TimeSpan.FromSeconds(2),
+                    Policy = &quot;ConsecutiveFailures&quot;,
+                    Path = &quot;/health&quot;
+                }
+            } : null
+        };
+
+        _clusters.Add(cluster);
+        return this;
+    }
+
+    public YarpConfigBuilder AddRoute(
+        string routeId,
+        string clusterId,
+        string pathPattern,
+        IReadOnlyList&lt;IReadOnlyDictionary&lt;string, string&gt;&gt;? transforms = null,
+        string? authorizationPolicy = null,
+        string? rateLimiterPolicy = null)
+    {
+        var route = new RouteConfig
+        {
+            RouteId = routeId,
+            ClusterId = clusterId,
+            Match = new RouteMatch
+            {
+                Path = pathPattern
+            },
+            AuthorizationPolicy = authorizationPolicy,
+            RateLimiterPolicy = rateLimiterPolicy,
+            Transforms = transforms
+        };
+
+        _routes.Add(route);
+        return this;
+    }
+
+    public (IReadOnlyList&lt;RouteConfig&gt; Routes, IReadOnlyList&lt;ClusterConfig&gt; Clusters) Build()
+    {
+        return (_routes.AsReadOnly(), _clusters.AsReadOnly());
+    }
+}
+
+/// &lt;summary&gt;
+/// Gateway Token Bucket Rate Limiter partitioned by Client IP or API Key.
+/// &lt;/summary&gt;
+public class GatewayRateLimiter
+{
+    private readonly int _capacity;
+    private readonly double _refillRatePerSecond;
+    private readonly ConcurrentDictionary&lt;string, TokenBucket&gt; _clientBuckets = new();
+
+    public GatewayRateLimiter(int capacity, double refillRatePerSecond)
+    {
+        if (capacity &lt;= 0) throw new ArgumentOutOfRangeException(nameof(capacity));
+        if (refillRatePerSecond &lt;= 0) throw new ArgumentOutOfRangeException(nameof(refillRatePerSecond));
+
+        _capacity = capacity;
+        _refillRatePerSecond = refillRatePerSecond;
+    }
+
+    public bool TryConsume(string clientKey, out int remainingTokens, out TimeSpan retryAfter)
+    {
+        var bucket = _clientBuckets.GetOrAdd(clientKey, _ =&gt; new TokenBucket(_capacity, _refillRatePerSecond));
+        return bucket.TryConsume(out remainingTokens, out retryAfter);
+    }
+
+    private class TokenBucket
+    {
+        private readonly int _maxTokens;
+        private readonly double _refillRate;
+        private double _currentTokens;
+        private DateTime _lastRefillUtc;
+        private readonly object _lock = new();
+
+        public TokenBucket(int maxTokens, double refillRate)
+        {
+            _maxTokens = maxTokens;
+            _refillRate = refillRate;
+            _currentTokens = maxTokens;
+            _lastRefillUtc = DateTime.UtcNow;
+        }
+
+        public bool TryConsume(out int remaining, out TimeSpan retryAfter)
+        {
+            lock (_lock)
+            {
+                var now = DateTime.UtcNow;
+                var elapsed = (now - _lastRefillUtc).TotalSeconds;
+                _currentTokens = Math.Min(_maxTokens, _currentTokens + (elapsed * _refillRate));
+                _lastRefillUtc = now;
+
+                if (_currentTokens &gt;= 1.0)
+                {
+                    _currentTokens -= 1.0;
+                    remaining = (int)_currentTokens;
+                    retryAfter = TimeSpan.Zero;
+                    return true;
+                }
+
+                remaining = 0;
+                var missingTokens = 1.0 - _currentTokens;
+                retryAfter = TimeSpan.FromSeconds(Math.Ceiling(missingTokens / _refillRate));
+                return false;
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// High-throughput simulated YARP Reverse Proxy Engine.
+/// Handles route dispatching, request transformation, health check filtering, and destination load balancing.
+/// &lt;/summary&gt;
+public class YarpGatewayEngine
+{
+    private readonly List&lt;RouteConfig&gt; _routes = new();
+    private readonly Dictionary&lt;string, List&lt;DownstreamDestination&gt;&gt; _clusterDestinations = new();
+    private readonly ConcurrentDictionary&lt;string, int&gt; _clusterRoundRobinIndices = new();
+    private readonly GatewayRateLimiter _rateLimiter;
+    private readonly TransformRule _globalTransforms;
+
+    public YarpGatewayEngine(GatewayRateLimiter rateLimiter, TransformRule? globalTransforms = null)
+    {
+        _rateLimiter = rateLimiter;
+        _globalTransforms = globalTransforms ?? new TransformRule();
+    }
+
+    public void RegisterRoute(RouteConfig route)
+    {
+        _routes.Add(route);
+    }
+
+    public void RegisterCluster(string clusterId, IEnumerable&lt;DownstreamDestination&gt; destinations)
+    {
+        _clusterDestinations[clusterId] = destinations.ToList();
+        _clusterRoundRobinIndices[clusterId] = 0;
+    }
+
+    /// &lt;summary&gt;
+    /// Processes an incoming request through Rate Limiter, Route Matching, Transform Pipeline, and Load Balancer.
+    /// &lt;/summary&gt;
+    public GatewayProxyResult Forward(GatewayRequest request)
+    {
+        // 1. Rate Limiting Check
+        if (!_rateLimiter.TryConsume(request.ClientIp, out var remainingTokens, out var retryAfter))
+        {
+            return new GatewayProxyResult(
+                StatusCode: 429,
+                ErrorMessage: &quot;Rate limit exceeded. Try again later.&quot;,
+                TransformedHeaders: new Dictionary&lt;string, string&gt;
+                {
+                    [&quot;Retry-After&quot;] = ((int)retryAfter.TotalSeconds).ToString(),
+                    [&quot;X-RateLimit-Remaining&quot;] = &quot;0&quot;
+                });
+        }
+
+        // 2. Route Matching
+        var matchedRoute = FindMatchingRoute(request.Path);
+        if (matchedRoute == null)
+        {
+            return new GatewayProxyResult(
+                StatusCode: 404,
+                ErrorMessage: $&quot;No matching YARP route found for path: {request.Path}&quot;);
+        }
+
+        // 3. Cluster &amp; Healthy Destination Selection
+        if (!_clusterDestinations.TryGetValue(matchedRoute.ClusterId ?? string.Empty, out var destinations))
+        {
+            return new GatewayProxyResult(
+                StatusCode: 502,
+                ErrorMessage: $&quot;Target cluster &#x27;{matchedRoute.ClusterId}&#x27; not configured.&quot;);
+        }
+
+        var healthyDestinations = destinations
+            .Where(d =&gt; d.HealthStatus == DestinationHealthStatus.Healthy)
+            .ToList();
+
+        if (healthyDestinations.Count == 0)
+        {
+            return new GatewayProxyResult(
+                StatusCode: 503,
+                ErrorMessage: $&quot;All destinations for cluster &#x27;{matchedRoute.ClusterId}&#x27; are unhealthy.&quot;);
+        }
+
+        // Round-Robin selection over healthy destinations
+        var index = _clusterRoundRobinIndices.AddOrUpdate(
+            matchedRoute.ClusterId!,
+            0,
+            (_, curr) =&gt; (curr + 1) % healthyDestinations.Count);
+        var targetDestination = healthyDestinations[index % healthyDestinations.Count];
+
+        // 4. Request Transformation
+        var transformedHeaders = ApplyHeaderTransforms(request.Headers);
+        transformedHeaders[&quot;X-RateLimit-Remaining&quot;] = remainingTokens.ToString();
+        transformedHeaders[&quot;X-Forwarded-Host&quot;] = request.Host;
+        transformedHeaders[&quot;X-Forwarded-For&quot;] = request.ClientIp;
+        if (!transformedHeaders.ContainsKey(&quot;X-Correlation-ID&quot;))
+        {
+            transformedHeaders[&quot;X-Correlation-ID&quot;] = Guid.NewGuid().ToString(&quot;N&quot;);
+        }
+
+        var transformedPath = ApplyPathTransforms(request.Path, matchedRoute);
+
+        return new GatewayProxyResult(
+            StatusCode: 200,
+            DestinationId: targetDestination.Id,
+            DestinationUri: new Uri(targetDestination.Address, transformedPath.TrimStart(&#x27;/&#x27;)),
+            TransformedPath: transformedPath,
+            TransformedHeaders: transformedHeaders);
+    }
+
+    private RouteConfig? FindMatchingRoute(string path)
+    {
+        foreach (var route in _routes)
+        {
+            if (string.IsNullOrEmpty(route.Match.Path)) continue;
+
+            // Simplified prefix &amp; wildcards matching (e.g. /api/orders/{**catch-all} or /api/orders)
+            var pattern = route.Match.Path
+                .Replace(&quot;{**catch-all}&quot;, &quot;.*&quot;)
+                .Replace(&quot;{**remainder}&quot;, &quot;.*&quot;);
+
+            if (Regex.IsMatch(path, $&quot;^{pattern}$&quot;, RegexOptions.IgnoreCase))
+            {
+                return route;
+            }
+        }
+        return null;
+    }
+
+    private Dictionary&lt;string, string&gt; ApplyHeaderTransforms(IReadOnlyDictionary&lt;string, string&gt; incomingHeaders)
+    {
+        var headers = new Dictionary&lt;string, string&gt;(incomingHeaders, StringComparer.OrdinalIgnoreCase);
+
+        // Strip disallowed headers
+        foreach (var removeKey in _globalTransforms.RemoveHeaders)
+        {
+            headers.Remove(removeKey);
+        }
+
+        // Add configured headers
+        foreach (var (k, v) in _globalTransforms.AddHeaders)
+        {
+            headers[k] = v;
+        }
+
+        return headers;
+    }
+
+    private string ApplyPathTransforms(string incomingPath, RouteConfig route)
+    {
+        var path = incomingPath;
+
+        if (_globalTransforms.PathRemovePrefix != null &amp;&amp; path.StartsWith(_globalTransforms.PathRemovePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            path = path[_globalTransforms.PathRemovePrefix.Length..];
+        }
+
+        if (_globalTransforms.PathAddPrefix != null)
+        {
+            path = _globalTransforms.PathAddPrefix.TrimEnd(&#x27;/&#x27;) + &quot;/&quot; + path.TrimStart(&#x27;/&#x27;);
+        }
+
+        return string.IsNullOrEmpty(path) ? &quot;/&quot; : path;
+    }
+}
+
+public record GatewayRequest(
+    string Path,
+    string Method,
+    string Host,
+    string ClientIp,
+    Dictionary&lt;string, string&gt; Headers);
+
+public record GatewayProxyResult(
+    int StatusCode,
+    string? DestinationId = null,
+    Uri? DestinationUri = null,
+    string? TransformedPath = null,
+    Dictionary&lt;string, string&gt;? TransformedHeaders = null,
+    string? ErrorMessage = null);
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day27.ApiGatewayYarp.Tests/Day27Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd27-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d27-tests-code-0" class="language-csharp">using Day27.ApiGatewayYarp;
+using Xunit;
+using Yarp.ReverseProxy.Configuration;
+
+namespace Day27.ApiGatewayYarp.Tests;
+
+public class Day27Tests
+{
+    [Fact]
+    public void YarpConfigBuilder_ConstructsValidRoutesAndClusters()
+    {
+        var builder = new YarpConfigBuilder();
+        builder.AddCluster(
+            clusterId: &quot;orders-cluster&quot;,
+            destinationAddresses: new Dictionary&lt;string, string&gt;
+            {
+                [&quot;dest-1&quot;] = &quot;http://orders-svc-1:5001&quot;,
+                [&quot;dest-2&quot;] = &quot;http://orders-svc-2:5001&quot;
+            },
+            loadBalancingPolicy: &quot;RoundRobin&quot;,
+            enableHealthChecks: true);
+
+        builder.AddRoute(
+            routeId: &quot;orders-route&quot;,
+            clusterId: &quot;orders-cluster&quot;,
+            pathPattern: &quot;/api/orders/{**catch-all}&quot;);
+
+        var (routes, clusters) = builder.Build();
+
+        Assert.Single(routes);
+        Assert.Single(clusters);
+        Assert.Equal(&quot;orders-route&quot;, routes[0].RouteId);
+        Assert.Equal(&quot;orders-cluster&quot;, routes[0].ClusterId);
+        Assert.Equal(2, clusters[0].Destinations?.Count);
+        Assert.NotNull(clusters[0].HealthCheck?.Active);
+        Assert.True(clusters[0].HealthCheck!.Active!.Enabled);
+    }
+
+    [Fact]
+    public void YarpGatewayEngine_ForwardsRequest_ToMatchingCluster()
+    {
+        var limiter = new GatewayRateLimiter(capacity: 10, refillRatePerSecond: 10.0);
+        var engine = new YarpGatewayEngine(limiter);
+
+        var route = new RouteConfig
+        {
+            RouteId = &quot;inventory-route&quot;,
+            ClusterId = &quot;inventory-cluster&quot;,
+            Match = new RouteMatch { Path = &quot;/api/inventory/{**catch-all}&quot; }
+        };
+        engine.RegisterRoute(route);
+
+        var dest1 = new DownstreamDestination(&quot;inv-node-1&quot;, new Uri(&quot;http://inventory-host:5002/&quot;));
+        engine.RegisterCluster(&quot;inventory-cluster&quot;, new[] { dest1 });
+
+        var request = new GatewayRequest(
+            Path: &quot;/api/inventory/items/SKU-999&quot;,
+            Method: &quot;GET&quot;,
+            Host: &quot;api.company.com&quot;,
+            ClientIp: &quot;10.0.0.1&quot;,
+            Headers: new Dictionary&lt;string, string&gt; { [&quot;User-Agent&quot;] = &quot;TestClient&quot; });
+
+        var result = engine.Forward(request);
+
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(&quot;inv-node-1&quot;, result.DestinationId);
+        Assert.Equal(&quot;http://inventory-host:5002/api/inventory/items/SKU-999&quot;, result.DestinationUri?.ToString());
+        Assert.NotNull(result.TransformedHeaders);
+        Assert.True(result.TransformedHeaders.ContainsKey(&quot;X-Correlation-ID&quot;));
+    }
+
+    [Fact]
+    public void YarpGatewayEngine_AppliesTransforms_HeadersAndPath()
+    {
+        var limiter = new GatewayRateLimiter(capacity: 10, refillRatePerSecond: 10.0);
+        var transforms = new TransformRule
+        {
+            AddHeaders = new Dictionary&lt;string, string&gt; { [&quot;X-Forwarded-Prefix&quot;] = &quot;/public-gateway&quot; },
+            RemoveHeaders = new HashSet&lt;string&gt; { &quot;X-Client-Secret&quot;, &quot;Internal-Token&quot; },
+            PathRemovePrefix = &quot;/api/v1&quot;
+        };
+
+        var engine = new YarpGatewayEngine(limiter, transforms);
+
+        var route = new RouteConfig
+        {
+            RouteId = &quot;orders-route&quot;,
+            ClusterId = &quot;orders-cluster&quot;,
+            Match = new RouteMatch { Path = &quot;/api/v1/orders/{**catch-all}&quot; }
+        };
+        engine.RegisterRoute(route);
+
+        var dest = new DownstreamDestination(&quot;order-node-1&quot;, new Uri(&quot;http://orders-host:5001/&quot;));
+        engine.RegisterCluster(&quot;orders-cluster&quot;, new[] { dest });
+
+        var request = new GatewayRequest(
+            Path: &quot;/api/v1/orders/123&quot;,
+            Method: &quot;GET&quot;,
+            Host: &quot;api.company.com&quot;,
+            ClientIp: &quot;192.168.1.50&quot;,
+            Headers: new Dictionary&lt;string, string&gt;
+            {
+                [&quot;X-Client-Secret&quot;] = &quot;super-confidential-key&quot;,
+                [&quot;Internal-Token&quot;] = &quot;token-secret&quot;,
+                [&quot;Accept&quot;] = &quot;application/json&quot;
+            });
+
+        var result = engine.Forward(request);
+
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(&quot;/orders/123&quot;, result.TransformedPath);
+        Assert.False(result.TransformedHeaders!.ContainsKey(&quot;X-Client-Secret&quot;));
+        Assert.False(result.TransformedHeaders.ContainsKey(&quot;Internal-Token&quot;));
+        Assert.Equal(&quot;/public-gateway&quot;, result.TransformedHeaders[&quot;X-Forwarded-Prefix&quot;]);
+    }
+
+    [Fact]
+    public void YarpGatewayEngine_FiltersOutUnhealthyDestinations()
+    {
+        var limiter = new GatewayRateLimiter(capacity: 10, refillRatePerSecond: 10.0);
+        var engine = new YarpGatewayEngine(limiter);
+
+        var route = new RouteConfig
+        {
+            RouteId = &quot;payment-route&quot;,
+            ClusterId = &quot;payment-cluster&quot;,
+            Match = new RouteMatch { Path = &quot;/api/payments/{**catch-all}&quot; }
+        };
+        engine.RegisterRoute(route);
+
+        var destHealthy = new DownstreamDestination(&quot;pay-healthy&quot;, new Uri(&quot;http://pay-1:5003/&quot;))
+        {
+            HealthStatus = DestinationHealthStatus.Healthy
+        };
+        var destUnhealthy = new DownstreamDestination(&quot;pay-dead&quot;, new Uri(&quot;http://pay-2:5003/&quot;))
+        {
+            HealthStatus = DestinationHealthStatus.Unhealthy
+        };
+
+        engine.RegisterCluster(&quot;payment-cluster&quot;, new[] { destUnhealthy, destHealthy });
+
+        for (int i = 0; i &lt; 5; i++)
+        {
+            var request = new GatewayRequest(
+                Path: &quot;/api/payments/charge&quot;,
+                Method: &quot;POST&quot;,
+                Host: &quot;api.company.com&quot;,
+                ClientIp: &quot;10.0.0.1&quot;,
+                Headers: new Dictionary&lt;string, string&gt;());
+
+            var result = engine.Forward(request);
+            Assert.Equal(200, result.StatusCode);
+            Assert.Equal(&quot;pay-healthy&quot;, result.DestinationId);
+        }
+    }
+
+    [Fact]
+    public void YarpGatewayEngine_Returns503_WhenAllDestinationsUnhealthy()
+    {
+        var limiter = new GatewayRateLimiter(capacity: 10, refillRatePerSecond: 10.0);
+        var engine = new YarpGatewayEngine(limiter);
+
+        var route = new RouteConfig
+        {
+            RouteId = &quot;failover-route&quot;,
+            ClusterId = &quot;failover-cluster&quot;,
+            Match = new RouteMatch { Path = &quot;/api/fail/{**catch-all}&quot; }
+        };
+        engine.RegisterRoute(route);
+
+        var dest = new DownstreamDestination(&quot;fail-node&quot;, new Uri(&quot;http://fail:5000/&quot;))
+        {
+            HealthStatus = DestinationHealthStatus.Unhealthy
+        };
+        engine.RegisterCluster(&quot;failover-cluster&quot;, new[] { dest });
+
+        var request = new GatewayRequest(
+            Path: &quot;/api/fail/test&quot;,
+            Method: &quot;GET&quot;,
+            Host: &quot;api.company.com&quot;,
+            ClientIp: &quot;10.0.0.1&quot;,
+            Headers: new Dictionary&lt;string, string&gt;());
+
+        var result = engine.Forward(request);
+
+        Assert.Equal(503, result.StatusCode);
+        Assert.Contains(&quot;All destinations for cluster &#x27;failover-cluster&#x27; are unhealthy&quot;, result.ErrorMessage);
+    }
+
+    [Fact]
+    public void GatewayRateLimiter_EnforcesLimitAndEmits429()
+    {
+        var limiter = new GatewayRateLimiter(capacity: 2, refillRatePerSecond: 0.1);
+        var engine = new YarpGatewayEngine(limiter);
+
+        var route = new RouteConfig
+        {
+            RouteId = &quot;rate-route&quot;,
+            ClusterId = &quot;rate-cluster&quot;,
+            Match = new RouteMatch { Path = &quot;/api/ping&quot; }
+        };
+        engine.RegisterRoute(route);
+        engine.RegisterCluster(&quot;rate-cluster&quot;, new[] { new DownstreamDestination(&quot;node-1&quot;, new Uri(&quot;http://ping:80/&quot;)) });
+
+        var req = new GatewayRequest(&quot;/api/ping&quot;, &quot;GET&quot;, &quot;api.test.com&quot;, &quot;1.2.3.4&quot;, new Dictionary&lt;string, string&gt;());
+
+        var res1 = engine.Forward(req);
+        var res2 = engine.Forward(req);
+        var res3 = engine.Forward(req);
+
+        Assert.Equal(200, res1.StatusCode);
+        Assert.Equal(200, res2.StatusCode);
+        Assert.Equal(429, res3.StatusCode);
+        Assert.NotNull(res3.TransformedHeaders);
+        Assert.True(res3.TransformedHeaders.ContainsKey(&quot;Retry-After&quot;));
+    }
+
+    [Fact]
+    public void CloneGraph_Dfs_ClonesCyclicGraphAccurately()
+    {
+        var solver = new GraphAndIslandSolver();
+
+        // Build cycle graph: 1 -- 2
+        //                    |    |
+        //                    4 -- 3
+        var n1 = new Node(1);
+        var n2 = new Node(2);
+        var n3 = new Node(3);
+        var n4 = new Node(4);
+
+        n1.neighbors = new List&lt;Node&gt; { n2, n4 };
+        n2.neighbors = new List&lt;Node&gt; { n1, n3 };
+        n3.neighbors = new List&lt;Node&gt; { n2, n4 };
+        n4.neighbors = new List&lt;Node&gt; { n1, n3 };
+
+        var clone1 = solver.CloneGraphDfs(n1);
+
+        Assert.NotNull(clone1);
+        Assert.NotSame(n1, clone1);
+        Assert.Equal(1, clone1.val);
+        Assert.Equal(2, clone1.neighbors.Count);
+
+        // Verify deep copy references
+        var clone2 = clone1.neighbors.First(n =&gt; n.val == 2);
+        Assert.NotSame(n2, clone2);
+        Assert.Contains(clone2.neighbors, n =&gt; n == clone1); // cycle points to clone1, not original n1
+    }
+
+    [Fact]
+    public void CloneGraph_Bfs_ClonesCyclicGraphAccurately()
+    {
+        var solver = new GraphAndIslandSolver();
+
+        var n1 = new Node(10);
+        var n2 = new Node(20);
+        n1.neighbors.Add(n2);
+        n2.neighbors.Add(n1);
+
+        var clone1 = solver.CloneGraphBfs(n1);
+
+        Assert.NotNull(clone1);
+        Assert.NotSame(n1, clone1);
+        Assert.Equal(10, clone1.val);
+        Assert.Single(clone1.neighbors);
+        Assert.Equal(20, clone1.neighbors[0].val);
+        Assert.Same(clone1, clone1.neighbors[0].neighbors[0]);
+    }
+
+    [Fact]
+    public void CloneGraph_HandlesEdgeCases()
+    {
+        var solver = new GraphAndIslandSolver();
+
+        Assert.Null(solver.CloneGraphDfs(null));
+        Assert.Null(solver.CloneGraphBfs(null));
+
+        // Single isolated node
+        var single = new Node(42);
+        var clonedSingleDfs = solver.CloneGraphDfs(single);
+        Assert.NotNull(clonedSingleDfs);
+        Assert.Equal(42, clonedSingleDfs.val);
+        Assert.Empty(clonedSingleDfs.neighbors);
+
+        // Self-loop node
+        var selfLoop = new Node(99);
+        selfLoop.neighbors.Add(selfLoop);
+        var clonedSelf = solver.CloneGraphDfs(selfLoop);
+        Assert.NotNull(clonedSelf);
+        Assert.Single(clonedSelf.neighbors);
+        Assert.Same(clonedSelf, clonedSelf.neighbors[0]);
+    }
+
+    [Fact]
+    public void MaxAreaOfIsland_DfsAndBfs_CalculatesCorrectMaxArea()
+    {
+        var solver = new GraphAndIslandSolver();
+
+        // Grid with multiple islands: max area is 6
+        var grid = new int[][]
+        {
+            new[] { 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
+            new[] { 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
+            new[] { 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+            new[] { 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0 },
+            new[] { 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0 },
+            new[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
+            new[] { 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
+            new[] { 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0 }
+        };
+
+        var dfsArea = solver.MaxAreaOfIslandDfs(grid);
+        var bfsArea = solver.MaxAreaOfIslandBfs(grid);
+
+        Assert.Equal(6, dfsArea);
+        Assert.Equal(6, bfsArea);
+
+        // All water
+        var waterGrid = new int[][] { new[] { 0, 0 }, new[] { 0, 0 } };
+        Assert.Equal(0, solver.MaxAreaOfIslandDfs(waterGrid));
+        Assert.Equal(0, solver.MaxAreaOfIslandBfs(waterGrid));
+
+        // Single land
+        var singleLand = new int[][] { new[] { 1 } };
+        Assert.Equal(1, solver.MaxAreaOfIslandDfs(singleLand));
+        Assert.Equal(1, solver.MaxAreaOfIslandBfs(singleLand));
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 27: Deep Dive Notes — API Gateway Architecture with YARP</h1>
+<h2>1. The API Gateway Architectural Pattern</h2>
+<p>In a microservices topology, client applications (web SPAs, mobile apps, IoT devices, third-party partners) should not directly communicate with dozens of discrete backend microservices. Doing so leaks internal service topology, creates tight coupling, and requires each service to reimplement authentication, rate limiting, and SSL termination.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+----------------------------------------------------------------------------------------------------+
+|                                    API GATEWAY ARCHITECTURE                                        |
++----------------------------------------------------------------------------------------------------+
+|                                                                                                    |
+|    [ Web / Mobile Clients ]                                                                        |
+|               |                                                                                    |
+|               v                                                                                    |
+|    +------------------------------------------------------------------------------------------+    |
+|    |                             YARP REVERSE PROXY GATEWAY                                   |    |
+|    |------------------------------------------------------------------------------------------|    |
+|    |  • TLS Termination         • Route Matcher (/api/v1/orders/*)                            |    |
+|    |  • JWT Validation          • Request Transforms (Header injection, path stripping)      |    |
+|    |  • Token Bucket Limiter    • Active/Passive Health Checking                              |    |
+|    |  • Distributed Tracing     • Load Balancing (RoundRobin / PowerOfTwoChoices)             |    |
+|    +------------------------------------------------------------------------------------------+    |
+|               |                                      |                                             |
+|               v                                      v                                             |
+|    +---------------------+                +---------------------+                                  |
+|    |   Ordering Cluster  |                |  Inventory Cluster  |                                  |
+|    | (Node 1, Node 2...) |                | (Node 1, Node 2...) |                                  |
+|    +---------------------+                +---------------------+                                  |
+|                                                                                                    |
++----------------------------------------------------------------------------------------------------+</code></pre></div>
+<h3>Key Gateway Topologies</h3>
+<ol>
+<li><strong>Edge Gateway</strong>: Central entry point handling public internet traffic, DDoS mitigation, and global TLS termination.</li>
+<li><strong>Backend for Frontend (BFF)</strong>: Tailored gateways for specific client experiences (e.g., Mobile BFF vs Desktop Web BFF), aggregating multiple downstream calls into client-optimized DTOs.</li>
+<li><strong>Internal Gateway / Service Mesh Ingress</strong>: Routes East-West traffic between internal VPCs or Kubernetes clusters.</li>
+</ol>
+<h3>Layer 4 vs. Layer 7 Reverse Proxies</h3>
+<ul>
+<li><strong>Layer 4 (Transport Layer)</strong>: Proxies raw TCP/UDP byte streams. Extremely high throughput and low CPU overhead, but cannot inspect HTTP paths, headers, cookies, or payloads.</li>
+<li><strong>Layer 7 (Application Layer)</strong>: Proxies HTTP/1.1, HTTP/2, HTTP/3, and gRPC. Full visibility into URL paths, headers, and request bodies, enabling intelligent routing, header rewriting, rate limiting, and circuit breaking.</li>
+</ul>
+<hr/>
+<h2>2. YARP (Yet Another Reverse Proxy) Internals</h2>
+<p><strong>YARP</strong> is Microsoft's high-performance reverse proxy toolkit built on top of ASP.NET Core and <code>.NET Kestrel</code>.</p>
+<h3>1. Route and Cluster Configuration</h3>
+<ul>
+<li><strong>Route (<code>RouteConfig</code>)</strong>: Defines the incoming match conditions (e.g., path pattern <code>/api/orders/{**catch-all}</code>, allowed HTTP methods, host headers) and links to a target Cluster.</li>
+<li><strong>Cluster (<code>ClusterConfig</code>)</strong>: Represents a logical microservice comprised of one or more physical <strong>Destinations</strong> (IP/port or DNS name).</li>
+<li><strong>Destinations (<code>DestinationConfig</code>)</strong>: Individual instances of the service.</li>
+</ul>
+<h3>2. Request Transform Pipeline</h3>
+<p>Transforms execute sequentially before the request is forwarded:</p>
+<ul>
+<li><strong>Header Transforms</strong>:</li>
+<li><code>RequestHeaderAdd</code>: Injects headers such as <code>X-Forwarded-Prefix</code>, <code>X-Forwarded-For</code>, <code>X-Correlation-ID</code>.</li>
+<li><code>RequestHeaderRemove</code>: Strips sensitive internal authentication tokens or client secrets.</li>
+<li><strong>Path Transforms</strong>:</li>
+<li><code>PathRemovePrefix</code>: Strips gateway API versioning (e.g., <code>/api/v1/orders/1</code> $\to$ <code>/orders/1</code>).</li>
+<li><code>PathPrefix</code>: Prepends a backend-specific namespace.</li>
+<li><strong>Query Transforms</strong>: Append or sanitize query parameters.</li>
+</ul>
+<h3>3. Destination Health Checking</h3>
+<ul>
+<li><strong>Active Health Checks</strong>: YARP's background worker periodically sends probes (e.g. <code>GET /health</code>) to every registered destination at configured intervals. Destinations that fail consecutive probes are removed from the healthy routing pool.</li>
+<li><strong>Passive Health Checks</strong>: Monitored inline during live traffic. If an attempt to reach a destination results in a connection timeout or 5xx response, YARP immediately marks that destination as degraded without waiting for the next active probe.</li>
+</ul>
+<h3>4. Load Balancing Policies</h3>
+<ul>
+<li><code>RoundRobin</code>: Distributes requests sequentially across all healthy destinations.</li>
+<li><code>PowerOfTwoChoices</code>: Selects two random healthy destinations and picks the one with the fewest active requests (prevents thundering herd).</li>
+<li><code>LeastRequests</code>: Scans all destinations and chooses the one with the lowest active connection count.</li>
+</ul>
+<hr/>
+<h2>3. Graph Algorithms: LeetCode #133 & #695</h2>
+<h3>LeetCode #133: Clone Graph (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Given a reference of a node in a connected undirected graph, return a deep copy (clone) of the graph.</li>
+<li><strong>Cyclic Hazard</strong>: Graphs often contain cycles ($A \leftrightarrow B$). A naive recursive traversal results in infinite recursion and <code>StackOverflowException</code>.</li>
+<li><strong>Solution Strategy</strong>:</li>
+<li>Use a hash table <code>Dictionary&lt;Node, Node&gt;</code> mapping each original node to its newly allocated clone.</li>
+<li>When visiting a node:</li>
+</ul>
+<ol>
+<li>If already present in <code>visited</code>, immediately return the clone.</li>
+<li>Otherwise, allocate <code>clone = new Node(node.val)</code>, register in <code>visited[node] = clone</code>.</li>
+<li>Recursively (or via BFS queue) clone each neighbor and append to <code>clone.neighbors</code>.</li>
+</ol>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(V + E)$ where $V$ is vertices and $E$ is edges.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(V)$ for the hash map and traversal stack.</li>
+</ul>
+<h3>LeetCode #695: Max Area of Island (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Given an $m \times n$ binary matrix <code>grid</code>, an island is a 4-directionally connected group of <code>1</code>s. Return the maximum area of an island.</li>
+<li><strong>Solution Strategy</strong>:</li>
+<li>Iterate through every cell $(r, c)$ in the matrix.</li>
+<li>When encountering <code>grid[r][c] == 1</code>:</li>
+<li>Run DFS or BFS to traverse the entire connected component.</li>
+<li>Sink visited land cells by mutating <code>grid[r][c] = 0</code> (or using a <code>bool[][] visited</code> set) to ensure every cell is evaluated in $\mathcal{O}(1)$ amortized operations.</li>
+<li>Accumulate the area (<code>1 + sum(neighbors)</code>) and update <code>maxArea = max(maxArea, currentArea)</code>.</li>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(M \times N)$ — every cell is processed at most once.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(M \times N)$ worst-case DFS call stack (or $\mathcal{O}(\min(M, N))$ for BFS queue).</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 27: API Gateway Architecture with YARP</h1>
+<h2>Overview</h2>
+<p><strong>Day 27</strong> dives into cloud-native API Gateway patterns using <strong>YARP (Yet Another Reverse Proxy)</strong> in .NET 8. We explore reverse proxy routing architectures, transform pipelines (header forwarding/removal, path rewriting), active & passive health check monitoring, and distributed token bucket rate limiting at the gateway layer. For DSA, we tackle **LeetCode #133 (<em>Clone Graph</em>)<strong> using visited hash map node tracking across cyclic graphs and </strong>LeetCode #695 (<em>Max Area of Island</em>)** using recursive DFS and iterative BFS.</p>
+<hr/>
+<h2>Architectural Topics Covered</h2>
+<ol>
+<li><strong>YARP (Yet Another Reverse Proxy) Architecture</strong>:</li>
+</ol>
+<ul>
+<li>Routes, Clusters, Destinations, and Match Criteria (<code>Path</code>, <code>Hosts</code>, <code>Headers</code>).</li>
+<li>Active Health Checks (<code>Interval</code>, <code>Timeout</code>, <code>ConsecutiveFailuresPolicy</code>, <code>/health</code> probes) vs Passive Failure detection.</li>
+<li>Load Balancing Policies: <code>RoundRobin</code>, <code>PowerOfTwoChoices</code>, <code>LeastRequests</code>.</li>
+</ul>
+<ol>
+<li><strong>Gateway Transform Pipeline</strong>:</li>
+</ol>
+<ul>
+<li>Header enrichment: Injecting <code>X-Forwarded-Prefix</code>, <code>X-Forwarded-For</code>, <code>X-Forwarded-Host</code>, <code>X-Correlation-ID</code>.</li>
+<li>Header sanitization: Stripping internal secrets, confidential tokens, and sensitive headers before forwarding downstream.</li>
+<li>Path transformations: <code>PathRemovePrefix</code> and prefix routing to backends.</li>
+</ul>
+<ol>
+<li><strong>Gateway Rate Limiting</strong>:</li>
+</ol>
+<ul>
+<li>Token Bucket rate limiting partitioned by Client IP or API Key.</li>
+<li>Emission of standard RFC headers (<code>Retry-After</code>, <code>X-RateLimit-Remaining</code>) and HTTP 429 Too Many Requests.</li>
+</ul>
+<ol>
+<li><strong>Graph Algorithms</strong>:</li>
+</ol>
+<ul>
+<li><strong>LeetCode #133: Clone Graph (Medium)</strong>: Deep copy of an undirected cyclic graph using a <code>Dictionary&lt;Node, Node&gt;</code> to resolve cyclic dependencies in $\mathcal{O}(V + E)$ time.</li>
+<li><strong>LeetCode #695: Max Area of Island (Medium)</strong>: Finding the largest connected 4-directional component on a 2D binary grid in $\mathcal{O}(M \times N)$ time.</li>
+</ul>
+<hr/>
+<h2>Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day27-ApiGateway-Yarp/
+├── src/
+│   └── Day27.ApiGatewayYarp/
+│       ├── Day27.ApiGatewayYarp.csproj
+│       ├── YarpGatewayEngine.cs
+│       └── GraphAndIslandSolver.cs
+├── tests/
+│   └── Day27.ApiGatewayYarp.Tests/
+│       ├── Day27.ApiGatewayYarp.Tests.csproj
+│       └── Day27Tests.cs
+├── README.md
+├── notes.md
+└── interview-questions.md</code></pre></div>
+<hr/>
+<h2>Running the Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day27-ApiGateway-Yarp/tests/Day27.ApiGatewayYarp.Tests/Day27.ApiGatewayYarp.Tests.csproj</code></pre></div>
+<h3>Test Suite Coverage</h3>
+<ol>
+<li><code>YarpConfigBuilder_ConstructsValidRoutesAndClusters</code>: Validates programmatic construction of route and cluster configurations with active health check parameters.</li>
+<li><code>YarpGatewayEngine_ForwardsRequest_ToMatchingCluster</code>: Verifies route prefix matching, destination URI synthesis, and correlation header injection.</li>
+<li><code>YarpGatewayEngine_AppliesTransforms_HeadersAndPath</code>: Validates header removal (client secrets), header addition, and path prefix rewriting.</li>
+<li><code>YarpGatewayEngine_FiltersOutUnhealthyDestinations</code>: Verifies that traffic automatically bypasses destinations flagged as <code>Unhealthy</code>.</li>
+<li><code>YarpGatewayEngine_Returns503_WhenAllDestinationsUnhealthy</code>: Verifies HTTP 503 response when all destinations in a cluster fail.</li>
+<li><code>GatewayRateLimiter_EnforcesLimitAndEmits429</code>: Tests token bucket depletion, emission of HTTP 429, and <code>Retry-After</code> calculation.</li>
+<li><code>CloneGraph_Dfs_ClonesCyclicGraphAccurately</code>: Tests LC #133 recursive DFS deep clone preserving cyclic neighbor references.</li>
+<li><code>CloneGraph_Bfs_ClonesCyclicGraphAccurately</code>: Tests LC #133 iterative BFS deep clone.</li>
+<li><code>CloneGraph_HandlesEdgeCases</code>: Validates null inputs, isolated single nodes, and self-loop nodes.</li>
+<li><code>MaxAreaOfIsland_DfsAndBfs_CalculatesCorrectMaxArea</code>: Tests LC #695 across standard multi-island grids, water-only grids, and single-cell grids.</li>
+</ol>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          <div class="markdown-content"><h1>Day 27: Senior & Staff Engineer Interview Questions & Answers</h1>
+<h3>1. What are the definitive architectural distinctions between a Reverse Proxy, an API Gateway, and a Service Mesh?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Reverse Proxy (e.g., NGINX, HAProxy, basic YARP)</strong>:</li>
+<li>Operates primarily at Layer 4 and Layer 7.</li>
+<li>Sits in front of a pool of servers to provide load balancing, SSL/TLS termination, static caching, and basic route forwarding.</li>
+<li>Generally stateless, with limited awareness of business domain semantics.</li>
+<li><strong>API Gateway (e.g., Kong, Apisix, Enterprise YARP)</strong>:</li>
+<li>Sits at the perimeter (North-South traffic) between external clients and backend microservices.</li>
+<li>Provides advanced cross-cutting business and security capabilities: centralized OAuth2/JWT token validation, granular API key rate limiting, request aggregation (BFF pattern), schema validation, response transformation, and monetization metering.</li>
+<li><strong>Service Mesh (e.g., Istio, Linkerd, Envoy sidecars)</strong>:</li>
+<li>Operates entirely internally (East-West traffic) between microservices within a private network or Kubernetes cluster.</li>
+<li>Uses transparent sidecar proxies to provide mutual TLS (mTLS) with cryptographic identity, distributed tracing, canary traffic splitting, and service-to-service circuit breaking without altering application code.</li>
+</ul>
+<hr/>
+<h3>2. How does YARP achieve competitive performance with NGINX and Envoy despite running on the managed .NET runtime?</h3>
+<p><strong>Answer:</strong></p>
+<p>Historically, managed reverse proxies suffered from Garbage Collection pause times and memory copying overhead. YARP achieves near-C/C++ parity through foundational runtime improvements:</p>
+<ol>
+<li><strong>ASP.NET Core Kestrel & SocketsHttpHandler</strong>: Built directly on non-allocating socket layers using libuv/epoll/kqueue.</li>
+<li><strong>Zero-Copy Pipelines (<code>System.IO.Pipelines</code>)</strong>: Request and response streams are transferred using rented byte buffers (<code>MemoryPool&lt;byte&gt;</code>) and <code>ReadOnlySequence&lt;byte&gt;</code>, streaming data directly from incoming network sockets to downstream sockets without buffering entire request bodies on the managed heap.</li>
+<li><strong>Hardware Intrinsic SIMD & POH</strong>: Pinned Object Heap (POH) and vector-accelerated UTF-8 parsing avoid GC compaction latency during heavy header parsing.</li>
+<li><strong>C# Extensibility</strong>: Unlike NGINX (requiring C modules or Lua) or Envoy (requiring C++ filters), YARP allows .NET engineers to write native C# middleware, dependency injection, and health checks with full debugger support.</li>
+</ol>
+<hr/>
+<h3>3. How does YARP support zero-downtime dynamic configuration reloading without terminating in-flight HTTP requests?</h3>
+<p><strong>Answer:</strong></p>
+<p>YARP decouples proxy configuration from active request processing using the <code>IProxyConfigProvider</code> and change token pattern (<code>IChangeToken</code>).</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public class DynamicConfigProvider : IProxyConfigProvider
+{
+    private volatile CustomMemoryConfig _config;
+    public IProxyConfig GetConfig() =&gt; _config;
+
+    public void Update(IReadOnlyList&lt;RouteConfig&gt; routes, IReadOnlyList&lt;ClusterConfig&gt; clusters)
+    {
+        var oldConfig = _config;
+        _config = new CustomMemoryConfig(routes, clusters);
+        oldConfig.SignalChange(); // Notifies YARP to swap snapshot atomically
+    }
+}</code></pre></div>
+<p><strong>Reload Mechanics:</strong></p>
+<ul>
+<li>YARP maintains an immutable snapshot of routes, clusters, and destinations.</li>
+<li>When <code>SignalChange()</code> fires, YARP compiles a new routing tree in memory and verifies routing syntax.</li>
+<li>The reference is swapped atomically (<code>Interlocked.Exchange</code>).</li>
+<li>In-flight requests continue executing against the prior snapshot's destination pools until completed. New incoming requests are dispatched immediately against the newly activated snapshot.</li>
+</ul>
+<hr/>
+<h3>4. What is the difference between Active and Passive Health Checks in YARP, and how do they prevent "Black Hole" cascading failures?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Active Health Checks</strong>:</li>
+<li>The gateway initiates proactive periodic probes (e.g., <code>GET /health</code> every 10 seconds).</li>
+<li><em>Limitation</em>: If a downstream service instance crashes between probe intervals (e.g., second 2 of a 10s interval), requests sent during that 8-second window will fail.</li>
+<li><strong>Passive Health Checks</strong>:</li>
+<li>The gateway monitors real-time client traffic.</li>
+<li>If a destination returns transport errors (e.g., connection refused, socket reset) or consecutive HTTP 503s, YARP immediately flags the destination as unhealthy in real time.</li>
+<li><strong>Preventing "Black Hole" Cascading Failures</strong>:</li>
+<li>If a destination becomes slow or unresponsive, naive active probing might still consider it healthy if it responds to simple <code>/health</code> probes. Passive health checks detect increasing latency or transport timeouts on actual business endpoints and divert traffic immediately.</li>
+<li>To prevent cascading thundering herd failures where failing one instance overburdens the rest, YARP supports setting minimum healthy percentage thresholds.</li>
+</ul>
+<hr/>
+<h3>5. Why is the "Power of Two Random Choices (P2C)" load balancing policy superior to standard Round-Robin in distributed systems?</h3>
+<p><strong>Answer:</strong></p>
+<p>In simple Round-Robin or Least-Connections:</p>
+<ul>
+<li>Under rapid concurrent requests, multiple threads or gateway instances read the same connection counter and concurrently assign new requests to the same destination before its active count updates, causing severe latency spikes (herd effect).</li>
+<li>Round-Robin assumes all requests have equal processing cost and all downstream nodes have identical CPU capacity.</li>
+</ul>
+<p><strong>Power of Two Random Choices (P2C) Mechanics:</strong></p>
+<ol>
+<li>Pick two candidate destinations at random from the healthy destination pool: $D_1$ and $D_2$.</li>
+<li>Inspect their active request counters.</li>
+<li>Forward the request to whichever candidate has fewer active requests.</li>
+</ol>
+<ul>
+<li><em>Mathematical Foundation (Mitzenmacher, 2001)</em>: Selecting the minimum of just two random choices exponentially reduces the maximum queue length from $\mathcal{O}(\frac{\ln N}{\ln \ln N})$ to $\mathcal{O}(\ln \ln N)$, yielding near-optimal load distribution with $\mathcal{O}(1)$ overhead and zero global lock contention.</li>
+</ul>
+<hr/>
+<h3>6. What request transformations must an enterprise API Gateway enforce to prevent Header Smuggling and Spoofing?</h3>
+<p><strong>Answer:</strong></p>
+<ol>
+<li><strong>Sanitize Untrusted Headers</strong>: Strip client-supplied internal metadata (e.g. <code>X-User-Id</code>, <code>X-User-Roles</code>, <code>X-Tenant-Id</code>) to prevent malicious clients from impersonating administrators.</li>
+<li><strong>Normalize Forwarded Headers</strong>: Override <code>X-Forwarded-For</code> with the true TCP remote IP, or append client IP to the existing comma-delimited chain.</li>
+<li><strong>Inject Trace Context</strong>: Ensure every incoming request receives a W3C <code>traceparent</code> or <code>X-Correlation-ID</code> header for distributed tracing.</li>
+<li><strong>Prevent HTTP Request Smuggling</strong>: Normalize <code>Transfer-Encoding</code> and <code>Content-Length</code> headers; reject requests containing ambiguous or duplicate framing headers.</li>
+</ol>
+<hr/>
+<h3>7. How does a Gateway-level Token Bucket Rate Limiter differ from downstream service rate limiting?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Gateway-level Rate Limiting</strong>:</li>
+<li>Acts as the first line of defense against volumetric denial-of-service (DDoS), credential stuffing, and abusive scraping.</li>
+<li>Rejects excess traffic at the network edge before requests consume internal bandwidth, TLS handshakes with microservices, or database connection pool leases.</li>
+<li>Partitioned coarse-grained: by Client IP, API Key, or Client Certificate Thumbprint.</li>
+<li><strong>Downstream Service Rate Limiting</strong>:</li>
+<li>Enforces fine-grained domain constraints (e.g., maximum 5 password reset attempts per user account per hour, maximum 10 checkout submissions per minute).</li>
+<li>Understands authenticated business domain entities (<code>UserId</code>, <code>AccountId</code>).</li>
+<li><strong>Best Practice</strong>: Defense-in-depth—use coarse-grained Token Bucket rate limiting at the Gateway to protect infrastructure, combined with domain-specific rate limiting in microservices.</li>
+</ul>
+<hr/>
+<h3>8. How does YARP handle protocol upgrading for WebSockets and gRPC?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>WebSockets</strong>:</li>
+<li>YARP inspects the <code>Upgrade: websocket</code> and <code>Connection: Upgrade</code> headers.</li>
+<li>Once validated, YARP facilitates an opaque, full-duplex TCP/TLS byte stream tunnel between client and downstream server.</li>
+<li>YARP keeps the connection open until either client or backend initiates closure.</li>
+<li><strong>gRPC</strong>:</li>
+<li>gRPC requires HTTP/2 with trailer headers (<code>grpc-status</code>, <code>grpc-message</code>).</li>
+<li>YARP fully supports HTTP/2 end-to-end (Client $\to$ Gateway $\to$ Microservice).</li>
+<li>YARP preserves HTTP/2 multiplexing and accurately forwards trailing headers, allowing bidirectional streaming RPCs to operate transparently.</li>
+</ul>
+<hr/>
+<h3>9. For LeetCode #133 (<em>Clone Graph</em>), how do you prevent infinite recursion in cyclic graphs, and what is the optimal complexity?</h3>
+<p><strong>Answer:</strong></p>
+<p><strong>Cycle Handling:</strong></p>
+<p>An undirected graph containing a cycle (e.g., Node 1 connected to Node 2, which connects back to Node 1) will trap a naive DFS in an infinite loop.</p>
+<p>To guarantee termination:</p>
+<ol>
+<li>Maintain a hash table <code>Dictionary&lt;Node, Node&gt;</code> mapping original node instances to their newly constructed clones.</li>
+<li>Before traversing any neighbor, check if the neighbor has already been cloned.</li>
+<li>If already cloned, retrieve the clone from the dictionary and link it immediately.</li>
+<li>If not cloned, allocate the clone, insert it into the map <em>before</em> recursing, and then visit its neighbors.</li>
+</ol>
+<p><strong>Complexity:</strong></p>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(V + E)$ where $V$ is vertices and $E$ is edges. Every node and edge is traversed once.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(V)$ to store the hash map and call stack recursion.</li>
+</ul>
+<hr/>
+<h3>10. For LeetCode #695 (<em>Max Area of Island</em>), compare in-place grid mutation vs an auxiliary <code>visited</code> set in production environments.</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>In-Place Mutation (<code>grid[r][c] = 0</code>)</strong>:</li>
+<li><em>Pros</em>: $\mathcal{O}(1)$ auxiliary space overhead (excluding recursion stack); avoids allocating an $M \times N$ boolean array or hash set.</li>
+<li><em>Cons</em>: Mutates input data. In production environments or multi-threaded pipelines, mutating shared data creates race conditions and violates caller immutability expectations.</li>
+<li><strong>Auxiliary Set / Array (<code>bool[m, n] visited</code>)</strong>:</li>
+<li><em>Pros</em>: Leaves input grid immutable and thread-safe.</li>
+<li><em>Cons</em>: Allocates $\mathcal{O}(M \times N)$ additional heap memory, increasing GC ephemeral allocation pressure.</li>
+<li><strong>Production Standard</strong>: If the input grid is disposable or local, in-place sinking is optimal; if exposed via a shared API or cached memory buffer, clone the grid or use a bit array (<code>BitArray</code> or rented memory) to preserve caller data integrity.</li>
+</ul></div>
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day27.ApiGatewayYarp/GraphAndIslandSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd27-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d27-src-code-0" class="language-csharp">namespace Day27.ApiGatewayYarp;
+
+/// &lt;summary&gt;
+/// Node definition for LeetCode #133: Clone Graph.
+/// &lt;/summary&gt;
+public class Node
+{
+    public int val;
+    public IList&lt;Node&gt; neighbors;
+
+    public Node()
+    {
+        val = 0;
+        neighbors = new List&lt;Node&gt;();
+    }
+
+    public Node(int _val)
+    {
+        val = _val;
+        neighbors = new List&lt;Node&gt;();
+    }
+
+    public Node(int _val, IList&lt;Node&gt; _neighbors)
+    {
+        val = _val;
+        neighbors = _neighbors;
+    }
+}
+
+/// &lt;summary&gt;
+/// Graph and 2D Grid Solvers:
+/// 1. LeetCode #133: Clone Graph (Medium)
+/// 2. LeetCode #695: Max Area of Island (Medium)
+/// &lt;/summary&gt;
+public class GraphAndIslandSolver
+{
+    private static readonly int[] RowOffsets = { -1, 1, 0, 0 };
+    private static readonly int[] ColOffsets = { 0, 0, -1, 1 };
+
+    /// &lt;summary&gt;
+    /// Clones an undirected graph using Depth-First Search (DFS) with a visited lookup map.
+    /// Time Complexity: O(V + E) where V is vertices and E is edges.
+    /// Space Complexity: O(V) for clone map and recursion stack.
+    /// &lt;/summary&gt;
+    public Node? CloneGraphDfs(Node? node)
+    {
+        if (node == null) return null;
+        var visited = new Dictionary&lt;Node, Node&gt;();
+        return DfsClone(node, visited);
+    }
+
+    private Node DfsClone(Node node, Dictionary&lt;Node, Node&gt; visited)
+    {
+        if (visited.TryGetValue(node, out var existingClone))
+        {
+            return existingClone;
+        }
+
+        var clone = new Node(node.val);
+        visited[node] = clone;
+
+        foreach (var neighbor in node.neighbors)
+        {
+            clone.neighbors.Add(DfsClone(neighbor, visited));
+        }
+
+        return clone;
+    }
+
+    /// &lt;summary&gt;
+    /// Clones an undirected graph using Breadth-First Search (BFS) with a FIFO queue.
+    /// Time Complexity: O(V + E)
+    /// Space Complexity: O(V)
+    /// &lt;/summary&gt;
+    public Node? CloneGraphBfs(Node? node)
+    {
+        if (node == null) return null;
+
+        var visited = new Dictionary&lt;Node, Node&gt;();
+        var queue = new Queue&lt;Node&gt;();
+
+        var cloneRoot = new Node(node.val);
+        visited[node] = cloneRoot;
+        queue.Enqueue(node);
+
+        while (queue.Count &gt; 0)
+        {
+            var current = queue.Dequeue();
+
+            foreach (var neighbor in current.neighbors)
+            {
+                if (!visited.TryGetValue(neighbor, out var neighborClone))
+                {
+                    neighborClone = new Node(neighbor.val);
+                    visited[neighbor] = neighborClone;
+                    queue.Enqueue(neighbor);
+                }
+
+                visited[current].neighbors.Add(neighborClone);
+            }
+        }
+
+        return cloneRoot;
+    }
+
+    /// &lt;summary&gt;
+    /// Computes the maximum area of an island using Depth-First Search (DFS).
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N) recursion stack.
+    /// &lt;/summary&gt;
+    public int MaxAreaOfIslandDfs(int[][]? grid)
+    {
+        if (grid == null || grid.Length == 0 || grid[0].Length == 0) return 0;
+
+        var m = grid.Length;
+        var n = grid[0].Length;
+        var workingGrid = new int[m][];
+        for (var i = 0; i &lt; m; i++)
+        {
+            workingGrid[i] = (int[])grid[i].Clone();
+        }
+
+        var maxArea = 0;
+        for (var r = 0; r &lt; m; r++)
+        {
+            for (var c = 0; c &lt; n; c++)
+            {
+                if (workingGrid[r][c] == 1)
+                {
+                    var area = DfsSinkArea(workingGrid, r, c, m, n);
+                    maxArea = Math.Max(maxArea, area);
+                }
+            }
+        }
+
+        return maxArea;
+    }
+
+    private int DfsSinkArea(int[][] grid, int r, int c, int m, int n)
+    {
+        if (r &lt; 0 || r &gt;= m || c &lt; 0 || c &gt;= n || grid[r][c] != 1)
+            return 0;
+
+        // Sink cell to 0 to prevent re-counting
+        grid[r][c] = 0;
+        var area = 1;
+
+        for (var i = 0; i &lt; 4; i++)
+        {
+            area += DfsSinkArea(grid, r + RowOffsets[i], c + ColOffsets[i], m, n);
+        }
+
+        return area;
+    }
+
+    /// &lt;summary&gt;
+    /// Computes the maximum area of an island using Breadth-First Search (BFS).
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(min(M, N))
+    /// &lt;/summary&gt;
+    public int MaxAreaOfIslandBfs(int[][]? grid)
+    {
+        if (grid == null || grid.Length == 0 || grid[0].Length == 0) return 0;
+
+        var m = grid.Length;
+        var n = grid[0].Length;
+        var workingGrid = new int[m][];
+        for (var i = 0; i &lt; m; i++)
+        {
+            workingGrid[i] = (int[])grid[i].Clone();
+        }
+
+        var maxArea = 0;
+        var queue = new Queue&lt;(int r, int c)&gt;();
+
+        for (var r = 0; r &lt; m; r++)
+        {
+            for (var c = 0; c &lt; n; c++)
+            {
+                if (workingGrid[r][c] == 1)
+                {
+                    workingGrid[r][c] = 0; // sink immediately
+                    queue.Enqueue((r, c));
+                    var currentArea = 0;
+
+                    while (queue.Count &gt; 0)
+                    {
+                        var (currR, currC) = queue.Dequeue();
+                        currentArea++;
+
+                        for (var i = 0; i &lt; 4; i++)
+                        {
+                            var nr = currR + RowOffsets[i];
+                            var nc = currC + ColOffsets[i];
+
+                            if (nr &gt;= 0 &amp;&amp; nr &lt; m &amp;&amp; nc &gt;= 0 &amp;&amp; nc &lt; n &amp;&amp; workingGrid[nr][nc] == 1)
+                            {
+                                workingGrid[nr][nc] = 0;
+                                queue.Enqueue((nr, nc));
+                            }
+                        }
+                    }
+
+                    maxArea = Math.Max(maxArea, currentArea);
+                }
+            }
+        }
+
+        return maxArea;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day27.ApiGatewayYarp/YarpGatewayEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd27-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d27-src-code-1" class="language-csharp">using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
+using Yarp.ReverseProxy.Configuration;
+using Yarp.ReverseProxy.Forwarder;
+
+namespace Day27.ApiGatewayYarp;
+
+/// &lt;summary&gt;
+/// Status of a downstream microservice destination.
+/// &lt;/summary&gt;
+public enum DestinationHealthStatus
+{
+    Healthy,
+    Degraded,
+    Unhealthy
+}
+
+/// &lt;summary&gt;
+/// Represents a downstream service destination with health tracking.
+/// &lt;/summary&gt;
+public class DownstreamDestination
+{
+    public string Id { get; }
+    public Uri Address { get; }
+    public DestinationHealthStatus HealthStatus { get; set; } = DestinationHealthStatus.Healthy;
+    public int ActiveConnections { get; private set; }
+
+    public DownstreamDestination(string id, Uri address)
+    {
+        Id = id;
+        Address = address;
+    }
+
+    public void IncrementConnections() =&gt; Interlocked.Increment(ref _activeConnections);
+    public void DecrementConnections() =&gt; Interlocked.Decrement(ref _activeConnections);
+    private int _activeConnections;
+}
+
+/// &lt;summary&gt;
+/// Defines transform rules applied to requests passing through the API Gateway.
+/// &lt;/summary&gt;
+public record TransformRule
+{
+    public Dictionary&lt;string, string&gt; AddHeaders { get; init; } = new();
+    public HashSet&lt;string&gt; RemoveHeaders { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+    public string? PathRemovePrefix { get; init; }
+    public string? PathAddPrefix { get; init; }
+}
+
+/// &lt;summary&gt;
+/// Programmatic YARP Route and Cluster Configuration Builder.
+/// &lt;/summary&gt;
+public class YarpConfigBuilder
+{
+    private readonly List&lt;RouteConfig&gt; _routes = new();
+    private readonly List&lt;ClusterConfig&gt; _clusters = new();
+
+    public YarpConfigBuilder AddCluster(
+        string clusterId,
+        IReadOnlyDictionary&lt;string, string&gt; destinationAddresses,
+        string loadBalancingPolicy = &quot;RoundRobin&quot;,
+        bool enableHealthChecks = true)
+    {
+        var destinations = destinationAddresses.ToDictionary(
+            kvp =&gt; kvp.Key,
+            kvp =&gt; new DestinationConfig { Address = kvp.Value });
+
+        var cluster = new ClusterConfig
+        {
+            ClusterId = clusterId,
+            LoadBalancingPolicy = loadBalancingPolicy,
+            Destinations = destinations,
+            HealthCheck = enableHealthChecks ? new HealthCheckConfig
+            {
+                Active = new ActiveHealthCheckConfig
+                {
+                    Enabled = true,
+                    Interval = TimeSpan.FromSeconds(10),
+                    Timeout = TimeSpan.FromSeconds(2),
+                    Policy = &quot;ConsecutiveFailures&quot;,
+                    Path = &quot;/health&quot;
+                }
+            } : null
+        };
+
+        _clusters.Add(cluster);
+        return this;
+    }
+
+    public YarpConfigBuilder AddRoute(
+        string routeId,
+        string clusterId,
+        string pathPattern,
+        IReadOnlyList&lt;IReadOnlyDictionary&lt;string, string&gt;&gt;? transforms = null,
+        string? authorizationPolicy = null,
+        string? rateLimiterPolicy = null)
+    {
+        var route = new RouteConfig
+        {
+            RouteId = routeId,
+            ClusterId = clusterId,
+            Match = new RouteMatch
+            {
+                Path = pathPattern
+            },
+            AuthorizationPolicy = authorizationPolicy,
+            RateLimiterPolicy = rateLimiterPolicy,
+            Transforms = transforms
+        };
+
+        _routes.Add(route);
+        return this;
+    }
+
+    public (IReadOnlyList&lt;RouteConfig&gt; Routes, IReadOnlyList&lt;ClusterConfig&gt; Clusters) Build()
+    {
+        return (_routes.AsReadOnly(), _clusters.AsReadOnly());
+    }
+}
+
+/// &lt;summary&gt;
+/// Gateway Token Bucket Rate Limiter partitioned by Client IP or API Key.
+/// &lt;/summary&gt;
+public class GatewayRateLimiter
+{
+    private readonly int _capacity;
+    private readonly double _refillRatePerSecond;
+    private readonly ConcurrentDictionary&lt;string, TokenBucket&gt; _clientBuckets = new();
+
+    public GatewayRateLimiter(int capacity, double refillRatePerSecond)
+    {
+        if (capacity &lt;= 0) throw new ArgumentOutOfRangeException(nameof(capacity));
+        if (refillRatePerSecond &lt;= 0) throw new ArgumentOutOfRangeException(nameof(refillRatePerSecond));
+
+        _capacity = capacity;
+        _refillRatePerSecond = refillRatePerSecond;
+    }
+
+    public bool TryConsume(string clientKey, out int remainingTokens, out TimeSpan retryAfter)
+    {
+        var bucket = _clientBuckets.GetOrAdd(clientKey, _ =&gt; new TokenBucket(_capacity, _refillRatePerSecond));
+        return bucket.TryConsume(out remainingTokens, out retryAfter);
+    }
+
+    private class TokenBucket
+    {
+        private readonly int _maxTokens;
+        private readonly double _refillRate;
+        private double _currentTokens;
+        private DateTime _lastRefillUtc;
+        private readonly object _lock = new();
+
+        public TokenBucket(int maxTokens, double refillRate)
+        {
+            _maxTokens = maxTokens;
+            _refillRate = refillRate;
+            _currentTokens = maxTokens;
+            _lastRefillUtc = DateTime.UtcNow;
+        }
+
+        public bool TryConsume(out int remaining, out TimeSpan retryAfter)
+        {
+            lock (_lock)
+            {
+                var now = DateTime.UtcNow;
+                var elapsed = (now - _lastRefillUtc).TotalSeconds;
+                _currentTokens = Math.Min(_maxTokens, _currentTokens + (elapsed * _refillRate));
+                _lastRefillUtc = now;
+
+                if (_currentTokens &gt;= 1.0)
+                {
+                    _currentTokens -= 1.0;
+                    remaining = (int)_currentTokens;
+                    retryAfter = TimeSpan.Zero;
+                    return true;
+                }
+
+                remaining = 0;
+                var missingTokens = 1.0 - _currentTokens;
+                retryAfter = TimeSpan.FromSeconds(Math.Ceiling(missingTokens / _refillRate));
+                return false;
+            }
+        }
+    }
+}
+
+/// &lt;summary&gt;
+/// High-throughput simulated YARP Reverse Proxy Engine.
+/// Handles route dispatching, request transformation, health check filtering, and destination load balancing.
+/// &lt;/summary&gt;
+public class YarpGatewayEngine
+{
+    private readonly List&lt;RouteConfig&gt; _routes = new();
+    private readonly Dictionary&lt;string, List&lt;DownstreamDestination&gt;&gt; _clusterDestinations = new();
+    private readonly ConcurrentDictionary&lt;string, int&gt; _clusterRoundRobinIndices = new();
+    private readonly GatewayRateLimiter _rateLimiter;
+    private readonly TransformRule _globalTransforms;
+
+    public YarpGatewayEngine(GatewayRateLimiter rateLimiter, TransformRule? globalTransforms = null)
+    {
+        _rateLimiter = rateLimiter;
+        _globalTransforms = globalTransforms ?? new TransformRule();
+    }
+
+    public void RegisterRoute(RouteConfig route)
+    {
+        _routes.Add(route);
+    }
+
+    public void RegisterCluster(string clusterId, IEnumerable&lt;DownstreamDestination&gt; destinations)
+    {
+        _clusterDestinations[clusterId] = destinations.ToList();
+        _clusterRoundRobinIndices[clusterId] = 0;
+    }
+
+    /// &lt;summary&gt;
+    /// Processes an incoming request through Rate Limiter, Route Matching, Transform Pipeline, and Load Balancer.
+    /// &lt;/summary&gt;
+    public GatewayProxyResult Forward(GatewayRequest request)
+    {
+        // 1. Rate Limiting Check
+        if (!_rateLimiter.TryConsume(request.ClientIp, out var remainingTokens, out var retryAfter))
+        {
+            return new GatewayProxyResult(
+                StatusCode: 429,
+                ErrorMessage: &quot;Rate limit exceeded. Try again later.&quot;,
+                TransformedHeaders: new Dictionary&lt;string, string&gt;
+                {
+                    [&quot;Retry-After&quot;] = ((int)retryAfter.TotalSeconds).ToString(),
+                    [&quot;X-RateLimit-Remaining&quot;] = &quot;0&quot;
+                });
+        }
+
+        // 2. Route Matching
+        var matchedRoute = FindMatchingRoute(request.Path);
+        if (matchedRoute == null)
+        {
+            return new GatewayProxyResult(
+                StatusCode: 404,
+                ErrorMessage: $&quot;No matching YARP route found for path: {request.Path}&quot;);
+        }
+
+        // 3. Cluster &amp; Healthy Destination Selection
+        if (!_clusterDestinations.TryGetValue(matchedRoute.ClusterId ?? string.Empty, out var destinations))
+        {
+            return new GatewayProxyResult(
+                StatusCode: 502,
+                ErrorMessage: $&quot;Target cluster &#x27;{matchedRoute.ClusterId}&#x27; not configured.&quot;);
+        }
+
+        var healthyDestinations = destinations
+            .Where(d =&gt; d.HealthStatus == DestinationHealthStatus.Healthy)
+            .ToList();
+
+        if (healthyDestinations.Count == 0)
+        {
+            return new GatewayProxyResult(
+                StatusCode: 503,
+                ErrorMessage: $&quot;All destinations for cluster &#x27;{matchedRoute.ClusterId}&#x27; are unhealthy.&quot;);
+        }
+
+        // Round-Robin selection over healthy destinations
+        var index = _clusterRoundRobinIndices.AddOrUpdate(
+            matchedRoute.ClusterId!,
+            0,
+            (_, curr) =&gt; (curr + 1) % healthyDestinations.Count);
+        var targetDestination = healthyDestinations[index % healthyDestinations.Count];
+
+        // 4. Request Transformation
+        var transformedHeaders = ApplyHeaderTransforms(request.Headers);
+        transformedHeaders[&quot;X-RateLimit-Remaining&quot;] = remainingTokens.ToString();
+        transformedHeaders[&quot;X-Forwarded-Host&quot;] = request.Host;
+        transformedHeaders[&quot;X-Forwarded-For&quot;] = request.ClientIp;
+        if (!transformedHeaders.ContainsKey(&quot;X-Correlation-ID&quot;))
+        {
+            transformedHeaders[&quot;X-Correlation-ID&quot;] = Guid.NewGuid().ToString(&quot;N&quot;);
+        }
+
+        var transformedPath = ApplyPathTransforms(request.Path, matchedRoute);
+
+        return new GatewayProxyResult(
+            StatusCode: 200,
+            DestinationId: targetDestination.Id,
+            DestinationUri: new Uri(targetDestination.Address, transformedPath.TrimStart(&#x27;/&#x27;)),
+            TransformedPath: transformedPath,
+            TransformedHeaders: transformedHeaders);
+    }
+
+    private RouteConfig? FindMatchingRoute(string path)
+    {
+        foreach (var route in _routes)
+        {
+            if (string.IsNullOrEmpty(route.Match.Path)) continue;
+
+            // Simplified prefix &amp; wildcards matching (e.g. /api/orders/{**catch-all} or /api/orders)
+            var pattern = route.Match.Path
+                .Replace(&quot;{**catch-all}&quot;, &quot;.*&quot;)
+                .Replace(&quot;{**remainder}&quot;, &quot;.*&quot;);
+
+            if (Regex.IsMatch(path, $&quot;^{pattern}$&quot;, RegexOptions.IgnoreCase))
+            {
+                return route;
+            }
+        }
+        return null;
+    }
+
+    private Dictionary&lt;string, string&gt; ApplyHeaderTransforms(IReadOnlyDictionary&lt;string, string&gt; incomingHeaders)
+    {
+        var headers = new Dictionary&lt;string, string&gt;(incomingHeaders, StringComparer.OrdinalIgnoreCase);
+
+        // Strip disallowed headers
+        foreach (var removeKey in _globalTransforms.RemoveHeaders)
+        {
+            headers.Remove(removeKey);
+        }
+
+        // Add configured headers
+        foreach (var (k, v) in _globalTransforms.AddHeaders)
+        {
+            headers[k] = v;
+        }
+
+        return headers;
+    }
+
+    private string ApplyPathTransforms(string incomingPath, RouteConfig route)
+    {
+        var path = incomingPath;
+
+        if (_globalTransforms.PathRemovePrefix != null &amp;&amp; path.StartsWith(_globalTransforms.PathRemovePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            path = path[_globalTransforms.PathRemovePrefix.Length..];
+        }
+
+        if (_globalTransforms.PathAddPrefix != null)
+        {
+            path = _globalTransforms.PathAddPrefix.TrimEnd(&#x27;/&#x27;) + &quot;/&quot; + path.TrimStart(&#x27;/&#x27;);
+        }
+
+        return string.IsNullOrEmpty(path) ? &quot;/&quot; : path;
+    }
+}
+
+public record GatewayRequest(
+    string Path,
+    string Method,
+    string Host,
+    string ClientIp,
+    Dictionary&lt;string, string&gt; Headers);
+
+public record GatewayProxyResult(
+    int StatusCode,
+    string? DestinationId = null,
+    Uri? DestinationUri = null,
+    string? TransformedPath = null,
+    Dictionary&lt;string, string&gt;? TransformedHeaders = null,
+    string? ErrorMessage = null);
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day27.ApiGatewayYarp.Tests/Day27Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd27-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d27-tests-code-0" class="language-csharp">using Day27.ApiGatewayYarp;
+using Xunit;
+using Yarp.ReverseProxy.Configuration;
+
+namespace Day27.ApiGatewayYarp.Tests;
+
+public class Day27Tests
+{
+    [Fact]
+    public void YarpConfigBuilder_ConstructsValidRoutesAndClusters()
+    {
+        var builder = new YarpConfigBuilder();
+        builder.AddCluster(
+            clusterId: &quot;orders-cluster&quot;,
+            destinationAddresses: new Dictionary&lt;string, string&gt;
+            {
+                [&quot;dest-1&quot;] = &quot;http://orders-svc-1:5001&quot;,
+                [&quot;dest-2&quot;] = &quot;http://orders-svc-2:5001&quot;
+            },
+            loadBalancingPolicy: &quot;RoundRobin&quot;,
+            enableHealthChecks: true);
+
+        builder.AddRoute(
+            routeId: &quot;orders-route&quot;,
+            clusterId: &quot;orders-cluster&quot;,
+            pathPattern: &quot;/api/orders/{**catch-all}&quot;);
+
+        var (routes, clusters) = builder.Build();
+
+        Assert.Single(routes);
+        Assert.Single(clusters);
+        Assert.Equal(&quot;orders-route&quot;, routes[0].RouteId);
+        Assert.Equal(&quot;orders-cluster&quot;, routes[0].ClusterId);
+        Assert.Equal(2, clusters[0].Destinations?.Count);
+        Assert.NotNull(clusters[0].HealthCheck?.Active);
+        Assert.True(clusters[0].HealthCheck!.Active!.Enabled);
+    }
+
+    [Fact]
+    public void YarpGatewayEngine_ForwardsRequest_ToMatchingCluster()
+    {
+        var limiter = new GatewayRateLimiter(capacity: 10, refillRatePerSecond: 10.0);
+        var engine = new YarpGatewayEngine(limiter);
+
+        var route = new RouteConfig
+        {
+            RouteId = &quot;inventory-route&quot;,
+            ClusterId = &quot;inventory-cluster&quot;,
+            Match = new RouteMatch { Path = &quot;/api/inventory/{**catch-all}&quot; }
+        };
+        engine.RegisterRoute(route);
+
+        var dest1 = new DownstreamDestination(&quot;inv-node-1&quot;, new Uri(&quot;http://inventory-host:5002/&quot;));
+        engine.RegisterCluster(&quot;inventory-cluster&quot;, new[] { dest1 });
+
+        var request = new GatewayRequest(
+            Path: &quot;/api/inventory/items/SKU-999&quot;,
+            Method: &quot;GET&quot;,
+            Host: &quot;api.company.com&quot;,
+            ClientIp: &quot;10.0.0.1&quot;,
+            Headers: new Dictionary&lt;string, string&gt; { [&quot;User-Agent&quot;] = &quot;TestClient&quot; });
+
+        var result = engine.Forward(request);
+
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(&quot;inv-node-1&quot;, result.DestinationId);
+        Assert.Equal(&quot;http://inventory-host:5002/api/inventory/items/SKU-999&quot;, result.DestinationUri?.ToString());
+        Assert.NotNull(result.TransformedHeaders);
+        Assert.True(result.TransformedHeaders.ContainsKey(&quot;X-Correlation-ID&quot;));
+    }
+
+    [Fact]
+    public void YarpGatewayEngine_AppliesTransforms_HeadersAndPath()
+    {
+        var limiter = new GatewayRateLimiter(capacity: 10, refillRatePerSecond: 10.0);
+        var transforms = new TransformRule
+        {
+            AddHeaders = new Dictionary&lt;string, string&gt; { [&quot;X-Forwarded-Prefix&quot;] = &quot;/public-gateway&quot; },
+            RemoveHeaders = new HashSet&lt;string&gt; { &quot;X-Client-Secret&quot;, &quot;Internal-Token&quot; },
+            PathRemovePrefix = &quot;/api/v1&quot;
+        };
+
+        var engine = new YarpGatewayEngine(limiter, transforms);
+
+        var route = new RouteConfig
+        {
+            RouteId = &quot;orders-route&quot;,
+            ClusterId = &quot;orders-cluster&quot;,
+            Match = new RouteMatch { Path = &quot;/api/v1/orders/{**catch-all}&quot; }
+        };
+        engine.RegisterRoute(route);
+
+        var dest = new DownstreamDestination(&quot;order-node-1&quot;, new Uri(&quot;http://orders-host:5001/&quot;));
+        engine.RegisterCluster(&quot;orders-cluster&quot;, new[] { dest });
+
+        var request = new GatewayRequest(
+            Path: &quot;/api/v1/orders/123&quot;,
+            Method: &quot;GET&quot;,
+            Host: &quot;api.company.com&quot;,
+            ClientIp: &quot;192.168.1.50&quot;,
+            Headers: new Dictionary&lt;string, string&gt;
+            {
+                [&quot;X-Client-Secret&quot;] = &quot;super-confidential-key&quot;,
+                [&quot;Internal-Token&quot;] = &quot;token-secret&quot;,
+                [&quot;Accept&quot;] = &quot;application/json&quot;
+            });
+
+        var result = engine.Forward(request);
+
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(&quot;/orders/123&quot;, result.TransformedPath);
+        Assert.False(result.TransformedHeaders!.ContainsKey(&quot;X-Client-Secret&quot;));
+        Assert.False(result.TransformedHeaders.ContainsKey(&quot;Internal-Token&quot;));
+        Assert.Equal(&quot;/public-gateway&quot;, result.TransformedHeaders[&quot;X-Forwarded-Prefix&quot;]);
+    }
+
+    [Fact]
+    public void YarpGatewayEngine_FiltersOutUnhealthyDestinations()
+    {
+        var limiter = new GatewayRateLimiter(capacity: 10, refillRatePerSecond: 10.0);
+        var engine = new YarpGatewayEngine(limiter);
+
+        var route = new RouteConfig
+        {
+            RouteId = &quot;payment-route&quot;,
+            ClusterId = &quot;payment-cluster&quot;,
+            Match = new RouteMatch { Path = &quot;/api/payments/{**catch-all}&quot; }
+        };
+        engine.RegisterRoute(route);
+
+        var destHealthy = new DownstreamDestination(&quot;pay-healthy&quot;, new Uri(&quot;http://pay-1:5003/&quot;))
+        {
+            HealthStatus = DestinationHealthStatus.Healthy
+        };
+        var destUnhealthy = new DownstreamDestination(&quot;pay-dead&quot;, new Uri(&quot;http://pay-2:5003/&quot;))
+        {
+            HealthStatus = DestinationHealthStatus.Unhealthy
+        };
+
+        engine.RegisterCluster(&quot;payment-cluster&quot;, new[] { destUnhealthy, destHealthy });
+
+        for (int i = 0; i &lt; 5; i++)
+        {
+            var request = new GatewayRequest(
+                Path: &quot;/api/payments/charge&quot;,
+                Method: &quot;POST&quot;,
+                Host: &quot;api.company.com&quot;,
+                ClientIp: &quot;10.0.0.1&quot;,
+                Headers: new Dictionary&lt;string, string&gt;());
+
+            var result = engine.Forward(request);
+            Assert.Equal(200, result.StatusCode);
+            Assert.Equal(&quot;pay-healthy&quot;, result.DestinationId);
+        }
+    }
+
+    [Fact]
+    public void YarpGatewayEngine_Returns503_WhenAllDestinationsUnhealthy()
+    {
+        var limiter = new GatewayRateLimiter(capacity: 10, refillRatePerSecond: 10.0);
+        var engine = new YarpGatewayEngine(limiter);
+
+        var route = new RouteConfig
+        {
+            RouteId = &quot;failover-route&quot;,
+            ClusterId = &quot;failover-cluster&quot;,
+            Match = new RouteMatch { Path = &quot;/api/fail/{**catch-all}&quot; }
+        };
+        engine.RegisterRoute(route);
+
+        var dest = new DownstreamDestination(&quot;fail-node&quot;, new Uri(&quot;http://fail:5000/&quot;))
+        {
+            HealthStatus = DestinationHealthStatus.Unhealthy
+        };
+        engine.RegisterCluster(&quot;failover-cluster&quot;, new[] { dest });
+
+        var request = new GatewayRequest(
+            Path: &quot;/api/fail/test&quot;,
+            Method: &quot;GET&quot;,
+            Host: &quot;api.company.com&quot;,
+            ClientIp: &quot;10.0.0.1&quot;,
+            Headers: new Dictionary&lt;string, string&gt;());
+
+        var result = engine.Forward(request);
+
+        Assert.Equal(503, result.StatusCode);
+        Assert.Contains(&quot;All destinations for cluster &#x27;failover-cluster&#x27; are unhealthy&quot;, result.ErrorMessage);
+    }
+
+    [Fact]
+    public void GatewayRateLimiter_EnforcesLimitAndEmits429()
+    {
+        var limiter = new GatewayRateLimiter(capacity: 2, refillRatePerSecond: 0.1);
+        var engine = new YarpGatewayEngine(limiter);
+
+        var route = new RouteConfig
+        {
+            RouteId = &quot;rate-route&quot;,
+            ClusterId = &quot;rate-cluster&quot;,
+            Match = new RouteMatch { Path = &quot;/api/ping&quot; }
+        };
+        engine.RegisterRoute(route);
+        engine.RegisterCluster(&quot;rate-cluster&quot;, new[] { new DownstreamDestination(&quot;node-1&quot;, new Uri(&quot;http://ping:80/&quot;)) });
+
+        var req = new GatewayRequest(&quot;/api/ping&quot;, &quot;GET&quot;, &quot;api.test.com&quot;, &quot;1.2.3.4&quot;, new Dictionary&lt;string, string&gt;());
+
+        var res1 = engine.Forward(req);
+        var res2 = engine.Forward(req);
+        var res3 = engine.Forward(req);
+
+        Assert.Equal(200, res1.StatusCode);
+        Assert.Equal(200, res2.StatusCode);
+        Assert.Equal(429, res3.StatusCode);
+        Assert.NotNull(res3.TransformedHeaders);
+        Assert.True(res3.TransformedHeaders.ContainsKey(&quot;Retry-After&quot;));
+    }
+
+    [Fact]
+    public void CloneGraph_Dfs_ClonesCyclicGraphAccurately()
+    {
+        var solver = new GraphAndIslandSolver();
+
+        // Build cycle graph: 1 -- 2
+        //                    |    |
+        //                    4 -- 3
+        var n1 = new Node(1);
+        var n2 = new Node(2);
+        var n3 = new Node(3);
+        var n4 = new Node(4);
+
+        n1.neighbors = new List&lt;Node&gt; { n2, n4 };
+        n2.neighbors = new List&lt;Node&gt; { n1, n3 };
+        n3.neighbors = new List&lt;Node&gt; { n2, n4 };
+        n4.neighbors = new List&lt;Node&gt; { n1, n3 };
+
+        var clone1 = solver.CloneGraphDfs(n1);
+
+        Assert.NotNull(clone1);
+        Assert.NotSame(n1, clone1);
+        Assert.Equal(1, clone1.val);
+        Assert.Equal(2, clone1.neighbors.Count);
+
+        // Verify deep copy references
+        var clone2 = clone1.neighbors.First(n =&gt; n.val == 2);
+        Assert.NotSame(n2, clone2);
+        Assert.Contains(clone2.neighbors, n =&gt; n == clone1); // cycle points to clone1, not original n1
+    }
+
+    [Fact]
+    public void CloneGraph_Bfs_ClonesCyclicGraphAccurately()
+    {
+        var solver = new GraphAndIslandSolver();
+
+        var n1 = new Node(10);
+        var n2 = new Node(20);
+        n1.neighbors.Add(n2);
+        n2.neighbors.Add(n1);
+
+        var clone1 = solver.CloneGraphBfs(n1);
+
+        Assert.NotNull(clone1);
+        Assert.NotSame(n1, clone1);
+        Assert.Equal(10, clone1.val);
+        Assert.Single(clone1.neighbors);
+        Assert.Equal(20, clone1.neighbors[0].val);
+        Assert.Same(clone1, clone1.neighbors[0].neighbors[0]);
+    }
+
+    [Fact]
+    public void CloneGraph_HandlesEdgeCases()
+    {
+        var solver = new GraphAndIslandSolver();
+
+        Assert.Null(solver.CloneGraphDfs(null));
+        Assert.Null(solver.CloneGraphBfs(null));
+
+        // Single isolated node
+        var single = new Node(42);
+        var clonedSingleDfs = solver.CloneGraphDfs(single);
+        Assert.NotNull(clonedSingleDfs);
+        Assert.Equal(42, clonedSingleDfs.val);
+        Assert.Empty(clonedSingleDfs.neighbors);
+
+        // Self-loop node
+        var selfLoop = new Node(99);
+        selfLoop.neighbors.Add(selfLoop);
+        var clonedSelf = solver.CloneGraphDfs(selfLoop);
+        Assert.NotNull(clonedSelf);
+        Assert.Single(clonedSelf.neighbors);
+        Assert.Same(clonedSelf, clonedSelf.neighbors[0]);
+    }
+
+    [Fact]
+    public void MaxAreaOfIsland_DfsAndBfs_CalculatesCorrectMaxArea()
+    {
+        var solver = new GraphAndIslandSolver();
+
+        // Grid with multiple islands: max area is 6
+        var grid = new int[][]
+        {
+            new[] { 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
+            new[] { 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
+            new[] { 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+            new[] { 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0 },
+            new[] { 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0 },
+            new[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
+            new[] { 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0 },
+            new[] { 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0 }
+        };
+
+        var dfsArea = solver.MaxAreaOfIslandDfs(grid);
+        var bfsArea = solver.MaxAreaOfIslandBfs(grid);
+
+        Assert.Equal(6, dfsArea);
+        Assert.Equal(6, bfsArea);
+
+        // All water
+        var waterGrid = new int[][] { new[] { 0, 0 }, new[] { 0, 0 } };
+        Assert.Equal(0, solver.MaxAreaOfIslandDfs(waterGrid));
+        Assert.Equal(0, solver.MaxAreaOfIslandBfs(waterGrid));
+
+        // Single land
+        var singleLand = new int[][] { new[] { 1 } };
+        Assert.Equal(1, solver.MaxAreaOfIslandDfs(singleLand));
+        Assert.Equal(1, solver.MaxAreaOfIslandBfs(singleLand));
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 27 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

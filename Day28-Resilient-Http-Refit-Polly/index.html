@@ -1,0 +1,2593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 28: Resilient Service-to-Service HTTP with Refit &amp; Polly | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 28</span>
+        <span class="badge badge-category">Microservices &amp; Refit</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day27-ApiGateway-Yarp/index.html" class="nav-btn">← Day 27</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+
+        </select>
+        <a href="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html" class="nav-btn">Day 29 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 28: Resilient Service-to-Service HTTP with Refit &amp; Polly</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 3 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d28GradRefit" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0284c7"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d28GradPolly" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#b45309"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d28GradFlow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f766e"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 28: Resilient Service-to-Service HTTP with Refit &amp; Polly v8 &amp; LC #417 Pacific Atlantic</text>
+
+          <!-- 1. Refit Type-Safe REST -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d28GradRefit)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#7dd3fc" font-size="14" font-weight="bold">Refit Declarative REST</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">C# Interface Contract</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">[Get("/api/inventory/{sku}")]</text>
+          <text x="50" y="162" fill="#cbd5e1" font-size="9">[Post("/api/inventory/reserve")]</text>
+          <text x="50" y="179" fill="#34d399" font-size="9">Roslyn compile-time source generator</text>
+          <text x="50" y="196" fill="#a5b4fc" font-size="9">Zero raw URL strings | Strong typing</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Header &amp; Cancellation Binding</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">[Header("X-Correlation-ID")] string? id</text>
+          <text x="50" y="274" fill="#cbd5e1" font-size="9">CancellationToken cancellationToken</text>
+          <text x="50" y="290" fill="#34d399" font-size="9">ApiResponse&lt;T&gt; with HTTP status codes</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Automatic JSON streaming serialization</text>
+
+          <!-- 2. Polly v8 Resilience Pipeline -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d28GradPolly)" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#fcd34d" font-size="14" font-weight="bold">Polly v8 Resilience Pipeline</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#fbbf24" font-size="11" font-weight="bold">Retry with Decorrelated Jitter</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Exponential backoff: 2^attempt * base</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Full Jitter prevents retry storms</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">Zero-allocation ValueTask execution</text>
+          <text x="340" y="196" fill="#38bdf8" font-size="9">PredicateBuilder filters transient 5xx/429</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#f87171" font-size="11" font-weight="bold">Circuit Breaker &amp; Hedging</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Closed &#8594; Open (Fast fail BrokenCircuit)</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Half-Open: Canary probes for recovery</text>
+          <text x="340" y="290" fill="#a5b4fc" font-size="9">Hedging: Parallel backup call after 40ms</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Cuts p99 latency spikes on read replicas</text>
+
+          <!-- 3. LeetCode #417 Pacific Atlantic -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d28GradFlow)" stroke="#14b8a6" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#5eead4" font-size="14" font-weight="bold">LC #417: Pacific Atlantic Flow</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#14b8a6" font-size="11" font-weight="bold">Reverse Multi-Source Search</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Flow UPHILL from ocean borders</text>
+          <text x="630" y="162" fill="#cbd5e1" font-size="9">Pacific: Top (r=0) &amp; Left (c=0)</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Atlantic: Bottom (r=m-1) &amp; Right (c=n-1)</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Neighbor height &gt;= Current height</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Intersection &amp; Complexity</text>
+          <text x="630" y="258" fill="#34d399" font-size="9">pacific[r,c] &amp;&amp; atlantic[r,c] == true</text>
+          <text x="630" y="274" fill="#cbd5e1" font-size="9">DFS recursion &amp; BFS Queue supported</text>
+          <text x="630" y="290" fill="#fbbf24" font-size="9">Optimal O(M * N) Linear Time</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Avoids naive O((M*N)^2) search explosion</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (3 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 28: Deep Dive Notes — Resilient HTTP with Refit & Polly</h1>
+<h2>1. Resilience in Distributed Systems</h2>
+<p>In monolithic applications, an in-memory function call either succeeds or throws an immediate exception in nanoseconds. In microservices architectures, service-to-service communication crosses network boundaries, introducing partial failures, transient latency spikes, and socket disconnects.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+----------------------------------------------------------------------------------------------------+
+|                                POLLY v8 RESILIENCE PIPELINE TOPOLOGY                               |
++----------------------------------------------------------------------------------------------------+
+|                                                                                                    |
+|    Caller Request                                                                                  |
+|          |                                                                                         |
+|          v                                                                                         |
+|    +------------------------------------------------------------------------------------------+    |
+|    |                                  ResiliencePipeline                                      |    |
+|    |------------------------------------------------------------------------------------------|    |
+|    |  1. Total Timeout Strategy (e.g. 5s overall limit)                                       |    |
+|    |        |                                                                                 |    |
+|    |        v                                                                                 |    |
+|    |  2. Retry Strategy (Exponential Backoff + Decorrelated Jitter)                           |    |
+|    |        |                                                                                 |    |
+|    |        v                                                                                 |    |
+|    |  3. Circuit Breaker Strategy                                                             |    |
+|    |     [ Closed: Normal ] ---&gt; (Failures &gt;= 50%) ---&gt; [ Open: Fast-Fail with BrokenCircuit ]|    |
+|    |            ^                                               |                             |    |
+|    |            |                                        (Break Duration)                     |    |
+|    |            +--- (Canary Succeeds) &lt;--- [ Half-Open ] &lt;-----+                             |    |
+|    |        |                                                                                 |    |
+|    |        v                                                                                 |    |
+|    |  4. Attempt Timeout Strategy (e.g. 1.5s per HTTP attempt)                                |    |
+|    +------------------------------------------------------------------------------------------+    |
+|          |                                                                                         |
+|          v                                                                                         |
+|    [ Downstream Service (via Refit IInventoryServiceClient) ]                                      |
+|                                                                                                    |
++----------------------------------------------------------------------------------------------------+</code></pre></div>
+<hr/>
+<h2>2. Refit: Type-Safe Declarative REST Clients</h2>
+<h3>Manual <code>HttpClient</code> vs. Refit</h3>
+<ul>
+<li><strong>Manual <code>HttpClient</code></strong>:</li>
+<li>Developers write boilerplate code: <code>client.GetAsync($&quot;/api/inventory/{sku}&quot;)</code>, deserialize JSON streams, manually attach auth and correlation headers.</li>
+<li>Runtime errors from misspelled route tokens or query parameters.</li>
+<li><strong>Refit (<code>Refit.HttpClientFactory</code>)</strong>:</li>
+<li>Developers declare an interface adorned with HTTP annotations (<code>[Get]</code>, <code>[Post]</code>, <code>[Header]</code>, <code>[Body]</code>).</li>
+<li>During build, Refit uses Roslyn Source Generators to compile high-performance, non-allocating proxy implementations directly into the assembly.</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public interface IInventoryServiceClient
+{
+    [Get(&quot;/api/inventory/{sku}&quot;)]
+    Task&lt;ApiResponse&lt;InventoryItemDto&gt;&gt; GetInventoryItemAsync(
+        string sku,
+        [Header(&quot;X-Correlation-ID&quot;)] string? correlationId = null,
+        CancellationToken cancellationToken = default);
+}</code></pre></div>
+<hr/>
+<h2>3. Polly v8: The Modern Resilience Engine</h2>
+<p>In .NET 8, Polly was redesigned from the ground up (<code>Polly.Core</code>) in partnership with Microsoft.</p>
+<h3>Polly v7 vs. Polly v8</h3>
+<div class="table-container"><table><thead><tr>
+<th>Architectural Aspect</th>
+<th>Polly v7 (<code>IAsyncPolicy</code>)</th>
+<th>Polly v8 (<code>ResiliencePipeline</code>)</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Memory Allocation</strong></td>
+<td>Allocates execution contexts and closures on heap</td>
+<td>Zero-allocation using <code>ValueTask</code> and non-allocating structs</td>
+</tr>
+<tr>
+<td><strong>Composition Model</strong></td>
+<td>PolicyWrap with awkward nesting</td>
+<td>Fluent sequential pipeline builder</td>
+</tr>
+<tr>
+<td><strong>Telemetry</strong></td>
+<td>Manual logging or third-party adapters</td>
+<td>Native <code>System.Diagnostics.Metrics</code> and <code>Meter</code> integration</td>
+</tr>
+<tr>
+<td><strong>CancellationToken</strong></td>
+<td>Optional or passed manually through context</td>
+<td>First-class citizen on every strategy</td>
+</tr>
+</tbody></table></div>
+<h3>Core Resilience Strategies</h3>
+<h4>1. Retry with Decorrelated Jitter</h4>
+<p>When hundreds of concurrent requests encounter a temporary downstream hiccup, simple exponential retries cause all clients to retry at the exact same millisecond intervals ($2\text{s}, 4\text{s}, 8\text{s}$), overwhelming the recovering service (the "Thundering Herd" or retry storm).</p>
+<ul>
+<li><strong>Decorrelated Jitter</strong> injects cryptographic or pseudorandom variation into the sleep duration:</li>
+</ul>
+<p>$$t_{\text{sleep}} = \min(t_{\text{max}}, \text{Uniform}(\text{low}, \text{prev\_delay} \times 3))$$</p>
+<ul>
+<li>Spreads retry spikes across a smooth time distribution.</li>
+</ul>
+<h4>2. Advanced Circuit Breaker</h4>
+<p>A Circuit Breaker stops an application from repeatedly executing an operation that is almost certainly doomed to fail:</p>
+<ul>
+<li><strong><code>Closed</code></strong>: Operations execute normally. Failures are recorded within a sliding time window (SamplingDuration).</li>
+<li><strong><code>Open</code></strong>: When the failure ratio breaches a threshold (e.g. $\ge 50\%$) and the minimum throughput requirement is met (e.g. $\ge 4$ calls), the circuit opens immediately. All subsequent requests fail fast with <code>BrokenCircuitException</code>, preventing thread starvation and giving downstream services time to recover.</li>
+<li><strong><code>Half-Open</code></strong>: When the break duration expires, the circuit enters Half-Open. A limited number of trial (canary) requests are permitted through. If successful, the circuit resets to <code>Closed</code>; if any fail, it resets to <code>Open</code> for another cooldown.</li>
+</ul>
+<h4>3. Hedging (Speculative Parallel Execution)</h4>
+<p>For latency-sensitive read operations (e.g. searching a distributed catalog), 99% of requests complete in 15ms, but a tail 1% hang for 1500ms due to GC pauses or network retries.</p>
+<ul>
+<li>Hedging sets a delay threshold (e.g. 40ms). If the primary request does not respond within 40ms, the pipeline launches a second, concurrent request to an alternate replica. Whichever returns first is delivered to the caller, effectively eliminating tail latency (p99 smoothing).</li>
+</ul>
+<hr/>
+<h2>4. Graph Algorithms: Pacific Atlantic Water Flow (LeetCode #417)</h2>
+<h3>Problem Formulation</h3>
+<p>Given an $m \times n$ matrix of elevations, rain water can flow from a cell to adjacent cells horizontally or vertically if the adjacent cell's height is <strong>less than or equal</strong> to the current cell's height.</p>
+<ul>
+<li>Pacific Ocean touches top ($r=0$) and left ($c=0$) edges.</li>
+<li>Atlantic Ocean touches bottom ($r=m-1$) and right ($c=n-1$) edges.</li>
+<li>Find all coordinates where water can reach <strong>both</strong> oceans.</li>
+</ul>
+<h3>1. Naive Direct Approach</h3>
+<p>Starting a search from every individual cell $(r, c)$ to check if it can reach both oceans requires checking up to $M \times N$ cells, leading to an unacceptably slow $\mathcal{O}((M \times N)^2)$ time complexity.</p>
+<h3>2. Optimal Reverse Multi-Source Traversal</h3>
+<p>Instead of flowing water downhill from the continent to the ocean, reverse the flow: <strong>flow water uphill from the ocean boundaries into the continent</strong>.</p>
+<ul>
+<li>A neighbor cell $(nr, nc)$ can be reached from $(r, c)$ if:</li>
+</ul>
+<p>$$\text{heights}[nr][nc] \ge \text{heights}[r][c]$$</p>
+<ul>
+<li><strong>Algorithm</strong>:</li>
+</ul>
+<ol>
+<li>Initialize two boolean matrices: <code>pacific[m, n]</code> and <code>atlantic[m, n]</code>.</li>
+<li>Multi-source DFS/BFS for Pacific starting from all top and left perimeter cells. Mark reachable cells in <code>pacific</code>.</li>
+<li>Multi-source DFS/BFS for Atlantic starting from all bottom and right perimeter cells. Mark reachable cells in <code>atlantic</code>.</li>
+<li>Iterate through all $(r, c)$: any cell where <code>pacific[r, c] &amp;&amp; atlantic[r, c]</code> is true belongs to the final intersection set.</li>
+</ol>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(M \times N)$ — each matrix cell is visited at most twice.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(M \times N)$ for boolean reachability grids and recursion stack/queue.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 28: Resilient Service-to-Service HTTP with Refit & Polly</h1>
+<h2>Overview</h2>
+<p><strong>Day 28</strong> explores robust service-to-service communication across microservices in .NET 8. We master declarative type-safe REST clients using <strong>Refit</strong> and integrate enterprise resilience patterns via the redesigned <strong>Polly v8</strong> engine. The resilience pipeline features Exponential Backoff with Decorrelated Jitter, advanced Circuit Breakers (Closed $\to$ Open $\to$ Half-Open), Total and Attempt Timeouts, and Hedging (speculative parallel execution for p99 latency smoothing). For DSA, we solve **LeetCode #417 (<em>Pacific Atlantic Water Flow</em>)** using multi-source reverse graph traversals (DFS and BFS).</p>
+<hr/>
+<h2>Architectural Topics Covered</h2>
+<ol>
+<li><strong>Type-Safe REST Contracts with Refit</strong>:</li>
+</ol>
+<ul>
+<li>Declarative interface-driven HTTP contracts (<code>[Get]</code>, <code>[Post]</code>, <code>[Header]</code>, <code>[Body]</code>).</li>
+<li>Strong typing of request/response payloads (<code>InventoryItemDto</code>, <code>StockReservationRequest/Response</code>).</li>
+<li>Elimination of raw string URLs and boilerplate <code>HttpClient</code> JSON serialization.</li>
+</ul>
+<ol>
+<li><strong>Polly v8 Resilience Pipelines</strong>:</li>
+</ol>
+<ul>
+<li>Modern <code>ResiliencePipelineBuilder</code> architecture in <code>Polly.Core</code>.</li>
+<li><strong>Retry with Exponential Backoff + Jitter</strong>: $T_{\text{delay}} = 2^{\text{attempt}} \times \text{base} \pm \text{jitter}$ to prevent thundering herd retries on recovering backends.</li>
+<li><strong>Circuit Breaker</strong>: Failure ratio monitoring, minimum throughput guardrails, sampling windows, and automated recovery via probe half-open states.</li>
+<li><strong>Timeouts</strong>: Total pipeline timeout vs granular per-attempt cancellation.</li>
+<li><strong>Hedging</strong>: Proactive concurrent execution if primary attempt latency exceeds a tight threshold (e.g., 40ms), returning whichever succeeds first.</li>
+</ul>
+<ol>
+<li><strong>Graph Traversal & Multi-Source Flows</strong>:</li>
+</ol>
+<ul>
+<li><strong>LeetCode #417: Pacific Atlantic Water Flow (Medium)</strong>: Reverse flow exploration from dual ocean coastlines.</li>
+<li>Multi-source DFS and FIFO queue BFS exploring uphill elevations ($h_{\text{neighbor}} \ge h_{\text{current}}$).</li>
+<li>Bitwise/matrix intersection of Pacific-reachable and Atlantic-reachable continental cells.</li>
+</ul>
+<hr/>
+<h2>Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day28-Resilient-Http-Refit-Polly/
+├── src/
+│   └── Day28.ResilientHttpRefitPolly/
+│       ├── Day28.ResilientHttpRefitPolly.csproj
+│       ├── RefitContractsAndServices.cs
+│       ├── ResiliencePipelineBuilder.cs
+│       └── PacificAtlanticSolver.cs
+├── tests/
+│   └── Day28.ResilientHttpRefitPolly.Tests/
+│       ├── Day28.ResilientHttpRefitPolly.Tests.csproj
+│       └── Day28Tests.cs
+├── README.md
+├── notes.md
+└── interview-questions.md</code></pre></div>
+<hr/>
+<h2>Running the Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day28-Resilient-Http-Refit-Polly/tests/Day28.ResilientHttpRefitPolly.Tests/Day28.ResilientHttpRefitPolly.Tests.csproj</code></pre></div>
+<h3>Test Suite Coverage</h3>
+<ol>
+<li><code>RefitContract_ModelSerializationAndInvariants</code>: Validates DTO properties, decimal values, and contract invariants.</li>
+<li><code>PollyPipeline_ExecutesSuccessfulCallWithoutRetries</code>: Validates baseline fast-path execution through pipeline with zero retries.</li>
+<li><code>PollyPipeline_RetriesOnTransientHttpExceptions_AndSucceeds</code>: Verifies retry strategy retries on transient exceptions and completes successfully.</li>
+<li><code>PollyPipeline_ExhaustsRetries_WhenFailurePersists</code>: Confirms retry exhaustion and terminal exception rethrowing.</li>
+<li><code>PollyPipeline_CircuitBreaker_OpensAfterThreshold</code>: Validates circuit breaker opening upon breaching failure ratios, failing fast with <code>BrokenCircuitException</code>.</li>
+<li><code>PollyPipeline_Timeout_AbortsSlowOperations</code>: Validates cancellation propagation and <code>TimeoutRejectedException</code>.</li>
+<li><code>PollyPipeline_Hedging_ExecutesSpeculativeParallelAttempt</code>: Confirms hedging strategy executes speculative parallel attempts when primary attempt stalls.</li>
+<li><code>PacificAtlantic_DfsAndBfs_StandardContinent_CalculatesCorrectIntersection</code>: Validates LC #417 standard 5x5 elevation grid under both DFS and BFS.</li>
+<li><code>PacificAtlantic_SingleCell_ReachesBothOceans</code>: Validates 1x1 boundary matrix.</li>
+<li><code>PacificAtlantic_HandlesEdgeCases</code>: Validates null/empty matrices and flat continental plateaus.</li>
+</ol>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        <div class="markdown-content"><h1>Day 28: Senior & Staff Engineer Interview Questions & Answers</h1>
+<h3>1. Why is blindly adding retries to microservices dangerous, and how do Retry Storms cause cascading catastrophic failures?</h3>
+<p><strong>Answer:</strong></p>
+<p>When a downstream microservice experiences high CPU load or database lock contention, its latency increases. If callers have short timeouts and immediately retry failed or timed-out requests:</p>
+<ol>
+<li><strong>Traffic Multiplication</strong>: If each request retries 3 times, a struggling service experiencing 1,000 requests/sec suddenly receives up to 4,000 requests/sec.</li>
+<li><strong>Work Duplication</strong>: The downstream service may still be processing the original request while the caller retries, doubling the CPU and I/O consumption.</li>
+<li><strong>Cascading Collapse</strong>: As the downstream service crashes completely, caller thread pools saturate waiting on timeouts, causing callers to crash and propagating the failure up the call chain to the API Gateway and frontend.</li>
+</ol>
+<p><strong>Defensive Architecture:</strong></p>
+<ul>
+<li>Use <strong>Exponential Backoff with Jitter</strong> to de-synchronize retries.</li>
+<li>Implement <strong>Circuit Breakers</strong> to fail fast when downstream services are degraded.</li>
+<li>Enforce strict <strong>Total Timeouts</strong> encompassing all retry attempts.</li>
+<li>Only retry <strong>idempotent operations</strong> or transient network errors (HTTP 429, 503; never 400, 401, 403, 404, or 422).</li>
+</ul>
+<hr/>
+<h3>2. How do Idempotency Keys enable safe retries for non-idempotent HTTP methods (such as <code>POST /payments</code>)?</h3>
+<p><strong>Answer:</strong></p>
+<p>Under HTTP semantics, <code>GET</code>, <code>PUT</code>, and <code>DELETE</code> are naturally idempotent (re-executing yields the same side effects). <code>POST</code> operations (e.g. charging a credit card or creating an order) are non-idempotent; retrying a timed-out <code>POST</code> could result in duplicate charges or multiple orders.</p>
+<p><strong>Idempotency Key Pattern:</strong></p>
+<ol>
+<li>The client generates a unique UUID (e.g. <code>Idempotency-Key: f47ac10b-58cc-4372-a567-0e02b2c3d479</code>) before making the initial <code>POST</code>.</li>
+<li>The downstream service checks an ACID database or Redis cache:</li>
+</ol>
+<ul>
+<li>If the key is new: Store the key with status <code>PROCESSING</code> and execute the transaction. Once complete, save the final HTTP response payload and status code alongside the key.</li>
+<li>If the key exists and status is <code>PROCESSING</code>: Return HTTP 409 Conflict or wait for completion.</li>
+<li>If the key exists and status is <code>COMPLETED</code>: Immediately return the cached response without re-executing the business logic.</li>
+</ul>
+<ol>
+<li>Callers can safely retry failed or timed-out <code>POST</code> requests without fear of duplicate execution.</li>
+</ol>
+<hr/>
+<h3>3. What architectural enhancements make Polly v8 significantly faster and more memory-efficient than Polly v7?</h3>
+<p><strong>Answer:</strong></p>
+<p>Polly v7 was designed around <code>IAsyncPolicy</code> and relied heavily on closures, object allocations (<code>Context</code>), and <code>Task&lt;T&gt;</code> instantiations on the managed heap for every policy execution.</p>
+<p><strong>Polly v8 Enhancements (<code>Polly.Core</code>):</strong></p>
+<ol>
+<li><strong>Zero-Allocation Execution Path</strong>: Uses <code>ValueTask</code> and non-allocating structs (<code>ResilienceContext</code>). When an operation succeeds on the first attempt (the 99% happy path), Polly v8 introduces <strong>0 bytes of heap allocation</strong>.</li>
+<li><strong>Unified Pipeline Architecture</strong>: Replaced the cumbersome <code>PolicyWrap</code> with <code>ResiliencePipelineBuilder</code>, providing a linear, single-allocation builder that compiles into a highly optimized strategy chain.</li>
+<li><strong>Native OpenTelemetry Metrics</strong>: Emits standardized <code>System.Diagnostics.Metrics</code> (e.g., retry attempts, circuit breaker state changes, execution durations) natively without needing custom diagnostic listeners.</li>
+<li><strong>First-Class Timeouts & Cancellation</strong>: Every strategy natively accepts and forwards <code>CancellationToken</code>.</li>
+</ol>
+<hr/>
+<h3>4. What is the mathematical difference between Full Jitter and Equal Jitter in Exponential Backoff?</h3>
+<p><strong>Answer:</strong></p>
+<p>Given base delay $b$, attempt $i$, and ceiling delay $c$:</p>
+<ul>
+<li>Standard Exponential Backoff without jitter:</li>
+</ul>
+<p>$$t_{\text{sleep}} = \min(c, b \times 2^i)$$</p>
+<ul>
+<li><strong>Equal Jitter</strong>: Divides the delay into a deterministic half and a randomized half:</li>
+</ul>
+<p>$$t_{\text{sleep}} = \frac{\min(c, b \times 2^i)}{2} + \text{Random}\left(0, \frac{\min(c, b \times 2^i)}{2}\right)$$</p>
+<p>Ensures some minimum wait while adding jitter.</p>
+<ul>
+<li><strong>Full Jitter (AWS Recommended)</strong>: Distributes the wait time uniformly between 0 and the full exponential ceiling:</li>
+</ul>
+<p>$$t_{\text{sleep}} = \text{Random}(0, \min(c, b \times 2^i))$$</p>
+<p><em>Advantage</em>: Maximally flattens client request aggregation, completely neutralizing thundering herd synchronizations and reducing total system completion time.</p>
+<hr/>
+<h3>5. How should an architect tune Circuit Breaker parameters for high-throughput vs low-throughput microservices?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>High-Throughput Services (e.g., 5,000 RPS Payment/Catalog)</strong>:</li>
+<li><strong>SamplingDuration</strong>: Short (e.g., 5–10 seconds).</li>
+<li><strong>MinimumThroughput</strong>: High (e.g., 50–100 requests). An isolated hiccup of 5 failures should not trip a high-volume service.</li>
+<li><strong>FailureRatio</strong>: 0.3–0.5 (30% to 50% failure rate).</li>
+<li><strong>BreakDuration</strong>: Moderate (e.g., 5–15 seconds) with gradual canary recovery.</li>
+<li><strong>Low-Throughput / Sensitive Services (e.g., 2 RPS Batch Processing)</strong>:</li>
+<li><strong>SamplingDuration</strong>: Long (e.g., 30–60 seconds).</li>
+<li><strong>MinimumThroughput</strong>: Low (e.g., 2–4 requests). Otherwise, the circuit might never gather enough data to trip.</li>
+<li><strong>FailureRatio</strong>: Higher tolerance or consecutive failure counts (e.g., 3 consecutive failures).</li>
+<li><strong>BreakDuration</strong>: Longer (e.g., 30–60 seconds) to give external downstream dependencies adequate time to reboot.</li>
+</ul>
+<hr/>
+<h3>6. When should an engineer use Hedging over Retries, and what are the trade-offs?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Retry</strong>:</li>
+<li>Waits for the primary attempt to fail or time out completely before issuing an alternative attempt.</li>
+<li><em>Trade-off</em>: Increases total latency by at least the timeout duration of the failed request.</li>
+<li><strong>Hedging (Speculative Parallel Execution)</strong>:</li>
+<li>Does <em>not</em> wait for failure; instead, if the primary request exceeds a latency threshold (e.g. 50ms), it fires a second concurrent request to another server replica while keeping the first request alive. Whichever returns first wins.</li>
+<li><em>Best Suited For</em>: Idempotent read operations where tail latency (p99/p99.9) is unacceptable (e.g., search queries, cache lookups, financial quote lookups).</li>
+<li><em>Cost/Trade-off</em>: Increases downstream server load and network bandwidth by issuing duplicate requests during latency spikes. Must never be used on non-idempotent mutating endpoints.</li>
+</ul>
+<hr/>
+<h3>7. How do you integrate Refit with <code>IHttpClientFactory</code> and Polly v8 in .NET 8 Dependency Injection?</h3>
+<p><strong>Answer:</strong></p>
+<p>Using <code>Microsoft.Extensions.Http.Resilience</code>:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">builder.Services
+    .AddRefitClient&lt;IInventoryServiceClient&gt;()
+    .ConfigureHttpClient(c =&gt; c.BaseAddress = new Uri(&quot;https://inventory-svc&quot;))
+    .AddResilienceHandler(&quot;inventory-pipeline&quot;, pipelineBuilder =&gt;
+    {
+        pipelineBuilder.AddTimeout(TimeSpan.FromSeconds(5))
+            .AddRetry(new HttpRetryStrategyOptions
+            {
+                MaxRetryAttempts = 3,
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true
+            })
+            .AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
+            {
+                FailureRatio = 0.5,
+                SamplingDuration = TimeSpan.FromSeconds(10)
+            });
+    });</code></pre></div>
+<p>Refit automatically binds to the resilient <code>HttpClient</code> configured with the Polly pipeline, sharing connection pools and telemetry.</p>
+<hr/>
+<h3>8. How does cancellation token propagation prevent "Ghost Requests" in microservices call chains?</h3>
+<p><strong>Answer:</strong></p>
+<p>When an external client (e.g. mobile app) cancels a request or closes the connection:</p>
+<ul>
+<li>If microservices ignore the <code>CancellationToken</code>, backend servers continue executing expensive database queries, cryptographic operations, and downstream HTTP calls that will ultimately be discarded when attempting to write the HTTP response (Ghost Requests).</li>
+<li><strong>Correct Propagation</strong>:</li>
+</ul>
+<ol>
+<li>Receive <code>HttpContext.RequestAborted</code> in the API endpoint.</li>
+<li>Pass <code>cancellationToken</code> into Refit method calls: <code>await _client.GetItemAsync(sku, ct)</code>.</li>
+<li>Polly v8 strategies wrap and link this token with internal attempt timeouts using <code>CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutToken)</code>.</li>
+<li>Sockets immediately abort active TCP streams, freeing up downstream worker threads and connection pool sockets.</li>
+</ol>
+<hr/>
+<h3>9. Why does reverse multi-source traversal in LeetCode #417 (<em>Pacific Atlantic Water Flow</em>) reduce time complexity from $\mathcal{O}((MN)^2)$ to $\mathcal{O}(MN)$?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Forward Approach</strong>:</li>
+<li>For every cell $(r, c)$ in the $M \times N$ matrix, we run a search to see if it can reach the Pacific and Atlantic boundaries.</li>
+<li>In the worst case (e.g. flat plateau), each search visits $\mathcal{O}(M \times N)$ cells.</li>
+<li>Total time: $(M \times N) \times \mathcal{O}(M \times N) = \mathcal{O}((M \times N)^2)$. For a $200 \times 200$ grid, this requires $\approx 1.6 \times 10^9$ operations, triggering Time Limit Exceeded (TLE).</li>
+<li><strong>Reverse Multi-Source Approach</strong>:</li>
+<li>We seed the ocean boundaries (perimeter cells) and search uphill:</li>
+<li>Pacific: $M + N$ boundary cells.</li>
+<li>Atlantic: $M + N$ boundary cells.</li>
+<li>Because we maintain a <code>visited</code> matrix for each ocean, each cell is evaluated at most once per ocean.</li>
+<li>Total time: $2 \times \mathcal{O}(M \times N) = \mathcal{O}(M \times N)$ linear operations ($\approx 8 \times 10^4$ operations, completing in milliseconds).</li>
+</ul>
+<hr/>
+<h3>10. Compare multi-source DFS vs multi-source BFS for grid graph problems in terms of memory and stack safety.</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Multi-Source DFS</strong>:</li>
+<li><em>Mechanism</em>: Uses the thread call stack (or explicit recursion stack).</li>
+<li><em>Memory Footprint</em>: On deep grids (e.g. spiral or descending corridors), recursion depth can equal $M \times N$. In .NET, a 1MB default thread stack can overflow on grids larger than $1000 \times 1000$.</li>
+<li><strong>Multi-Source BFS</strong>:</li>
+<li><em>Mechanism</em>: Uses a FIFO <code>Queue&lt;(int, int)&gt;</code> on the managed heap.</li>
+<li><em>Memory Footprint</em>: The queue holds at most the frontier perimeter of the search wave at any given step, bounded by $\mathcal{O}(\min(M, N))$ for balanced waves (or $\mathcal{O}(M \times N)$ worst case).</li>
+<li><em>Stack Safety</em>: Completely stack-safe; cannot cause <code>StackOverflowException</code>.</li>
+<li><em>Level-by-Level</em>: BFS naturally processes cells in order of increasing distance/elevation, which is ideal for shortest path or contagion spreading problems (e.g. Rotting Oranges).</li>
+</ul></div>
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day28.ResilientHttpRefitPolly/PacificAtlanticSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd28-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d28-src-code-0" class="language-csharp">namespace Day28.ResilientHttpRefitPolly;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #417: Pacific Atlantic Water Flow (Medium).
+/// Uses reverse multi-source traversal flowing uphill from ocean boundaries.
+/// &lt;/summary&gt;
+public class PacificAtlanticSolver
+{
+    private static readonly int[] RowOffsets = { -1, 1, 0, 0 };
+    private static readonly int[] ColOffsets = { 0, 0, -1, 1 };
+
+    /// &lt;summary&gt;
+    /// Computes intersection coordinates reachable by both Pacific and Atlantic using Depth-First Search (DFS).
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N) for reachability matrices and recursion call stack.
+    /// &lt;/summary&gt;
+    public IList&lt;IList&lt;int&gt;&gt; PacificAtlanticDfs(int[][]? heights)
+    {
+        if (heights == null || heights.Length == 0 || heights[0].Length == 0)
+            return new List&lt;IList&lt;int&gt;&gt;();
+
+        int m = heights.Length;
+        int n = heights[0].Length;
+
+        bool[,] pacific = new bool[m, n];
+        bool[,] atlantic = new bool[m, n];
+
+        // 1. Pacific borders: Top row (r=0) and Left col (c=0)
+        for (int c = 0; c &lt; n; c++) DfsFlow(heights, 0, c, pacific, m, n);
+        for (int r = 0; r &lt; m; r++) DfsFlow(heights, r, 0, pacific, m, n);
+
+        // 2. Atlantic borders: Bottom row (r=m-1) and Right col (c=n-1)
+        for (int c = 0; c &lt; n; c++) DfsFlow(heights, m - 1, c, atlantic, m, n);
+        for (int r = 0; r &lt; m; r++) DfsFlow(heights, r, n - 1, atlantic, m, n);
+
+        // 3. Find intersection coordinates
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        for (int r = 0; r &lt; m; r++)
+        {
+            for (int c = 0; c &lt; n; c++)
+            {
+                if (pacific[r, c] &amp;&amp; atlantic[r, c])
+                {
+                    result.Add(new List&lt;int&gt; { r, c });
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private void DfsFlow(int[][] heights, int r, int c, bool[,] oceanReachable, int m, int n)
+    {
+        oceanReachable[r, c] = true;
+
+        for (int i = 0; i &lt; 4; i++)
+        {
+            int nr = r + RowOffsets[i];
+            int nc = c + ColOffsets[i];
+
+            // Reverse flow condition: neighbor must be &gt;= current cell height
+            if (nr &gt;= 0 &amp;&amp; nr &lt; m &amp;&amp; nc &gt;= 0 &amp;&amp; nc &lt; n &amp;&amp;
+                !oceanReachable[nr, nc] &amp;&amp;
+                heights[nr][nc] &gt;= heights[r][c])
+            {
+                DfsFlow(heights, nr, nc, oceanReachable, m, n);
+            }
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Computes intersection coordinates using Breadth-First Search (BFS) with queues.
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N)
+    /// &lt;/summary&gt;
+    public IList&lt;IList&lt;int&gt;&gt; PacificAtlanticBfs(int[][]? heights)
+    {
+        if (heights == null || heights.Length == 0 || heights[0].Length == 0)
+            return new List&lt;IList&lt;int&gt;&gt;();
+
+        int m = heights.Length;
+        int n = heights[0].Length;
+
+        bool[,] pacific = new bool[m, n];
+        bool[,] atlantic = new bool[m, n];
+
+        var pacQueue = new Queue&lt;(int r, int c)&gt;();
+        var atlQueue = new Queue&lt;(int r, int c)&gt;();
+
+        // Seed Pacific borders
+        for (int c = 0; c &lt; n; c++) { pacific[0, c] = true; pacQueue.Enqueue((0, c)); }
+        for (int r = 0; r &lt; m; r++) { if (!pacific[r, 0]) { pacific[r, 0] = true; pacQueue.Enqueue((r, 0)); } }
+
+        // Seed Atlantic borders
+        for (int c = 0; c &lt; n; c++) { atlantic[m - 1, c] = true; atlQueue.Enqueue((m - 1, c)); }
+        for (int r = 0; r &lt; m; r++) { if (!atlantic[r, n - 1]) { atlantic[r, n - 1] = true; atlQueue.Enqueue((r, n - 1)); } }
+
+        BfsExplore(heights, pacQueue, pacific, m, n);
+        BfsExplore(heights, atlQueue, atlantic, m, n);
+
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        for (int r = 0; r &lt; m; r++)
+        {
+            for (int c = 0; c &lt; n; c++)
+            {
+                if (pacific[r, c] &amp;&amp; atlantic[r, c])
+                {
+                    result.Add(new List&lt;int&gt; { r, c });
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private void BfsExplore(int[][] heights, Queue&lt;(int r, int c)&gt; queue, bool[,] visited, int m, int n)
+    {
+        while (queue.Count &gt; 0)
+        {
+            var (r, c) = queue.Dequeue();
+
+            for (int i = 0; i &lt; 4; i++)
+            {
+                int nr = r + RowOffsets[i];
+                int nc = c + ColOffsets[i];
+
+                if (nr &gt;= 0 &amp;&amp; nr &lt; m &amp;&amp; nc &gt;= 0 &amp;&amp; nc &lt; n &amp;&amp;
+                    !visited[nr, nc] &amp;&amp;
+                    heights[nr][nc] &gt;= heights[r][c])
+                {
+                    visited[nr, nc] = true;
+                    queue.Enqueue((nr, nc));
+                }
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day28.ResilientHttpRefitPolly/RefitContractsAndServices.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd28-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d28-src-code-1" class="language-csharp">using Refit;
+
+namespace Day28.ResilientHttpRefitPolly;
+
+public record InventoryItemDto(
+    string Sku,
+    int AvailableStock,
+    decimal UnitPrice,
+    string WarehouseLocation);
+
+public record StockReservationRequest(
+    string Sku,
+    int Quantity,
+    string OrderReference);
+
+public record StockReservationResponse(
+    Guid ReservationId,
+    string Sku,
+    int ReservedQuantity,
+    bool IsSuccess,
+    string? ErrorMessage);
+
+public record OrderSummaryDto(
+    Guid OrderId,
+    string CustomerId,
+    decimal TotalAmount,
+    string Status);
+
+/// &lt;summary&gt;
+/// Type-safe HTTP REST client for Inventory Service generated at compile time by Refit.
+/// &lt;/summary&gt;
+public interface IInventoryServiceClient
+{
+    [Get(&quot;/api/inventory/{sku}&quot;)]
+    Task&lt;ApiResponse&lt;InventoryItemDto&gt;&gt; GetInventoryItemAsync(
+        string sku,
+        [Header(&quot;X-Correlation-ID&quot;)] string? correlationId = null,
+        CancellationToken cancellationToken = default);
+
+    [Post(&quot;/api/inventory/reserve&quot;)]
+    [Headers(&quot;Accept: application/json&quot;)]
+    Task&lt;ApiResponse&lt;StockReservationResponse&gt;&gt; ReserveStockAsync(
+        [Body] StockReservationRequest request,
+        CancellationToken cancellationToken = default);
+}
+
+/// &lt;summary&gt;
+/// Type-safe HTTP REST client for Order Service generated at compile time by Refit.
+/// &lt;/summary&gt;
+public interface IOrderServiceClient
+{
+    [Get(&quot;/api/orders/{orderId}&quot;)]
+    Task&lt;ApiResponse&lt;OrderSummaryDto&gt;&gt; GetOrderAsync(
+        Guid orderId,
+        CancellationToken cancellationToken = default);
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day28.ResilientHttpRefitPolly/ResiliencePipelineBuilder.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd28-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d28-src-code-2" class="language-csharp">using Polly;
+using Polly.CircuitBreaker;
+using Polly.Hedging;
+using Polly.Retry;
+using Polly.Timeout;
+
+namespace Day28.ResilientHttpRefitPolly;
+
+/// &lt;summary&gt;
+/// State tracker for Circuit Breaker transitions.
+/// &lt;/summary&gt;
+public class CircuitBreakerStateMonitor
+{
+    public CircuitState CurrentState { get; private set; } = CircuitState.Closed;
+    public int OpenTransitionCount { get; private set; }
+    public int HalfOpenTransitionCount { get; private set; }
+    public int ClosedTransitionCount { get; private set; }
+
+    public void RecordOpened()
+    {
+        CurrentState = CircuitState.Open;
+        OpenTransitionCount++;
+    }
+
+    public void RecordHalfOpened()
+    {
+        CurrentState = CircuitState.HalfOpen;
+        HalfOpenTransitionCount++;
+    }
+
+    public void RecordClosed()
+    {
+        CurrentState = CircuitState.Closed;
+        ClosedTransitionCount++;
+    }
+}
+
+/// &lt;summary&gt;
+/// Configures production-grade Polly v8 Resilience Pipelines combining:
+/// 1. Timeout (Total &amp; Attempt)
+/// 2. Retry with Exponential Backoff &amp; Decorrelated Jitter
+/// 3. Advanced Circuit Breaker
+/// 4. Hedging (Speculative Parallel Execution)
+/// &lt;/summary&gt;
+public class ResiliencePipelineFactory
+{
+    /// &lt;summary&gt;
+    /// Builds standard HTTP client pipeline: Timeout -&gt; Retry -&gt; Circuit Breaker.
+    /// &lt;/summary&gt;
+    public static ResiliencePipeline CreateStandardHttpPipeline(
+        CircuitBreakerStateMonitor? monitor = null,
+        int maxRetries = 3,
+        TimeSpan? initialDelay = null,
+        TimeSpan? attemptTimeout = null,
+        TimeSpan? circuitBreakDuration = null)
+    {
+        var delay = initialDelay ?? TimeSpan.FromMilliseconds(50);
+        var timeout = attemptTimeout ?? TimeSpan.FromSeconds(2);
+        var breakDuration = circuitBreakDuration ?? TimeSpan.FromSeconds(1);
+
+        var builder = new ResiliencePipelineBuilder()
+            .AddTimeout(new TimeoutStrategyOptions
+            {
+                Timeout = timeout
+            });
+
+        if (maxRetries &gt; 0)
+        {
+            builder.AddRetry(new RetryStrategyOptions
+            {
+                MaxRetryAttempts = maxRetries,
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                Delay = delay,
+                ShouldHandle = new PredicateBuilder()
+                    .Handle&lt;HttpRequestException&gt;()
+                    .Handle&lt;TimeoutRejectedException&gt;()
+            });
+        }
+
+        return builder
+            .AddCircuitBreaker(new CircuitBreakerStrategyOptions
+            {
+                FailureRatio = 0.5,
+                MinimumThroughput = 4,
+                SamplingDuration = TimeSpan.FromSeconds(10),
+                BreakDuration = breakDuration,
+                ShouldHandle = new PredicateBuilder()
+                    .Handle&lt;HttpRequestException&gt;()
+                    .Handle&lt;TimeoutRejectedException&gt;(),
+                OnOpened = args =&gt;
+                {
+                    monitor?.RecordOpened();
+                    return ValueTask.CompletedTask;
+                },
+                OnHalfOpened = args =&gt;
+                {
+                    monitor?.RecordHalfOpened();
+                    return ValueTask.CompletedTask;
+                },
+                OnClosed = args =&gt;
+                {
+                    monitor?.RecordClosed();
+                    return ValueTask.CompletedTask;
+                }
+            })
+            .Build();
+    }
+
+    /// &lt;summary&gt;
+    /// Builds Hedged resilience pipeline for latency-sensitive read operations.
+    /// If primary attempt doesn&#x27;t complete within delay threshold, a concurrent speculative request is issued.
+    /// &lt;/summary&gt;
+    public static ResiliencePipeline&lt;TResult&gt; CreateHedgedPipeline&lt;TResult&gt;(
+        TimeSpan hedgingDelay,
+        int maxHedgedAttempts = 2)
+    {
+        return new ResiliencePipelineBuilder&lt;TResult&gt;()
+            .AddHedging(new HedgingStrategyOptions&lt;TResult&gt;
+            {
+                MaxHedgedAttempts = maxHedgedAttempts,
+                Delay = hedgingDelay,
+                ShouldHandle = new PredicateBuilder&lt;TResult&gt;()
+                    .Handle&lt;Exception&gt;()
+            })
+            .Build();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day28.ResilientHttpRefitPolly.Tests/Day28Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd28-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d28-tests-code-0" class="language-csharp">using Day28.ResilientHttpRefitPolly;
+using Polly.CircuitBreaker;
+using Polly.Timeout;
+using Xunit;
+
+namespace Day28.ResilientHttpRefitPolly.Tests;
+
+public class Day28Tests
+{
+    [Fact]
+    public void RefitContract_ModelSerializationAndInvariants()
+    {
+        var inventoryDto = new InventoryItemDto(&quot;SKU-PRO-MAX&quot;, 45, 1299.99m, &quot;WH-SEATTLE-01&quot;);
+        Assert.Equal(&quot;SKU-PRO-MAX&quot;, inventoryDto.Sku);
+        Assert.Equal(45, inventoryDto.AvailableStock);
+        Assert.Equal(1299.99m, inventoryDto.UnitPrice);
+
+        var reservationRequest = new StockReservationRequest(&quot;SKU-PRO-MAX&quot;, 2, &quot;ORD-7788&quot;);
+        Assert.Equal(&quot;ORD-7788&quot;, reservationRequest.OrderReference);
+
+        var reservationResponse = new StockReservationResponse(Guid.NewGuid(), &quot;SKU-PRO-MAX&quot;, 2, true, null);
+        Assert.True(reservationResponse.IsSuccess);
+        Assert.Null(reservationResponse.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task PollyPipeline_ExecutesSuccessfulCallWithoutRetries()
+    {
+        var pipeline = ResiliencePipelineFactory.CreateStandardHttpPipeline(maxRetries: 3);
+        int executionCount = 0;
+
+        var result = await pipeline.ExecuteAsync(async ct =&gt;
+        {
+            executionCount++;
+            await Task.Yield();
+            return &quot;SUCCESS&quot;;
+        });
+
+        Assert.Equal(&quot;SUCCESS&quot;, result);
+        Assert.Equal(1, executionCount);
+    }
+
+    [Fact]
+    public async Task PollyPipeline_RetriesOnTransientHttpExceptions_AndSucceeds()
+    {
+        var pipeline = ResiliencePipelineFactory.CreateStandardHttpPipeline(
+            maxRetries: 3,
+            initialDelay: TimeSpan.FromMilliseconds(5));
+
+        int executionCount = 0;
+
+        var result = await pipeline.ExecuteAsync(async ct =&gt;
+        {
+            executionCount++;
+            if (executionCount &lt; 3)
+            {
+                throw new HttpRequestException(&quot;Transient network glitch (HTTP 503).&quot;);
+            }
+            await Task.Yield();
+            return &quot;RECOVERED&quot;;
+        });
+
+        Assert.Equal(&quot;RECOVERED&quot;, result);
+        Assert.Equal(3, executionCount);
+    }
+
+    [Fact]
+    public async Task PollyPipeline_ExhaustsRetries_WhenFailurePersists()
+    {
+        var pipeline = ResiliencePipelineFactory.CreateStandardHttpPipeline(
+            maxRetries: 2,
+            initialDelay: TimeSpan.FromMilliseconds(5));
+
+        int executionCount = 0;
+
+        await Assert.ThrowsAsync&lt;HttpRequestException&gt;(async () =&gt;
+        {
+            await pipeline.ExecuteAsync(async ct =&gt;
+            {
+                executionCount++;
+                await Task.Yield();
+                throw new HttpRequestException(&quot;Downstream server dead.&quot;);
+            });
+        });
+
+        // Initial attempt + 2 retries = 3 total attempts
+        Assert.Equal(3, executionCount);
+    }
+
+    [Fact]
+    public async Task PollyPipeline_CircuitBreaker_OpensAfterThreshold()
+    {
+        var monitor = new CircuitBreakerStateMonitor();
+        var pipeline = ResiliencePipelineFactory.CreateStandardHttpPipeline(
+            monitor: monitor,
+            maxRetries: 0, // Isolate circuit breaker from retry loops
+            circuitBreakDuration: TimeSpan.FromSeconds(2));
+
+        // Drive failures to breach minimum throughput (4) and failure ratio (0.5)
+        for (int i = 0; i &lt; 4; i++)
+        {
+            try
+            {
+                await pipeline.ExecuteAsync(async ct =&gt;
+                {
+                    await Task.Yield();
+                    throw new HttpRequestException(&quot;Consecutive hard failure&quot;);
+                });
+            }
+            catch (HttpRequestException) { }
+        }
+
+        Assert.Equal(CircuitState.Open, monitor.CurrentState);
+        Assert.True(monitor.OpenTransitionCount &gt;= 1);
+
+        // Immediate subsequent request must fail fast with BrokenCircuitException
+        await Assert.ThrowsAsync&lt;BrokenCircuitException&gt;(async () =&gt;
+        {
+            await pipeline.ExecuteAsync(async ct =&gt;
+            {
+                await Task.Yield();
+                return &quot;Should not reach here&quot;;
+            });
+        });
+    }
+
+    [Fact]
+    public async Task PollyPipeline_Timeout_AbortsSlowOperations()
+    {
+        var pipeline = ResiliencePipelineFactory.CreateStandardHttpPipeline(
+            maxRetries: 0,
+            attemptTimeout: TimeSpan.FromMilliseconds(50));
+
+        await Assert.ThrowsAsync&lt;TimeoutRejectedException&gt;(async () =&gt;
+        {
+            await pipeline.ExecuteAsync(async ct =&gt;
+            {
+                await Task.Delay(500, ct);
+                return &quot;Never reached&quot;;
+            });
+        });
+    }
+
+    [Fact]
+    public async Task PollyPipeline_Hedging_ExecutesSpeculativeParallelAttempt()
+    {
+        var hedgedPipeline = ResiliencePipelineFactory.CreateHedgedPipeline&lt;string&gt;(
+            hedgingDelay: TimeSpan.FromMilliseconds(40),
+            maxHedgedAttempts: 2);
+
+        int attemptsStarted = 0;
+
+        var result = await hedgedPipeline.ExecuteAsync(async ct =&gt;
+        {
+            var attemptId = Interlocked.Increment(ref attemptsStarted);
+            if (attemptId == 1)
+            {
+                // Primary attempt hangs
+                await Task.Delay(300, ct);
+                return &quot;Primary Slow Result&quot;;
+            }
+
+            // Hedged secondary attempt responds fast
+            await Task.Yield();
+            return &quot;Hedged Fast Result&quot;;
+        });
+
+        Assert.Equal(&quot;Hedged Fast Result&quot;, result);
+        Assert.True(attemptsStarted &gt;= 2);
+    }
+
+    [Fact]
+    public void PacificAtlantic_DfsAndBfs_StandardContinent_CalculatesCorrectIntersection()
+    {
+        var solver = new PacificAtlanticSolver();
+
+        // LeetCode #417 standard test grid:
+        // Pacific (top &amp; left), Atlantic (bottom &amp; right)
+        var heights = new int[][]
+        {
+            new[] { 1, 2, 2, 3, 5 },
+            new[] { 3, 2, 3, 4, 4 },
+            new[] { 2, 4, 5, 3, 1 },
+            new[] { 6, 7, 1, 4, 5 },
+            new[] { 5, 1, 1, 2, 4 }
+        };
+
+        var dfsResult = solver.PacificAtlanticDfs(heights);
+        var bfsResult = solver.PacificAtlanticBfs(heights);
+
+        // Expected intersection coordinates:
+        // [0,4], [1,3], [1,4], [2,2], [3,0], [3,1], [4,0]
+        Assert.Equal(7, dfsResult.Count);
+        Assert.Equal(7, bfsResult.Count);
+
+        // Verify specific known intersections
+        Assert.Contains(dfsResult, coord =&gt; coord[0] == 0 &amp;&amp; coord[1] == 4);
+        Assert.Contains(dfsResult, coord =&gt; coord[0] == 2 &amp;&amp; coord[1] == 2);
+        Assert.Contains(dfsResult, coord =&gt; coord[0] == 4 &amp;&amp; coord[1] == 0);
+
+        Assert.Contains(bfsResult, coord =&gt; coord[0] == 0 &amp;&amp; coord[1] == 4);
+        Assert.Contains(bfsResult, coord =&gt; coord[0] == 2 &amp;&amp; coord[1] == 2);
+        Assert.Contains(bfsResult, coord =&gt; coord[0] == 4 &amp;&amp; coord[1] == 0);
+    }
+
+    [Fact]
+    public void PacificAtlantic_SingleCell_ReachesBothOceans()
+    {
+        var solver = new PacificAtlanticSolver();
+        var heights = new int[][] { new[] { 10 } };
+
+        var dfsResult = solver.PacificAtlanticDfs(heights);
+        var bfsResult = solver.PacificAtlanticBfs(heights);
+
+        Assert.Single(dfsResult);
+        Assert.Equal(0, dfsResult[0][0]);
+        Assert.Equal(0, dfsResult[0][1]);
+
+        Assert.Single(bfsResult);
+        Assert.Equal(0, bfsResult[0][0]);
+        Assert.Equal(0, bfsResult[0][1]);
+    }
+
+    [Fact]
+    public void PacificAtlantic_HandlesEdgeCases()
+    {
+        var solver = new PacificAtlanticSolver();
+
+        Assert.Empty(solver.PacificAtlanticDfs(null));
+        Assert.Empty(solver.PacificAtlanticBfs(null));
+        Assert.Empty(solver.PacificAtlanticDfs(Array.Empty&lt;int[]&gt;()));
+        Assert.Empty(solver.PacificAtlanticBfs(Array.Empty&lt;int[]&gt;()));
+
+        // Flat plateau: all cells reach both oceans
+        var flatHeights = new int[][]
+        {
+            new[] { 1, 1 },
+            new[] { 1, 1 }
+        };
+        var flatDfs = solver.PacificAtlanticDfs(flatHeights);
+        var flatBfs = solver.PacificAtlanticBfs(flatHeights);
+
+        Assert.Equal(4, flatDfs.Count);
+        Assert.Equal(4, flatBfs.Count);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 28: Deep Dive Notes — Resilient HTTP with Refit & Polly</h1>
+<h2>1. Resilience in Distributed Systems</h2>
+<p>In monolithic applications, an in-memory function call either succeeds or throws an immediate exception in nanoseconds. In microservices architectures, service-to-service communication crosses network boundaries, introducing partial failures, transient latency spikes, and socket disconnects.</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">+----------------------------------------------------------------------------------------------------+
+|                                POLLY v8 RESILIENCE PIPELINE TOPOLOGY                               |
++----------------------------------------------------------------------------------------------------+
+|                                                                                                    |
+|    Caller Request                                                                                  |
+|          |                                                                                         |
+|          v                                                                                         |
+|    +------------------------------------------------------------------------------------------+    |
+|    |                                  ResiliencePipeline                                      |    |
+|    |------------------------------------------------------------------------------------------|    |
+|    |  1. Total Timeout Strategy (e.g. 5s overall limit)                                       |    |
+|    |        |                                                                                 |    |
+|    |        v                                                                                 |    |
+|    |  2. Retry Strategy (Exponential Backoff + Decorrelated Jitter)                           |    |
+|    |        |                                                                                 |    |
+|    |        v                                                                                 |    |
+|    |  3. Circuit Breaker Strategy                                                             |    |
+|    |     [ Closed: Normal ] ---&gt; (Failures &gt;= 50%) ---&gt; [ Open: Fast-Fail with BrokenCircuit ]|    |
+|    |            ^                                               |                             |    |
+|    |            |                                        (Break Duration)                     |    |
+|    |            +--- (Canary Succeeds) &lt;--- [ Half-Open ] &lt;-----+                             |    |
+|    |        |                                                                                 |    |
+|    |        v                                                                                 |    |
+|    |  4. Attempt Timeout Strategy (e.g. 1.5s per HTTP attempt)                                |    |
+|    +------------------------------------------------------------------------------------------+    |
+|          |                                                                                         |
+|          v                                                                                         |
+|    [ Downstream Service (via Refit IInventoryServiceClient) ]                                      |
+|                                                                                                    |
++----------------------------------------------------------------------------------------------------+</code></pre></div>
+<hr/>
+<h2>2. Refit: Type-Safe Declarative REST Clients</h2>
+<h3>Manual <code>HttpClient</code> vs. Refit</h3>
+<ul>
+<li><strong>Manual <code>HttpClient</code></strong>:</li>
+<li>Developers write boilerplate code: <code>client.GetAsync($&quot;/api/inventory/{sku}&quot;)</code>, deserialize JSON streams, manually attach auth and correlation headers.</li>
+<li>Runtime errors from misspelled route tokens or query parameters.</li>
+<li><strong>Refit (<code>Refit.HttpClientFactory</code>)</strong>:</li>
+<li>Developers declare an interface adorned with HTTP annotations (<code>[Get]</code>, <code>[Post]</code>, <code>[Header]</code>, <code>[Body]</code>).</li>
+<li>During build, Refit uses Roslyn Source Generators to compile high-performance, non-allocating proxy implementations directly into the assembly.</li>
+</ul>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">public interface IInventoryServiceClient
+{
+    [Get(&quot;/api/inventory/{sku}&quot;)]
+    Task&lt;ApiResponse&lt;InventoryItemDto&gt;&gt; GetInventoryItemAsync(
+        string sku,
+        [Header(&quot;X-Correlation-ID&quot;)] string? correlationId = null,
+        CancellationToken cancellationToken = default);
+}</code></pre></div>
+<hr/>
+<h2>3. Polly v8: The Modern Resilience Engine</h2>
+<p>In .NET 8, Polly was redesigned from the ground up (<code>Polly.Core</code>) in partnership with Microsoft.</p>
+<h3>Polly v7 vs. Polly v8</h3>
+<div class="table-container"><table><thead><tr>
+<th>Architectural Aspect</th>
+<th>Polly v7 (<code>IAsyncPolicy</code>)</th>
+<th>Polly v8 (<code>ResiliencePipeline</code>)</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Memory Allocation</strong></td>
+<td>Allocates execution contexts and closures on heap</td>
+<td>Zero-allocation using <code>ValueTask</code> and non-allocating structs</td>
+</tr>
+<tr>
+<td><strong>Composition Model</strong></td>
+<td>PolicyWrap with awkward nesting</td>
+<td>Fluent sequential pipeline builder</td>
+</tr>
+<tr>
+<td><strong>Telemetry</strong></td>
+<td>Manual logging or third-party adapters</td>
+<td>Native <code>System.Diagnostics.Metrics</code> and <code>Meter</code> integration</td>
+</tr>
+<tr>
+<td><strong>CancellationToken</strong></td>
+<td>Optional or passed manually through context</td>
+<td>First-class citizen on every strategy</td>
+</tr>
+</tbody></table></div>
+<h3>Core Resilience Strategies</h3>
+<h4>1. Retry with Decorrelated Jitter</h4>
+<p>When hundreds of concurrent requests encounter a temporary downstream hiccup, simple exponential retries cause all clients to retry at the exact same millisecond intervals ($2\text{s}, 4\text{s}, 8\text{s}$), overwhelming the recovering service (the "Thundering Herd" or retry storm).</p>
+<ul>
+<li><strong>Decorrelated Jitter</strong> injects cryptographic or pseudorandom variation into the sleep duration:</li>
+</ul>
+<p>$$t_{\text{sleep}} = \min(t_{\text{max}}, \text{Uniform}(\text{low}, \text{prev\_delay} \times 3))$$</p>
+<ul>
+<li>Spreads retry spikes across a smooth time distribution.</li>
+</ul>
+<h4>2. Advanced Circuit Breaker</h4>
+<p>A Circuit Breaker stops an application from repeatedly executing an operation that is almost certainly doomed to fail:</p>
+<ul>
+<li><strong><code>Closed</code></strong>: Operations execute normally. Failures are recorded within a sliding time window (SamplingDuration).</li>
+<li><strong><code>Open</code></strong>: When the failure ratio breaches a threshold (e.g. $\ge 50\%$) and the minimum throughput requirement is met (e.g. $\ge 4$ calls), the circuit opens immediately. All subsequent requests fail fast with <code>BrokenCircuitException</code>, preventing thread starvation and giving downstream services time to recover.</li>
+<li><strong><code>Half-Open</code></strong>: When the break duration expires, the circuit enters Half-Open. A limited number of trial (canary) requests are permitted through. If successful, the circuit resets to <code>Closed</code>; if any fail, it resets to <code>Open</code> for another cooldown.</li>
+</ul>
+<h4>3. Hedging (Speculative Parallel Execution)</h4>
+<p>For latency-sensitive read operations (e.g. searching a distributed catalog), 99% of requests complete in 15ms, but a tail 1% hang for 1500ms due to GC pauses or network retries.</p>
+<ul>
+<li>Hedging sets a delay threshold (e.g. 40ms). If the primary request does not respond within 40ms, the pipeline launches a second, concurrent request to an alternate replica. Whichever returns first is delivered to the caller, effectively eliminating tail latency (p99 smoothing).</li>
+</ul>
+<hr/>
+<h2>4. Graph Algorithms: Pacific Atlantic Water Flow (LeetCode #417)</h2>
+<h3>Problem Formulation</h3>
+<p>Given an $m \times n$ matrix of elevations, rain water can flow from a cell to adjacent cells horizontally or vertically if the adjacent cell's height is <strong>less than or equal</strong> to the current cell's height.</p>
+<ul>
+<li>Pacific Ocean touches top ($r=0$) and left ($c=0$) edges.</li>
+<li>Atlantic Ocean touches bottom ($r=m-1$) and right ($c=n-1$) edges.</li>
+<li>Find all coordinates where water can reach <strong>both</strong> oceans.</li>
+</ul>
+<h3>1. Naive Direct Approach</h3>
+<p>Starting a search from every individual cell $(r, c)$ to check if it can reach both oceans requires checking up to $M \times N$ cells, leading to an unacceptably slow $\mathcal{O}((M \times N)^2)$ time complexity.</p>
+<h3>2. Optimal Reverse Multi-Source Traversal</h3>
+<p>Instead of flowing water downhill from the continent to the ocean, reverse the flow: <strong>flow water uphill from the ocean boundaries into the continent</strong>.</p>
+<ul>
+<li>A neighbor cell $(nr, nc)$ can be reached from $(r, c)$ if:</li>
+</ul>
+<p>$$\text{heights}[nr][nc] \ge \text{heights}[r][c]$$</p>
+<ul>
+<li><strong>Algorithm</strong>:</li>
+</ul>
+<ol>
+<li>Initialize two boolean matrices: <code>pacific[m, n]</code> and <code>atlantic[m, n]</code>.</li>
+<li>Multi-source DFS/BFS for Pacific starting from all top and left perimeter cells. Mark reachable cells in <code>pacific</code>.</li>
+<li>Multi-source DFS/BFS for Atlantic starting from all bottom and right perimeter cells. Mark reachable cells in <code>atlantic</code>.</li>
+<li>Iterate through all $(r, c)$: any cell where <code>pacific[r, c] &amp;&amp; atlantic[r, c]</code> is true belongs to the final intersection set.</li>
+</ol>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(M \times N)$ — each matrix cell is visited at most twice.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(M \times N)$ for boolean reachability grids and recursion stack/queue.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 28: Resilient Service-to-Service HTTP with Refit & Polly</h1>
+<h2>Overview</h2>
+<p><strong>Day 28</strong> explores robust service-to-service communication across microservices in .NET 8. We master declarative type-safe REST clients using <strong>Refit</strong> and integrate enterprise resilience patterns via the redesigned <strong>Polly v8</strong> engine. The resilience pipeline features Exponential Backoff with Decorrelated Jitter, advanced Circuit Breakers (Closed $\to$ Open $\to$ Half-Open), Total and Attempt Timeouts, and Hedging (speculative parallel execution for p99 latency smoothing). For DSA, we solve **LeetCode #417 (<em>Pacific Atlantic Water Flow</em>)** using multi-source reverse graph traversals (DFS and BFS).</p>
+<hr/>
+<h2>Architectural Topics Covered</h2>
+<ol>
+<li><strong>Type-Safe REST Contracts with Refit</strong>:</li>
+</ol>
+<ul>
+<li>Declarative interface-driven HTTP contracts (<code>[Get]</code>, <code>[Post]</code>, <code>[Header]</code>, <code>[Body]</code>).</li>
+<li>Strong typing of request/response payloads (<code>InventoryItemDto</code>, <code>StockReservationRequest/Response</code>).</li>
+<li>Elimination of raw string URLs and boilerplate <code>HttpClient</code> JSON serialization.</li>
+</ul>
+<ol>
+<li><strong>Polly v8 Resilience Pipelines</strong>:</li>
+</ol>
+<ul>
+<li>Modern <code>ResiliencePipelineBuilder</code> architecture in <code>Polly.Core</code>.</li>
+<li><strong>Retry with Exponential Backoff + Jitter</strong>: $T_{\text{delay}} = 2^{\text{attempt}} \times \text{base} \pm \text{jitter}$ to prevent thundering herd retries on recovering backends.</li>
+<li><strong>Circuit Breaker</strong>: Failure ratio monitoring, minimum throughput guardrails, sampling windows, and automated recovery via probe half-open states.</li>
+<li><strong>Timeouts</strong>: Total pipeline timeout vs granular per-attempt cancellation.</li>
+<li><strong>Hedging</strong>: Proactive concurrent execution if primary attempt latency exceeds a tight threshold (e.g., 40ms), returning whichever succeeds first.</li>
+</ul>
+<ol>
+<li><strong>Graph Traversal & Multi-Source Flows</strong>:</li>
+</ol>
+<ul>
+<li><strong>LeetCode #417: Pacific Atlantic Water Flow (Medium)</strong>: Reverse flow exploration from dual ocean coastlines.</li>
+<li>Multi-source DFS and FIFO queue BFS exploring uphill elevations ($h_{\text{neighbor}} \ge h_{\text{current}}$).</li>
+<li>Bitwise/matrix intersection of Pacific-reachable and Atlantic-reachable continental cells.</li>
+</ul>
+<hr/>
+<h2>Project Structure</h2>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Day28-Resilient-Http-Refit-Polly/
+├── src/
+│   └── Day28.ResilientHttpRefitPolly/
+│       ├── Day28.ResilientHttpRefitPolly.csproj
+│       ├── RefitContractsAndServices.cs
+│       ├── ResiliencePipelineBuilder.cs
+│       └── PacificAtlanticSolver.cs
+├── tests/
+│   └── Day28.ResilientHttpRefitPolly.Tests/
+│       ├── Day28.ResilientHttpRefitPolly.Tests.csproj
+│       └── Day28Tests.cs
+├── README.md
+├── notes.md
+└── interview-questions.md</code></pre></div>
+<hr/>
+<h2>Running the Unit Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day28-Resilient-Http-Refit-Polly/tests/Day28.ResilientHttpRefitPolly.Tests/Day28.ResilientHttpRefitPolly.Tests.csproj</code></pre></div>
+<h3>Test Suite Coverage</h3>
+<ol>
+<li><code>RefitContract_ModelSerializationAndInvariants</code>: Validates DTO properties, decimal values, and contract invariants.</li>
+<li><code>PollyPipeline_ExecutesSuccessfulCallWithoutRetries</code>: Validates baseline fast-path execution through pipeline with zero retries.</li>
+<li><code>PollyPipeline_RetriesOnTransientHttpExceptions_AndSucceeds</code>: Verifies retry strategy retries on transient exceptions and completes successfully.</li>
+<li><code>PollyPipeline_ExhaustsRetries_WhenFailurePersists</code>: Confirms retry exhaustion and terminal exception rethrowing.</li>
+<li><code>PollyPipeline_CircuitBreaker_OpensAfterThreshold</code>: Validates circuit breaker opening upon breaching failure ratios, failing fast with <code>BrokenCircuitException</code>.</li>
+<li><code>PollyPipeline_Timeout_AbortsSlowOperations</code>: Validates cancellation propagation and <code>TimeoutRejectedException</code>.</li>
+<li><code>PollyPipeline_Hedging_ExecutesSpeculativeParallelAttempt</code>: Confirms hedging strategy executes speculative parallel attempts when primary attempt stalls.</li>
+<li><code>PacificAtlantic_DfsAndBfs_StandardContinent_CalculatesCorrectIntersection</code>: Validates LC #417 standard 5x5 elevation grid under both DFS and BFS.</li>
+<li><code>PacificAtlantic_SingleCell_ReachesBothOceans</code>: Validates 1x1 boundary matrix.</li>
+<li><code>PacificAtlantic_HandlesEdgeCases</code>: Validates null/empty matrices and flat continental plateaus.</li>
+</ol>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          <div class="markdown-content"><h1>Day 28: Senior & Staff Engineer Interview Questions & Answers</h1>
+<h3>1. Why is blindly adding retries to microservices dangerous, and how do Retry Storms cause cascading catastrophic failures?</h3>
+<p><strong>Answer:</strong></p>
+<p>When a downstream microservice experiences high CPU load or database lock contention, its latency increases. If callers have short timeouts and immediately retry failed or timed-out requests:</p>
+<ol>
+<li><strong>Traffic Multiplication</strong>: If each request retries 3 times, a struggling service experiencing 1,000 requests/sec suddenly receives up to 4,000 requests/sec.</li>
+<li><strong>Work Duplication</strong>: The downstream service may still be processing the original request while the caller retries, doubling the CPU and I/O consumption.</li>
+<li><strong>Cascading Collapse</strong>: As the downstream service crashes completely, caller thread pools saturate waiting on timeouts, causing callers to crash and propagating the failure up the call chain to the API Gateway and frontend.</li>
+</ol>
+<p><strong>Defensive Architecture:</strong></p>
+<ul>
+<li>Use <strong>Exponential Backoff with Jitter</strong> to de-synchronize retries.</li>
+<li>Implement <strong>Circuit Breakers</strong> to fail fast when downstream services are degraded.</li>
+<li>Enforce strict <strong>Total Timeouts</strong> encompassing all retry attempts.</li>
+<li>Only retry <strong>idempotent operations</strong> or transient network errors (HTTP 429, 503; never 400, 401, 403, 404, or 422).</li>
+</ul>
+<hr/>
+<h3>2. How do Idempotency Keys enable safe retries for non-idempotent HTTP methods (such as <code>POST /payments</code>)?</h3>
+<p><strong>Answer:</strong></p>
+<p>Under HTTP semantics, <code>GET</code>, <code>PUT</code>, and <code>DELETE</code> are naturally idempotent (re-executing yields the same side effects). <code>POST</code> operations (e.g. charging a credit card or creating an order) are non-idempotent; retrying a timed-out <code>POST</code> could result in duplicate charges or multiple orders.</p>
+<p><strong>Idempotency Key Pattern:</strong></p>
+<ol>
+<li>The client generates a unique UUID (e.g. <code>Idempotency-Key: f47ac10b-58cc-4372-a567-0e02b2c3d479</code>) before making the initial <code>POST</code>.</li>
+<li>The downstream service checks an ACID database or Redis cache:</li>
+</ol>
+<ul>
+<li>If the key is new: Store the key with status <code>PROCESSING</code> and execute the transaction. Once complete, save the final HTTP response payload and status code alongside the key.</li>
+<li>If the key exists and status is <code>PROCESSING</code>: Return HTTP 409 Conflict or wait for completion.</li>
+<li>If the key exists and status is <code>COMPLETED</code>: Immediately return the cached response without re-executing the business logic.</li>
+</ul>
+<ol>
+<li>Callers can safely retry failed or timed-out <code>POST</code> requests without fear of duplicate execution.</li>
+</ol>
+<hr/>
+<h3>3. What architectural enhancements make Polly v8 significantly faster and more memory-efficient than Polly v7?</h3>
+<p><strong>Answer:</strong></p>
+<p>Polly v7 was designed around <code>IAsyncPolicy</code> and relied heavily on closures, object allocations (<code>Context</code>), and <code>Task&lt;T&gt;</code> instantiations on the managed heap for every policy execution.</p>
+<p><strong>Polly v8 Enhancements (<code>Polly.Core</code>):</strong></p>
+<ol>
+<li><strong>Zero-Allocation Execution Path</strong>: Uses <code>ValueTask</code> and non-allocating structs (<code>ResilienceContext</code>). When an operation succeeds on the first attempt (the 99% happy path), Polly v8 introduces <strong>0 bytes of heap allocation</strong>.</li>
+<li><strong>Unified Pipeline Architecture</strong>: Replaced the cumbersome <code>PolicyWrap</code> with <code>ResiliencePipelineBuilder</code>, providing a linear, single-allocation builder that compiles into a highly optimized strategy chain.</li>
+<li><strong>Native OpenTelemetry Metrics</strong>: Emits standardized <code>System.Diagnostics.Metrics</code> (e.g., retry attempts, circuit breaker state changes, execution durations) natively without needing custom diagnostic listeners.</li>
+<li><strong>First-Class Timeouts & Cancellation</strong>: Every strategy natively accepts and forwards <code>CancellationToken</code>.</li>
+</ol>
+<hr/>
+<h3>4. What is the mathematical difference between Full Jitter and Equal Jitter in Exponential Backoff?</h3>
+<p><strong>Answer:</strong></p>
+<p>Given base delay $b$, attempt $i$, and ceiling delay $c$:</p>
+<ul>
+<li>Standard Exponential Backoff without jitter:</li>
+</ul>
+<p>$$t_{\text{sleep}} = \min(c, b \times 2^i)$$</p>
+<ul>
+<li><strong>Equal Jitter</strong>: Divides the delay into a deterministic half and a randomized half:</li>
+</ul>
+<p>$$t_{\text{sleep}} = \frac{\min(c, b \times 2^i)}{2} + \text{Random}\left(0, \frac{\min(c, b \times 2^i)}{2}\right)$$</p>
+<p>Ensures some minimum wait while adding jitter.</p>
+<ul>
+<li><strong>Full Jitter (AWS Recommended)</strong>: Distributes the wait time uniformly between 0 and the full exponential ceiling:</li>
+</ul>
+<p>$$t_{\text{sleep}} = \text{Random}(0, \min(c, b \times 2^i))$$</p>
+<p><em>Advantage</em>: Maximally flattens client request aggregation, completely neutralizing thundering herd synchronizations and reducing total system completion time.</p>
+<hr/>
+<h3>5. How should an architect tune Circuit Breaker parameters for high-throughput vs low-throughput microservices?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>High-Throughput Services (e.g., 5,000 RPS Payment/Catalog)</strong>:</li>
+<li><strong>SamplingDuration</strong>: Short (e.g., 5–10 seconds).</li>
+<li><strong>MinimumThroughput</strong>: High (e.g., 50–100 requests). An isolated hiccup of 5 failures should not trip a high-volume service.</li>
+<li><strong>FailureRatio</strong>: 0.3–0.5 (30% to 50% failure rate).</li>
+<li><strong>BreakDuration</strong>: Moderate (e.g., 5–15 seconds) with gradual canary recovery.</li>
+<li><strong>Low-Throughput / Sensitive Services (e.g., 2 RPS Batch Processing)</strong>:</li>
+<li><strong>SamplingDuration</strong>: Long (e.g., 30–60 seconds).</li>
+<li><strong>MinimumThroughput</strong>: Low (e.g., 2–4 requests). Otherwise, the circuit might never gather enough data to trip.</li>
+<li><strong>FailureRatio</strong>: Higher tolerance or consecutive failure counts (e.g., 3 consecutive failures).</li>
+<li><strong>BreakDuration</strong>: Longer (e.g., 30–60 seconds) to give external downstream dependencies adequate time to reboot.</li>
+</ul>
+<hr/>
+<h3>6. When should an engineer use Hedging over Retries, and what are the trade-offs?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Retry</strong>:</li>
+<li>Waits for the primary attempt to fail or time out completely before issuing an alternative attempt.</li>
+<li><em>Trade-off</em>: Increases total latency by at least the timeout duration of the failed request.</li>
+<li><strong>Hedging (Speculative Parallel Execution)</strong>:</li>
+<li>Does <em>not</em> wait for failure; instead, if the primary request exceeds a latency threshold (e.g. 50ms), it fires a second concurrent request to another server replica while keeping the first request alive. Whichever returns first wins.</li>
+<li><em>Best Suited For</em>: Idempotent read operations where tail latency (p99/p99.9) is unacceptable (e.g., search queries, cache lookups, financial quote lookups).</li>
+<li><em>Cost/Trade-off</em>: Increases downstream server load and network bandwidth by issuing duplicate requests during latency spikes. Must never be used on non-idempotent mutating endpoints.</li>
+</ul>
+<hr/>
+<h3>7. How do you integrate Refit with <code>IHttpClientFactory</code> and Polly v8 in .NET 8 Dependency Injection?</h3>
+<p><strong>Answer:</strong></p>
+<p>Using <code>Microsoft.Extensions.Http.Resilience</code>:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">builder.Services
+    .AddRefitClient&lt;IInventoryServiceClient&gt;()
+    .ConfigureHttpClient(c =&gt; c.BaseAddress = new Uri(&quot;https://inventory-svc&quot;))
+    .AddResilienceHandler(&quot;inventory-pipeline&quot;, pipelineBuilder =&gt;
+    {
+        pipelineBuilder.AddTimeout(TimeSpan.FromSeconds(5))
+            .AddRetry(new HttpRetryStrategyOptions
+            {
+                MaxRetryAttempts = 3,
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true
+            })
+            .AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
+            {
+                FailureRatio = 0.5,
+                SamplingDuration = TimeSpan.FromSeconds(10)
+            });
+    });</code></pre></div>
+<p>Refit automatically binds to the resilient <code>HttpClient</code> configured with the Polly pipeline, sharing connection pools and telemetry.</p>
+<hr/>
+<h3>8. How does cancellation token propagation prevent "Ghost Requests" in microservices call chains?</h3>
+<p><strong>Answer:</strong></p>
+<p>When an external client (e.g. mobile app) cancels a request or closes the connection:</p>
+<ul>
+<li>If microservices ignore the <code>CancellationToken</code>, backend servers continue executing expensive database queries, cryptographic operations, and downstream HTTP calls that will ultimately be discarded when attempting to write the HTTP response (Ghost Requests).</li>
+<li><strong>Correct Propagation</strong>:</li>
+</ul>
+<ol>
+<li>Receive <code>HttpContext.RequestAborted</code> in the API endpoint.</li>
+<li>Pass <code>cancellationToken</code> into Refit method calls: <code>await _client.GetItemAsync(sku, ct)</code>.</li>
+<li>Polly v8 strategies wrap and link this token with internal attempt timeouts using <code>CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutToken)</code>.</li>
+<li>Sockets immediately abort active TCP streams, freeing up downstream worker threads and connection pool sockets.</li>
+</ol>
+<hr/>
+<h3>9. Why does reverse multi-source traversal in LeetCode #417 (<em>Pacific Atlantic Water Flow</em>) reduce time complexity from $\mathcal{O}((MN)^2)$ to $\mathcal{O}(MN)$?</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Forward Approach</strong>:</li>
+<li>For every cell $(r, c)$ in the $M \times N$ matrix, we run a search to see if it can reach the Pacific and Atlantic boundaries.</li>
+<li>In the worst case (e.g. flat plateau), each search visits $\mathcal{O}(M \times N)$ cells.</li>
+<li>Total time: $(M \times N) \times \mathcal{O}(M \times N) = \mathcal{O}((M \times N)^2)$. For a $200 \times 200$ grid, this requires $\approx 1.6 \times 10^9$ operations, triggering Time Limit Exceeded (TLE).</li>
+<li><strong>Reverse Multi-Source Approach</strong>:</li>
+<li>We seed the ocean boundaries (perimeter cells) and search uphill:</li>
+<li>Pacific: $M + N$ boundary cells.</li>
+<li>Atlantic: $M + N$ boundary cells.</li>
+<li>Because we maintain a <code>visited</code> matrix for each ocean, each cell is evaluated at most once per ocean.</li>
+<li>Total time: $2 \times \mathcal{O}(M \times N) = \mathcal{O}(M \times N)$ linear operations ($\approx 8 \times 10^4$ operations, completing in milliseconds).</li>
+</ul>
+<hr/>
+<h3>10. Compare multi-source DFS vs multi-source BFS for grid graph problems in terms of memory and stack safety.</h3>
+<p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Multi-Source DFS</strong>:</li>
+<li><em>Mechanism</em>: Uses the thread call stack (or explicit recursion stack).</li>
+<li><em>Memory Footprint</em>: On deep grids (e.g. spiral or descending corridors), recursion depth can equal $M \times N$. In .NET, a 1MB default thread stack can overflow on grids larger than $1000 \times 1000$.</li>
+<li><strong>Multi-Source BFS</strong>:</li>
+<li><em>Mechanism</em>: Uses a FIFO <code>Queue&lt;(int, int)&gt;</code> on the managed heap.</li>
+<li><em>Memory Footprint</em>: The queue holds at most the frontier perimeter of the search wave at any given step, bounded by $\mathcal{O}(\min(M, N))$ for balanced waves (or $\mathcal{O}(M \times N)$ worst case).</li>
+<li><em>Stack Safety</em>: Completely stack-safe; cannot cause <code>StackOverflowException</code>.</li>
+<li><em>Level-by-Level</em>: BFS naturally processes cells in order of increasing distance/elevation, which is ideal for shortest path or contagion spreading problems (e.g. Rotting Oranges).</li>
+</ul></div>
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day28.ResilientHttpRefitPolly/PacificAtlanticSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd28-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d28-src-code-0" class="language-csharp">namespace Day28.ResilientHttpRefitPolly;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #417: Pacific Atlantic Water Flow (Medium).
+/// Uses reverse multi-source traversal flowing uphill from ocean boundaries.
+/// &lt;/summary&gt;
+public class PacificAtlanticSolver
+{
+    private static readonly int[] RowOffsets = { -1, 1, 0, 0 };
+    private static readonly int[] ColOffsets = { 0, 0, -1, 1 };
+
+    /// &lt;summary&gt;
+    /// Computes intersection coordinates reachable by both Pacific and Atlantic using Depth-First Search (DFS).
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N) for reachability matrices and recursion call stack.
+    /// &lt;/summary&gt;
+    public IList&lt;IList&lt;int&gt;&gt; PacificAtlanticDfs(int[][]? heights)
+    {
+        if (heights == null || heights.Length == 0 || heights[0].Length == 0)
+            return new List&lt;IList&lt;int&gt;&gt;();
+
+        int m = heights.Length;
+        int n = heights[0].Length;
+
+        bool[,] pacific = new bool[m, n];
+        bool[,] atlantic = new bool[m, n];
+
+        // 1. Pacific borders: Top row (r=0) and Left col (c=0)
+        for (int c = 0; c &lt; n; c++) DfsFlow(heights, 0, c, pacific, m, n);
+        for (int r = 0; r &lt; m; r++) DfsFlow(heights, r, 0, pacific, m, n);
+
+        // 2. Atlantic borders: Bottom row (r=m-1) and Right col (c=n-1)
+        for (int c = 0; c &lt; n; c++) DfsFlow(heights, m - 1, c, atlantic, m, n);
+        for (int r = 0; r &lt; m; r++) DfsFlow(heights, r, n - 1, atlantic, m, n);
+
+        // 3. Find intersection coordinates
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        for (int r = 0; r &lt; m; r++)
+        {
+            for (int c = 0; c &lt; n; c++)
+            {
+                if (pacific[r, c] &amp;&amp; atlantic[r, c])
+                {
+                    result.Add(new List&lt;int&gt; { r, c });
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private void DfsFlow(int[][] heights, int r, int c, bool[,] oceanReachable, int m, int n)
+    {
+        oceanReachable[r, c] = true;
+
+        for (int i = 0; i &lt; 4; i++)
+        {
+            int nr = r + RowOffsets[i];
+            int nc = c + ColOffsets[i];
+
+            // Reverse flow condition: neighbor must be &gt;= current cell height
+            if (nr &gt;= 0 &amp;&amp; nr &lt; m &amp;&amp; nc &gt;= 0 &amp;&amp; nc &lt; n &amp;&amp;
+                !oceanReachable[nr, nc] &amp;&amp;
+                heights[nr][nc] &gt;= heights[r][c])
+            {
+                DfsFlow(heights, nr, nc, oceanReachable, m, n);
+            }
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Computes intersection coordinates using Breadth-First Search (BFS) with queues.
+    /// Time Complexity: O(M * N)
+    /// Space Complexity: O(M * N)
+    /// &lt;/summary&gt;
+    public IList&lt;IList&lt;int&gt;&gt; PacificAtlanticBfs(int[][]? heights)
+    {
+        if (heights == null || heights.Length == 0 || heights[0].Length == 0)
+            return new List&lt;IList&lt;int&gt;&gt;();
+
+        int m = heights.Length;
+        int n = heights[0].Length;
+
+        bool[,] pacific = new bool[m, n];
+        bool[,] atlantic = new bool[m, n];
+
+        var pacQueue = new Queue&lt;(int r, int c)&gt;();
+        var atlQueue = new Queue&lt;(int r, int c)&gt;();
+
+        // Seed Pacific borders
+        for (int c = 0; c &lt; n; c++) { pacific[0, c] = true; pacQueue.Enqueue((0, c)); }
+        for (int r = 0; r &lt; m; r++) { if (!pacific[r, 0]) { pacific[r, 0] = true; pacQueue.Enqueue((r, 0)); } }
+
+        // Seed Atlantic borders
+        for (int c = 0; c &lt; n; c++) { atlantic[m - 1, c] = true; atlQueue.Enqueue((m - 1, c)); }
+        for (int r = 0; r &lt; m; r++) { if (!atlantic[r, n - 1]) { atlantic[r, n - 1] = true; atlQueue.Enqueue((r, n - 1)); } }
+
+        BfsExplore(heights, pacQueue, pacific, m, n);
+        BfsExplore(heights, atlQueue, atlantic, m, n);
+
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        for (int r = 0; r &lt; m; r++)
+        {
+            for (int c = 0; c &lt; n; c++)
+            {
+                if (pacific[r, c] &amp;&amp; atlantic[r, c])
+                {
+                    result.Add(new List&lt;int&gt; { r, c });
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private void BfsExplore(int[][] heights, Queue&lt;(int r, int c)&gt; queue, bool[,] visited, int m, int n)
+    {
+        while (queue.Count &gt; 0)
+        {
+            var (r, c) = queue.Dequeue();
+
+            for (int i = 0; i &lt; 4; i++)
+            {
+                int nr = r + RowOffsets[i];
+                int nc = c + ColOffsets[i];
+
+                if (nr &gt;= 0 &amp;&amp; nr &lt; m &amp;&amp; nc &gt;= 0 &amp;&amp; nc &lt; n &amp;&amp;
+                    !visited[nr, nc] &amp;&amp;
+                    heights[nr][nc] &gt;= heights[r][c])
+                {
+                    visited[nr, nc] = true;
+                    queue.Enqueue((nr, nc));
+                }
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day28.ResilientHttpRefitPolly/RefitContractsAndServices.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd28-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d28-src-code-1" class="language-csharp">using Refit;
+
+namespace Day28.ResilientHttpRefitPolly;
+
+public record InventoryItemDto(
+    string Sku,
+    int AvailableStock,
+    decimal UnitPrice,
+    string WarehouseLocation);
+
+public record StockReservationRequest(
+    string Sku,
+    int Quantity,
+    string OrderReference);
+
+public record StockReservationResponse(
+    Guid ReservationId,
+    string Sku,
+    int ReservedQuantity,
+    bool IsSuccess,
+    string? ErrorMessage);
+
+public record OrderSummaryDto(
+    Guid OrderId,
+    string CustomerId,
+    decimal TotalAmount,
+    string Status);
+
+/// &lt;summary&gt;
+/// Type-safe HTTP REST client for Inventory Service generated at compile time by Refit.
+/// &lt;/summary&gt;
+public interface IInventoryServiceClient
+{
+    [Get(&quot;/api/inventory/{sku}&quot;)]
+    Task&lt;ApiResponse&lt;InventoryItemDto&gt;&gt; GetInventoryItemAsync(
+        string sku,
+        [Header(&quot;X-Correlation-ID&quot;)] string? correlationId = null,
+        CancellationToken cancellationToken = default);
+
+    [Post(&quot;/api/inventory/reserve&quot;)]
+    [Headers(&quot;Accept: application/json&quot;)]
+    Task&lt;ApiResponse&lt;StockReservationResponse&gt;&gt; ReserveStockAsync(
+        [Body] StockReservationRequest request,
+        CancellationToken cancellationToken = default);
+}
+
+/// &lt;summary&gt;
+/// Type-safe HTTP REST client for Order Service generated at compile time by Refit.
+/// &lt;/summary&gt;
+public interface IOrderServiceClient
+{
+    [Get(&quot;/api/orders/{orderId}&quot;)]
+    Task&lt;ApiResponse&lt;OrderSummaryDto&gt;&gt; GetOrderAsync(
+        Guid orderId,
+        CancellationToken cancellationToken = default);
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day28.ResilientHttpRefitPolly/ResiliencePipelineBuilder.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd28-src-code-2')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d28-src-code-2" class="language-csharp">using Polly;
+using Polly.CircuitBreaker;
+using Polly.Hedging;
+using Polly.Retry;
+using Polly.Timeout;
+
+namespace Day28.ResilientHttpRefitPolly;
+
+/// &lt;summary&gt;
+/// State tracker for Circuit Breaker transitions.
+/// &lt;/summary&gt;
+public class CircuitBreakerStateMonitor
+{
+    public CircuitState CurrentState { get; private set; } = CircuitState.Closed;
+    public int OpenTransitionCount { get; private set; }
+    public int HalfOpenTransitionCount { get; private set; }
+    public int ClosedTransitionCount { get; private set; }
+
+    public void RecordOpened()
+    {
+        CurrentState = CircuitState.Open;
+        OpenTransitionCount++;
+    }
+
+    public void RecordHalfOpened()
+    {
+        CurrentState = CircuitState.HalfOpen;
+        HalfOpenTransitionCount++;
+    }
+
+    public void RecordClosed()
+    {
+        CurrentState = CircuitState.Closed;
+        ClosedTransitionCount++;
+    }
+}
+
+/// &lt;summary&gt;
+/// Configures production-grade Polly v8 Resilience Pipelines combining:
+/// 1. Timeout (Total &amp; Attempt)
+/// 2. Retry with Exponential Backoff &amp; Decorrelated Jitter
+/// 3. Advanced Circuit Breaker
+/// 4. Hedging (Speculative Parallel Execution)
+/// &lt;/summary&gt;
+public class ResiliencePipelineFactory
+{
+    /// &lt;summary&gt;
+    /// Builds standard HTTP client pipeline: Timeout -&gt; Retry -&gt; Circuit Breaker.
+    /// &lt;/summary&gt;
+    public static ResiliencePipeline CreateStandardHttpPipeline(
+        CircuitBreakerStateMonitor? monitor = null,
+        int maxRetries = 3,
+        TimeSpan? initialDelay = null,
+        TimeSpan? attemptTimeout = null,
+        TimeSpan? circuitBreakDuration = null)
+    {
+        var delay = initialDelay ?? TimeSpan.FromMilliseconds(50);
+        var timeout = attemptTimeout ?? TimeSpan.FromSeconds(2);
+        var breakDuration = circuitBreakDuration ?? TimeSpan.FromSeconds(1);
+
+        var builder = new ResiliencePipelineBuilder()
+            .AddTimeout(new TimeoutStrategyOptions
+            {
+                Timeout = timeout
+            });
+
+        if (maxRetries &gt; 0)
+        {
+            builder.AddRetry(new RetryStrategyOptions
+            {
+                MaxRetryAttempts = maxRetries,
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                Delay = delay,
+                ShouldHandle = new PredicateBuilder()
+                    .Handle&lt;HttpRequestException&gt;()
+                    .Handle&lt;TimeoutRejectedException&gt;()
+            });
+        }
+
+        return builder
+            .AddCircuitBreaker(new CircuitBreakerStrategyOptions
+            {
+                FailureRatio = 0.5,
+                MinimumThroughput = 4,
+                SamplingDuration = TimeSpan.FromSeconds(10),
+                BreakDuration = breakDuration,
+                ShouldHandle = new PredicateBuilder()
+                    .Handle&lt;HttpRequestException&gt;()
+                    .Handle&lt;TimeoutRejectedException&gt;(),
+                OnOpened = args =&gt;
+                {
+                    monitor?.RecordOpened();
+                    return ValueTask.CompletedTask;
+                },
+                OnHalfOpened = args =&gt;
+                {
+                    monitor?.RecordHalfOpened();
+                    return ValueTask.CompletedTask;
+                },
+                OnClosed = args =&gt;
+                {
+                    monitor?.RecordClosed();
+                    return ValueTask.CompletedTask;
+                }
+            })
+            .Build();
+    }
+
+    /// &lt;summary&gt;
+    /// Builds Hedged resilience pipeline for latency-sensitive read operations.
+    /// If primary attempt doesn&#x27;t complete within delay threshold, a concurrent speculative request is issued.
+    /// &lt;/summary&gt;
+    public static ResiliencePipeline&lt;TResult&gt; CreateHedgedPipeline&lt;TResult&gt;(
+        TimeSpan hedgingDelay,
+        int maxHedgedAttempts = 2)
+    {
+        return new ResiliencePipelineBuilder&lt;TResult&gt;()
+            .AddHedging(new HedgingStrategyOptions&lt;TResult&gt;
+            {
+                MaxHedgedAttempts = maxHedgedAttempts,
+                Delay = hedgingDelay,
+                ShouldHandle = new PredicateBuilder&lt;TResult&gt;()
+                    .Handle&lt;Exception&gt;()
+            })
+            .Build();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day28.ResilientHttpRefitPolly.Tests/Day28Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd28-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d28-tests-code-0" class="language-csharp">using Day28.ResilientHttpRefitPolly;
+using Polly.CircuitBreaker;
+using Polly.Timeout;
+using Xunit;
+
+namespace Day28.ResilientHttpRefitPolly.Tests;
+
+public class Day28Tests
+{
+    [Fact]
+    public void RefitContract_ModelSerializationAndInvariants()
+    {
+        var inventoryDto = new InventoryItemDto(&quot;SKU-PRO-MAX&quot;, 45, 1299.99m, &quot;WH-SEATTLE-01&quot;);
+        Assert.Equal(&quot;SKU-PRO-MAX&quot;, inventoryDto.Sku);
+        Assert.Equal(45, inventoryDto.AvailableStock);
+        Assert.Equal(1299.99m, inventoryDto.UnitPrice);
+
+        var reservationRequest = new StockReservationRequest(&quot;SKU-PRO-MAX&quot;, 2, &quot;ORD-7788&quot;);
+        Assert.Equal(&quot;ORD-7788&quot;, reservationRequest.OrderReference);
+
+        var reservationResponse = new StockReservationResponse(Guid.NewGuid(), &quot;SKU-PRO-MAX&quot;, 2, true, null);
+        Assert.True(reservationResponse.IsSuccess);
+        Assert.Null(reservationResponse.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task PollyPipeline_ExecutesSuccessfulCallWithoutRetries()
+    {
+        var pipeline = ResiliencePipelineFactory.CreateStandardHttpPipeline(maxRetries: 3);
+        int executionCount = 0;
+
+        var result = await pipeline.ExecuteAsync(async ct =&gt;
+        {
+            executionCount++;
+            await Task.Yield();
+            return &quot;SUCCESS&quot;;
+        });
+
+        Assert.Equal(&quot;SUCCESS&quot;, result);
+        Assert.Equal(1, executionCount);
+    }
+
+    [Fact]
+    public async Task PollyPipeline_RetriesOnTransientHttpExceptions_AndSucceeds()
+    {
+        var pipeline = ResiliencePipelineFactory.CreateStandardHttpPipeline(
+            maxRetries: 3,
+            initialDelay: TimeSpan.FromMilliseconds(5));
+
+        int executionCount = 0;
+
+        var result = await pipeline.ExecuteAsync(async ct =&gt;
+        {
+            executionCount++;
+            if (executionCount &lt; 3)
+            {
+                throw new HttpRequestException(&quot;Transient network glitch (HTTP 503).&quot;);
+            }
+            await Task.Yield();
+            return &quot;RECOVERED&quot;;
+        });
+
+        Assert.Equal(&quot;RECOVERED&quot;, result);
+        Assert.Equal(3, executionCount);
+    }
+
+    [Fact]
+    public async Task PollyPipeline_ExhaustsRetries_WhenFailurePersists()
+    {
+        var pipeline = ResiliencePipelineFactory.CreateStandardHttpPipeline(
+            maxRetries: 2,
+            initialDelay: TimeSpan.FromMilliseconds(5));
+
+        int executionCount = 0;
+
+        await Assert.ThrowsAsync&lt;HttpRequestException&gt;(async () =&gt;
+        {
+            await pipeline.ExecuteAsync(async ct =&gt;
+            {
+                executionCount++;
+                await Task.Yield();
+                throw new HttpRequestException(&quot;Downstream server dead.&quot;);
+            });
+        });
+
+        // Initial attempt + 2 retries = 3 total attempts
+        Assert.Equal(3, executionCount);
+    }
+
+    [Fact]
+    public async Task PollyPipeline_CircuitBreaker_OpensAfterThreshold()
+    {
+        var monitor = new CircuitBreakerStateMonitor();
+        var pipeline = ResiliencePipelineFactory.CreateStandardHttpPipeline(
+            monitor: monitor,
+            maxRetries: 0, // Isolate circuit breaker from retry loops
+            circuitBreakDuration: TimeSpan.FromSeconds(2));
+
+        // Drive failures to breach minimum throughput (4) and failure ratio (0.5)
+        for (int i = 0; i &lt; 4; i++)
+        {
+            try
+            {
+                await pipeline.ExecuteAsync(async ct =&gt;
+                {
+                    await Task.Yield();
+                    throw new HttpRequestException(&quot;Consecutive hard failure&quot;);
+                });
+            }
+            catch (HttpRequestException) { }
+        }
+
+        Assert.Equal(CircuitState.Open, monitor.CurrentState);
+        Assert.True(monitor.OpenTransitionCount &gt;= 1);
+
+        // Immediate subsequent request must fail fast with BrokenCircuitException
+        await Assert.ThrowsAsync&lt;BrokenCircuitException&gt;(async () =&gt;
+        {
+            await pipeline.ExecuteAsync(async ct =&gt;
+            {
+                await Task.Yield();
+                return &quot;Should not reach here&quot;;
+            });
+        });
+    }
+
+    [Fact]
+    public async Task PollyPipeline_Timeout_AbortsSlowOperations()
+    {
+        var pipeline = ResiliencePipelineFactory.CreateStandardHttpPipeline(
+            maxRetries: 0,
+            attemptTimeout: TimeSpan.FromMilliseconds(50));
+
+        await Assert.ThrowsAsync&lt;TimeoutRejectedException&gt;(async () =&gt;
+        {
+            await pipeline.ExecuteAsync(async ct =&gt;
+            {
+                await Task.Delay(500, ct);
+                return &quot;Never reached&quot;;
+            });
+        });
+    }
+
+    [Fact]
+    public async Task PollyPipeline_Hedging_ExecutesSpeculativeParallelAttempt()
+    {
+        var hedgedPipeline = ResiliencePipelineFactory.CreateHedgedPipeline&lt;string&gt;(
+            hedgingDelay: TimeSpan.FromMilliseconds(40),
+            maxHedgedAttempts: 2);
+
+        int attemptsStarted = 0;
+
+        var result = await hedgedPipeline.ExecuteAsync(async ct =&gt;
+        {
+            var attemptId = Interlocked.Increment(ref attemptsStarted);
+            if (attemptId == 1)
+            {
+                // Primary attempt hangs
+                await Task.Delay(300, ct);
+                return &quot;Primary Slow Result&quot;;
+            }
+
+            // Hedged secondary attempt responds fast
+            await Task.Yield();
+            return &quot;Hedged Fast Result&quot;;
+        });
+
+        Assert.Equal(&quot;Hedged Fast Result&quot;, result);
+        Assert.True(attemptsStarted &gt;= 2);
+    }
+
+    [Fact]
+    public void PacificAtlantic_DfsAndBfs_StandardContinent_CalculatesCorrectIntersection()
+    {
+        var solver = new PacificAtlanticSolver();
+
+        // LeetCode #417 standard test grid:
+        // Pacific (top &amp; left), Atlantic (bottom &amp; right)
+        var heights = new int[][]
+        {
+            new[] { 1, 2, 2, 3, 5 },
+            new[] { 3, 2, 3, 4, 4 },
+            new[] { 2, 4, 5, 3, 1 },
+            new[] { 6, 7, 1, 4, 5 },
+            new[] { 5, 1, 1, 2, 4 }
+        };
+
+        var dfsResult = solver.PacificAtlanticDfs(heights);
+        var bfsResult = solver.PacificAtlanticBfs(heights);
+
+        // Expected intersection coordinates:
+        // [0,4], [1,3], [1,4], [2,2], [3,0], [3,1], [4,0]
+        Assert.Equal(7, dfsResult.Count);
+        Assert.Equal(7, bfsResult.Count);
+
+        // Verify specific known intersections
+        Assert.Contains(dfsResult, coord =&gt; coord[0] == 0 &amp;&amp; coord[1] == 4);
+        Assert.Contains(dfsResult, coord =&gt; coord[0] == 2 &amp;&amp; coord[1] == 2);
+        Assert.Contains(dfsResult, coord =&gt; coord[0] == 4 &amp;&amp; coord[1] == 0);
+
+        Assert.Contains(bfsResult, coord =&gt; coord[0] == 0 &amp;&amp; coord[1] == 4);
+        Assert.Contains(bfsResult, coord =&gt; coord[0] == 2 &amp;&amp; coord[1] == 2);
+        Assert.Contains(bfsResult, coord =&gt; coord[0] == 4 &amp;&amp; coord[1] == 0);
+    }
+
+    [Fact]
+    public void PacificAtlantic_SingleCell_ReachesBothOceans()
+    {
+        var solver = new PacificAtlanticSolver();
+        var heights = new int[][] { new[] { 10 } };
+
+        var dfsResult = solver.PacificAtlanticDfs(heights);
+        var bfsResult = solver.PacificAtlanticBfs(heights);
+
+        Assert.Single(dfsResult);
+        Assert.Equal(0, dfsResult[0][0]);
+        Assert.Equal(0, dfsResult[0][1]);
+
+        Assert.Single(bfsResult);
+        Assert.Equal(0, bfsResult[0][0]);
+        Assert.Equal(0, bfsResult[0][1]);
+    }
+
+    [Fact]
+    public void PacificAtlantic_HandlesEdgeCases()
+    {
+        var solver = new PacificAtlanticSolver();
+
+        Assert.Empty(solver.PacificAtlanticDfs(null));
+        Assert.Empty(solver.PacificAtlanticBfs(null));
+        Assert.Empty(solver.PacificAtlanticDfs(Array.Empty&lt;int[]&gt;()));
+        Assert.Empty(solver.PacificAtlanticBfs(Array.Empty&lt;int[]&gt;()));
+
+        // Flat plateau: all cells reach both oceans
+        var flatHeights = new int[][]
+        {
+            new[] { 1, 1 },
+            new[] { 1, 1 }
+        };
+        var flatDfs = solver.PacificAtlanticDfs(flatHeights);
+        var flatBfs = solver.PacificAtlanticBfs(flatHeights);
+
+        Assert.Equal(4, flatDfs.Count);
+        Assert.Equal(4, flatBfs.Count);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 28 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

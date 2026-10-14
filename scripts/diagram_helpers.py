@@ -31,6 +31,9 @@ DAYS_INFO = [
     {"num": 24, "dir": "Day24-Advanced-SQL-Window-Partitions", "title": "Advanced SQL: CTEs, Window Functions & Partitions", "category": "SQL & Relational DB"},
     {"num": 25, "dir": "Day25-Phase1-Milestone-Assessment", "title": "Phase 1 Review & Milestone Assessment", "category": "Architecture, Review & Benchmarks"},
     {"num": 26, "dir": "Day26-Microservices-BoundedContexts", "title": "Microservices Principles & Bounded Contexts", "category": "Microservices & DDD"},
+    {"num": 27, "dir": "Day27-ApiGateway-Yarp", "title": "API Gateway Architecture with YARP", "category": "Microservices & YARP"},
+    {"num": 28, "dir": "Day28-Resilient-Http-Refit-Polly", "title": "Resilient Service-to-Service HTTP with Refit & Polly", "category": "Microservices & Refit"},
+    {"num": 29, "dir": "Day29-RabbitMQ-Core-Exchanges-Queues", "title": "RabbitMQ Core Concepts: Exchanges & Queues", "category": "RabbitMQ & Messaging"},
 ]
 
 def get_day_svg(day_num):
@@ -1273,6 +1276,207 @@ def get_day_svg(day_num):
           <text x="630" y="274" fill="#34d399" font-size="9">Mark '0' on enqueue prevents duplicates</text>
           <text x="630" y="290" fill="#cbd5e1" font-size="9">Memory bounded by perimeter O(min(M, N))</text>
           <text x="630" y="306" fill="#94a3b8" font-size="9">Diagonals unconnected &#8594; distinct islands</text>
+        </svg>
+        """
+
+    if day_num == 27:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d27GradYarp" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d27GradHealth" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#064e3b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d27GradGraph" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#581c87"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 27: API Gateway Architecture with YARP &amp; LC #133 Clone Graph / #695 Max Area</text>
+
+          <!-- 1. YARP Routing & Transforms -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d27GradYarp)" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#a5b4fc" font-size="14" font-weight="bold">YARP Routing &amp; Transforms</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Route &amp; Cluster Config</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Match: /api/orders/{**catch-all}</text>
+          <text x="50" y="162" fill="#cbd5e1" font-size="9">Clusters &#8594; Destinations [Node1, Node2]</text>
+          <text x="50" y="179" fill="#34d399" font-size="9">IProxyConfigProvider dynamic reload</text>
+          <text x="50" y="196" fill="#a5b4fc" font-size="9">Zero-copy ASP.NET Core Kestrel sockets</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Pipeline Transforms</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Add: X-Forwarded-*, X-Correlation-ID</text>
+          <text x="50" y="274" fill="#f87171" font-size="9">Strip: X-Client-Secret, Internal-Token</text>
+          <text x="50" y="290" fill="#38bdf8" font-size="9">PathRemovePrefix: /api/v1 &#8594; /orders</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Prevents header spoofing &amp; smuggling</text>
+
+          <!-- 2. Health Checks & Rate Limiting -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d27GradHealth)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Health Checks &amp; Rate Limiting</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#34d399" font-size="11" font-weight="bold">Active &amp; Passive Health Checks</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Active: Probes GET /health every 10s</text>
+          <text x="340" y="162" fill="#cbd5e1" font-size="9">Passive: Real-time 5xx &amp; timeout detection</text>
+          <text x="340" y="179" fill="#f43f5e" font-size="9">Unhealthy destinations pruned dynamically</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Load balancing: RoundRobin / P2C</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Gateway Rate Limiter</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Token Bucket partitioned by Client IP</text>
+          <text x="340" y="274" fill="#f87171" font-size="9">HTTP 429 Too Many Requests</text>
+          <text x="340" y="290" fill="#38bdf8" font-size="9">Headers: Retry-After, X-RateLimit-Left</text>
+          <text x="340" y="306" fill="#a5b4fc" font-size="9">Protects edge before backend saturation</text>
+
+          <!-- 3. LeetCode #133 & #695 -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d27GradGraph)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#e9d5ff" font-size="14" font-weight="bold">LC #133 &amp; #695 Graph Algorithms</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#c084fc" font-size="11" font-weight="bold">LC #133: Clone Graph</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Dictionary&lt;Node, Node&gt; visited clone map</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Handles cyclic references seamlessly</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">DFS / BFS traversal order</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Time: O(V + E) | Space: O(V)</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">LC #695: Max Area of Island</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Grid cell (r, c) = 1 &#8594; sink to 0</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Accumulate area across 4 directions</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Global maxArea = max(maxArea, area)</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Time: O(M * N) | Space: O(M * N)</text>
+        </svg>
+        """
+
+    if day_num == 28:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d28GradRefit" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0284c7"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d28GradPolly" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#b45309"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d28GradFlow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f766e"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 28: Resilient Service-to-Service HTTP with Refit &amp; Polly v8 &amp; LC #417 Pacific Atlantic</text>
+
+          <!-- 1. Refit Type-Safe REST -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d28GradRefit)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#7dd3fc" font-size="14" font-weight="bold">Refit Declarative REST</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">C# Interface Contract</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">[Get("/api/inventory/{sku}")]</text>
+          <text x="50" y="162" fill="#cbd5e1" font-size="9">[Post("/api/inventory/reserve")]</text>
+          <text x="50" y="179" fill="#34d399" font-size="9">Roslyn compile-time source generator</text>
+          <text x="50" y="196" fill="#a5b4fc" font-size="9">Zero raw URL strings | Strong typing</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Header &amp; Cancellation Binding</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">[Header("X-Correlation-ID")] string? id</text>
+          <text x="50" y="274" fill="#cbd5e1" font-size="9">CancellationToken cancellationToken</text>
+          <text x="50" y="290" fill="#34d399" font-size="9">ApiResponse&lt;T&gt; with HTTP status codes</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Automatic JSON streaming serialization</text>
+
+          <!-- 2. Polly v8 Resilience Pipeline -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d28GradPolly)" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#fcd34d" font-size="14" font-weight="bold">Polly v8 Resilience Pipeline</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#fbbf24" font-size="11" font-weight="bold">Retry with Decorrelated Jitter</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Exponential backoff: 2^attempt * base</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Full Jitter prevents retry storms</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">Zero-allocation ValueTask execution</text>
+          <text x="340" y="196" fill="#38bdf8" font-size="9">PredicateBuilder filters transient 5xx/429</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#f87171" font-size="11" font-weight="bold">Circuit Breaker &amp; Hedging</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Closed &#8594; Open (Fast fail BrokenCircuit)</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Half-Open: Canary probes for recovery</text>
+          <text x="340" y="290" fill="#a5b4fc" font-size="9">Hedging: Parallel backup call after 40ms</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Cuts p99 latency spikes on read replicas</text>
+
+          <!-- 3. LeetCode #417 Pacific Atlantic -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d28GradFlow)" stroke="#14b8a6" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#5eead4" font-size="14" font-weight="bold">LC #417: Pacific Atlantic Flow</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#14b8a6" font-size="11" font-weight="bold">Reverse Multi-Source Search</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Flow UPHILL from ocean borders</text>
+          <text x="630" y="162" fill="#cbd5e1" font-size="9">Pacific: Top (r=0) &amp; Left (c=0)</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Atlantic: Bottom (r=m-1) &amp; Right (c=n-1)</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Neighbor height &gt;= Current height</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Intersection &amp; Complexity</text>
+          <text x="630" y="258" fill="#34d399" font-size="9">pacific[r,c] &amp;&amp; atlantic[r,c] == true</text>
+          <text x="630" y="274" fill="#cbd5e1" font-size="9">DFS recursion &amp; BFS Queue supported</text>
+          <text x="630" y="290" fill="#fbbf24" font-size="9">Optimal O(M * N) Linear Time</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Avoids naive O((M*N)^2) search explosion</text>
+        </svg>
+        """
+
+    if day_num == 29:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d29GradRmq" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ea580c"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d29GradRel" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d29GradBfs" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#042f2e"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="2"/>
+          <text x="450" y="32" fill="#f8fafc" font-size="16" font-weight="bold" text-anchor="middle">Day 29: RabbitMQ Core Concepts: Exchanges, Queues &amp; LC #130 / #994</text>
+
+          <!-- 1. The 4 AMQP Exchanges -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d29GradRmq)" stroke="#f97316" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#fdba74" font-size="14" font-weight="bold">The 4 AMQP Exchange Types</text>
+
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#fbbf24" font-size="11" font-weight="bold">Direct &amp; Fanout Exchanges</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Direct: Exact match (order.created)</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">Fanout: Broadcast to ALL bound queues</text>
+          <text x="50" y="179" fill="#cbd5e1" font-size="9">Bypasses routing key &#8594; High throughput</text>
+          <text x="50" y="196" fill="#a5b4fc" font-size="9">Multiplexed channels over single TCP</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Topic &amp; Headers Exchanges</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Topic: * = 1 word | # = 0+ words</text>
+          <text x="50" y="274" fill="#cbd5e1" font-size="9">Pattern: orders.eu.* matches orders.eu.paid</text>
+          <text x="50" y="290" fill="#34d399" font-size="9">Headers: x-match all/any attribute match</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Trie prefix tree internal routing</text>
+
+          <!-- 2. Reliability, DLX & QoS -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d29GradRel)" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#a5b4fc" font-size="14" font-weight="bold">Reliability, DLX &amp; QoS</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Publisher Confirms &amp; Acks</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Publisher Confirms: Broker ACK on disk sync</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Consumer BasicAck clears unacked state</text>
+          <text x="340" y="179" fill="#fbbf24" font-size="9">BasicNack(requeue:true) &#8594; Head of queue</text>
+          <text x="340" y="196" fill="#a5b4fc" font-size="9">Eliminates message loss on node crash</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#f43f5e" font-size="11" font-weight="bold">Dead Letter Exchange &amp; QoS</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">BasicNack(requeue:false) &#8594; Routes to DLX</text>
+          <text x="340" y="274" fill="#cbd5e1" font-size="9">x-dead-letter-exchange for poison messages</text>
+          <text x="340" y="290" fill="#34d399" font-size="9">basic.qos(prefetch=1) fair dispatching</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Prevents worker buffer memory bloat</text>
+
+          <!-- 3. LeetCode #130 & #994 -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d29GradBfs)" stroke="#2dd4bf" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#5eead4" font-size="14" font-weight="bold">LC #130 &amp; #994 Grid Algorithms</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#2dd4bf" font-size="11" font-weight="bold">LC #130: Surrounded Regions</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Boundary 'O' cells can never be captured</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Reverse DFS marks boundary 'O' &#8594; '#'</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Flip remaining 'O' &#8594; 'X' (captured)</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Restore '#' &#8594; 'O' in linear O(M*N) time</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#fbbf24" font-size="11" font-weight="bold">LC #994: Rotting Oranges</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Multi-Source BFS from rotten oranges (2)</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Level-by-level = Minute-by-minute wave</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Fresh count == 0 &#8594; Return minutes</text>
+          <text x="630" y="306" fill="#f87171" font-size="9">Unreachable fresh &#8594; Return -1</text>
         </svg>
         """
     return ""

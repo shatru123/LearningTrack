@@ -1,8 +1,8 @@
 # 100-Day .NET + AI Engineering Track
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
-[![Status](https://img.shields.io/badge/Roadmap-Days%201--29%20Completed-brightgreen.svg)](#completed-curriculum-days-129)
-[![Tests](https://img.shields.io/badge/Tests-325%20Passed-brightgreen.svg)](#running-builds-and-tests)
+[![Status](https://img.shields.io/badge/Roadmap-Days%201--31%20Completed-brightgreen.svg)](#completed-curriculum-days-131)
+[![Tests](https://img.shields.io/badge/Tests-345%20Passed-brightgreen.svg)](#running-builds-and-tests)
 
 Practical engineering implementations, performance benchmarks, systems architecture labs, and Data Structures & Algorithms (DSA) exercises across the 100-Day .NET + AI Engineering journey.
 
@@ -17,7 +17,7 @@ Practical engineering implementations, performance benchmarks, systems architect
 
 ## Status
 
-**Days 1–29: Completed** (Phase 1 [Days 1–25] concluded; Phase 2 [Days 26–29] in progress)
+**Days 1–31: Completed** (Phase 1 [Days 1–25] concluded; Phase 2 [Days 26–31] in progress)
 
 Detailed status table: [roadmap/progress.md](roadmap/progress.md)  
 Roadmap overview: [roadmap/100-day-roadmap.md](roadmap/100-day-roadmap.md)
@@ -33,7 +33,7 @@ Read complete daily guides, deep architectural notes, interview questions, and c
 
 ---
 
-## Completed Curriculum (Days 1–29)
+## Completed Curriculum (Days 1–31)
 
 Each day includes complete practical implementations, xUnit test suites, comprehensive engineering notes, and practical scenarios.
 
@@ -68,6 +68,8 @@ Each day includes complete practical implementations, xUnit test suites, compreh
 | **Day 27** | API Gateway Architecture with YARP | YARP Reverse Proxy engine, Route & Cluster mapping, Header & Path transforms, active/passive health checks, token bucket rate limiter, DSA (LeetCode #133 Clone Graph & #695 Max Area of Island) | [Day27-ApiGateway-Yarp](Day27-ApiGateway-Yarp/) • [README](Day27-ApiGateway-Yarp/README.md) • [Notes](Day27-ApiGateway-Yarp/notes.md) • [Interview Qs](Day27-ApiGateway-Yarp/interview-questions.md) |
 | **Day 28** | Resilient Service-to-Service HTTP with Refit & Polly | Refit type-safe REST clients, Polly v8 zero-allocation `ResiliencePipeline`, Exponential Backoff + Jitter, Circuit Breaker with state monitor, Hedging, Timeouts, DSA (LeetCode #417 Pacific Atlantic Water Flow) | [Day28-Resilient-Http-Refit-Polly](Day28-Resilient-Http-Refit-Polly/) • [README](Day28-Resilient-Http-Refit-Polly/README.md) • [Notes](Day28-Resilient-Http-Refit-Polly/notes.md) • [Interview Qs](Day28-Resilient-Http-Refit-Polly/interview-questions.md) |
 | **Day 29** | RabbitMQ Core Concepts: Exchanges & Queues | AMQP 0-9-1 architecture simulator: Exchanges (`Direct`, `Topic` with `*` & `#`, `Fanout`, `Headers`), Publisher Confirms, Consumer Manual Ack/Nack, DLX, Prefetch QoS fair dispatch, DSA (LeetCode #130 Surrounded Regions & #994 Rotting Oranges) | [Day29-RabbitMQ-Core-Exchanges-Queues](Day29-RabbitMQ-Core-Exchanges-Queues/) • [README](Day29-RabbitMQ-Core-Exchanges-Queues/README.md) • [Notes](Day29-RabbitMQ-Core-Exchanges-Queues/notes.md) • [Interview Qs](Day29-RabbitMQ-Core-Exchanges-Queues/interview-questions.md) |
+| **Day 30** | RabbitMQ Dead-Letter Queues & MassTransit | AMQP DLX (`x-dead-letter-exchange`), TTL delayed retry loops (`x-message-ttl`), poison message triage with `x-death` headers, MassTransit Saga State Machine (`OrderStateInstance`), DSA (LeetCode #207 Course Schedule & #210 Course Schedule II via Kahn's BFS & 3-Color DFS) | [Day30-RabbitMQ-DLQ-MassTransit](Day30-RabbitMQ-DLQ-MassTransit/) • [README](Day30-RabbitMQ-DLQ-MassTransit/README.md) • [Notes](Day30-RabbitMQ-DLQ-MassTransit/notes.md) • [Interview Qs](Day30-RabbitMQ-DLQ-MassTransit/interview-questions.md) |
+| **Day 31** | The Transactional Outbox Pattern | Dual-Write hazard prevention, atomic unit-of-work (`Order` + `OutboxMessage`), Outbox Publisher background worker (`SELECT ... FOR UPDATE SKIP LOCKED` lease lock), Idempotent Consumer Inbox pattern, DSA (LeetCode #684 Redundant Connection via DSU with path compression & union by rank) | [Day31-Transactional-Outbox-Pattern](Day31-Transactional-Outbox-Pattern/) • [README](Day31-Transactional-Outbox-Pattern/README.md) • [Notes](Day31-Transactional-Outbox-Pattern/notes.md) • [Interview Qs](Day31-Transactional-Outbox-Pattern/interview-questions.md) |
 
 ---
 
@@ -81,6 +83,7 @@ dotnet build
 dotnet test LearningTrack.sln
 ```
 
-All 325 automated unit and integration tests validate the implementations across Days 1–29.
+All 345 automated unit and integration tests validate the implementations across Days 1–31.
+
 
 

@@ -34,6 +34,8 @@ DAYS_INFO = [
     {"num": 27, "dir": "Day27-ApiGateway-Yarp", "title": "API Gateway Architecture with YARP", "category": "Microservices & YARP"},
     {"num": 28, "dir": "Day28-Resilient-Http-Refit-Polly", "title": "Resilient Service-to-Service HTTP with Refit & Polly", "category": "Microservices & Refit"},
     {"num": 29, "dir": "Day29-RabbitMQ-Core-Exchanges-Queues", "title": "RabbitMQ Core Concepts: Exchanges & Queues", "category": "RabbitMQ & Messaging"},
+    {"num": 30, "dir": "Day30-RabbitMQ-DLQ-MassTransit", "title": "RabbitMQ Dead-Letter Queues & MassTransit", "category": "RabbitMQ & Messaging"},
+    {"num": 31, "dir": "Day31-Transactional-Outbox-Pattern", "title": "The Transactional Outbox Pattern", "category": "Distributed Systems"},
 ]
 
 def get_day_svg(day_num):
@@ -1479,6 +1481,145 @@ def get_day_svg(day_num):
           <text x="630" y="306" fill="#f87171" font-size="9">Unreachable fresh &#8594; Return -1</text>
         </svg>
         """
+
+    if day_num == 30:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d30GradBg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d30GradDlx" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d30GradSaga" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#14532d"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d30GradDsa" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#312e81"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d30GradBg)"/>
+          
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 30: RabbitMQ DLQ, TTL Retry Pipeline &amp; MassTransit Sagas</text>
+          
+          <!-- 1. DLX & TTL Retry Loop -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d30GradDlx)" stroke="#ec4899" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#f472b6" font-size="14" font-weight="bold">DLX &amp; Progressive TTL Retry</text>
+          
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#fbbf24" font-size="11" font-weight="bold">Zero-Consumer Retry Loop</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Worker Queue: orders.work</text>
+          <text x="50" y="162" fill="#f43f5e" font-size="9">Failure &#8594; BasicReject(requeue:false)</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">orders.retry.5s: x-message-ttl = 5000ms</text>
+          <text x="50" y="196" fill="#34d399" font-size="9">TTL Expiration &#8594; DLX back to orders.work</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#f43f5e" font-size="11" font-weight="bold">Poison Queue &amp; x-death</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">RetryCount &gt;= 3 &#8594; orders.dlq</text>
+          <text x="50" y="274" fill="#a5b4fc" font-size="9">x-death: original queue, count, time</text>
+          <text x="50" y="290" fill="#34d399" font-size="9">No Head-of-Line blocking (discrete TTL)</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Quorum queue dead-letter isolation</text>
+
+          <!-- 2. MassTransit State Machine Saga -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d30GradSaga)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">MassTransit State Machine Saga</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">OrderStateInstance Workflow</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">CorrelateById: CorrelationId Guid</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Initial &#8594; Submitted &#8594; Reserved</text>
+          <text x="340" y="179" fill="#38bdf8" font-size="9">PaymentCompleted &#8594; Completed</text>
+          <text x="340" y="196" fill="#f43f5e" font-size="9">OrderFaulted &#8594; Faulted State</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Saga Concurrency &amp; Retries</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Optimistic Concurrency with Version</text>
+          <text x="340" y="274" fill="#cbd5e1" font-size="9">GreenPipes pipeline filter chain</text>
+          <text x="340" y="290" fill="#a5b4fc" font-size="9">UseMessageRetry (in-memory backoff)</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">UseDelayedRedelivery (broker backoff)</text>
+
+          <!-- 3. LeetCode #207 & #210: Course Schedule -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d30GradDsa)" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#a5b4fc" font-size="14" font-weight="bold">LC #207 &amp; #210 Topological Sort</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Kahn's Algorithm (In-Degree BFS)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Calculate in-degrees for all V nodes</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Queue all in-degree == 0 nodes</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Dequeue &amp; decrement neighbor in-degree</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Visited == V &#8594; Valid DAG (No cycle)</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#ec4899" font-size="11" font-weight="bold">DFS 3-Coloring Cycle Detection</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">0 = Unvisited | 1 = Visiting | 2 = Done</text>
+          <text x="630" y="274" fill="#f43f5e" font-size="9">Neighbor in state 1 &#8594; Cycle detected!</text>
+          <text x="630" y="290" fill="#34d399" font-size="9">Post-order reversal gives ordering</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Linear O(V + E) time &amp; space</text>
+        </svg>
+        """
+
+    if day_num == 31:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d31GradBg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d31GradOutbox" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d31GradInbox" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#14532d"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d31GradDsu" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d31GradBg)"/>
+          
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 31: The Transactional Outbox Pattern &amp; Disjoint Set Union</text>
+          
+          <!-- 1. The Dual-Write Problem & Atomic Outbox -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d31GradOutbox)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Atomic Transactional Outbox</text>
+          
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#f43f5e" font-size="11" font-weight="bold">Dual-Write Hazard</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">DB Commit + Direct Broker Publish</text>
+          <text x="50" y="162" fill="#f43f5e" font-size="9">Network drop after commit &#8594; Lost event</text>
+          <text x="50" y="179" fill="#f43f5e" font-size="9">Broker publish + DB rollback &#8594; Ghost event</text>
+          <text x="50" y="196" fill="#a5b4fc" font-size="9">2PC / XA non-viable in microservices</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#34d399" font-size="11" font-weight="bold">Local ACID Atomicity</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">INSERT INTO Orders (...)</text>
+          <text x="50" y="274" fill="#38bdf8" font-size="9">INSERT INTO OutboxMessages (...)</text>
+          <text x="50" y="290" fill="#34d399" font-size="9">Single local database transaction</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Both commit or both roll back together</text>
+
+          <!-- 2. Polling Publisher & Inbox Pattern -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d31GradInbox)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Polling Publisher &amp; Inbox Pattern</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Worker Leasing &amp; SKIP LOCKED</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">SELECT ... FOR UPDATE SKIP LOCKED</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Lease timeout: LockedUntilUtc + LockId</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">On publish confirm &#8594; ProcessedOnUtc = now</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">CDC (Debezium WAL) for sub-10ms scale</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#a855f7" font-size="11" font-weight="bold">Idempotent Consumer (Inbox)</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">At-Least-Once delivery produces duplicates</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">InboxMessages table deduplication</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">Duplicate detected &#8594; ACK without side effect</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Guarantees exactly-once business side effects</text>
+
+          <!-- 3. LeetCode #684: Redundant Connection -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d31GradDsu)" stroke="#e879f9" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#f0abfc" font-size="14" font-weight="bold">LC #684: Disjoint Set Union</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Path Compression &amp; Rank</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">parent[x] = Find(parent[x]) flattens tree</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Union by rank attaches small tree to root</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Inverse Ackermann alpha(N) &lt; 5</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Amortized near-constant time O(1)</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#ec4899" font-size="11" font-weight="bold">Cycle-Forming Edge Detection</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">For each edge (u, v):</text>
+          <text x="630" y="274" fill="#f43f5e" font-size="9">Find(u) == Find(v) &#8594; Cycle detected!</text>
+          <text x="630" y="290" fill="#34d399" font-size="9">Return (u, v) as redundant edge</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Linear O(N * alpha(N)) time, O(N) space</text>
+        </svg>
+        """
+
     return ""
 
 def format_interview_qa(interview_md):

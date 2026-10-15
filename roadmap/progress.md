@@ -43,8 +43,10 @@
 | Day 27 | API Gateway Architecture with YARP (LC #133 & #695) | ✅ Completed |
 | Day 28 | Resilient Service-to-Service HTTP with Refit & Polly (LC #417) | ✅ Completed |
 | Day 29 | RabbitMQ Core Concepts: Exchanges & Queues (LC #130 & #994) | ✅ Completed |
+| Day 30 | RabbitMQ Dead-Letter Queues & MassTransit (LC #207 & #210) | ✅ Completed |
+| Day 31 | The Transactional Outbox Pattern (LC #684) | ✅ Completed |
 
 ## Next
 
-Day 30 — RabbitMQ Advanced Patterns: Dead Letter Exchanges, Retry Strategies & Worker Queues.
+Day 32 — gRPC Services in ASP.NET Core: Protobuf Contracts & Streaming.
 

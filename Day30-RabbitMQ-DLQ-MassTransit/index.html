@@ -1,0 +1,3145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 30: RabbitMQ Dead-Letter Queues &amp; MassTransit | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 30</span>
+        <span class="badge badge-category">RabbitMQ &amp; Messaging</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html" class="nav-btn">← Day 29</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+
+        </select>
+        <a href="../Day31-Transactional-Outbox-Pattern/index.html" class="nav-btn">Day 31 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 30: RabbitMQ Dead-Letter Queues &amp; MassTransit</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d30GradBg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d30GradDlx" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d30GradSaga" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#14532d"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d30GradDsa" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#312e81"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d30GradBg)"/>
+          
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 30: RabbitMQ DLQ, TTL Retry Pipeline &amp; MassTransit Sagas</text>
+          
+          <!-- 1. DLX & TTL Retry Loop -->
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d30GradDlx)" stroke="#ec4899" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#f472b6" font-size="14" font-weight="bold">DLX &amp; Progressive TTL Retry</text>
+          
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#fbbf24" font-size="11" font-weight="bold">Zero-Consumer Retry Loop</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Worker Queue: orders.work</text>
+          <text x="50" y="162" fill="#f43f5e" font-size="9">Failure &#8594; BasicReject(requeue:false)</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">orders.retry.5s: x-message-ttl = 5000ms</text>
+          <text x="50" y="196" fill="#34d399" font-size="9">TTL Expiration &#8594; DLX back to orders.work</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#f43f5e" font-size="11" font-weight="bold">Poison Queue &amp; x-death</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">RetryCount &gt;= 3 &#8594; orders.dlq</text>
+          <text x="50" y="274" fill="#a5b4fc" font-size="9">x-death: original queue, count, time</text>
+          <text x="50" y="290" fill="#34d399" font-size="9">No Head-of-Line blocking (discrete TTL)</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Quorum queue dead-letter isolation</text>
+
+          <!-- 2. MassTransit State Machine Saga -->
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d30GradSaga)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">MassTransit State Machine Saga</text>
+
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">OrderStateInstance Workflow</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">CorrelateById: CorrelationId Guid</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Initial &#8594; Submitted &#8594; Reserved</text>
+          <text x="340" y="179" fill="#38bdf8" font-size="9">PaymentCompleted &#8594; Completed</text>
+          <text x="340" y="196" fill="#f43f5e" font-size="9">OrderFaulted &#8594; Faulted State</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Saga Concurrency &amp; Retries</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Optimistic Concurrency with Version</text>
+          <text x="340" y="274" fill="#cbd5e1" font-size="9">GreenPipes pipeline filter chain</text>
+          <text x="340" y="290" fill="#a5b4fc" font-size="9">UseMessageRetry (in-memory backoff)</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">UseDelayedRedelivery (broker backoff)</text>
+
+          <!-- 3. LeetCode #207 & #210: Course Schedule -->
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d30GradDsa)" stroke="#818cf8" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#a5b4fc" font-size="14" font-weight="bold">LC #207 &amp; #210 Topological Sort</text>
+
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Kahn's Algorithm (In-Degree BFS)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Calculate in-degrees for all V nodes</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Queue all in-degree == 0 nodes</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Dequeue &amp; decrement neighbor in-degree</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Visited == V &#8594; Valid DAG (No cycle)</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#ec4899" font-size="11" font-weight="bold">DFS 3-Coloring Cycle Detection</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">0 = Unvisited | 1 = Visiting | 2 = Done</text>
+          <text x="630" y="274" fill="#f43f5e" font-size="9">Neighbor in state 1 &#8594; Cycle detected!</text>
+          <text x="630" y="290" fill="#34d399" font-size="9">Post-order reversal gives ordering</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Linear O(V + E) time &amp; space</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Day 30 Deep Dive Notes: RabbitMQ DLQ, TTL Retry Topology & MassTransit Sagas</h1>
+<h2>1. AMQP Dead-Letter Protocol & Wire Semantics</h2>
+<h3>The AMQP Dead-Letter Specification</h3>
+<p>Under the AMQP 0-9-1 specification, a message entering an AMQP queue can be transitioned to dead-letter status under three exact conditions:</p>
+<ol>
+<li><strong>Explicit Negative Acknowledgment</strong>:</li>
+</ol>
+<ul>
+<li><code>basic.reject(deliveryTag, requeue = false)</code></li>
+<li><code>basic.nack(deliveryTag, multiple = false, requeue = false)</code></li>
+</ul>
+<p>When <code>requeue = true</code>, the broker places the message back into its original position in the queue. When <code>requeue = false</code>, if <code>x-dead-letter-exchange</code> is declared, the message is immediately routed to that exchange; otherwise, it is silently dropped into the ether.</p>
+<ol>
+<li><strong>Time-To-Live (TTL) Expiration</strong>:</li>
+</ol>
+<ul>
+<li>Queue-level TTL (<code>x-message-ttl</code>): Automatically configured on queue declaration.</li>
+<li>Message-level TTL (<code>expiration</code> header): Declared per publication.</li>
+</ul>
+<ol>
+<li><strong>Queue Length Overflow</strong>:</li>
+</ol>
+<ul>
+<li><code>x-max-length</code>: Maximum count of ready messages.</li>
+<li><code>x-max-length-bytes</code>: Maximum total payload size in bytes.</li>
+<li><code>x-overflow</code>: Determines behavior when full (<code>drop-head</code>, <code>reject-publish</code>, or <code>reject-publish-dlx</code>).</li>
+</ul>
+<h3>The <code>x-death</code> Header Architecture</h3>
+<p>When RabbitMQ dead-letters a message, it modifies the message headers by prepending a hash to the <code>x-death</code> array:</p>
+<div class="code-block-container"><pre class="language-json"><code class="language-json">{
+  &quot;x-death&quot;: [
+    {
+      &quot;count&quot;: 1,
+      &quot;exchange&quot;: &quot;orders.direct&quot;,
+      &quot;queue&quot;: &quot;orders.work&quot;,
+      &quot;reason&quot;: &quot;rejected&quot;,
+      &quot;routing-keys&quot;: [&quot;orders.work&quot;],
+      &quot;time&quot;: 1729000000
+    }
+  ]
+}</code></pre></div>
+<p><strong>Critical Production Gotcha</strong>: If a message transitions through multiple dead-letter hops (e.g. <code>work</code> $\to$ <code>retry.5s</code> $\to$ <code>work</code> $\to$ <code>retry.30s</code> $\to$ <code>dlq</code>), RabbitMQ updates the count for existing queue entries or inserts a new element at index 0. To calculate total historical retries across multiple queues, your inspection tool must sum the <code>count</code> fields across all elements matching the root processing queue.</p>
+<hr/>
+<h2>2. RabbitMQ TTL Retry Pitfalls: Head-of-Line Blocking</h2>
+<h3>Why Variable Per-Message TTL Causes Head-of-Line Blocking</h3>
+<p>A common architectural mistake is using a single retry queue with variable per-message <code>expiration</code> headers:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">// ANTI-PATTERN:
+await channel.BasicPublishAsync(exchange: &quot;&quot;, routingKey: &quot;orders.retry&quot;, mandatory: true, basicProperties: new BasicProperties { Expiration = &quot;30000&quot; }, body: body1);
+await channel.BasicPublishAsync(exchange: &quot;&quot;, routingKey: &quot;orders.retry&quot;, mandatory: true, basicProperties: new BasicProperties { Expiration = &quot;5000&quot; }, body: body2);</code></pre></div>
+<p><strong>Why this fails</strong>: In standard RabbitMQ classic and quorum queues, messages are evaluated for expiration <strong>only when they reach the head of the queue</strong>. If message 1 has a 30-second TTL and message 2 has a 5-second TTL, message 2 will NOT expire and dead-letter after 5 seconds! It remains trapped behind message 1 for the full 30 seconds.</p>
+<h3>The Correct Production Solution: Multi-Stage Discrete Delay Queues</h3>
+<p>Create discrete queues with fixed queue-level <code>x-message-ttl</code>:</p>
+<ul>
+<li><code>orders.retry.5s</code>: <code>x-message-ttl = 5000</code>, DLX $\to$ <code>orders.work</code></li>
+<li><code>orders.retry.30s</code>: <code>x-message-ttl = 30000</code>, DLX $\to$ <code>orders.work</code></li>
+<li><code>orders.retry.2m</code>: <code>x-message-ttl = 120000</code>, DLX $\to$ <code>orders.work</code></li>
+<li><code>orders.dlq</code>: Final poison holding queue (retained for manual inspection and replay).</li>
+</ul>
+<p>Because all messages in a given queue have identical TTL, messages always expire in strict FIFO order, preventing Head-of-Line blocking entirely.</p>
+<hr/>
+<h2>3. MassTransit Architecture & Saga State Machines</h2>
+<h3>The MassTransit Pipeline Engine</h3>
+<p>MassTransit builds an asynchronous message pipeline inspired by the <code>Russian Doll</code> middleware pattern (GreenPipes):</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Transport (RabbitMQ) 
+  ---&gt; DeserializationFilter 
+    ---&gt; ScopedFilter (DI Scope per message) 
+      ---&gt; RetryFilter (In-memory backoff) 
+        ---&gt; RedeliveryFilter (Delayed exchange) 
+          ---&gt; OutboxFilter (Transactional Outbox) 
+            ---&gt; Consumer / Saga State Machine</code></pre></div>
+<h3>Saga Orchestration vs Choreography</h3>
+<ul>
+<li><strong>Choreography</strong>: Each service listens to domain events and decides its own local action without centralized coordination. Works well for simple 2-3 step workflows, but becomes impossible to debug and trace in complex flows.</li>
+<li><strong>Orchestration (MassTransit Saga State Machine)</strong>: A centralized state coordinator (<code>OrderStateMachine</code>) listens to events, tracks global state in a persistent instance table, and dispatches direct commands (<code>ReserveInventory</code>, <code>AuthorizePayment</code>).</li>
+</ul>
+<h3>Concurrency & Locking in Sagas</h3>
+<p>When concurrent events arrive for the same saga instance (e.g. <code>PaymentCompleted</code> and <code>InventoryUnavailable</code> dispatched simultaneously):</p>
+<ol>
+<li><strong>Optimistic Concurrency</strong>: MassTransit tracks a <code>RowVersion</code> or <code>Version</code> property. If two threads attempt to commit state transitions simultaneously, one commits and the second throws <code>DbUpdateConcurrencyException</code>. MassTransit's retry middleware automatically catches the concurrency exception and re-reads the updated saga state.</li>
+<li><strong>Pessimistic Concurrency</strong>: Acquires a database row lock (<code>SELECT ... FOR UPDATE</code>) before executing saga activity.</li>
+</ol>
+<hr/>
+<h2>4. DSA Deep Dive: Topological Sorting</h2>
+<h3>Directed Acyclic Graph (DAG) Foundations</h3>
+<p>A Topological Sort of a directed graph $G = (V, E)$ is a linear ordering of its vertices such that for every directed edge $(u, v)$, node $u$ comes before $v$ in the ordering.</p>
+<p>A graph admits a topological sort <strong>if and only if it is a Directed Acyclic Graph (DAG)</strong>.</p>
+<h3>Kahn's Algorithm vs DFS 3-Coloring</h3>
+<div class="table-container"><table><thead><tr>
+<th>Characteristic</th>
+<th>Kahn's Algorithm (BFS)</th>
+<th>3-Coloring (DFS)</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Underlying Mechanism</strong></td>
+<td>In-degree queue</td>
+<td>Post-order reversal via recursion stack</td>
+</tr>
+<tr>
+<td><strong>Cycle Detection</strong></td>
+<td>Count of dequeued nodes $< \</td>
+<td>V\</td>
+<td>$</td>
+<td>Directed back-edge to a node currently in state <code>1</code> (Visiting)</td>
+</tr>
+<tr>
+<td><strong>Memory Footprint</strong></td>
+<td>In-degree array + FIFO queue</td>
+<td>Recursion stack ($\mathcal{O}(H)$ call stack)</td>
+</tr>
+<tr>
+<td><strong>Output Order</strong></td>
+<td>Forward direct topological order</td>
+<td>Reverse post-order (must reverse or stack pop)</td>
+</tr>
+<tr>
+<td><strong>Cycle Path Extraction</strong></td>
+<td>Harder to extract cycle loop</td>
+<td>Trivial to extract cycle path by tracing gray nodes</td>
+</tr>
+</tbody></table></div>
+<h3>Complexity Analysis</h3>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(V + E)$ where $V$ is <code>numCourses</code> and $E$ is the number of prerequisites. Every vertex is enqueued/visited once, and every directed edge is decremented/traversed exactly once.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(V + E)$ to store the adjacency list representation, plus $\mathcal{O}(V)$ for in-degree array / state array and queue/stack.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 30: RabbitMQ Dead-Letter Queues & MassTransit</h1>
+<h2>Architectural Overview</h2>
+<p>In high-throughput microservices architectures, unhandled message processing failures, transient downstream outages, and poison messages (malformed or unprocessable payloads) pose catastrophic risks to system availability. Without robust dead-lettering and progressive retry policies, failed messages either trigger infinite retry storms that starve healthy messages (Head-of-Line blocking) or are dropped silently resulting in data loss.</p>
+<p>This module provides a production-grade implementation of <strong>AMQP Dead-Letter Exchanges (DLX)</strong>, <strong>TTL-based Exponential Delayed Retry Queues</strong>, and <strong>MassTransit Saga State Machine Orchestration</strong> in .NET 8.</p>
+<hr/>
+<h2>Key Architectural Concepts</h2>
+<h3>1. AMQP Dead-Letter Exchange (DLX) Mechanics</h3>
+<p>A queue declares dead-letter routing via standard AMQP 0-9-1 arguments:</p>
+<ul>
+<li><code>x-dead-letter-exchange</code>: The exchange that receives dead-lettered messages.</li>
+<li><code>x-dead-letter-routing-key</code>: Optional replacement routing key for dead-lettered routing.</li>
+<li><code>x-message-ttl</code>: Per-message or per-queue time-to-live in milliseconds.</li>
+<li><code>x-max-length</code>: Maximum message capacity; overflowing messages are diverted to DLX instead of dropped.</li>
+</ul>
+<p>A message is dead-lettered under three specific conditions:</p>
+<ol>
+<li><strong>Explicit Rejection</strong>: Consumer issues <code>basic.reject</code> or <code>basic.nack</code> with <code>requeue = false</code>.</li>
+<li><strong>TTL Expiration</strong>: Message resides in a queue past its <code>x-message-ttl</code> expiration without being consumed.</li>
+<li><strong>Queue Max-Length Overflow</strong>: Queue exceeds its declared capacity limit.</li>
+</ol>
+<h3>2. Progressive Delayed Retry Topology (Zero-Consumer DLX Loop)</h3>
+<p>Instead of blocking worker threads with <code>Task.Delay()</code> inside consumers:</p>
+<ol>
+<li>On failure (attempt $N < \text{Max}$), the consumer rejects the message into a delayed queue (<code>orders.retry.5s</code>).</li>
+<li>The delay queue has NO consumers attached and is configured with <code>x-message-ttl: 5000</code> and <code>x-dead-letter-exchange: dlx.direct</code>, <code>x-dead-letter-routing-key: orders.work</code>.</li>
+<li>When the TTL expires, the broker automatically re-routes the message back into the active processing queue (<code>orders.work</code>).</li>
+<li>If failures persist beyond threshold ($N \ge \text{Max}$), the message routes directly to the poison DLQ (<code>orders.dlq</code>) with full <code>x-death</code> diagnosis headers.</li>
+</ol>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">[Publisher] ---&gt; [orders.work] ---&gt; [Consumer] (Fails attempt 1)
+                     ^                    |
+                     | (TTL expires)      v (Reject to DLX)
+              [orders.retry.5s] &lt;--- [dlx.direct]
+                     (No consumers)
+                                          | (Fails attempt 3)
+                                          v
+                                    [orders.dlq] (Poison Triage)</code></pre></div>
+<h3>3. MassTransit State Machine Saga Coordination</h3>
+<p>Distributed transactions spanning multiple bounded contexts (<code>Order</code>, <code>Inventory</code>, <code>Payment</code>) require compensating choreographies or orchestrations. <code>MassTransitStateMachine&lt;TInstance&gt;</code> correlates events by <code>CorrelationId</code> and provides:</p>
+<ul>
+<li>State transitions: <code>Initial</code> $\to$ <code>Submitted</code> $\to$ <code>InventoryReserved</code> $\to$ <code>Completed</code>.</li>
+<li>Fault handling: Any unexpected fault routes to <code>Faulted</code> state triggering compensating commands.</li>
+</ul>
+<hr/>
+<h2>Data Structures & Algorithms: Topological Sorting</h2>
+<h3>LeetCode #207: Course Schedule (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Given <code>numCourses</code> and directed prerequisite pairs <code>[a, b]</code> ($b \to a$), determine if it is possible to finish all courses.</li>
+<li><strong>Kahn's Algorithm (BFS)</strong>:</li>
+<li>Calculate in-degrees for all $V$ courses.</li>
+<li>Enqueue all courses with in-degree 0.</li>
+<li>Dequeue node $u$, decrement neighbors' in-degrees, enqueue when in-degree hits 0.</li>
+<li>If processed count equals $numCourses$, graph is a DAG (no cycles).</li>
+<li><strong>Complexity</strong>: $\mathcal{O}(V + E)$ time, $\mathcal{O}(V + E)$ space.</li>
+</ul>
+<h3>LeetCode #210: Course Schedule II (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Return the ordering of courses you should take to finish all courses. If impossible due to cycles, return empty array.</li>
+<li><strong>Algorithm</strong>: Kahn's BFS records each dequeued node into the output array. If output size is $numCourses$, the valid topological order is returned; otherwise, an empty array is returned.</li>
+</ul>
+<hr/>
+<h2>Test Suite Summary</h2>
+<p>All 10 unit tests pass with 100% coverage:</p>
+<ol>
+<li><code>Dlq_WhenMessageRejected_RoutesToDeadLetterQueue</code></li>
+<li><code>Dlq_CapturesXDeathMetadata_WithReasonAndExceptionDetails</code></li>
+<li><code>Dlq_TtlExpiration_MovesMessageToDeadLetterQueue</code></li>
+<li><code>Dlq_QueueMaxLengthExceeded_DeadLettersOverflowMessage</code></li>
+<li><code>ProgressiveRetry_TtlDelayedRetryPipeline_RequeuesBackToMainQueue</code></li>
+<li><code>MassTransit_OrderStateMachine_TransitionsToSubmittedInitially</code></li>
+<li><code>MassTransit_OrderStateMachine_TransitionsToCompletedOnPayment</code></li>
+<li><code>MassTransit_OrderStateMachine_TransitionsToFaultedOnOrderFault</code></li>
+<li><code>CourseSchedule_LC207_DetectsValidScheduleAndCycles</code></li>
+<li><code>CourseScheduleII_LC210_ProducesValidTopologicalOrdering</code></li>
+</ol>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the exact mechanical difference between `basic.reject(requeue: true)` and `basic.reject(requeue: false)` with an AMQP Dead-Letter Exchange configured?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li>When a consumer calls <code>basic.reject(deliveryTag, requeue: true)</code>, RabbitMQ immediately re-inserts the unacknowledged message back into the <strong>head of the same queue</strong> (or its original position). If the consumer failure was caused by a persistent software bug or malformed payload, this triggers an infinite immediate retry loop (retry storm) that consumes 100% CPU and completely blocks all subsequent messages from processing (Head-of-Line blocking).</li>
+<li>When a consumer calls <code>basic.reject(deliveryTag, requeue: false)</code>, RabbitMQ checks if the queue has an <code>x-dead-letter-exchange</code> argument declared. If yes, the broker intercepts the message, injects an entry into its <code>x-death</code> diagnostic header, modifies its exchange/routing key as configured, and publishes it to the dead-letter exchange. If no DLX is configured, the message is permanently destroyed and discarded. In production, unhandled exceptions must always reject with <code>requeue: false</code> towards a configured DLX.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Explain Head-of-Line blocking in RabbitMQ when using per-message TTL for delayed retries. How do you prevent it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>RabbitMQ evaluates message expiration only when a message reaches the <strong>head</strong> of the queue. If a worker queue publishes message A with a 60-second TTL (<code>expiration: &quot;60000&quot;</code>) followed immediately by message B with a 5-second TTL (<code>expiration: &quot;5000&quot;</code>), message B will NOT dead-letter after 5 seconds. It is physically blocked behind message A. Only when message A's 60 seconds expire will message A dead-letter, at which point the broker inspects message B and discovers it has already expired.</p>
+<p>To prevent this:</p>
+<ol>
+<li><strong>Discrete Queue-Level TTL</strong>: Do NOT use per-message TTL on a shared queue. Declare distinct queues with fixed queue-level <code>x-message-ttl</code> arguments (<code>retry.5s</code>, <code>retry.30s</code>, <code>retry.2m</code>). All messages in a given queue share the identical TTL and therefore expire in exact FIFO order.</li>
+<li><strong>RabbitMQ Delayed Message Plugin</strong>: Use the <code>x-delayed-message</code> exchange plugin, which stores delayed messages in an internal Erlang Mnesia database table and routes them only when their specific timer elapses.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the operational difference between the RabbitMQ Delayed Message Exchange plugin and the DLX/TTL loop pattern?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>DLX/TTL Loop (Native AMQP)</strong>: Requires zero plugins and runs on standard, unmodified RabbitMQ clusters. Messages sit in regular queues with no consumers. When TTL expires, the broker moves them via DLX. However, it requires predefined discrete delay intervals (e.g. 5s, 30s, 5m), and creating arbitrary per-message delay intervals is impossible without risking Head-of-Line blocking.</li>
+<li><strong>Delayed Message Plugin (<code>x-delayed-message</code>)</strong>: Allows arbitrary per-message delay via the <code>x-delay</code> header (in milliseconds). The exchange stores messages in an internal Mnesia database on disk, bypassing queues entirely until expiration. However, because it relies on Mnesia, it does not scale well past ~100,000 delayed messages, does not support Quorum Queues directly at the exchange level, and complicates node replication and cluster upgrades.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does MassTransit differentiate between transient exceptions and poison messages? Explain `UseMessageRetry` vs `UseDelayedRedelivery`.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong><code>UseMessageRetry</code> (In-Memory Retry)</strong>: Catches exceptions inside the consumer's executing scope without acknowledging or rejecting the message on the broker. The thread or task waits using in-memory timers (e.g. exponential backoff: 100ms, 200ms, 500ms). This is ideal for short, transient glitches (e.g., brief database deadlocks or network socket resets). However, holding the message in memory locks the consumer thread/prefetch slot.</li>
+<li><strong><code>UseDelayedRedelivery</code> (Broker Delayed Retry)</strong>: When in-memory retries are exhausted, <code>UseDelayedRedelivery</code> acknowledges or moves the message out of the main queue into a delayed queue (via RabbitMQ delayed-message exchange or quartz/hangfire). This releases the consumer thread and prefetch buffer to process subsequent messages. The message is republished to the consumer queue minutes or hours later.</li>
+<li>If delayed redelivery also exhausts its maximum attempts, MassTransit routes the poison message to a designated <code>_error</code> queue with serialized exception details in message headers.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How does MassTransit solve concurrent saga state transitions when two asynchronous events arrive simultaneously for the same `CorrelationId`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>In an asynchronous distributed architecture, multiple events (such as <code>InventoryReserved</code> and <code>PaymentCompleted</code>) may arrive concurrently at different consumer instances for the exact same saga instance.</p>
+<p>MassTransit solves this via:</p>
+<ol>
+<li><strong>Optimistic Concurrency Control</strong>: The saga instance table includes a <code>Version</code> or <code>RowVersion</code> integer column. MassTransit issues an atomic update: <code>UPDATE SagaTable SET State = @NewState, Version = Version + 1 WHERE Id = @Id AND Version = @ExpectedVersion</code>. If a concurrent worker updated the version first, the second worker's update affects 0 rows, throwing a <code>DbUpdateConcurrencyException</code>. MassTransit's saga repository middleware catches this concurrency exception and automatically retries loading the fresh saga state and applying the second event.</li>
+<li><strong>Pessimistic Locking</strong>: Configured via <code>UseRowLock()</code> in EF Core (e.g. <code>SELECT ... FOR UPDATE</code>), which serializes event processing at the database transaction boundary.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What is the structure of the `x-death` AMQP header in RabbitMQ, and how do you extract the root failure reason?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>When RabbitMQ dead-letters a message, it adds an <code>x-death</code> array of dictionary objects to the message's AMQP headers. Each element contains:</p>
+<ul>
+<li><code>queue</code>: Name of the queue where the message died.</li>
+<li><code>reason</code>: String enum: <code>&quot;rejected&quot;</code>, <code>&quot;expired&quot;</code>, or <code>&quot;maxlen&quot;</code>.</li>
+<li><code>count</code>: How many times the message died in that specific queue.</li>
+<li><code>exchange</code>: The original exchange the message was published to.</li>
+<li><code>time</code>: Unix timestamp when the dead-lettering occurred.</li>
+</ul>
+<p>If a message travels through multiple retry queues, <code>x-death</code> contains multiple entries. To find the root queue where failure first started, inspect the last element in the array or match the non-retry queue name. To get the total number of retries across a specific queue, read the <code>count</code> property.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">When should you choose Orchestration (Saga State Machine) over Choreography in microservices?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Choose Choreography</strong> when:</li>
+<li>The workflow is short and simple (2 to 3 bounded contexts).</li>
+<li>There are no complex branching logic, timeout deadlines, or multi-step compensating actions.</li>
+<li>Services are loosely coupled and publish generic domain events (<code>OrderPlaced</code>, <code>CustomerBilled</code>).</li>
+<li><strong>Choose Orchestration (State Machine)</strong> when:</li>
+<li>The business process involves 4+ services, conditional branching, or time-based escalation (e.g., "if payment not received within 15 minutes, cancel order and release inventory").</li>
+<li>Compensating transactions are required upon failure (rolling back steps 2 and 1 if step 3 fails).</li>
+<li>Centralized visibility, auditability, and operational tracking of workflow state are mandatory for compliance or customer support.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How do you safely implement DLQ re-drive (replaying dead-lettered messages back to production) without triggering duplicate processing?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ol>
+<li><strong>Fix Root Cause First</strong>: Never re-drive messages while the underlying bug, schema incompatibility, or downstream outage exists.</li>
+<li><strong>Consumer Idempotency</strong>: All consumers must implement the Idempotent Consumer / Inbox pattern using a unique <code>MessageId</code> or business deduplication key stored in an atomic database table.</li>
+<li><strong>Strip Diagnostic Headers</strong>: When transferring messages from <code>orders.dlq</code> back to <code>orders.work</code>, strip or reset the <code>x-death</code> and retry count headers so the message starts with a clean retry budget.</li>
+<li><strong>Controlled Rate / Shovel</strong>: Use RabbitMQ Shovel or a rate-limited re-drive worker rather than a bulk instantaneous dump to prevent overwhelming downstream databases.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Explain Kahn&#x27;s algorithm for topological sorting. Why does an unprocessed vertex count prove the existence of a directed cycle?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>Kahn's algorithm operates on the topological property that in any Directed Acyclic Graph (DAG), there must be at least one vertex with an in-degree of 0 (no dependencies).</p>
+<ol>
+<li>Compute the in-degree of all vertices.</li>
+<li>Enqueue all vertices with <code>inDegree == 0</code>.</li>
+<li>Repeatedly dequeue a vertex $u$, add it to the topological order, and decrement the in-degree of all its outbound neighbors $(u, v)$.</li>
+<li>Whenever a neighbor's in-degree drops to 0, enqueue it.</li>
+<li><strong>Cycle Proof</strong>: If the graph contains a directed cycle (e.g. $A \to B \to C \to A$), every node in that cycle has an in-degree $\ge 1$ from within the cycle. Therefore, none of the vertices in the cycle can ever reach an in-degree of 0, and none will ever be enqueued. If the total count of processed vertices is less than the total vertices $|V|$, the graph strictly contains at least one directed cycle.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you handle a partial failure during a Saga compensation (e.g. inventory rollback succeeds, but payment refund API fails)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>This is the fundamental reality of distributed systems: compensating actions can themselves fail.</p>
+<ol>
+<li><strong>Exponential Retry with DLQ</strong>: The compensation command (<code>RefundPayment</code>) is published through the same reliable messaging pipeline with exponential backoff and a dedicated dead-letter queue.</li>
+<li><strong>Idempotent Compensations</strong>: Compensation endpoints must be idempotent. If the compensation retry executes three times, the customer must only be refunded once.</li>
+<li><strong>Escalation to Human Workflow (Manual Triage)</strong>: If automated compensation fails after reaching maximum retries, the saga instance enters a <code>NeedsManualIntervention</code> state, publishes a critical P1 telemetry alert to Ops, and logs the saga <code>CorrelationId</code> and transaction IDs to an administrative console for human reconciliation. Distributed systems cannot guarantee 100% automated recovery for non-idempotent external third-party failures; automated retries combined with human escalation queues ensure no funds or data are silently lost.</li>
+</ol>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day30.RabbitMQDLQMassTransit/CourseScheduleSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd30-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d30-src-code-0" class="language-csharp">namespace Day30.RabbitMQDLQMassTransit;
+
+public static class CourseScheduleSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #207: Course Schedule (Medium) using Kahn&#x27;s Algorithm (BFS in-degree topological sort).
+    /// Time Complexity: O(V + E), Space Complexity: O(V + E)
+    /// &lt;/summary&gt;
+    public static bool CanFinishKahn(int numCourses, int[][] prerequisites)
+    {
+        if (numCourses &lt;= 0) return true;
+
+        var adj = new List&lt;int&gt;[numCourses];
+        var inDegree = new int[numCourses];
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            adj[i] = new List&lt;int&gt;();
+        }
+
+        foreach (var pair in prerequisites)
+        {
+            int course = pair[0];
+            int prereq = pair[1];
+            adj[prereq].Add(course);
+            inDegree[course]++;
+        }
+
+        var queue = new Queue&lt;int&gt;();
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            if (inDegree[i] == 0)
+            {
+                queue.Enqueue(i);
+            }
+        }
+
+        int visitedCount = 0;
+        while (queue.Count &gt; 0)
+        {
+            int u = queue.Dequeue();
+            visitedCount++;
+
+            foreach (int v in adj[u])
+            {
+                inDegree[v]--;
+                if (inDegree[v] == 0)
+                {
+                    queue.Enqueue(v);
+                }
+            }
+        }
+
+        return visitedCount == numCourses;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #207: Course Schedule (Medium) using 3-Coloring DFS Cycle Detection.
+    /// 0 = Unvisited, 1 = Visiting (in recursion stack), 2 = Visited.
+    /// Time Complexity: O(V + E), Space Complexity: O(V + E)
+    /// &lt;/summary&gt;
+    public static bool CanFinishDfs(int numCourses, int[][] prerequisites)
+    {
+        if (numCourses &lt;= 0) return true;
+
+        var adj = new List&lt;int&gt;[numCourses];
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            adj[i] = new List&lt;int&gt;();
+        }
+
+        foreach (var pair in prerequisites)
+        {
+            int course = pair[0];
+            int prereq = pair[1];
+            adj[prereq].Add(course);
+        }
+
+        var state = new int[numCourses]; // 0=White, 1=Gray, 2=Black
+
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            if (state[i] == 0)
+            {
+                if (HasCycleDfs(i, adj, state))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static bool HasCycleDfs(int u, List&lt;int&gt;[] adj, int[] state)
+    {
+        state[u] = 1; // Mark as visiting
+
+        foreach (int v in adj[u])
+        {
+            if (state[v] == 1) return true; // Directed back-edge -&gt; Cycle!
+            if (state[v] == 0 &amp;&amp; HasCycleDfs(v, adj, state)) return true;
+        }
+
+        state[u] = 2; // Mark as visited
+        return false;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #210: Course Schedule II (Medium) using Kahn&#x27;s Algorithm.
+    /// Returns valid topological order, or empty array if cycle detected.
+    /// Time Complexity: O(V + E), Space Complexity: O(V + E)
+    /// &lt;/summary&gt;
+    public static int[] FindOrderKahn(int numCourses, int[][] prerequisites)
+    {
+        if (numCourses &lt;= 0) return Array.Empty&lt;int&gt;();
+
+        var adj = new List&lt;int&gt;[numCourses];
+        var inDegree = new int[numCourses];
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            adj[i] = new List&lt;int&gt;();
+        }
+
+        foreach (var pair in prerequisites)
+        {
+            int course = pair[0];
+            int prereq = pair[1];
+            adj[prereq].Add(course);
+            inDegree[course]++;
+        }
+
+        var queue = new Queue&lt;int&gt;();
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            if (inDegree[i] == 0)
+            {
+                queue.Enqueue(i);
+            }
+        }
+
+        var order = new int[numCourses];
+        int index = 0;
+
+        while (queue.Count &gt; 0)
+        {
+            int u = queue.Dequeue();
+            order[index++] = u;
+
+            foreach (int v in adj[u])
+            {
+                inDegree[v]--;
+                if (inDegree[v] == 0)
+                {
+                    queue.Enqueue(v);
+                }
+            }
+        }
+
+        return index == numCourses ? order : Array.Empty&lt;int&gt;();
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #210: Course Schedule II (Medium) using DFS Post-order reversal.
+    /// Time Complexity: O(V + E), Space Complexity: O(V + E)
+    /// &lt;/summary&gt;
+    public static int[] FindOrderDfs(int numCourses, int[][] prerequisites)
+    {
+        if (numCourses &lt;= 0) return Array.Empty&lt;int&gt;();
+
+        var adj = new List&lt;int&gt;[numCourses];
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            adj[i] = new List&lt;int&gt;();
+        }
+
+        foreach (var pair in prerequisites)
+        {
+            int course = pair[0];
+            int prereq = pair[1];
+            adj[prereq].Add(course);
+        }
+
+        var state = new int[numCourses];
+        var orderStack = new Stack&lt;int&gt;();
+
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            if (state[i] == 0)
+            {
+                if (DfsTopological(i, adj, state, orderStack))
+                {
+                    return Array.Empty&lt;int&gt;(); // Cycle detected
+                }
+            }
+        }
+
+        var result = new int[numCourses];
+        int index = 0;
+        while (orderStack.Count &gt; 0)
+        {
+            result[index++] = orderStack.Pop();
+        }
+
+        return result;
+    }
+
+    private static bool DfsTopological(int u, List&lt;int&gt;[] adj, int[] state, Stack&lt;int&gt; orderStack)
+    {
+        state[u] = 1;
+
+        foreach (int v in adj[u])
+        {
+            if (state[v] == 1) return true; // Cycle!
+            if (state[v] == 0 &amp;&amp; DfsTopological(v, adj, state, orderStack)) return true;
+        }
+
+        state[u] = 2;
+        orderStack.Push(u);
+        return false;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day30.RabbitMQDLQMassTransit/RabbitMqDlqAndRetryEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd30-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d30-src-code-1" class="language-csharp">using System.Collections.Concurrent;
+using MassTransit;
+
+namespace Day30.RabbitMQDLQMassTransit;
+
+#region AMQP DLQ &amp; Retry Topology Models
+
+public enum DeadLetterReason
+{
+    Rejected,
+    Expired,
+    MaxLengthExceeded
+}
+
+public sealed record XDeathEntry(
+    string Queue,
+    DeadLetterReason Reason,
+    int Count,
+    string Exchange,
+    DateTime Timestamp,
+    string? ExceptionMessage,
+    string? ExceptionType
+);
+
+public sealed record AmqpMessage(
+    string MessageId,
+    string RoutingKey,
+    string Payload,
+    int RetryCount = 0,
+    int? TtlMilliseconds = null,
+    List&lt;XDeathEntry&gt;? DeathHistory = null
+)
+{
+    public List&lt;XDeathEntry&gt; DeathHistory { get; init; } = DeathHistory ?? new List&lt;XDeathEntry&gt;();
+}
+
+public sealed record QueueArguments(
+    string? DeadLetterExchange = null,
+    string? DeadLetterRoutingKey = null,
+    int? MessageTtlMs = null,
+    int? MaxLength = null
+);
+
+#endregion
+
+#region DLQ &amp; Progressive Retry Simulator Engine
+
+public class DlqRetrySimulator
+{
+    private readonly ConcurrentDictionary&lt;string, QueueArguments&gt; _queueConfigs = new();
+    private readonly ConcurrentDictionary&lt;string, List&lt;AmqpMessage&gt;&gt; _queues = new();
+    private readonly ConcurrentDictionary&lt;string, Action&lt;AmqpMessage&gt;&gt; _consumers = new();
+    private readonly object _lock = new();
+
+    public int MaxRetries { get; set; } = 3;
+
+    public void DeclareQueue(string queueName, QueueArguments? arguments = null)
+    {
+        _queueConfigs[queueName] = arguments ?? new QueueArguments();
+        _queues.GetOrAdd(queueName, _ =&gt; new List&lt;AmqpMessage&gt;());
+    }
+
+    public void RegisterConsumer(string queueName, Action&lt;AmqpMessage&gt; consumer)
+    {
+        _consumers[queueName] = consumer;
+    }
+
+    public void Publish(string queueName, AmqpMessage message)
+    {
+        lock (_lock)
+        {
+            if (!_queues.ContainsKey(queueName))
+            {
+                DeclareQueue(queueName);
+            }
+
+            var queue = _queues[queueName];
+            var config = _queueConfigs.GetValueOrDefault(queueName, new QueueArguments());
+
+            // Check MaxLength dead-lettering
+            if (config.MaxLength.HasValue &amp;&amp; queue.Count &gt;= config.MaxLength.Value)
+            {
+                if (!string.IsNullOrEmpty(config.DeadLetterExchange))
+                {
+                    var targetQueue = config.DeadLetterRoutingKey ?? config.DeadLetterExchange;
+                    DeadLetter(message, queueName, targetQueue, DeadLetterReason.MaxLengthExceeded, &quot;Queue reached max-length capacity&quot;);
+                    return;
+                }
+            }
+
+            queue.Add(message);
+        }
+    }
+
+    public void Reject(string currentQueue, AmqpMessage message, Exception reason, bool requeue = false)
+    {
+        lock (_lock)
+        {
+            if (_queues.TryGetValue(currentQueue, out var list))
+            {
+                list.Remove(message);
+            }
+
+            if (requeue)
+            {
+                Publish(currentQueue, message);
+                return;
+            }
+
+            var config = _queueConfigs.GetValueOrDefault(currentQueue, new QueueArguments());
+            if (string.IsNullOrEmpty(config.DeadLetterExchange))
+            {
+                throw new InvalidOperationException($&quot;Queue &#x27;{currentQueue}&#x27; has no dead-letter exchange configured.&quot;);
+            }
+
+            var nextRetry = message.RetryCount + 1;
+            var targetQueue = config.DeadLetterRoutingKey ?? config.DeadLetterExchange;
+
+            var updatedMessage = message with
+            {
+                RetryCount = nextRetry
+            };
+
+            DeadLetter(updatedMessage, currentQueue, targetQueue, DeadLetterReason.Rejected, reason.Message, reason.GetType().Name);
+        }
+    }
+
+    public void ExpireTtl(string delayQueueName, string messageId)
+    {
+        lock (_lock)
+        {
+            if (!_queues.TryGetValue(delayQueueName, out var list)) return;
+            var msg = list.FirstOrDefault(m =&gt; m.MessageId == messageId);
+            if (msg == null) return;
+
+            list.Remove(msg);
+            var config = _queueConfigs.GetValueOrDefault(delayQueueName, new QueueArguments());
+            if (!string.IsNullOrEmpty(config.DeadLetterExchange))
+            {
+                var targetQueue = config.DeadLetterRoutingKey ?? config.DeadLetterExchange;
+                DeadLetter(msg, delayQueueName, targetQueue, DeadLetterReason.Expired, &quot;Message TTL expired in delayed retry queue&quot;);
+            }
+        }
+    }
+
+    private void DeadLetter(
+        AmqpMessage message,
+        string sourceQueue,
+        string targetQueue,
+        DeadLetterReason reason,
+        string? details = null,
+        string? exceptionType = null)
+    {
+        var deathEntry = new XDeathEntry(
+            Queue: sourceQueue,
+            Reason: reason,
+            Count: message.RetryCount,
+            Exchange: &quot;dlx.direct&quot;,
+            Timestamp: DateTime.UtcNow,
+            ExceptionMessage: details,
+            ExceptionType: exceptionType
+        );
+
+        var updatedHistory = new List&lt;XDeathEntry&gt;(message.DeathHistory) { deathEntry };
+        var deadLetteredMsg = message with { DeathHistory = updatedHistory };
+
+        Publish(targetQueue, deadLetteredMsg);
+    }
+
+    public IReadOnlyList&lt;AmqpMessage&gt; GetQueueMessages(string queueName)
+    {
+        lock (_lock)
+        {
+            return _queues.TryGetValue(queueName, out var list) ? list.ToList() : Array.Empty&lt;AmqpMessage&gt;();
+        }
+    }
+
+    public void DispatchNext(string queueName)
+    {
+        AmqpMessage? msg = null;
+        Action&lt;AmqpMessage&gt;? consumer = null;
+
+        lock (_lock)
+        {
+            if (_queues.TryGetValue(queueName, out var list) &amp;&amp; list.Count &gt; 0)
+            {
+                msg = list[0];
+            }
+            _consumers.TryGetValue(queueName, out consumer);
+        }
+
+        if (msg != null &amp;&amp; consumer != null)
+        {
+            consumer(msg);
+        }
+    }
+}
+
+#endregion
+
+#region MassTransit State Machine Saga Implementation
+
+public record OrderSubmittedEvent(Guid CorrelationId, string OrderNumber, decimal TotalAmount);
+public record InventoryReservedEvent(Guid CorrelationId, DateTime ReservedAt);
+public record PaymentCompletedEvent(Guid CorrelationId, string TransactionId, DateTime CompletedAt);
+public record OrderFaultedEvent(Guid CorrelationId, string Reason);
+
+public class OrderStateInstance : SagaStateMachineInstance
+{
+    public Guid CorrelationId { get; set; }
+    public string CurrentState { get; set; } = string.Empty;
+    public string OrderNumber { get; set; } = string.Empty;
+    public decimal TotalAmount { get; set; }
+    public DateTime? SubmittedAt { get; set; }
+    public DateTime? InventoryReservedAt { get; set; }
+    public DateTime? PaymentCompletedAt { get; set; }
+    public string? PaymentTransactionId { get; set; }
+    public string? FaultReason { get; set; }
+}
+
+public class OrderStateMachine : MassTransitStateMachine&lt;OrderStateInstance&gt;
+{
+    public State Submitted { get; private set; } = null!;
+    public State InventoryReserved { get; private set; } = null!;
+    public State Completed { get; private set; } = null!;
+    public State Faulted { get; private set; } = null!;
+
+    public Event&lt;OrderSubmittedEvent&gt; OrderSubmitted { get; private set; } = null!;
+    public Event&lt;InventoryReservedEvent&gt; InventoryReservedEvent { get; private set; } = null!;
+    public Event&lt;PaymentCompletedEvent&gt; PaymentCompleted { get; private set; } = null!;
+    public Event&lt;OrderFaultedEvent&gt; OrderFaulted { get; private set; } = null!;
+
+    public OrderStateMachine()
+    {
+        InstanceState(x =&gt; x.CurrentState);
+
+        Event(() =&gt; OrderSubmitted, x =&gt; x.CorrelateById(context =&gt; context.Message.CorrelationId));
+        Event(() =&gt; InventoryReservedEvent, x =&gt; x.CorrelateById(context =&gt; context.Message.CorrelationId));
+        Event(() =&gt; PaymentCompleted, x =&gt; x.CorrelateById(context =&gt; context.Message.CorrelationId));
+        Event(() =&gt; OrderFaulted, x =&gt; x.CorrelateById(context =&gt; context.Message.CorrelationId));
+
+        Initially(
+            When(OrderSubmitted)
+                .Then(context =&gt;
+                {
+                    context.Saga.OrderNumber = context.Message.OrderNumber;
+                    context.Saga.TotalAmount = context.Message.TotalAmount;
+                    context.Saga.SubmittedAt = DateTime.UtcNow;
+                })
+                .TransitionTo(Submitted)
+        );
+
+        During(Submitted,
+            When(InventoryReservedEvent)
+                .Then(context =&gt;
+                {
+                    context.Saga.InventoryReservedAt = context.Message.ReservedAt;
+                })
+                .TransitionTo(InventoryReserved),
+            When(OrderFaulted)
+                .Then(context =&gt;
+                {
+                    context.Saga.FaultReason = context.Message.Reason;
+                })
+                .TransitionTo(Faulted)
+        );
+
+        During(InventoryReserved,
+            When(PaymentCompleted)
+                .Then(context =&gt;
+                {
+                    context.Saga.PaymentCompletedAt = context.Message.CompletedAt;
+                    context.Saga.PaymentTransactionId = context.Message.TransactionId;
+                })
+                .TransitionTo(Completed),
+            When(OrderFaulted)
+                .Then(context =&gt;
+                {
+                    context.Saga.FaultReason = context.Message.Reason;
+                })
+                .TransitionTo(Faulted)
+        );
+
+        SetCompletedWhenFinalized();
+    }
+}
+
+#endregion
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day30.RabbitMQDLQMassTransit.Tests/Day30Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd30-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d30-tests-code-0" class="language-csharp">using Day30.RabbitMQDLQMassTransit;
+using MassTransit;
+using MassTransit.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
+
+namespace Day30.RabbitMQDLQMassTransit.Tests;
+
+public class Day30Tests
+{
+    [Fact]
+    public void Dlq_WhenMessageRejected_RoutesToDeadLetterQueue()
+    {
+        var simulator = new DlqRetrySimulator();
+        simulator.DeclareQueue(&quot;orders.dlq&quot;);
+        simulator.DeclareQueue(&quot;orders.work&quot;, new QueueArguments(
+            DeadLetterExchange: &quot;dlx.direct&quot;,
+            DeadLetterRoutingKey: &quot;orders.dlq&quot;
+        ));
+
+        var msg = new AmqpMessage(&quot;msg-101&quot;, &quot;orders.work&quot;, &quot;{\&quot;orderId\&quot;:\&quot;101\&quot;}&quot;);
+        simulator.Publish(&quot;orders.work&quot;, msg);
+
+        Assert.Single(simulator.GetQueueMessages(&quot;orders.work&quot;));
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.dlq&quot;));
+
+        // Consumer encounters unhandled exception
+        simulator.Reject(&quot;orders.work&quot;, msg, new InvalidOperationException(&quot;Payment gateway unreachable&quot;), requeue: false);
+
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.work&quot;));
+        var dlqMsgs = simulator.GetQueueMessages(&quot;orders.dlq&quot;);
+        Assert.Single(dlqMsgs);
+        Assert.Equal(&quot;msg-101&quot;, dlqMsgs[0].MessageId);
+        Assert.Equal(1, dlqMsgs[0].RetryCount);
+    }
+
+    [Fact]
+    public void Dlq_CapturesXDeathMetadata_WithReasonAndExceptionDetails()
+    {
+        var simulator = new DlqRetrySimulator();
+        simulator.DeclareQueue(&quot;orders.dlq&quot;);
+        simulator.DeclareQueue(&quot;orders.work&quot;, new QueueArguments(
+            DeadLetterExchange: &quot;dlx.direct&quot;,
+            DeadLetterRoutingKey: &quot;orders.dlq&quot;
+        ));
+
+        var msg = new AmqpMessage(&quot;msg-202&quot;, &quot;orders.work&quot;, &quot;{\&quot;sku\&quot;:\&quot;SKU-CORRUPT\&quot;}&quot;);
+        simulator.Publish(&quot;orders.work&quot;, msg);
+
+        simulator.Reject(&quot;orders.work&quot;, msg, new FormatException(&quot;Corrupt SKU checksum&quot;), requeue: false);
+
+        var dlqMsg = simulator.GetQueueMessages(&quot;orders.dlq&quot;).Single();
+        Assert.Single(dlqMsg.DeathHistory);
+
+        var death = dlqMsg.DeathHistory[0];
+        Assert.Equal(&quot;orders.work&quot;, death.Queue);
+        Assert.Equal(DeadLetterReason.Rejected, death.Reason);
+        Assert.Equal(&quot;Corrupt SKU checksum&quot;, death.ExceptionMessage);
+        Assert.Equal(nameof(FormatException), death.ExceptionType);
+    }
+
+    [Fact]
+    public void Dlq_TtlExpiration_MovesMessageToDeadLetterQueue()
+    {
+        var simulator = new DlqRetrySimulator();
+        simulator.DeclareQueue(&quot;orders.retry.dlx&quot;);
+        simulator.DeclareQueue(&quot;orders.retry.5s&quot;, new QueueArguments(
+            DeadLetterExchange: &quot;dlx.direct&quot;,
+            DeadLetterRoutingKey: &quot;orders.retry.dlx&quot;,
+            MessageTtlMs: 5000
+        ));
+
+        var msg = new AmqpMessage(&quot;msg-303&quot;, &quot;orders.retry.5s&quot;, &quot;{\&quot;orderId\&quot;:\&quot;303\&quot;}&quot;);
+        simulator.Publish(&quot;orders.retry.5s&quot;, msg);
+
+        Assert.Single(simulator.GetQueueMessages(&quot;orders.retry.5s&quot;));
+
+        // Simulate TTL clock expiry
+        simulator.ExpireTtl(&quot;orders.retry.5s&quot;, &quot;msg-303&quot;);
+
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.retry.5s&quot;));
+        var dlqMessages = simulator.GetQueueMessages(&quot;orders.retry.dlx&quot;);
+        Assert.Single(dlqMessages);
+        Assert.Equal(DeadLetterReason.Expired, dlqMessages[0].DeathHistory[0].Reason);
+    }
+
+    [Fact]
+    public void Dlq_QueueMaxLengthExceeded_DeadLettersOverflowMessage()
+    {
+        var simulator = new DlqRetrySimulator();
+        simulator.DeclareQueue(&quot;orders.overflow.dlq&quot;);
+        simulator.DeclareQueue(&quot;orders.bounded&quot;, new QueueArguments(
+            DeadLetterExchange: &quot;dlx.direct&quot;,
+            DeadLetterRoutingKey: &quot;orders.overflow.dlq&quot;,
+            MaxLength: 2
+        ));
+
+        simulator.Publish(&quot;orders.bounded&quot;, new AmqpMessage(&quot;msg-1&quot;, &quot;orders.bounded&quot;, &quot;item-1&quot;));
+        simulator.Publish(&quot;orders.bounded&quot;, new AmqpMessage(&quot;msg-2&quot;, &quot;orders.bounded&quot;, &quot;item-2&quot;));
+
+        Assert.Equal(2, simulator.GetQueueMessages(&quot;orders.bounded&quot;).Count);
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.overflow.dlq&quot;));
+
+        // 3rd message overflows bounded queue
+        simulator.Publish(&quot;orders.bounded&quot;, new AmqpMessage(&quot;msg-3&quot;, &quot;orders.bounded&quot;, &quot;item-3&quot;));
+
+        Assert.Equal(2, simulator.GetQueueMessages(&quot;orders.bounded&quot;).Count);
+        var overflowList = simulator.GetQueueMessages(&quot;orders.overflow.dlq&quot;);
+        Assert.Single(overflowList);
+        Assert.Equal(&quot;msg-3&quot;, overflowList[0].MessageId);
+        Assert.Equal(DeadLetterReason.MaxLengthExceeded, overflowList[0].DeathHistory[0].Reason);
+    }
+
+    [Fact]
+    public void ProgressiveRetry_TtlDelayedRetryPipeline_RequeuesBackToMainQueue()
+    {
+        var simulator = new DlqRetrySimulator();
+        simulator.DeclareQueue(&quot;orders.work&quot;);
+        simulator.DeclareQueue(&quot;orders.retry.5s&quot;, new QueueArguments(
+            DeadLetterExchange: &quot;dlx.direct&quot;,
+            DeadLetterRoutingKey: &quot;orders.work&quot;,
+            MessageTtlMs: 5000
+        ));
+
+        var originalMsg = new AmqpMessage(&quot;retry-item&quot;, &quot;orders.work&quot;, &quot;{\&quot;payload\&quot;:\&quot;work\&quot;}&quot;);
+        simulator.Publish(&quot;orders.work&quot;, originalMsg);
+
+        // Reject into retry queue
+        var retryQueueConfig = new QueueArguments(DeadLetterExchange: &quot;dlx.direct&quot;, DeadLetterRoutingKey: &quot;orders.retry.5s&quot;);
+        simulator.DeclareQueue(&quot;orders.work&quot;, retryQueueConfig);
+
+        simulator.Reject(&quot;orders.work&quot;, originalMsg, new HttpRequestException(&quot;Service Unavailable (503)&quot;));
+
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.work&quot;));
+        Assert.Single(simulator.GetQueueMessages(&quot;orders.retry.5s&quot;));
+
+        // When 5s TTL expires, message is sent back to orders.work via DLX
+        simulator.ExpireTtl(&quot;orders.retry.5s&quot;, &quot;retry-item&quot;);
+
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.retry.5s&quot;));
+        var reprocessed = simulator.GetQueueMessages(&quot;orders.work&quot;);
+        Assert.Single(reprocessed);
+        Assert.Equal(1, reprocessed[0].RetryCount);
+    }
+
+    [Fact]
+    public async Task MassTransit_OrderStateMachine_TransitionsToSubmittedInitially()
+    {
+        var services = new ServiceCollection();
+        services.AddMassTransitTestHarness(cfg =&gt;
+        {
+            cfg.AddSagaStateMachine&lt;OrderStateMachine, OrderStateInstance&gt;();
+        });
+
+        await using var provider = services.BuildServiceProvider(true);
+        var harness = provider.GetRequiredService&lt;ITestHarness&gt;();
+        await harness.Start();
+
+        var correlationId = Guid.NewGuid();
+        await harness.Bus.Publish(new OrderSubmittedEvent(correlationId, &quot;ORD-9901&quot;, 149.99m));
+
+        var sagaHarness = harness.GetSagaStateMachineHarness&lt;OrderStateMachine, OrderStateInstance&gt;();
+        Assert.True(await sagaHarness.Consumed.Any&lt;OrderSubmittedEvent&gt;());
+
+        var sagaInstance = sagaHarness.Created.Contains(correlationId);
+        Assert.NotNull(sagaInstance);
+        Assert.Equal(&quot;Submitted&quot;, sagaInstance.CurrentState);
+        Assert.Equal(&quot;ORD-9901&quot;, sagaInstance.OrderNumber);
+        Assert.Equal(149.99m, sagaInstance.TotalAmount);
+    }
+
+    [Fact]
+    public async Task MassTransit_OrderStateMachine_TransitionsToCompletedOnPayment()
+    {
+        var services = new ServiceCollection();
+        services.AddMassTransitTestHarness(cfg =&gt;
+        {
+            cfg.AddSagaStateMachine&lt;OrderStateMachine, OrderStateInstance&gt;();
+        });
+
+        await using var provider = services.BuildServiceProvider(true);
+        var harness = provider.GetRequiredService&lt;ITestHarness&gt;();
+        await harness.Start();
+
+        var correlationId = Guid.NewGuid();
+        await harness.Bus.Publish(new OrderSubmittedEvent(correlationId, &quot;ORD-9902&quot;, 299.50m));
+        await harness.Bus.Publish(new InventoryReservedEvent(correlationId, DateTime.UtcNow));
+        await harness.Bus.Publish(new PaymentCompletedEvent(correlationId, &quot;TXN-8812&quot;, DateTime.UtcNow));
+
+        var sagaHarness = harness.GetSagaStateMachineHarness&lt;OrderStateMachine, OrderStateInstance&gt;();
+        Assert.True(await sagaHarness.Consumed.Any&lt;PaymentCompletedEvent&gt;());
+
+        var sagaInstance = sagaHarness.Created.Contains(correlationId);
+        Assert.NotNull(sagaInstance);
+        Assert.Equal(&quot;Completed&quot;, sagaInstance.CurrentState);
+        Assert.Equal(&quot;TXN-8812&quot;, sagaInstance.PaymentTransactionId);
+    }
+
+    [Fact]
+    public async Task MassTransit_OrderStateMachine_TransitionsToFaultedOnOrderFault()
+    {
+        var services = new ServiceCollection();
+        services.AddMassTransitTestHarness(cfg =&gt;
+        {
+            cfg.AddSagaStateMachine&lt;OrderStateMachine, OrderStateInstance&gt;();
+        });
+
+        await using var provider = services.BuildServiceProvider(true);
+        var harness = provider.GetRequiredService&lt;ITestHarness&gt;();
+        await harness.Start();
+
+        var correlationId = Guid.NewGuid();
+        await harness.Bus.Publish(new OrderSubmittedEvent(correlationId, &quot;ORD-9903&quot;, 50.00m));
+        await harness.Bus.Publish(new OrderFaultedEvent(correlationId, &quot;Inventory out of stock&quot;));
+
+        var sagaHarness = harness.GetSagaStateMachineHarness&lt;OrderStateMachine, OrderStateInstance&gt;();
+        Assert.True(await sagaHarness.Consumed.Any&lt;OrderFaultedEvent&gt;());
+
+        var sagaInstance = sagaHarness.Created.Contains(correlationId);
+        Assert.NotNull(sagaInstance);
+        Assert.Equal(&quot;Faulted&quot;, sagaInstance.CurrentState);
+        Assert.Equal(&quot;Inventory out of stock&quot;, sagaInstance.FaultReason);
+    }
+
+    [Fact]
+    public void CourseSchedule_LC207_DetectsValidScheduleAndCycles()
+    {
+        // Example 1: numCourses = 2, prerequisites = [[1,0]] -&gt; true
+        var prereq1 = new int[][] { new[] { 1, 0 } };
+        Assert.True(CourseScheduleSolver.CanFinishKahn(2, prereq1));
+        Assert.True(CourseScheduleSolver.CanFinishDfs(2, prereq1));
+
+        // Example 2: numCourses = 2, prerequisites = [[1,0],[0,1]] -&gt; false (cycle)
+        var prereq2 = new int[][] { new[] { 1, 0 }, new[] { 0, 1 } };
+        Assert.False(CourseScheduleSolver.CanFinishKahn(2, prereq2));
+        Assert.False(CourseScheduleSolver.CanFinishDfs(2, prereq2));
+
+        // Complex DAG: 4 courses: 0-&gt;1, 0-&gt;2, 1-&gt;3, 2-&gt;3 -&gt; true
+        var prereq3 = new int[][]
+        {
+            new[] { 1, 0 },
+            new[] { 2, 0 },
+            new[] { 3, 1 },
+            new[] { 3, 2 }
+        };
+        Assert.True(CourseScheduleSolver.CanFinishKahn(4, prereq3));
+        Assert.True(CourseScheduleSolver.CanFinishDfs(4, prereq3));
+    }
+
+    [Fact]
+    public void CourseScheduleII_LC210_ProducesValidTopologicalOrdering()
+    {
+        // numCourses = 4, prereqs: 1-&gt;0, 2-&gt;0, 3-&gt;1, 3-&gt;2
+        var prereqs = new int[][]
+        {
+            new[] { 1, 0 },
+            new[] { 2, 0 },
+            new[] { 3, 1 },
+            new[] { 3, 2 }
+        };
+
+        var kahnOrder = CourseScheduleSolver.FindOrderKahn(4, prereqs);
+        Assert.Equal(4, kahnOrder.Length);
+        Assert.Equal(0, kahnOrder[0]); // 0 must be first since it has 0 prereqs
+        Assert.Equal(3, kahnOrder[3]); // 3 must be last
+
+        var dfsOrder = CourseScheduleSolver.FindOrderDfs(4, prereqs);
+        Assert.Equal(4, dfsOrder.Length);
+
+        // Cyclic case returns empty array
+        var cyclePrereqs = new int[][]
+        {
+            new[] { 0, 1 },
+            new[] { 1, 2 },
+            new[] { 2, 0 }
+        };
+        Assert.Empty(CourseScheduleSolver.FindOrderKahn(3, cyclePrereqs));
+        Assert.Empty(CourseScheduleSolver.FindOrderDfs(3, cyclePrereqs));
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 30 Deep Dive Notes: RabbitMQ DLQ, TTL Retry Topology & MassTransit Sagas</h1>
+<h2>1. AMQP Dead-Letter Protocol & Wire Semantics</h2>
+<h3>The AMQP Dead-Letter Specification</h3>
+<p>Under the AMQP 0-9-1 specification, a message entering an AMQP queue can be transitioned to dead-letter status under three exact conditions:</p>
+<ol>
+<li><strong>Explicit Negative Acknowledgment</strong>:</li>
+</ol>
+<ul>
+<li><code>basic.reject(deliveryTag, requeue = false)</code></li>
+<li><code>basic.nack(deliveryTag, multiple = false, requeue = false)</code></li>
+</ul>
+<p>When <code>requeue = true</code>, the broker places the message back into its original position in the queue. When <code>requeue = false</code>, if <code>x-dead-letter-exchange</code> is declared, the message is immediately routed to that exchange; otherwise, it is silently dropped into the ether.</p>
+<ol>
+<li><strong>Time-To-Live (TTL) Expiration</strong>:</li>
+</ol>
+<ul>
+<li>Queue-level TTL (<code>x-message-ttl</code>): Automatically configured on queue declaration.</li>
+<li>Message-level TTL (<code>expiration</code> header): Declared per publication.</li>
+</ul>
+<ol>
+<li><strong>Queue Length Overflow</strong>:</li>
+</ol>
+<ul>
+<li><code>x-max-length</code>: Maximum count of ready messages.</li>
+<li><code>x-max-length-bytes</code>: Maximum total payload size in bytes.</li>
+<li><code>x-overflow</code>: Determines behavior when full (<code>drop-head</code>, <code>reject-publish</code>, or <code>reject-publish-dlx</code>).</li>
+</ul>
+<h3>The <code>x-death</code> Header Architecture</h3>
+<p>When RabbitMQ dead-letters a message, it modifies the message headers by prepending a hash to the <code>x-death</code> array:</p>
+<div class="code-block-container"><pre class="language-json"><code class="language-json">{
+  &quot;x-death&quot;: [
+    {
+      &quot;count&quot;: 1,
+      &quot;exchange&quot;: &quot;orders.direct&quot;,
+      &quot;queue&quot;: &quot;orders.work&quot;,
+      &quot;reason&quot;: &quot;rejected&quot;,
+      &quot;routing-keys&quot;: [&quot;orders.work&quot;],
+      &quot;time&quot;: 1729000000
+    }
+  ]
+}</code></pre></div>
+<p><strong>Critical Production Gotcha</strong>: If a message transitions through multiple dead-letter hops (e.g. <code>work</code> $\to$ <code>retry.5s</code> $\to$ <code>work</code> $\to$ <code>retry.30s</code> $\to$ <code>dlq</code>), RabbitMQ updates the count for existing queue entries or inserts a new element at index 0. To calculate total historical retries across multiple queues, your inspection tool must sum the <code>count</code> fields across all elements matching the root processing queue.</p>
+<hr/>
+<h2>2. RabbitMQ TTL Retry Pitfalls: Head-of-Line Blocking</h2>
+<h3>Why Variable Per-Message TTL Causes Head-of-Line Blocking</h3>
+<p>A common architectural mistake is using a single retry queue with variable per-message <code>expiration</code> headers:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">// ANTI-PATTERN:
+await channel.BasicPublishAsync(exchange: &quot;&quot;, routingKey: &quot;orders.retry&quot;, mandatory: true, basicProperties: new BasicProperties { Expiration = &quot;30000&quot; }, body: body1);
+await channel.BasicPublishAsync(exchange: &quot;&quot;, routingKey: &quot;orders.retry&quot;, mandatory: true, basicProperties: new BasicProperties { Expiration = &quot;5000&quot; }, body: body2);</code></pre></div>
+<p><strong>Why this fails</strong>: In standard RabbitMQ classic and quorum queues, messages are evaluated for expiration <strong>only when they reach the head of the queue</strong>. If message 1 has a 30-second TTL and message 2 has a 5-second TTL, message 2 will NOT expire and dead-letter after 5 seconds! It remains trapped behind message 1 for the full 30 seconds.</p>
+<h3>The Correct Production Solution: Multi-Stage Discrete Delay Queues</h3>
+<p>Create discrete queues with fixed queue-level <code>x-message-ttl</code>:</p>
+<ul>
+<li><code>orders.retry.5s</code>: <code>x-message-ttl = 5000</code>, DLX $\to$ <code>orders.work</code></li>
+<li><code>orders.retry.30s</code>: <code>x-message-ttl = 30000</code>, DLX $\to$ <code>orders.work</code></li>
+<li><code>orders.retry.2m</code>: <code>x-message-ttl = 120000</code>, DLX $\to$ <code>orders.work</code></li>
+<li><code>orders.dlq</code>: Final poison holding queue (retained for manual inspection and replay).</li>
+</ul>
+<p>Because all messages in a given queue have identical TTL, messages always expire in strict FIFO order, preventing Head-of-Line blocking entirely.</p>
+<hr/>
+<h2>3. MassTransit Architecture & Saga State Machines</h2>
+<h3>The MassTransit Pipeline Engine</h3>
+<p>MassTransit builds an asynchronous message pipeline inspired by the <code>Russian Doll</code> middleware pattern (GreenPipes):</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Transport (RabbitMQ) 
+  ---&gt; DeserializationFilter 
+    ---&gt; ScopedFilter (DI Scope per message) 
+      ---&gt; RetryFilter (In-memory backoff) 
+        ---&gt; RedeliveryFilter (Delayed exchange) 
+          ---&gt; OutboxFilter (Transactional Outbox) 
+            ---&gt; Consumer / Saga State Machine</code></pre></div>
+<h3>Saga Orchestration vs Choreography</h3>
+<ul>
+<li><strong>Choreography</strong>: Each service listens to domain events and decides its own local action without centralized coordination. Works well for simple 2-3 step workflows, but becomes impossible to debug and trace in complex flows.</li>
+<li><strong>Orchestration (MassTransit Saga State Machine)</strong>: A centralized state coordinator (<code>OrderStateMachine</code>) listens to events, tracks global state in a persistent instance table, and dispatches direct commands (<code>ReserveInventory</code>, <code>AuthorizePayment</code>).</li>
+</ul>
+<h3>Concurrency & Locking in Sagas</h3>
+<p>When concurrent events arrive for the same saga instance (e.g. <code>PaymentCompleted</code> and <code>InventoryUnavailable</code> dispatched simultaneously):</p>
+<ol>
+<li><strong>Optimistic Concurrency</strong>: MassTransit tracks a <code>RowVersion</code> or <code>Version</code> property. If two threads attempt to commit state transitions simultaneously, one commits and the second throws <code>DbUpdateConcurrencyException</code>. MassTransit's retry middleware automatically catches the concurrency exception and re-reads the updated saga state.</li>
+<li><strong>Pessimistic Concurrency</strong>: Acquires a database row lock (<code>SELECT ... FOR UPDATE</code>) before executing saga activity.</li>
+</ol>
+<hr/>
+<h2>4. DSA Deep Dive: Topological Sorting</h2>
+<h3>Directed Acyclic Graph (DAG) Foundations</h3>
+<p>A Topological Sort of a directed graph $G = (V, E)$ is a linear ordering of its vertices such that for every directed edge $(u, v)$, node $u$ comes before $v$ in the ordering.</p>
+<p>A graph admits a topological sort <strong>if and only if it is a Directed Acyclic Graph (DAG)</strong>.</p>
+<h3>Kahn's Algorithm vs DFS 3-Coloring</h3>
+<div class="table-container"><table><thead><tr>
+<th>Characteristic</th>
+<th>Kahn's Algorithm (BFS)</th>
+<th>3-Coloring (DFS)</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>Underlying Mechanism</strong></td>
+<td>In-degree queue</td>
+<td>Post-order reversal via recursion stack</td>
+</tr>
+<tr>
+<td><strong>Cycle Detection</strong></td>
+<td>Count of dequeued nodes $< \</td>
+<td>V\</td>
+<td>$</td>
+<td>Directed back-edge to a node currently in state <code>1</code> (Visiting)</td>
+</tr>
+<tr>
+<td><strong>Memory Footprint</strong></td>
+<td>In-degree array + FIFO queue</td>
+<td>Recursion stack ($\mathcal{O}(H)$ call stack)</td>
+</tr>
+<tr>
+<td><strong>Output Order</strong></td>
+<td>Forward direct topological order</td>
+<td>Reverse post-order (must reverse or stack pop)</td>
+</tr>
+<tr>
+<td><strong>Cycle Path Extraction</strong></td>
+<td>Harder to extract cycle loop</td>
+<td>Trivial to extract cycle path by tracing gray nodes</td>
+</tr>
+</tbody></table></div>
+<h3>Complexity Analysis</h3>
+<ul>
+<li><strong>Time Complexity</strong>: $\mathcal{O}(V + E)$ where $V$ is <code>numCourses</code> and $E$ is the number of prerequisites. Every vertex is enqueued/visited once, and every directed edge is decremented/traversed exactly once.</li>
+<li><strong>Space Complexity</strong>: $\mathcal{O}(V + E)$ to store the adjacency list representation, plus $\mathcal{O}(V)$ for in-degree array / state array and queue/stack.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 30: RabbitMQ Dead-Letter Queues & MassTransit</h1>
+<h2>Architectural Overview</h2>
+<p>In high-throughput microservices architectures, unhandled message processing failures, transient downstream outages, and poison messages (malformed or unprocessable payloads) pose catastrophic risks to system availability. Without robust dead-lettering and progressive retry policies, failed messages either trigger infinite retry storms that starve healthy messages (Head-of-Line blocking) or are dropped silently resulting in data loss.</p>
+<p>This module provides a production-grade implementation of <strong>AMQP Dead-Letter Exchanges (DLX)</strong>, <strong>TTL-based Exponential Delayed Retry Queues</strong>, and <strong>MassTransit Saga State Machine Orchestration</strong> in .NET 8.</p>
+<hr/>
+<h2>Key Architectural Concepts</h2>
+<h3>1. AMQP Dead-Letter Exchange (DLX) Mechanics</h3>
+<p>A queue declares dead-letter routing via standard AMQP 0-9-1 arguments:</p>
+<ul>
+<li><code>x-dead-letter-exchange</code>: The exchange that receives dead-lettered messages.</li>
+<li><code>x-dead-letter-routing-key</code>: Optional replacement routing key for dead-lettered routing.</li>
+<li><code>x-message-ttl</code>: Per-message or per-queue time-to-live in milliseconds.</li>
+<li><code>x-max-length</code>: Maximum message capacity; overflowing messages are diverted to DLX instead of dropped.</li>
+</ul>
+<p>A message is dead-lettered under three specific conditions:</p>
+<ol>
+<li><strong>Explicit Rejection</strong>: Consumer issues <code>basic.reject</code> or <code>basic.nack</code> with <code>requeue = false</code>.</li>
+<li><strong>TTL Expiration</strong>: Message resides in a queue past its <code>x-message-ttl</code> expiration without being consumed.</li>
+<li><strong>Queue Max-Length Overflow</strong>: Queue exceeds its declared capacity limit.</li>
+</ol>
+<h3>2. Progressive Delayed Retry Topology (Zero-Consumer DLX Loop)</h3>
+<p>Instead of blocking worker threads with <code>Task.Delay()</code> inside consumers:</p>
+<ol>
+<li>On failure (attempt $N < \text{Max}$), the consumer rejects the message into a delayed queue (<code>orders.retry.5s</code>).</li>
+<li>The delay queue has NO consumers attached and is configured with <code>x-message-ttl: 5000</code> and <code>x-dead-letter-exchange: dlx.direct</code>, <code>x-dead-letter-routing-key: orders.work</code>.</li>
+<li>When the TTL expires, the broker automatically re-routes the message back into the active processing queue (<code>orders.work</code>).</li>
+<li>If failures persist beyond threshold ($N \ge \text{Max}$), the message routes directly to the poison DLQ (<code>orders.dlq</code>) with full <code>x-death</code> diagnosis headers.</li>
+</ol>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">[Publisher] ---&gt; [orders.work] ---&gt; [Consumer] (Fails attempt 1)
+                     ^                    |
+                     | (TTL expires)      v (Reject to DLX)
+              [orders.retry.5s] &lt;--- [dlx.direct]
+                     (No consumers)
+                                          | (Fails attempt 3)
+                                          v
+                                    [orders.dlq] (Poison Triage)</code></pre></div>
+<h3>3. MassTransit State Machine Saga Coordination</h3>
+<p>Distributed transactions spanning multiple bounded contexts (<code>Order</code>, <code>Inventory</code>, <code>Payment</code>) require compensating choreographies or orchestrations. <code>MassTransitStateMachine&lt;TInstance&gt;</code> correlates events by <code>CorrelationId</code> and provides:</p>
+<ul>
+<li>State transitions: <code>Initial</code> $\to$ <code>Submitted</code> $\to$ <code>InventoryReserved</code> $\to$ <code>Completed</code>.</li>
+<li>Fault handling: Any unexpected fault routes to <code>Faulted</code> state triggering compensating commands.</li>
+</ul>
+<hr/>
+<h2>Data Structures & Algorithms: Topological Sorting</h2>
+<h3>LeetCode #207: Course Schedule (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Given <code>numCourses</code> and directed prerequisite pairs <code>[a, b]</code> ($b \to a$), determine if it is possible to finish all courses.</li>
+<li><strong>Kahn's Algorithm (BFS)</strong>:</li>
+<li>Calculate in-degrees for all $V$ courses.</li>
+<li>Enqueue all courses with in-degree 0.</li>
+<li>Dequeue node $u$, decrement neighbors' in-degrees, enqueue when in-degree hits 0.</li>
+<li>If processed count equals $numCourses$, graph is a DAG (no cycles).</li>
+<li><strong>Complexity</strong>: $\mathcal{O}(V + E)$ time, $\mathcal{O}(V + E)$ space.</li>
+</ul>
+<h3>LeetCode #210: Course Schedule II (Medium)</h3>
+<ul>
+<li><strong>Problem</strong>: Return the ordering of courses you should take to finish all courses. If impossible due to cycles, return empty array.</li>
+<li><strong>Algorithm</strong>: Kahn's BFS records each dequeued node into the output array. If output size is $numCourses$, the valid topological order is returned; otherwise, an empty array is returned.</li>
+</ul>
+<hr/>
+<h2>Test Suite Summary</h2>
+<p>All 10 unit tests pass with 100% coverage:</p>
+<ol>
+<li><code>Dlq_WhenMessageRejected_RoutesToDeadLetterQueue</code></li>
+<li><code>Dlq_CapturesXDeathMetadata_WithReasonAndExceptionDetails</code></li>
+<li><code>Dlq_TtlExpiration_MovesMessageToDeadLetterQueue</code></li>
+<li><code>Dlq_QueueMaxLengthExceeded_DeadLettersOverflowMessage</code></li>
+<li><code>ProgressiveRetry_TtlDelayedRetryPipeline_RequeuesBackToMainQueue</code></li>
+<li><code>MassTransit_OrderStateMachine_TransitionsToSubmittedInitially</code></li>
+<li><code>MassTransit_OrderStateMachine_TransitionsToCompletedOnPayment</code></li>
+<li><code>MassTransit_OrderStateMachine_TransitionsToFaultedOnOrderFault</code></li>
+<li><code>CourseSchedule_LC207_DetectsValidScheduleAndCycles</code></li>
+<li><code>CourseScheduleII_LC210_ProducesValidTopologicalOrdering</code></li>
+</ol>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the exact mechanical difference between `basic.reject(requeue: true)` and `basic.reject(requeue: false)` with an AMQP Dead-Letter Exchange configured?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li>When a consumer calls <code>basic.reject(deliveryTag, requeue: true)</code>, RabbitMQ immediately re-inserts the unacknowledged message back into the <strong>head of the same queue</strong> (or its original position). If the consumer failure was caused by a persistent software bug or malformed payload, this triggers an infinite immediate retry loop (retry storm) that consumes 100% CPU and completely blocks all subsequent messages from processing (Head-of-Line blocking).</li>
+<li>When a consumer calls <code>basic.reject(deliveryTag, requeue: false)</code>, RabbitMQ checks if the queue has an <code>x-dead-letter-exchange</code> argument declared. If yes, the broker intercepts the message, injects an entry into its <code>x-death</code> diagnostic header, modifies its exchange/routing key as configured, and publishes it to the dead-letter exchange. If no DLX is configured, the message is permanently destroyed and discarded. In production, unhandled exceptions must always reject with <code>requeue: false</code> towards a configured DLX.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Explain Head-of-Line blocking in RabbitMQ when using per-message TTL for delayed retries. How do you prevent it?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>RabbitMQ evaluates message expiration only when a message reaches the <strong>head</strong> of the queue. If a worker queue publishes message A with a 60-second TTL (<code>expiration: &quot;60000&quot;</code>) followed immediately by message B with a 5-second TTL (<code>expiration: &quot;5000&quot;</code>), message B will NOT dead-letter after 5 seconds. It is physically blocked behind message A. Only when message A's 60 seconds expire will message A dead-letter, at which point the broker inspects message B and discovers it has already expired.</p>
+<p>To prevent this:</p>
+<ol>
+<li><strong>Discrete Queue-Level TTL</strong>: Do NOT use per-message TTL on a shared queue. Declare distinct queues with fixed queue-level <code>x-message-ttl</code> arguments (<code>retry.5s</code>, <code>retry.30s</code>, <code>retry.2m</code>). All messages in a given queue share the identical TTL and therefore expire in exact FIFO order.</li>
+<li><strong>RabbitMQ Delayed Message Plugin</strong>: Use the <code>x-delayed-message</code> exchange plugin, which stores delayed messages in an internal Erlang Mnesia database table and routes them only when their specific timer elapses.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">What is the operational difference between the RabbitMQ Delayed Message Exchange plugin and the DLX/TTL loop pattern?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>DLX/TTL Loop (Native AMQP)</strong>: Requires zero plugins and runs on standard, unmodified RabbitMQ clusters. Messages sit in regular queues with no consumers. When TTL expires, the broker moves them via DLX. However, it requires predefined discrete delay intervals (e.g. 5s, 30s, 5m), and creating arbitrary per-message delay intervals is impossible without risking Head-of-Line blocking.</li>
+<li><strong>Delayed Message Plugin (<code>x-delayed-message</code>)</strong>: Allows arbitrary per-message delay via the <code>x-delay</code> header (in milliseconds). The exchange stores messages in an internal Mnesia database on disk, bypassing queues entirely until expiration. However, because it relies on Mnesia, it does not scale well past ~100,000 delayed messages, does not support Quorum Queues directly at the exchange level, and complicates node replication and cluster upgrades.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does MassTransit differentiate between transient exceptions and poison messages? Explain `UseMessageRetry` vs `UseDelayedRedelivery`.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong><code>UseMessageRetry</code> (In-Memory Retry)</strong>: Catches exceptions inside the consumer's executing scope without acknowledging or rejecting the message on the broker. The thread or task waits using in-memory timers (e.g. exponential backoff: 100ms, 200ms, 500ms). This is ideal for short, transient glitches (e.g., brief database deadlocks or network socket resets). However, holding the message in memory locks the consumer thread/prefetch slot.</li>
+<li><strong><code>UseDelayedRedelivery</code> (Broker Delayed Retry)</strong>: When in-memory retries are exhausted, <code>UseDelayedRedelivery</code> acknowledges or moves the message out of the main queue into a delayed queue (via RabbitMQ delayed-message exchange or quartz/hangfire). This releases the consumer thread and prefetch buffer to process subsequent messages. The message is republished to the consumer queue minutes or hours later.</li>
+<li>If delayed redelivery also exhausts its maximum attempts, MassTransit routes the poison message to a designated <code>_error</code> queue with serialized exception details in message headers.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How does MassTransit solve concurrent saga state transitions when two asynchronous events arrive simultaneously for the same `CorrelationId`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>In an asynchronous distributed architecture, multiple events (such as <code>InventoryReserved</code> and <code>PaymentCompleted</code>) may arrive concurrently at different consumer instances for the exact same saga instance.</p>
+<p>MassTransit solves this via:</p>
+<ol>
+<li><strong>Optimistic Concurrency Control</strong>: The saga instance table includes a <code>Version</code> or <code>RowVersion</code> integer column. MassTransit issues an atomic update: <code>UPDATE SagaTable SET State = @NewState, Version = Version + 1 WHERE Id = @Id AND Version = @ExpectedVersion</code>. If a concurrent worker updated the version first, the second worker's update affects 0 rows, throwing a <code>DbUpdateConcurrencyException</code>. MassTransit's saga repository middleware catches this concurrency exception and automatically retries loading the fresh saga state and applying the second event.</li>
+<li><strong>Pessimistic Locking</strong>: Configured via <code>UseRowLock()</code> in EF Core (e.g. <code>SELECT ... FOR UPDATE</code>), which serializes event processing at the database transaction boundary.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What is the structure of the `x-death` AMQP header in RabbitMQ, and how do you extract the root failure reason?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>When RabbitMQ dead-letters a message, it adds an <code>x-death</code> array of dictionary objects to the message's AMQP headers. Each element contains:</p>
+<ul>
+<li><code>queue</code>: Name of the queue where the message died.</li>
+<li><code>reason</code>: String enum: <code>&quot;rejected&quot;</code>, <code>&quot;expired&quot;</code>, or <code>&quot;maxlen&quot;</code>.</li>
+<li><code>count</code>: How many times the message died in that specific queue.</li>
+<li><code>exchange</code>: The original exchange the message was published to.</li>
+<li><code>time</code>: Unix timestamp when the dead-lettering occurred.</li>
+</ul>
+<p>If a message travels through multiple retry queues, <code>x-death</code> contains multiple entries. To find the root queue where failure first started, inspect the last element in the array or match the non-retry queue name. To get the total number of retries across a specific queue, read the <code>count</code> property.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">When should you choose Orchestration (Saga State Machine) over Choreography in microservices?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ul>
+<li><strong>Choose Choreography</strong> when:</li>
+<li>The workflow is short and simple (2 to 3 bounded contexts).</li>
+<li>There are no complex branching logic, timeout deadlines, or multi-step compensating actions.</li>
+<li>Services are loosely coupled and publish generic domain events (<code>OrderPlaced</code>, <code>CustomerBilled</code>).</li>
+<li><strong>Choose Orchestration (State Machine)</strong> when:</li>
+<li>The business process involves 4+ services, conditional branching, or time-based escalation (e.g., "if payment not received within 15 minutes, cancel order and release inventory").</li>
+<li>Compensating transactions are required upon failure (rolling back steps 2 and 1 if step 3 fails).</li>
+<li>Centralized visibility, auditability, and operational tracking of workflow state are mandatory for compliance or customer support.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How do you safely implement DLQ re-drive (replaying dead-lettered messages back to production) without triggering duplicate processing?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<ol>
+<li><strong>Fix Root Cause First</strong>: Never re-drive messages while the underlying bug, schema incompatibility, or downstream outage exists.</li>
+<li><strong>Consumer Idempotency</strong>: All consumers must implement the Idempotent Consumer / Inbox pattern using a unique <code>MessageId</code> or business deduplication key stored in an atomic database table.</li>
+<li><strong>Strip Diagnostic Headers</strong>: When transferring messages from <code>orders.dlq</code> back to <code>orders.work</code>, strip or reset the <code>x-death</code> and retry count headers so the message starts with a clean retry budget.</li>
+<li><strong>Controlled Rate / Shovel</strong>: Use RabbitMQ Shovel or a rate-limited re-drive worker rather than a bulk instantaneous dump to prevent overwhelming downstream databases.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Explain Kahn&#x27;s algorithm for topological sorting. Why does an unprocessed vertex count prove the existence of a directed cycle?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>Kahn's algorithm operates on the topological property that in any Directed Acyclic Graph (DAG), there must be at least one vertex with an in-degree of 0 (no dependencies).</p>
+<ol>
+<li>Compute the in-degree of all vertices.</li>
+<li>Enqueue all vertices with <code>inDegree == 0</code>.</li>
+<li>Repeatedly dequeue a vertex $u$, add it to the topological order, and decrement the in-degree of all its outbound neighbors $(u, v)$.</li>
+<li>Whenever a neighbor's in-degree drops to 0, enqueue it.</li>
+<li><strong>Cycle Proof</strong>: If the graph contains a directed cycle (e.g. $A \to B \to C \to A$), every node in that cycle has an in-degree $\ge 1$ from within the cycle. Therefore, none of the vertices in the cycle can ever reach an in-degree of 0, and none will ever be enqueued. If the total count of processed vertices is less than the total vertices $|V|$, the graph strictly contains at least one directed cycle.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you handle a partial failure during a Saga compensation (e.g. inventory rollback succeeds, but payment refund API fails)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer:</strong></p>
+<p>This is the fundamental reality of distributed systems: compensating actions can themselves fail.</p>
+<ol>
+<li><strong>Exponential Retry with DLQ</strong>: The compensation command (<code>RefundPayment</code>) is published through the same reliable messaging pipeline with exponential backoff and a dedicated dead-letter queue.</li>
+<li><strong>Idempotent Compensations</strong>: Compensation endpoints must be idempotent. If the compensation retry executes three times, the customer must only be refunded once.</li>
+<li><strong>Escalation to Human Workflow (Manual Triage)</strong>: If automated compensation fails after reaching maximum retries, the saga instance enters a <code>NeedsManualIntervention</code> state, publishes a critical P1 telemetry alert to Ops, and logs the saga <code>CorrelationId</code> and transaction IDs to an administrative console for human reconciliation. Distributed systems cannot guarantee 100% automated recovery for non-idempotent external third-party failures; automated retries combined with human escalation queues ensure no funds or data are silently lost.</li>
+</ol>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day30.RabbitMQDLQMassTransit/CourseScheduleSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd30-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d30-src-code-0" class="language-csharp">namespace Day30.RabbitMQDLQMassTransit;
+
+public static class CourseScheduleSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #207: Course Schedule (Medium) using Kahn&#x27;s Algorithm (BFS in-degree topological sort).
+    /// Time Complexity: O(V + E), Space Complexity: O(V + E)
+    /// &lt;/summary&gt;
+    public static bool CanFinishKahn(int numCourses, int[][] prerequisites)
+    {
+        if (numCourses &lt;= 0) return true;
+
+        var adj = new List&lt;int&gt;[numCourses];
+        var inDegree = new int[numCourses];
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            adj[i] = new List&lt;int&gt;();
+        }
+
+        foreach (var pair in prerequisites)
+        {
+            int course = pair[0];
+            int prereq = pair[1];
+            adj[prereq].Add(course);
+            inDegree[course]++;
+        }
+
+        var queue = new Queue&lt;int&gt;();
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            if (inDegree[i] == 0)
+            {
+                queue.Enqueue(i);
+            }
+        }
+
+        int visitedCount = 0;
+        while (queue.Count &gt; 0)
+        {
+            int u = queue.Dequeue();
+            visitedCount++;
+
+            foreach (int v in adj[u])
+            {
+                inDegree[v]--;
+                if (inDegree[v] == 0)
+                {
+                    queue.Enqueue(v);
+                }
+            }
+        }
+
+        return visitedCount == numCourses;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #207: Course Schedule (Medium) using 3-Coloring DFS Cycle Detection.
+    /// 0 = Unvisited, 1 = Visiting (in recursion stack), 2 = Visited.
+    /// Time Complexity: O(V + E), Space Complexity: O(V + E)
+    /// &lt;/summary&gt;
+    public static bool CanFinishDfs(int numCourses, int[][] prerequisites)
+    {
+        if (numCourses &lt;= 0) return true;
+
+        var adj = new List&lt;int&gt;[numCourses];
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            adj[i] = new List&lt;int&gt;();
+        }
+
+        foreach (var pair in prerequisites)
+        {
+            int course = pair[0];
+            int prereq = pair[1];
+            adj[prereq].Add(course);
+        }
+
+        var state = new int[numCourses]; // 0=White, 1=Gray, 2=Black
+
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            if (state[i] == 0)
+            {
+                if (HasCycleDfs(i, adj, state))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static bool HasCycleDfs(int u, List&lt;int&gt;[] adj, int[] state)
+    {
+        state[u] = 1; // Mark as visiting
+
+        foreach (int v in adj[u])
+        {
+            if (state[v] == 1) return true; // Directed back-edge -&gt; Cycle!
+            if (state[v] == 0 &amp;&amp; HasCycleDfs(v, adj, state)) return true;
+        }
+
+        state[u] = 2; // Mark as visited
+        return false;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #210: Course Schedule II (Medium) using Kahn&#x27;s Algorithm.
+    /// Returns valid topological order, or empty array if cycle detected.
+    /// Time Complexity: O(V + E), Space Complexity: O(V + E)
+    /// &lt;/summary&gt;
+    public static int[] FindOrderKahn(int numCourses, int[][] prerequisites)
+    {
+        if (numCourses &lt;= 0) return Array.Empty&lt;int&gt;();
+
+        var adj = new List&lt;int&gt;[numCourses];
+        var inDegree = new int[numCourses];
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            adj[i] = new List&lt;int&gt;();
+        }
+
+        foreach (var pair in prerequisites)
+        {
+            int course = pair[0];
+            int prereq = pair[1];
+            adj[prereq].Add(course);
+            inDegree[course]++;
+        }
+
+        var queue = new Queue&lt;int&gt;();
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            if (inDegree[i] == 0)
+            {
+                queue.Enqueue(i);
+            }
+        }
+
+        var order = new int[numCourses];
+        int index = 0;
+
+        while (queue.Count &gt; 0)
+        {
+            int u = queue.Dequeue();
+            order[index++] = u;
+
+            foreach (int v in adj[u])
+            {
+                inDegree[v]--;
+                if (inDegree[v] == 0)
+                {
+                    queue.Enqueue(v);
+                }
+            }
+        }
+
+        return index == numCourses ? order : Array.Empty&lt;int&gt;();
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #210: Course Schedule II (Medium) using DFS Post-order reversal.
+    /// Time Complexity: O(V + E), Space Complexity: O(V + E)
+    /// &lt;/summary&gt;
+    public static int[] FindOrderDfs(int numCourses, int[][] prerequisites)
+    {
+        if (numCourses &lt;= 0) return Array.Empty&lt;int&gt;();
+
+        var adj = new List&lt;int&gt;[numCourses];
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            adj[i] = new List&lt;int&gt;();
+        }
+
+        foreach (var pair in prerequisites)
+        {
+            int course = pair[0];
+            int prereq = pair[1];
+            adj[prereq].Add(course);
+        }
+
+        var state = new int[numCourses];
+        var orderStack = new Stack&lt;int&gt;();
+
+        for (int i = 0; i &lt; numCourses; i++)
+        {
+            if (state[i] == 0)
+            {
+                if (DfsTopological(i, adj, state, orderStack))
+                {
+                    return Array.Empty&lt;int&gt;(); // Cycle detected
+                }
+            }
+        }
+
+        var result = new int[numCourses];
+        int index = 0;
+        while (orderStack.Count &gt; 0)
+        {
+            result[index++] = orderStack.Pop();
+        }
+
+        return result;
+    }
+
+    private static bool DfsTopological(int u, List&lt;int&gt;[] adj, int[] state, Stack&lt;int&gt; orderStack)
+    {
+        state[u] = 1;
+
+        foreach (int v in adj[u])
+        {
+            if (state[v] == 1) return true; // Cycle!
+            if (state[v] == 0 &amp;&amp; DfsTopological(v, adj, state, orderStack)) return true;
+        }
+
+        state[u] = 2;
+        orderStack.Push(u);
+        return false;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day30.RabbitMQDLQMassTransit/RabbitMqDlqAndRetryEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd30-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d30-src-code-1" class="language-csharp">using System.Collections.Concurrent;
+using MassTransit;
+
+namespace Day30.RabbitMQDLQMassTransit;
+
+#region AMQP DLQ &amp; Retry Topology Models
+
+public enum DeadLetterReason
+{
+    Rejected,
+    Expired,
+    MaxLengthExceeded
+}
+
+public sealed record XDeathEntry(
+    string Queue,
+    DeadLetterReason Reason,
+    int Count,
+    string Exchange,
+    DateTime Timestamp,
+    string? ExceptionMessage,
+    string? ExceptionType
+);
+
+public sealed record AmqpMessage(
+    string MessageId,
+    string RoutingKey,
+    string Payload,
+    int RetryCount = 0,
+    int? TtlMilliseconds = null,
+    List&lt;XDeathEntry&gt;? DeathHistory = null
+)
+{
+    public List&lt;XDeathEntry&gt; DeathHistory { get; init; } = DeathHistory ?? new List&lt;XDeathEntry&gt;();
+}
+
+public sealed record QueueArguments(
+    string? DeadLetterExchange = null,
+    string? DeadLetterRoutingKey = null,
+    int? MessageTtlMs = null,
+    int? MaxLength = null
+);
+
+#endregion
+
+#region DLQ &amp; Progressive Retry Simulator Engine
+
+public class DlqRetrySimulator
+{
+    private readonly ConcurrentDictionary&lt;string, QueueArguments&gt; _queueConfigs = new();
+    private readonly ConcurrentDictionary&lt;string, List&lt;AmqpMessage&gt;&gt; _queues = new();
+    private readonly ConcurrentDictionary&lt;string, Action&lt;AmqpMessage&gt;&gt; _consumers = new();
+    private readonly object _lock = new();
+
+    public int MaxRetries { get; set; } = 3;
+
+    public void DeclareQueue(string queueName, QueueArguments? arguments = null)
+    {
+        _queueConfigs[queueName] = arguments ?? new QueueArguments();
+        _queues.GetOrAdd(queueName, _ =&gt; new List&lt;AmqpMessage&gt;());
+    }
+
+    public void RegisterConsumer(string queueName, Action&lt;AmqpMessage&gt; consumer)
+    {
+        _consumers[queueName] = consumer;
+    }
+
+    public void Publish(string queueName, AmqpMessage message)
+    {
+        lock (_lock)
+        {
+            if (!_queues.ContainsKey(queueName))
+            {
+                DeclareQueue(queueName);
+            }
+
+            var queue = _queues[queueName];
+            var config = _queueConfigs.GetValueOrDefault(queueName, new QueueArguments());
+
+            // Check MaxLength dead-lettering
+            if (config.MaxLength.HasValue &amp;&amp; queue.Count &gt;= config.MaxLength.Value)
+            {
+                if (!string.IsNullOrEmpty(config.DeadLetterExchange))
+                {
+                    var targetQueue = config.DeadLetterRoutingKey ?? config.DeadLetterExchange;
+                    DeadLetter(message, queueName, targetQueue, DeadLetterReason.MaxLengthExceeded, &quot;Queue reached max-length capacity&quot;);
+                    return;
+                }
+            }
+
+            queue.Add(message);
+        }
+    }
+
+    public void Reject(string currentQueue, AmqpMessage message, Exception reason, bool requeue = false)
+    {
+        lock (_lock)
+        {
+            if (_queues.TryGetValue(currentQueue, out var list))
+            {
+                list.Remove(message);
+            }
+
+            if (requeue)
+            {
+                Publish(currentQueue, message);
+                return;
+            }
+
+            var config = _queueConfigs.GetValueOrDefault(currentQueue, new QueueArguments());
+            if (string.IsNullOrEmpty(config.DeadLetterExchange))
+            {
+                throw new InvalidOperationException($&quot;Queue &#x27;{currentQueue}&#x27; has no dead-letter exchange configured.&quot;);
+            }
+
+            var nextRetry = message.RetryCount + 1;
+            var targetQueue = config.DeadLetterRoutingKey ?? config.DeadLetterExchange;
+
+            var updatedMessage = message with
+            {
+                RetryCount = nextRetry
+            };
+
+            DeadLetter(updatedMessage, currentQueue, targetQueue, DeadLetterReason.Rejected, reason.Message, reason.GetType().Name);
+        }
+    }
+
+    public void ExpireTtl(string delayQueueName, string messageId)
+    {
+        lock (_lock)
+        {
+            if (!_queues.TryGetValue(delayQueueName, out var list)) return;
+            var msg = list.FirstOrDefault(m =&gt; m.MessageId == messageId);
+            if (msg == null) return;
+
+            list.Remove(msg);
+            var config = _queueConfigs.GetValueOrDefault(delayQueueName, new QueueArguments());
+            if (!string.IsNullOrEmpty(config.DeadLetterExchange))
+            {
+                var targetQueue = config.DeadLetterRoutingKey ?? config.DeadLetterExchange;
+                DeadLetter(msg, delayQueueName, targetQueue, DeadLetterReason.Expired, &quot;Message TTL expired in delayed retry queue&quot;);
+            }
+        }
+    }
+
+    private void DeadLetter(
+        AmqpMessage message,
+        string sourceQueue,
+        string targetQueue,
+        DeadLetterReason reason,
+        string? details = null,
+        string? exceptionType = null)
+    {
+        var deathEntry = new XDeathEntry(
+            Queue: sourceQueue,
+            Reason: reason,
+            Count: message.RetryCount,
+            Exchange: &quot;dlx.direct&quot;,
+            Timestamp: DateTime.UtcNow,
+            ExceptionMessage: details,
+            ExceptionType: exceptionType
+        );
+
+        var updatedHistory = new List&lt;XDeathEntry&gt;(message.DeathHistory) { deathEntry };
+        var deadLetteredMsg = message with { DeathHistory = updatedHistory };
+
+        Publish(targetQueue, deadLetteredMsg);
+    }
+
+    public IReadOnlyList&lt;AmqpMessage&gt; GetQueueMessages(string queueName)
+    {
+        lock (_lock)
+        {
+            return _queues.TryGetValue(queueName, out var list) ? list.ToList() : Array.Empty&lt;AmqpMessage&gt;();
+        }
+    }
+
+    public void DispatchNext(string queueName)
+    {
+        AmqpMessage? msg = null;
+        Action&lt;AmqpMessage&gt;? consumer = null;
+
+        lock (_lock)
+        {
+            if (_queues.TryGetValue(queueName, out var list) &amp;&amp; list.Count &gt; 0)
+            {
+                msg = list[0];
+            }
+            _consumers.TryGetValue(queueName, out consumer);
+        }
+
+        if (msg != null &amp;&amp; consumer != null)
+        {
+            consumer(msg);
+        }
+    }
+}
+
+#endregion
+
+#region MassTransit State Machine Saga Implementation
+
+public record OrderSubmittedEvent(Guid CorrelationId, string OrderNumber, decimal TotalAmount);
+public record InventoryReservedEvent(Guid CorrelationId, DateTime ReservedAt);
+public record PaymentCompletedEvent(Guid CorrelationId, string TransactionId, DateTime CompletedAt);
+public record OrderFaultedEvent(Guid CorrelationId, string Reason);
+
+public class OrderStateInstance : SagaStateMachineInstance
+{
+    public Guid CorrelationId { get; set; }
+    public string CurrentState { get; set; } = string.Empty;
+    public string OrderNumber { get; set; } = string.Empty;
+    public decimal TotalAmount { get; set; }
+    public DateTime? SubmittedAt { get; set; }
+    public DateTime? InventoryReservedAt { get; set; }
+    public DateTime? PaymentCompletedAt { get; set; }
+    public string? PaymentTransactionId { get; set; }
+    public string? FaultReason { get; set; }
+}
+
+public class OrderStateMachine : MassTransitStateMachine&lt;OrderStateInstance&gt;
+{
+    public State Submitted { get; private set; } = null!;
+    public State InventoryReserved { get; private set; } = null!;
+    public State Completed { get; private set; } = null!;
+    public State Faulted { get; private set; } = null!;
+
+    public Event&lt;OrderSubmittedEvent&gt; OrderSubmitted { get; private set; } = null!;
+    public Event&lt;InventoryReservedEvent&gt; InventoryReservedEvent { get; private set; } = null!;
+    public Event&lt;PaymentCompletedEvent&gt; PaymentCompleted { get; private set; } = null!;
+    public Event&lt;OrderFaultedEvent&gt; OrderFaulted { get; private set; } = null!;
+
+    public OrderStateMachine()
+    {
+        InstanceState(x =&gt; x.CurrentState);
+
+        Event(() =&gt; OrderSubmitted, x =&gt; x.CorrelateById(context =&gt; context.Message.CorrelationId));
+        Event(() =&gt; InventoryReservedEvent, x =&gt; x.CorrelateById(context =&gt; context.Message.CorrelationId));
+        Event(() =&gt; PaymentCompleted, x =&gt; x.CorrelateById(context =&gt; context.Message.CorrelationId));
+        Event(() =&gt; OrderFaulted, x =&gt; x.CorrelateById(context =&gt; context.Message.CorrelationId));
+
+        Initially(
+            When(OrderSubmitted)
+                .Then(context =&gt;
+                {
+                    context.Saga.OrderNumber = context.Message.OrderNumber;
+                    context.Saga.TotalAmount = context.Message.TotalAmount;
+                    context.Saga.SubmittedAt = DateTime.UtcNow;
+                })
+                .TransitionTo(Submitted)
+        );
+
+        During(Submitted,
+            When(InventoryReservedEvent)
+                .Then(context =&gt;
+                {
+                    context.Saga.InventoryReservedAt = context.Message.ReservedAt;
+                })
+                .TransitionTo(InventoryReserved),
+            When(OrderFaulted)
+                .Then(context =&gt;
+                {
+                    context.Saga.FaultReason = context.Message.Reason;
+                })
+                .TransitionTo(Faulted)
+        );
+
+        During(InventoryReserved,
+            When(PaymentCompleted)
+                .Then(context =&gt;
+                {
+                    context.Saga.PaymentCompletedAt = context.Message.CompletedAt;
+                    context.Saga.PaymentTransactionId = context.Message.TransactionId;
+                })
+                .TransitionTo(Completed),
+            When(OrderFaulted)
+                .Then(context =&gt;
+                {
+                    context.Saga.FaultReason = context.Message.Reason;
+                })
+                .TransitionTo(Faulted)
+        );
+
+        SetCompletedWhenFinalized();
+    }
+}
+
+#endregion
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day30.RabbitMQDLQMassTransit.Tests/Day30Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd30-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d30-tests-code-0" class="language-csharp">using Day30.RabbitMQDLQMassTransit;
+using MassTransit;
+using MassTransit.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
+
+namespace Day30.RabbitMQDLQMassTransit.Tests;
+
+public class Day30Tests
+{
+    [Fact]
+    public void Dlq_WhenMessageRejected_RoutesToDeadLetterQueue()
+    {
+        var simulator = new DlqRetrySimulator();
+        simulator.DeclareQueue(&quot;orders.dlq&quot;);
+        simulator.DeclareQueue(&quot;orders.work&quot;, new QueueArguments(
+            DeadLetterExchange: &quot;dlx.direct&quot;,
+            DeadLetterRoutingKey: &quot;orders.dlq&quot;
+        ));
+
+        var msg = new AmqpMessage(&quot;msg-101&quot;, &quot;orders.work&quot;, &quot;{\&quot;orderId\&quot;:\&quot;101\&quot;}&quot;);
+        simulator.Publish(&quot;orders.work&quot;, msg);
+
+        Assert.Single(simulator.GetQueueMessages(&quot;orders.work&quot;));
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.dlq&quot;));
+
+        // Consumer encounters unhandled exception
+        simulator.Reject(&quot;orders.work&quot;, msg, new InvalidOperationException(&quot;Payment gateway unreachable&quot;), requeue: false);
+
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.work&quot;));
+        var dlqMsgs = simulator.GetQueueMessages(&quot;orders.dlq&quot;);
+        Assert.Single(dlqMsgs);
+        Assert.Equal(&quot;msg-101&quot;, dlqMsgs[0].MessageId);
+        Assert.Equal(1, dlqMsgs[0].RetryCount);
+    }
+
+    [Fact]
+    public void Dlq_CapturesXDeathMetadata_WithReasonAndExceptionDetails()
+    {
+        var simulator = new DlqRetrySimulator();
+        simulator.DeclareQueue(&quot;orders.dlq&quot;);
+        simulator.DeclareQueue(&quot;orders.work&quot;, new QueueArguments(
+            DeadLetterExchange: &quot;dlx.direct&quot;,
+            DeadLetterRoutingKey: &quot;orders.dlq&quot;
+        ));
+
+        var msg = new AmqpMessage(&quot;msg-202&quot;, &quot;orders.work&quot;, &quot;{\&quot;sku\&quot;:\&quot;SKU-CORRUPT\&quot;}&quot;);
+        simulator.Publish(&quot;orders.work&quot;, msg);
+
+        simulator.Reject(&quot;orders.work&quot;, msg, new FormatException(&quot;Corrupt SKU checksum&quot;), requeue: false);
+
+        var dlqMsg = simulator.GetQueueMessages(&quot;orders.dlq&quot;).Single();
+        Assert.Single(dlqMsg.DeathHistory);
+
+        var death = dlqMsg.DeathHistory[0];
+        Assert.Equal(&quot;orders.work&quot;, death.Queue);
+        Assert.Equal(DeadLetterReason.Rejected, death.Reason);
+        Assert.Equal(&quot;Corrupt SKU checksum&quot;, death.ExceptionMessage);
+        Assert.Equal(nameof(FormatException), death.ExceptionType);
+    }
+
+    [Fact]
+    public void Dlq_TtlExpiration_MovesMessageToDeadLetterQueue()
+    {
+        var simulator = new DlqRetrySimulator();
+        simulator.DeclareQueue(&quot;orders.retry.dlx&quot;);
+        simulator.DeclareQueue(&quot;orders.retry.5s&quot;, new QueueArguments(
+            DeadLetterExchange: &quot;dlx.direct&quot;,
+            DeadLetterRoutingKey: &quot;orders.retry.dlx&quot;,
+            MessageTtlMs: 5000
+        ));
+
+        var msg = new AmqpMessage(&quot;msg-303&quot;, &quot;orders.retry.5s&quot;, &quot;{\&quot;orderId\&quot;:\&quot;303\&quot;}&quot;);
+        simulator.Publish(&quot;orders.retry.5s&quot;, msg);
+
+        Assert.Single(simulator.GetQueueMessages(&quot;orders.retry.5s&quot;));
+
+        // Simulate TTL clock expiry
+        simulator.ExpireTtl(&quot;orders.retry.5s&quot;, &quot;msg-303&quot;);
+
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.retry.5s&quot;));
+        var dlqMessages = simulator.GetQueueMessages(&quot;orders.retry.dlx&quot;);
+        Assert.Single(dlqMessages);
+        Assert.Equal(DeadLetterReason.Expired, dlqMessages[0].DeathHistory[0].Reason);
+    }
+
+    [Fact]
+    public void Dlq_QueueMaxLengthExceeded_DeadLettersOverflowMessage()
+    {
+        var simulator = new DlqRetrySimulator();
+        simulator.DeclareQueue(&quot;orders.overflow.dlq&quot;);
+        simulator.DeclareQueue(&quot;orders.bounded&quot;, new QueueArguments(
+            DeadLetterExchange: &quot;dlx.direct&quot;,
+            DeadLetterRoutingKey: &quot;orders.overflow.dlq&quot;,
+            MaxLength: 2
+        ));
+
+        simulator.Publish(&quot;orders.bounded&quot;, new AmqpMessage(&quot;msg-1&quot;, &quot;orders.bounded&quot;, &quot;item-1&quot;));
+        simulator.Publish(&quot;orders.bounded&quot;, new AmqpMessage(&quot;msg-2&quot;, &quot;orders.bounded&quot;, &quot;item-2&quot;));
+
+        Assert.Equal(2, simulator.GetQueueMessages(&quot;orders.bounded&quot;).Count);
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.overflow.dlq&quot;));
+
+        // 3rd message overflows bounded queue
+        simulator.Publish(&quot;orders.bounded&quot;, new AmqpMessage(&quot;msg-3&quot;, &quot;orders.bounded&quot;, &quot;item-3&quot;));
+
+        Assert.Equal(2, simulator.GetQueueMessages(&quot;orders.bounded&quot;).Count);
+        var overflowList = simulator.GetQueueMessages(&quot;orders.overflow.dlq&quot;);
+        Assert.Single(overflowList);
+        Assert.Equal(&quot;msg-3&quot;, overflowList[0].MessageId);
+        Assert.Equal(DeadLetterReason.MaxLengthExceeded, overflowList[0].DeathHistory[0].Reason);
+    }
+
+    [Fact]
+    public void ProgressiveRetry_TtlDelayedRetryPipeline_RequeuesBackToMainQueue()
+    {
+        var simulator = new DlqRetrySimulator();
+        simulator.DeclareQueue(&quot;orders.work&quot;);
+        simulator.DeclareQueue(&quot;orders.retry.5s&quot;, new QueueArguments(
+            DeadLetterExchange: &quot;dlx.direct&quot;,
+            DeadLetterRoutingKey: &quot;orders.work&quot;,
+            MessageTtlMs: 5000
+        ));
+
+        var originalMsg = new AmqpMessage(&quot;retry-item&quot;, &quot;orders.work&quot;, &quot;{\&quot;payload\&quot;:\&quot;work\&quot;}&quot;);
+        simulator.Publish(&quot;orders.work&quot;, originalMsg);
+
+        // Reject into retry queue
+        var retryQueueConfig = new QueueArguments(DeadLetterExchange: &quot;dlx.direct&quot;, DeadLetterRoutingKey: &quot;orders.retry.5s&quot;);
+        simulator.DeclareQueue(&quot;orders.work&quot;, retryQueueConfig);
+
+        simulator.Reject(&quot;orders.work&quot;, originalMsg, new HttpRequestException(&quot;Service Unavailable (503)&quot;));
+
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.work&quot;));
+        Assert.Single(simulator.GetQueueMessages(&quot;orders.retry.5s&quot;));
+
+        // When 5s TTL expires, message is sent back to orders.work via DLX
+        simulator.ExpireTtl(&quot;orders.retry.5s&quot;, &quot;retry-item&quot;);
+
+        Assert.Empty(simulator.GetQueueMessages(&quot;orders.retry.5s&quot;));
+        var reprocessed = simulator.GetQueueMessages(&quot;orders.work&quot;);
+        Assert.Single(reprocessed);
+        Assert.Equal(1, reprocessed[0].RetryCount);
+    }
+
+    [Fact]
+    public async Task MassTransit_OrderStateMachine_TransitionsToSubmittedInitially()
+    {
+        var services = new ServiceCollection();
+        services.AddMassTransitTestHarness(cfg =&gt;
+        {
+            cfg.AddSagaStateMachine&lt;OrderStateMachine, OrderStateInstance&gt;();
+        });
+
+        await using var provider = services.BuildServiceProvider(true);
+        var harness = provider.GetRequiredService&lt;ITestHarness&gt;();
+        await harness.Start();
+
+        var correlationId = Guid.NewGuid();
+        await harness.Bus.Publish(new OrderSubmittedEvent(correlationId, &quot;ORD-9901&quot;, 149.99m));
+
+        var sagaHarness = harness.GetSagaStateMachineHarness&lt;OrderStateMachine, OrderStateInstance&gt;();
+        Assert.True(await sagaHarness.Consumed.Any&lt;OrderSubmittedEvent&gt;());
+
+        var sagaInstance = sagaHarness.Created.Contains(correlationId);
+        Assert.NotNull(sagaInstance);
+        Assert.Equal(&quot;Submitted&quot;, sagaInstance.CurrentState);
+        Assert.Equal(&quot;ORD-9901&quot;, sagaInstance.OrderNumber);
+        Assert.Equal(149.99m, sagaInstance.TotalAmount);
+    }
+
+    [Fact]
+    public async Task MassTransit_OrderStateMachine_TransitionsToCompletedOnPayment()
+    {
+        var services = new ServiceCollection();
+        services.AddMassTransitTestHarness(cfg =&gt;
+        {
+            cfg.AddSagaStateMachine&lt;OrderStateMachine, OrderStateInstance&gt;();
+        });
+
+        await using var provider = services.BuildServiceProvider(true);
+        var harness = provider.GetRequiredService&lt;ITestHarness&gt;();
+        await harness.Start();
+
+        var correlationId = Guid.NewGuid();
+        await harness.Bus.Publish(new OrderSubmittedEvent(correlationId, &quot;ORD-9902&quot;, 299.50m));
+        await harness.Bus.Publish(new InventoryReservedEvent(correlationId, DateTime.UtcNow));
+        await harness.Bus.Publish(new PaymentCompletedEvent(correlationId, &quot;TXN-8812&quot;, DateTime.UtcNow));
+
+        var sagaHarness = harness.GetSagaStateMachineHarness&lt;OrderStateMachine, OrderStateInstance&gt;();
+        Assert.True(await sagaHarness.Consumed.Any&lt;PaymentCompletedEvent&gt;());
+
+        var sagaInstance = sagaHarness.Created.Contains(correlationId);
+        Assert.NotNull(sagaInstance);
+        Assert.Equal(&quot;Completed&quot;, sagaInstance.CurrentState);
+        Assert.Equal(&quot;TXN-8812&quot;, sagaInstance.PaymentTransactionId);
+    }
+
+    [Fact]
+    public async Task MassTransit_OrderStateMachine_TransitionsToFaultedOnOrderFault()
+    {
+        var services = new ServiceCollection();
+        services.AddMassTransitTestHarness(cfg =&gt;
+        {
+            cfg.AddSagaStateMachine&lt;OrderStateMachine, OrderStateInstance&gt;();
+        });
+
+        await using var provider = services.BuildServiceProvider(true);
+        var harness = provider.GetRequiredService&lt;ITestHarness&gt;();
+        await harness.Start();
+
+        var correlationId = Guid.NewGuid();
+        await harness.Bus.Publish(new OrderSubmittedEvent(correlationId, &quot;ORD-9903&quot;, 50.00m));
+        await harness.Bus.Publish(new OrderFaultedEvent(correlationId, &quot;Inventory out of stock&quot;));
+
+        var sagaHarness = harness.GetSagaStateMachineHarness&lt;OrderStateMachine, OrderStateInstance&gt;();
+        Assert.True(await sagaHarness.Consumed.Any&lt;OrderFaultedEvent&gt;());
+
+        var sagaInstance = sagaHarness.Created.Contains(correlationId);
+        Assert.NotNull(sagaInstance);
+        Assert.Equal(&quot;Faulted&quot;, sagaInstance.CurrentState);
+        Assert.Equal(&quot;Inventory out of stock&quot;, sagaInstance.FaultReason);
+    }
+
+    [Fact]
+    public void CourseSchedule_LC207_DetectsValidScheduleAndCycles()
+    {
+        // Example 1: numCourses = 2, prerequisites = [[1,0]] -&gt; true
+        var prereq1 = new int[][] { new[] { 1, 0 } };
+        Assert.True(CourseScheduleSolver.CanFinishKahn(2, prereq1));
+        Assert.True(CourseScheduleSolver.CanFinishDfs(2, prereq1));
+
+        // Example 2: numCourses = 2, prerequisites = [[1,0],[0,1]] -&gt; false (cycle)
+        var prereq2 = new int[][] { new[] { 1, 0 }, new[] { 0, 1 } };
+        Assert.False(CourseScheduleSolver.CanFinishKahn(2, prereq2));
+        Assert.False(CourseScheduleSolver.CanFinishDfs(2, prereq2));
+
+        // Complex DAG: 4 courses: 0-&gt;1, 0-&gt;2, 1-&gt;3, 2-&gt;3 -&gt; true
+        var prereq3 = new int[][]
+        {
+            new[] { 1, 0 },
+            new[] { 2, 0 },
+            new[] { 3, 1 },
+            new[] { 3, 2 }
+        };
+        Assert.True(CourseScheduleSolver.CanFinishKahn(4, prereq3));
+        Assert.True(CourseScheduleSolver.CanFinishDfs(4, prereq3));
+    }
+
+    [Fact]
+    public void CourseScheduleII_LC210_ProducesValidTopologicalOrdering()
+    {
+        // numCourses = 4, prereqs: 1-&gt;0, 2-&gt;0, 3-&gt;1, 3-&gt;2
+        var prereqs = new int[][]
+        {
+            new[] { 1, 0 },
+            new[] { 2, 0 },
+            new[] { 3, 1 },
+            new[] { 3, 2 }
+        };
+
+        var kahnOrder = CourseScheduleSolver.FindOrderKahn(4, prereqs);
+        Assert.Equal(4, kahnOrder.Length);
+        Assert.Equal(0, kahnOrder[0]); // 0 must be first since it has 0 prereqs
+        Assert.Equal(3, kahnOrder[3]); // 3 must be last
+
+        var dfsOrder = CourseScheduleSolver.FindOrderDfs(4, prereqs);
+        Assert.Equal(4, dfsOrder.Length);
+
+        // Cyclic case returns empty array
+        var cyclePrereqs = new int[][]
+        {
+            new[] { 0, 1 },
+            new[] { 1, 2 },
+            new[] { 2, 0 }
+        };
+        Assert.Empty(CourseScheduleSolver.FindOrderKahn(3, cyclePrereqs));
+        Assert.Empty(CourseScheduleSolver.FindOrderDfs(3, cyclePrereqs));
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 30 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

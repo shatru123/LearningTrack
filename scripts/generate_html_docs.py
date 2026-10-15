@@ -34,6 +34,8 @@ DAYS_INFO = [
     {"num": 27, "dir": "Day27-ApiGateway-Yarp", "title": "API Gateway Architecture with YARP", "category": "Microservices & YARP"},
     {"num": 28, "dir": "Day28-Resilient-Http-Refit-Polly", "title": "Resilient Service-to-Service HTTP with Refit & Polly", "category": "Microservices & Refit"},
     {"num": 29, "dir": "Day29-RabbitMQ-Core-Exchanges-Queues", "title": "RabbitMQ Core Concepts: Exchanges & Queues", "category": "RabbitMQ & Messaging"},
+    {"num": 30, "dir": "Day30-RabbitMQ-DLQ-MassTransit", "title": "RabbitMQ Dead-Letter Queues & MassTransit", "category": "RabbitMQ & Messaging"},
+    {"num": 31, "dir": "Day31-Transactional-Outbox-Pattern", "title": "The Transactional Outbox Pattern", "category": "Distributed Systems"},
 ]
 
 from diagram_helpers import get_day_svg
@@ -801,12 +803,12 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
   <div class="container">
     <header>
       <h1>100-Day .NET + AI Engineering Track</h1>
-      <p class="lead">Interactive Knowledge Hub containing all 29 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
+      <p class="lead">Interactive Knowledge Hub containing all 31 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
       <div class="stats-bar">
-        <div class="stat-pill">Completed: <span>29 / 100 Days</span></div>
-        <div class="stat-pill">Deep Notes: <span>29 Architectural Guides</span></div>
-        <div class="stat-pill">Interview Q&amp;A: <span>290 Senior Scenarios &amp; Answers</span></div>
-        <div class="stat-pill">Test Suite: <span>325 / 325 Passed (100%)</span></div>
+        <div class="stat-pill">Completed: <span>31 / 100 Days</span></div>
+        <div class="stat-pill">Deep Notes: <span>31 Architectural Guides</span></div>
+        <div class="stat-pill">Interview Q&amp;A: <span>310 Senior Scenarios &amp; Answers</span></div>
+        <div class="stat-pill">Test Suite: <span>345 / 345 Passed (100%)</span></div>
         <div class="stat-pill">Platform: <span>.NET 8 / C# 12</span></div>
       </div>
     </header>

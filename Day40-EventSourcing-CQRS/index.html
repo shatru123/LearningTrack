@@ -1,0 +1,2368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 40: Event Sourcing &amp; CQRS Foundations | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 40</span>
+        <span class="badge badge-category">Event Sourcing &amp; CQRS</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day39-CAP-PACELC-DistributedSystems/index.html" class="nav-btn">← Day 39</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+
+        </select>
+        <a href="../Day41-Docker-DotNet-Cgroups/index.html" class="nav-btn">Day 41 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 40: Event Sourcing &amp; CQRS Foundations</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d40Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d40P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d40P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d40P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#065f46"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d40Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 40: Event Sourcing, CQRS &amp; Palindrome Partitioning</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d40P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Event Sourcing Core</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Append-Only Event Store</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Immutable domain events</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">State = FoldLeft(Initial, Events)</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">100% auditability &amp; time travel</text>
+          <text x="50" y="196" fill="#fbbf24" font-size="9">Zero destructive UPDATEs</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Optimistic Concurrency &amp; OCC</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">ExpectedVersion check on stream</text>
+          <text x="50" y="274" fill="#f43f5e" font-size="9">Unique constraint: (stream_id, version)</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">Rejects concurrent write collisions</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Snapshots bound replay time to O(k)</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d40P2)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#c084fc" font-size="14" font-weight="bold">CQRS Read Projections</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Command / Query Separation</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Commands: Hit Aggregate Root (Write)</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Queries: Hit Denormalized Views (Read)</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">Asymmetric scaling: 99% reads</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Postgres, Redis, or Elasticsearch views</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#c084fc" font-size="11" font-weight="bold">Eventual Consistency in UI</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Projections update asynchronously</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Optimistic UI updates</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">Read-your-own-writes version tokens</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">GDPR crypto-shredding keys</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d40P3)" stroke="#34d399" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#34d399" font-size="14" font-weight="bold">LC #131: Palindrome Partition</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">DP Table Precomputation</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">dp[i, j] = true if s[i..j] is palindrome</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">dp[i, j] = (s[i] == s[j]) &amp;&amp; dp[i+1, j-1]</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">O(N^2) table initialization</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">O(1) lookup during backtracking</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#34d399" font-size="11" font-weight="bold">Backtracking DFS</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Traverse all partitioning points</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Eliminates repeated string reversals</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Time: O(N * 2^N), Space: O(N^2)</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">High-performance partition generation</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: Event Sourcing & CQRS Pattern</h1>
+<h2>1. Event Sourcing Core Principles</h2>
+<ul>
+<li><strong>State as a Left Fold</strong>:</li>
+<li>In CRUD, <code>UPDATE accounts SET balance = 150 WHERE id = 1</code> destroys the history of how the balance became 150.</li>
+<li>In Event Sourcing, state is derived:</li>
+</ul>
+<p><code>state = events.Aggregate(initial, (acc, evt) =&gt; acc.Apply(evt))</code></p>
+<ul>
+<li>The Event Store is the single source of truth.</li>
+<li><strong>Optimistic Concurrency Control (OCC)</strong>:</li>
+<li>Stream table schema: <code>(stream_id, version, payload, timestamp)</code> with unique constraint on <code>(stream_id, version)</code>.</li>
+<li>When appending, specify <code>ExpectedVersion</code>. If another process appended version 3 first, the unique constraint or check fails, aborting the write and forcing the caller to reload and re-evaluate business logic.</li>
+</ul>
+<h2>2. CQRS (Command Query Responsibility Segregation)</h2>
+<ul>
+<li><strong>Asymmetric Scaling</strong>:</li>
+<li>Most business systems have an 80:20 or 99:1 read-to-write ratio.</li>
+<li>Write Model: Optimized for transactional integrity, validation, and zero locks (aggregates write to append-only tables).</li>
+<li>Read Model: Optimized for queries (denormalized relational tables, Elasticsearch indices, or Redis hashes).</li>
+<li><strong>Handling Eventual Consistency in UI</strong>:</li>
+<li>Because read projections update asynchronously after the event is committed, a read immediately following a write might not show the new item.</li>
+<li><strong>Mitigation Strategies</strong>:</li>
+</ul>
+<ol>
+<li>Optimistic UI update: The client updates local UI state immediately.</li>
+<li>Read-your-own-writes session token: Query model waits until projected version $\ge$ token version before responding.</li>
+</ol>
+<h2>3. LeetCode #131: Palindrome Partitioning DP Optimization</h2>
+<ul>
+<li>A naive check reverses every substring, taking $O(K)$ time per substring. With $2^N$ possible partition combinations, this wastes CPU cycles.</li>
+<li><strong>DP Table Formulation</strong>:</li>
+<li>Let <code>dp[i, j]</code> represent whether <code>s[i..j]</code> is a palindrome.</li>
+<li>Base case: <code>dp[i, i] = true</code> for all $i$.</li>
+<li>For substrings of length $L \ge 2$:</li>
+</ul>
+<p>$$\text{dp}[i, j] = (s[i] == s[j]) \land (L == 2 \lor \text{dp}[i+1, j-1])$$</p>
+<ul>
+<li>Filling the DP table takes $O(N^2)$ time once up front. Then, each palindrome check in the backtracking loop is a lightning-fast $O(1)$ table lookup.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 40: Event Sourcing & CQRS Foundations</h1>
+<h2>Architectural Overview</h2>
+<p>Traditional CRUD applications mutate state in place, overwriting historical data and making auditing, time-travel debugging, and distributed synchronization complex.</p>
+<p><strong>Event Sourcing</strong> models application state as an append-only sequence of immutable domain events:</p>
+<p>$$\text{Current State} = \text{FoldLeft}(\text{Initial State},\; \text{Events})$$</p>
+<p>This module implements enterprise Event Sourcing and CQRS (Command Query Responsibility Segregation) in .NET 8:</p>
+<ul>
+<li><strong>Aggregate Root Pattern</strong>: <code>BankAccountAggregate</code> validates commands (<code>Open</code>, <code>Deposit</code>, <code>Withdraw</code>, <code>Close</code>) against current business rules and emits immutable domain events.</li>
+<li><strong>Append-Only Event Store</strong>: Stores events ordered by monotonic version per stream (<code>AccountId</code>).</li>
+<li><strong>Optimistic Concurrency Control</strong>: Employs <code>ExpectedVersion</code> checking during append operations to detect and reject concurrent write collisions (<code>OptimisticConcurrencyException</code>).</li>
+<li><strong>State Reconstruction & Snapshotting</strong>: Rebuilds aggregate state by applying events sequentially. Periodic snapshots bound replay time from $O(N)$ to $O(k)$ where $k \le \text{snapshot interval}$.</li>
+<li><strong>CQRS Read-Model Projections</strong>: Separates the write model from the query model. An <code>AccountProjectionManager</code> listens to committed events and materializes denormalized read views (<code>AccountSummaryView</code>) optimized for high-speed queries.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                  Command: Deposit($100)
+                           │
+                           ▼
+               ┌───────────────────────┐
+               │ BankAccountAggregate  │ ──(Validate Business Rules)
+               └───────────┬───────────┘
+                           │
+                 Emit FundsDepositedEvent
+                           │
+                           ▼
+               ┌───────────────────────┐
+               │      Event Store      │ (Append-Only Stream)
+               │ (ExpectedVersion = 2) │
+               └───────────┬───────────┘
+                           │
+              ┌────────────┴────────────┐
+              ▼                         ▼
+    ┌───────────────────┐     ┌───────────────────┐
+    │  State Snapshot   │     │ CQRS Read View    │
+    │  (Every N Events) │     │ (Projection View) │
+    └───────────────────┘     └───────────────────┘</code></pre></div>
+<hr/>
+<h2>LeetCode #131: Palindrome Partitioning (Medium)</h2>
+<p>Partition string $s$ such that every substring is a palindrome:</p>
+<ul>
+<li><strong>DP Precomputation</strong>: Constructs a 2D boolean dynamic programming table <code>dp[i, j]</code> where <code>dp[i, j] = true</code> if <code>s[i..j]</code> is a palindrome. Base cases handle length 1 and 2; transitions evaluate <code>s[i] == s[j] &amp;&amp; dp[i+1, j-1]</code>.</li>
+<li><strong>Backtracking</strong>: Traverses partitions using $O(1)$ DP palindrome verification, avoiding redundant $O(K)$ string reversal checks per branch.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day40-EventSourcing-CQRS/tests/Day40.EventSourcing.Tests/Day40.EventSourcing.Tests.csproj</code></pre></div>
+<p>10 unit tests validate aggregate business rules, event store append/replay, optimistic concurrency conflict detection, snapshot rehydration, CQRS read view projections, and palindrome partitioning.</p>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is Event Sourcing, and how does it fundamentally differ from traditional CRUD persistence?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>CRUD (Create, Read, Update, Delete)</strong>: Directly mutates the current snapshot of an entity in a database table. Prior states are overwritten and lost unless secondary audit tables are maintained.</li>
+<li><strong>Event Sourcing</strong>: Replaces mutable tables with an immutable, append-only log of domain events (<code>AccountOpened</code>, <code>FundsDeposited</code>, <code>FundsWithdrawn</code>).</li>
+<li>Current state is not stored as the primary source of truth; it is derived by replaying (folding) all past events from genesis to present.</li>
+<li>Guarantees 100% auditability, eliminates object-relational mapping impedance mismatch, enables time-travel debugging, and provides native event publishing for microservice event-driven choreography.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is CQRS, and why is it frequently paired with Event Sourcing?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>CQRS (Command Query Responsibility Segregation) separates data modification (Commands) from data retrieval (Queries):</p>
+<ul>
+<li><strong>Why paired</strong>: An event-sourced write model is structurally an append-only log (<code>StreamId</code>, <code>Version</code>, <code>Payload</code>). Querying complex relational filters (e.g., "Find all accounts in California with balance > \$5,000 created in 2024") on an append-only event log would require replaying every event in the entire database, which is $O(N)$ and prohibitively expensive.</li>
+<li><strong>Solution</strong>: Event handlers listen to committed events and project (materialize) them into read-optimized SQL tables, Elasticsearch indices, or Redis caches. Commands hit the aggregate; queries hit the projections.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you implement Optimistic Concurrency Control in an append-only Event Store?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>When loading an aggregate root to execute a command, record its current version (e.g. <code>Version = 4</code>).</li>
+<li>The aggregate executes business logic and emits new uncommitted events (e.g., versions 5 and 6).</li>
+<li>The event store executes an atomic append:</li>
+</ol>
+<p><code>INSERT INTO events (stream_id, version, payload) VALUES ...</code></p>
+<ol>
+<li>The database enforces a unique composite constraint on <code>(stream_id, version)</code> or checks <code>WHERE stream_id = @id AND version = @expectedVersion</code>.</li>
+<li>If another concurrent request already appended version 5, the insert fails with a unique constraint violation.</li>
+<li>The application catches this error, raises an <code>OptimisticConcurrencyException</code>, reloads the fresh aggregate state, and retries the command.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is Snapshotting in Event Sourcing, and when should it be triggered?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>As an entity's lifecycle lengthens, replaying thousands of historical events on every load degrades latency ($O(N)$ event deserialization).</p>
+<ul>
+<li><strong>Snapshotting</strong>: The system periodically serializes the aggregate's in-memory state alongside its version (e.g., at version 100, <code>AccountSnapshot(Balance=1500, Version=100)</code>).</li>
+<li>When loading the aggregate, fetch the newest snapshot first ($O(1)$) and only replay events with <code>Version &gt; Snapshot.Version</code>.</li>
+<li><strong>Triggers</strong>: Periodic threshold (every $N=100$ events), time-based, or asynchronous background snapshot worker.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you handle schema evolution and breaking changes in immutable domain events (&quot;Versioning Events&quot;)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Because events are immutable and persisted permanently, old events cannot be casually rewritten in the database.</p>
+<ul>
+<li><strong>Strategies</strong>:</li>
+</ul>
+<ol>
+<li><strong>Upcasting</strong>: Middleware intercepts raw JSON during deserialization. If an event is version 1, an upcaster transforms it into version 2 schema (e.g., splitting <code>FullName</code> into <code>FirstName</code> and <code>LastName</code>) before handing it to the aggregate.</li>
+<li><strong>Additive Schema Evolution</strong>: Make changes backward-compatible: new properties must be nullable or have safe defaults; never delete or rename properties.</li>
+<li><strong>Event Migration / Copy-and-Replace</strong>: Create a background migration script that reads from stream V1, translates events, and writes to stream V2.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you guarantee idempotency and &quot;at-least-once&quot; projection updates in CQRS?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Projections subscribe to the event stream over message brokers or database change data capture (CDC).</p>
+<ul>
+<li>Network glitches cause event re-deliveries.</li>
+<li><strong>Projection Idempotency</strong>:</li>
+<li>Maintain a <code>last_processed_version</code> column in the projection database within the <strong>same local transaction</strong> as the projection update:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">    UPDATE account_views 
+    SET balance = balance + @amount, last_version = @version 
+    WHERE account_id = @id AND last_version = @version - 1;</code></pre></div>
+<ul>
+<li>If an event with <code>version &lt;= last_version</code> arrives, the projection ignores it, preventing duplicate mutations.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How do you comply with GDPR &quot;Right to be Forgotten&quot; in an immutable Event Store?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>GDPR requires permanently deleting personal identifiable data (PII), which conflicts with append-only immutability.</p>
+<ul>
+<li><strong>Crypto-Shredding (Cryptographic Erasure)</strong>:</li>
+<li>Personal data fields (name, email, SSN) inside domain events are encrypted with a unique per-user symmetric key ($K_{\text{user}}$).</li>
+<li>The keys are stored in a dedicated key vault.</li>
+<li>When the user requests account deletion, simply destroy $K_{\text{user}}$.</li>
+<li>The events remain in the append-only store preserving cryptographic hashes and stream version integrity, but the PII is permanently and irrecoverably rendered unreadable ciphertext.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #131 (Palindrome Partitioning), how does Dynamic Programming optimize the backtracking search?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>Checking if a substring $s[i..j]$ is a palindrome naively requires $O(j - i)$ two-pointer comparisons.</li>
+<li>In backtracking, the same substring is evaluated repeatedly across different partitioning prefixes.</li>
+<li>Precomputing a 2D boolean table <code>dp[i, j]</code> using the recurrence:</li>
+</ul>
+<p>$$\text{dp}[i, j] = (s[i] == s[j]) \land (j - i \le 2 \lor \text{dp}[i+1, j-1])$$</p>
+<p>takes $O(N^2)$ time once.</p>
+<ul>
+<li>During backtracking, verifying if a substring is a valid palindrome is reduced from $O(N)$ to $O(1)$ memory lookup, dramatically pruning recursive branches and reducing execution time.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">What are the primary trade-offs and downsides of Event Sourcing?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Complexity</strong>: Significantly steeper learning curve than standard CRUD; developers must think in terms of immutable facts rather than current state.</li>
+<li><strong>Eventual Consistency</strong>: Read projections are asynchronously updated, requiring UI accommodation (optimistic rendering, spinners, or polling).</li>
+<li><strong>Storage Overhead</strong>: An append-only store grows monotonically and requires partitioning, archival, and snapshotting strategies.</li>
+<li><strong>Query Impedance</strong>: Directly querying the event store for ad-hoc business reporting is impractical; an external projection layer (CQRS) is mandatory.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you test an Event-Sourced Aggregate Root?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Event-sourced aggregates are pure domain models with zero external I/O dependencies, making them exceptionally easy and fast to unit test using the <strong>Given-When-Then</strong> specification pattern:</p>
+<ul>
+<li><strong>Given</strong>: A sequence of past historical events:</li>
+</ul>
+<p><code>[AccountOpened(balance=100), FundsDeposited(amount=50)]</code></p>
+<ul>
+<li><strong>When</strong>: A command is executed:</li>
+</ul>
+<p><code>account.Withdraw(30)</code></p>
+<ul>
+<li><strong>Then</strong>: Assert that the expected domain event is emitted:</li>
+</ul>
+<p><code>[FundsWithdrawn(amount=30, version=3)]</code></p>
+<ul>
+<li>Or assert that a domain exception is thrown:</li>
+</ul>
+<p><code>account.Withdraw(500) -&gt; throws InsufficientFundsException</code></p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day40.EventSourcing/EventSourcingEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd40-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d40-src-code-0" class="language-csharp">namespace Day40.EventSourcing;
+
+public class OptimisticConcurrencyException : Exception
+{
+    public OptimisticConcurrencyException(string message) : base(message) { }
+}
+
+public interface IDomainEvent
+{
+    string StreamId { get; }
+    long Version { get; }
+    DateTime OccurredAtUtc { get; }
+}
+
+public record AccountOpenedEvent(string AccountId, string OwnerName, decimal InitialBalance, long Version, DateTime OccurredAtUtc) : IDomainEvent
+{
+    public string StreamId =&gt; AccountId;
+}
+
+public record FundsDepositedEvent(string AccountId, decimal Amount, long Version, DateTime OccurredAtUtc) : IDomainEvent
+{
+    public string StreamId =&gt; AccountId;
+}
+
+public record FundsWithdrawnEvent(string AccountId, decimal Amount, long Version, DateTime OccurredAtUtc) : IDomainEvent
+{
+    public string StreamId =&gt; AccountId;
+}
+
+public record AccountClosedEvent(string AccountId, string Reason, long Version, DateTime OccurredAtUtc) : IDomainEvent
+{
+    public string StreamId =&gt; AccountId;
+}
+
+public record AccountSnapshot(string AccountId, string OwnerName, decimal Balance, bool IsClosed, long Version);
+
+public class BankAccountAggregate
+{
+    public string Id { get; private set; } = string.Empty;
+    public string OwnerName { get; private set; } = string.Empty;
+    public decimal Balance { get; private set; } = 0m;
+    public bool IsClosed { get; private set; } = false;
+    public long Version { get; private set; } = 0;
+
+    private readonly List&lt;IDomainEvent&gt; _uncommittedEvents = new();
+    public IReadOnlyList&lt;IDomainEvent&gt; UncommittedEvents =&gt; _uncommittedEvents.ToList();
+
+    public void ClearUncommittedEvents() =&gt; _uncommittedEvents.Clear();
+
+    public void LoadFromHistory(IEnumerable&lt;IDomainEvent&gt; history)
+    {
+        foreach (var evt in history)
+        {
+            Apply(evt);
+            Version = evt.Version;
+        }
+    }
+
+    public void RestoreFromSnapshot(AccountSnapshot snapshot)
+    {
+        Id = snapshot.AccountId;
+        OwnerName = snapshot.OwnerName;
+        Balance = snapshot.Balance;
+        IsClosed = snapshot.IsClosed;
+        Version = snapshot.Version;
+    }
+
+    public void Open(string accountId, string ownerName, decimal initialBalance)
+    {
+        if (Version &gt; 0) throw new InvalidOperationException(&quot;Account is already open&quot;);
+        if (initialBalance &lt; 0) throw new ArgumentException(&quot;Initial balance cannot be negative&quot;);
+
+        Emit(new AccountOpenedEvent(accountId, ownerName, initialBalance, Version + 1, DateTime.UtcNow));
+    }
+
+    public void Deposit(decimal amount)
+    {
+        if (IsClosed) throw new InvalidOperationException(&quot;Cannot deposit to closed account&quot;);
+        if (amount &lt;= 0) throw new ArgumentException(&quot;Deposit must be positive&quot;);
+
+        Emit(new FundsDepositedEvent(Id, amount, Version + 1, DateTime.UtcNow));
+    }
+
+    public void Withdraw(decimal amount)
+    {
+        if (IsClosed) throw new InvalidOperationException(&quot;Cannot withdraw from closed account&quot;);
+        if (amount &lt;= 0) throw new ArgumentException(&quot;Withdrawal must be positive&quot;);
+        if (Balance &lt; amount) throw new InvalidOperationException(&quot;Insufficient funds&quot;);
+
+        Emit(new FundsWithdrawnEvent(Id, amount, Version + 1, DateTime.UtcNow));
+    }
+
+    public void Close(string reason)
+    {
+        if (IsClosed) throw new InvalidOperationException(&quot;Account is already closed&quot;);
+        Emit(new AccountClosedEvent(Id, reason, Version + 1, DateTime.UtcNow));
+    }
+
+    private void Emit(IDomainEvent evt)
+    {
+        Apply(evt);
+        Version = evt.Version;
+        _uncommittedEvents.Add(evt);
+    }
+
+    private void Apply(IDomainEvent evt)
+    {
+        switch (evt)
+        {
+            case AccountOpenedEvent opened:
+                Id = opened.AccountId;
+                OwnerName = opened.OwnerName;
+                Balance = opened.InitialBalance;
+                IsClosed = false;
+                break;
+            case FundsDepositedEvent deposited:
+                Balance += deposited.Amount;
+                break;
+            case FundsWithdrawnEvent withdrawn:
+                Balance -= withdrawn.Amount;
+                break;
+            case AccountClosedEvent:
+                IsClosed = true;
+                break;
+        }
+    }
+}
+
+public class EventStore
+{
+    private readonly Dictionary&lt;string, List&lt;IDomainEvent&gt;&gt; _streams = new();
+    private readonly Dictionary&lt;string, AccountSnapshot&gt; _snapshots = new();
+    private readonly object _lock = new();
+
+    public event Action&lt;IDomainEvent&gt;? EventAppended;
+
+    public void AppendEvents(string streamId, long expectedVersion, IEnumerable&lt;IDomainEvent&gt; newEvents)
+    {
+        lock (_lock)
+        {
+            if (!_streams.TryGetValue(streamId, out var stream))
+            {
+                stream = new List&lt;IDomainEvent&gt;();
+                _streams[streamId] = stream;
+            }
+
+            long currentVersion = stream.Count &gt; 0 ? stream[^1].Version : 0;
+            if (currentVersion != expectedVersion)
+            {
+                throw new OptimisticConcurrencyException(
+                    $&quot;Stream &#x27;{streamId}&#x27; concurrency conflict. Expected version {expectedVersion}, actual {currentVersion}.&quot;);
+            }
+
+            foreach (var evt in newEvents)
+            {
+                stream.Add(evt);
+                EventAppended?.Invoke(evt);
+            }
+        }
+    }
+
+    public void SaveSnapshot(string streamId, AccountSnapshot snapshot)
+    {
+        lock (_lock)
+        {
+            _snapshots[streamId] = snapshot;
+        }
+    }
+
+    public BankAccountAggregate LoadAggregate(string streamId)
+    {
+        lock (_lock)
+        {
+            var aggregate = new BankAccountAggregate();
+            long fromVersion = 0;
+
+            if (_snapshots.TryGetValue(streamId, out var snapshot))
+            {
+                aggregate.RestoreFromSnapshot(snapshot);
+                fromVersion = snapshot.Version;
+            }
+
+            if (_streams.TryGetValue(streamId, out var stream))
+            {
+                var subsequentEvents = stream.Where(e =&gt; e.Version &gt; fromVersion);
+                aggregate.LoadFromHistory(subsequentEvents);
+            }
+
+            return aggregate;
+        }
+    }
+}
+
+public record AccountSummaryView(string AccountId, string OwnerName, decimal CurrentBalance, int TransactionCount, string Status);
+
+public class AccountProjectionManager
+{
+    private readonly Dictionary&lt;string, AccountSummaryView&gt; _readViews = new();
+    private readonly object _lock = new();
+
+    public AccountProjectionManager(EventStore eventStore)
+    {
+        eventStore.EventAppended += Project;
+    }
+
+    public AccountSummaryView? GetAccountView(string accountId)
+    {
+        lock (_lock)
+        {
+            return _readViews.TryGetValue(accountId, out var view) ? view : null;
+        }
+    }
+
+    private void Project(IDomainEvent evt)
+    {
+        lock (_lock)
+        {
+            switch (evt)
+            {
+                case AccountOpenedEvent opened:
+                    _readViews[opened.AccountId] = new AccountSummaryView(
+                        opened.AccountId,
+                        opened.OwnerName,
+                        opened.InitialBalance,
+                        TransactionCount: 1,
+                        Status: &quot;Active&quot;
+                    );
+                    break;
+                case FundsDepositedEvent deposited:
+                    if (_readViews.TryGetValue(deposited.AccountId, out var currentDep))
+                    {
+                        _readViews[deposited.AccountId] = currentDep with
+                        {
+                            CurrentBalance = currentDep.CurrentBalance + deposited.Amount,
+                            TransactionCount = currentDep.TransactionCount + 1
+                        };
+                    }
+                    break;
+                case FundsWithdrawnEvent withdrawn:
+                    if (_readViews.TryGetValue(withdrawn.AccountId, out var currentWd))
+                    {
+                        _readViews[withdrawn.AccountId] = currentWd with
+                        {
+                            CurrentBalance = currentWd.CurrentBalance - withdrawn.Amount,
+                            TransactionCount = currentWd.TransactionCount + 1
+                        };
+                    }
+                    break;
+                case AccountClosedEvent closed:
+                    if (_readViews.TryGetValue(closed.AccountId, out var currentCl))
+                    {
+                        _readViews[closed.AccountId] = currentCl with
+                        {
+                            Status = &quot;Closed&quot;,
+                            TransactionCount = currentCl.TransactionCount + 1
+                        };
+                    }
+                    break;
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day40.EventSourcing/PalindromePartitioningSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd40-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d40-src-code-1" class="language-csharp">namespace Day40.EventSourcing;
+
+public static class PalindromePartitioningSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #131: Palindrome Partitioning (Medium).
+    /// Uses DP precomputation table to check palindromes in O(1) time during backtracking.
+    /// Time Complexity: O(N * 2^N), Space Complexity: O(N^2) for DP table + O(N) recursion stack.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;string&gt;&gt; Partition(string s)
+    {
+        var result = new List&lt;IList&lt;string&gt;&gt;();
+        if (string.IsNullOrEmpty(s)) return result;
+
+        int n = s.Length;
+        // DP table: dp[i, j] is true if substring s[i..j] is a palindrome
+        var dp = new bool[n, n];
+
+        for (int i = 0; i &lt; n; i++)
+        {
+            dp[i, i] = true;
+        }
+
+        for (int len = 2; len &lt;= n; len++)
+        {
+            for (int i = 0; i &lt;= n - len; i++)
+            {
+                int j = i + len - 1;
+                if (s[i] == s[j])
+                {
+                    dp[i, j] = len == 2 || dp[i + 1, j - 1];
+                }
+            }
+        }
+
+        var current = new List&lt;string&gt;();
+        Backtrack(s, 0, dp, current, result);
+        return result;
+    }
+
+    private static void Backtrack(string s, int start, bool[,] dp, List&lt;string&gt; current, List&lt;IList&lt;string&gt;&gt; result)
+    {
+        if (start == s.Length)
+        {
+            result.Add(new List&lt;string&gt;(current));
+            return;
+        }
+
+        for (int end = start; end &lt; s.Length; end++)
+        {
+            if (dp[start, end])
+            {
+                current.Add(s.Substring(start, end - start + 1));
+                Backtrack(s, end + 1, dp, current, result);
+                current.RemoveAt(current.Count - 1);
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day40.EventSourcing.Tests/Day40Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd40-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d40-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day40.EventSourcing.Tests;
+
+public class Day40Tests
+{
+    [Fact]
+    public void BankAccountAggregate_DepositAndWithdraw_CalculatesCorrectBalance()
+    {
+        var account = new BankAccountAggregate();
+        account.Open(&quot;acc-101&quot;, &quot;Alice&quot;, 100m);
+        account.Deposit(50m);
+        account.Withdraw(30m);
+
+        Assert.Equal(&quot;acc-101&quot;, account.Id);
+        Assert.Equal(&quot;Alice&quot;, account.OwnerName);
+        Assert.Equal(120m, account.Balance);
+        Assert.Equal(3, account.Version);
+        Assert.Equal(3, account.UncommittedEvents.Count);
+    }
+
+    [Fact]
+    public void BankAccountAggregate_WithdrawExceedingBalance_ThrowsInvalidOperationException()
+    {
+        var account = new BankAccountAggregate();
+        account.Open(&quot;acc-102&quot;, &quot;Bob&quot;, 50m);
+
+        var ex = Assert.Throws&lt;InvalidOperationException&gt;(() =&gt; account.Withdraw(100m));
+        Assert.Contains(&quot;Insufficient funds&quot;, ex.Message);
+    }
+
+    [Fact]
+    public void EventStore_AppendAndLoadAggregate_ReconstructsStateFromEvents()
+    {
+        var store = new EventStore();
+        var account = new BankAccountAggregate();
+
+        account.Open(&quot;acc-103&quot;, &quot;Charlie&quot;, 200m);
+        account.Deposit(100m);
+        account.Withdraw(50m);
+
+        store.AppendEvents(account.Id, expectedVersion: 0, account.UncommittedEvents);
+
+        // Load fresh aggregate purely from event history replay
+        var rehydrated = store.LoadAggregate(&quot;acc-103&quot;);
+
+        Assert.Equal(&quot;acc-103&quot;, rehydrated.Id);
+        Assert.Equal(&quot;Charlie&quot;, rehydrated.OwnerName);
+        Assert.Equal(250m, rehydrated.Balance);
+        Assert.Equal(3, rehydrated.Version);
+        Assert.Empty(rehydrated.UncommittedEvents);
+    }
+
+    [Fact]
+    public void EventStore_OptimisticConcurrencyConflict_ThrowsException()
+    {
+        var store = new EventStore();
+        var account = new BankAccountAggregate();
+        account.Open(&quot;acc-104&quot;, &quot;David&quot;, 50m);
+        store.AppendEvents(&quot;acc-104&quot;, expectedVersion: 0, account.UncommittedEvents);
+
+        // Another thread attempts to append assuming version 0 when version is already 1
+        var conflictingAccount = new BankAccountAggregate();
+        conflictingAccount.Open(&quot;acc-104&quot;, &quot;David Duplicate&quot;, 100m);
+
+        Assert.Throws&lt;OptimisticConcurrencyException&gt;(() =&gt;
+        {
+            store.AppendEvents(&quot;acc-104&quot;, expectedVersion: 0, conflictingAccount.UncommittedEvents);
+        });
+    }
+
+    [Fact]
+    public void EventStore_SnapshotRestore_AcceleratesReplayFromSnapshot()
+    {
+        var store = new EventStore();
+        string accId = &quot;acc-105&quot;;
+
+        var acc = new BankAccountAggregate();
+        acc.Open(accId, &quot;Eve&quot;, 1000m);
+        acc.Deposit(500m); // Version 2, Balance 1500
+        store.AppendEvents(accId, 0, acc.UncommittedEvents);
+        acc.ClearUncommittedEvents();
+
+        // Create snapshot at Version 2
+        var snapshot = new AccountSnapshot(acc.Id, acc.OwnerName, acc.Balance, acc.IsClosed, acc.Version);
+        store.SaveSnapshot(accId, snapshot);
+
+        // Subsequent events after snapshot
+        acc.Deposit(200m); // Version 3
+        acc.Withdraw(100m); // Version 4
+        store.AppendEvents(accId, expectedVersion: 2, acc.UncommittedEvents);
+
+        // Load aggregate: should restore snapshot (v=2, 1500), then replay v=3 and v=4
+        var rehydrated = store.LoadAggregate(accId);
+
+        Assert.Equal(1600m, rehydrated.Balance);
+        Assert.Equal(4, rehydrated.Version);
+    }
+
+    [Fact]
+    public void AccountProjectionManager_MaterializesCQRSReadView()
+    {
+        var store = new EventStore();
+        var projection = new AccountProjectionManager(store);
+
+        var acc = new BankAccountAggregate();
+        acc.Open(&quot;acc-106&quot;, &quot;Frank&quot;, 500m);
+        acc.Deposit(250m);
+        acc.Withdraw(100m);
+        acc.Close(&quot;Customer request&quot;);
+
+        store.AppendEvents(acc.Id, 0, acc.UncommittedEvents);
+
+        var view = projection.GetAccountView(&quot;acc-106&quot;);
+
+        Assert.NotNull(view);
+        Assert.Equal(&quot;acc-106&quot;, view.AccountId);
+        Assert.Equal(&quot;Frank&quot;, view.OwnerName);
+        Assert.Equal(650m, view.CurrentBalance);
+        Assert.Equal(4, view.TransactionCount);
+        Assert.Equal(&quot;Closed&quot;, view.Status);
+    }
+
+    [Fact]
+    public void PalindromePartitioning_ExampleString_ReturnsAllValidPartitions()
+    {
+        string s = &quot;aab&quot;;
+        var partitions = PalindromePartitioningSolver.Partition(s);
+
+        // Expected: [[&quot;a&quot;,&quot;a&quot;,&quot;b&quot;], [&quot;aa&quot;,&quot;b&quot;]]
+        Assert.Equal(2, partitions.Count);
+        Assert.Contains(partitions, p =&gt; p.SequenceEqual([&quot;a&quot;, &quot;a&quot;, &quot;b&quot;]));
+        Assert.Contains(partitions, p =&gt; p.SequenceEqual([&quot;aa&quot;, &quot;b&quot;]));
+    }
+
+    [Fact]
+    public void PalindromePartitioning_SingleCharacterString_ReturnsSinglePartition()
+    {
+        var partitions = PalindromePartitioningSolver.Partition(&quot;a&quot;);
+
+        Assert.Single(partitions);
+        Assert.Equal([&quot;a&quot;], partitions[0]);
+    }
+
+    [Fact]
+    public void PalindromePartitioning_AllSameCharacters_ReturnsAllCombinations()
+    {
+        string s = &quot;aaa&quot;;
+        var partitions = PalindromePartitioningSolver.Partition(s);
+
+        // For &quot;aaa&quot;: [&quot;a&quot;,&quot;a&quot;,&quot;a&quot;], [&quot;a&quot;,&quot;aa&quot;], [&quot;aa&quot;,&quot;a&quot;], [&quot;aaa&quot;] -&gt; 4
+        Assert.Equal(4, partitions.Count);
+        Assert.Contains(partitions, p =&gt; p.SequenceEqual([&quot;a&quot;, &quot;a&quot;, &quot;a&quot;]));
+        Assert.Contains(partitions, p =&gt; p.SequenceEqual([&quot;aaa&quot;]));
+    }
+
+    [Fact]
+    public void PalindromePartitioning_NoPalindromesBeyondSingleChars_ReturnsSingleCharacterList()
+    {
+        string s = &quot;abc&quot;;
+        var partitions = PalindromePartitioningSolver.Partition(s);
+
+        Assert.Single(partitions);
+        Assert.Equal([&quot;a&quot;, &quot;b&quot;, &quot;c&quot;], partitions[0]);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: Event Sourcing & CQRS Pattern</h1>
+<h2>1. Event Sourcing Core Principles</h2>
+<ul>
+<li><strong>State as a Left Fold</strong>:</li>
+<li>In CRUD, <code>UPDATE accounts SET balance = 150 WHERE id = 1</code> destroys the history of how the balance became 150.</li>
+<li>In Event Sourcing, state is derived:</li>
+</ul>
+<p><code>state = events.Aggregate(initial, (acc, evt) =&gt; acc.Apply(evt))</code></p>
+<ul>
+<li>The Event Store is the single source of truth.</li>
+<li><strong>Optimistic Concurrency Control (OCC)</strong>:</li>
+<li>Stream table schema: <code>(stream_id, version, payload, timestamp)</code> with unique constraint on <code>(stream_id, version)</code>.</li>
+<li>When appending, specify <code>ExpectedVersion</code>. If another process appended version 3 first, the unique constraint or check fails, aborting the write and forcing the caller to reload and re-evaluate business logic.</li>
+</ul>
+<h2>2. CQRS (Command Query Responsibility Segregation)</h2>
+<ul>
+<li><strong>Asymmetric Scaling</strong>:</li>
+<li>Most business systems have an 80:20 or 99:1 read-to-write ratio.</li>
+<li>Write Model: Optimized for transactional integrity, validation, and zero locks (aggregates write to append-only tables).</li>
+<li>Read Model: Optimized for queries (denormalized relational tables, Elasticsearch indices, or Redis hashes).</li>
+<li><strong>Handling Eventual Consistency in UI</strong>:</li>
+<li>Because read projections update asynchronously after the event is committed, a read immediately following a write might not show the new item.</li>
+<li><strong>Mitigation Strategies</strong>:</li>
+</ul>
+<ol>
+<li>Optimistic UI update: The client updates local UI state immediately.</li>
+<li>Read-your-own-writes session token: Query model waits until projected version $\ge$ token version before responding.</li>
+</ol>
+<h2>3. LeetCode #131: Palindrome Partitioning DP Optimization</h2>
+<ul>
+<li>A naive check reverses every substring, taking $O(K)$ time per substring. With $2^N$ possible partition combinations, this wastes CPU cycles.</li>
+<li><strong>DP Table Formulation</strong>:</li>
+<li>Let <code>dp[i, j]</code> represent whether <code>s[i..j]</code> is a palindrome.</li>
+<li>Base case: <code>dp[i, i] = true</code> for all $i$.</li>
+<li>For substrings of length $L \ge 2$:</li>
+</ul>
+<p>$$\text{dp}[i, j] = (s[i] == s[j]) \land (L == 2 \lor \text{dp}[i+1, j-1])$$</p>
+<ul>
+<li>Filling the DP table takes $O(N^2)$ time once up front. Then, each palindrome check in the backtracking loop is a lightning-fast $O(1)$ table lookup.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 40: Event Sourcing & CQRS Foundations</h1>
+<h2>Architectural Overview</h2>
+<p>Traditional CRUD applications mutate state in place, overwriting historical data and making auditing, time-travel debugging, and distributed synchronization complex.</p>
+<p><strong>Event Sourcing</strong> models application state as an append-only sequence of immutable domain events:</p>
+<p>$$\text{Current State} = \text{FoldLeft}(\text{Initial State},\; \text{Events})$$</p>
+<p>This module implements enterprise Event Sourcing and CQRS (Command Query Responsibility Segregation) in .NET 8:</p>
+<ul>
+<li><strong>Aggregate Root Pattern</strong>: <code>BankAccountAggregate</code> validates commands (<code>Open</code>, <code>Deposit</code>, <code>Withdraw</code>, <code>Close</code>) against current business rules and emits immutable domain events.</li>
+<li><strong>Append-Only Event Store</strong>: Stores events ordered by monotonic version per stream (<code>AccountId</code>).</li>
+<li><strong>Optimistic Concurrency Control</strong>: Employs <code>ExpectedVersion</code> checking during append operations to detect and reject concurrent write collisions (<code>OptimisticConcurrencyException</code>).</li>
+<li><strong>State Reconstruction & Snapshotting</strong>: Rebuilds aggregate state by applying events sequentially. Periodic snapshots bound replay time from $O(N)$ to $O(k)$ where $k \le \text{snapshot interval}$.</li>
+<li><strong>CQRS Read-Model Projections</strong>: Separates the write model from the query model. An <code>AccountProjectionManager</code> listens to committed events and materializes denormalized read views (<code>AccountSummaryView</code>) optimized for high-speed queries.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                  Command: Deposit($100)
+                           │
+                           ▼
+               ┌───────────────────────┐
+               │ BankAccountAggregate  │ ──(Validate Business Rules)
+               └───────────┬───────────┘
+                           │
+                 Emit FundsDepositedEvent
+                           │
+                           ▼
+               ┌───────────────────────┐
+               │      Event Store      │ (Append-Only Stream)
+               │ (ExpectedVersion = 2) │
+               └───────────┬───────────┘
+                           │
+              ┌────────────┴────────────┐
+              ▼                         ▼
+    ┌───────────────────┐     ┌───────────────────┐
+    │  State Snapshot   │     │ CQRS Read View    │
+    │  (Every N Events) │     │ (Projection View) │
+    └───────────────────┘     └───────────────────┘</code></pre></div>
+<hr/>
+<h2>LeetCode #131: Palindrome Partitioning (Medium)</h2>
+<p>Partition string $s$ such that every substring is a palindrome:</p>
+<ul>
+<li><strong>DP Precomputation</strong>: Constructs a 2D boolean dynamic programming table <code>dp[i, j]</code> where <code>dp[i, j] = true</code> if <code>s[i..j]</code> is a palindrome. Base cases handle length 1 and 2; transitions evaluate <code>s[i] == s[j] &amp;&amp; dp[i+1, j-1]</code>.</li>
+<li><strong>Backtracking</strong>: Traverses partitions using $O(1)$ DP palindrome verification, avoiding redundant $O(K)$ string reversal checks per branch.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day40-EventSourcing-CQRS/tests/Day40.EventSourcing.Tests/Day40.EventSourcing.Tests.csproj</code></pre></div>
+<p>10 unit tests validate aggregate business rules, event store append/replay, optimistic concurrency conflict detection, snapshot rehydration, CQRS read view projections, and palindrome partitioning.</p>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is Event Sourcing, and how does it fundamentally differ from traditional CRUD persistence?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>CRUD (Create, Read, Update, Delete)</strong>: Directly mutates the current snapshot of an entity in a database table. Prior states are overwritten and lost unless secondary audit tables are maintained.</li>
+<li><strong>Event Sourcing</strong>: Replaces mutable tables with an immutable, append-only log of domain events (<code>AccountOpened</code>, <code>FundsDeposited</code>, <code>FundsWithdrawn</code>).</li>
+<li>Current state is not stored as the primary source of truth; it is derived by replaying (folding) all past events from genesis to present.</li>
+<li>Guarantees 100% auditability, eliminates object-relational mapping impedance mismatch, enables time-travel debugging, and provides native event publishing for microservice event-driven choreography.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is CQRS, and why is it frequently paired with Event Sourcing?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>CQRS (Command Query Responsibility Segregation) separates data modification (Commands) from data retrieval (Queries):</p>
+<ul>
+<li><strong>Why paired</strong>: An event-sourced write model is structurally an append-only log (<code>StreamId</code>, <code>Version</code>, <code>Payload</code>). Querying complex relational filters (e.g., "Find all accounts in California with balance > \$5,000 created in 2024") on an append-only event log would require replaying every event in the entire database, which is $O(N)$ and prohibitively expensive.</li>
+<li><strong>Solution</strong>: Event handlers listen to committed events and project (materialize) them into read-optimized SQL tables, Elasticsearch indices, or Redis caches. Commands hit the aggregate; queries hit the projections.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you implement Optimistic Concurrency Control in an append-only Event Store?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>When loading an aggregate root to execute a command, record its current version (e.g. <code>Version = 4</code>).</li>
+<li>The aggregate executes business logic and emits new uncommitted events (e.g., versions 5 and 6).</li>
+<li>The event store executes an atomic append:</li>
+</ol>
+<p><code>INSERT INTO events (stream_id, version, payload) VALUES ...</code></p>
+<ol>
+<li>The database enforces a unique composite constraint on <code>(stream_id, version)</code> or checks <code>WHERE stream_id = @id AND version = @expectedVersion</code>.</li>
+<li>If another concurrent request already appended version 5, the insert fails with a unique constraint violation.</li>
+<li>The application catches this error, raises an <code>OptimisticConcurrencyException</code>, reloads the fresh aggregate state, and retries the command.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is Snapshotting in Event Sourcing, and when should it be triggered?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>As an entity's lifecycle lengthens, replaying thousands of historical events on every load degrades latency ($O(N)$ event deserialization).</p>
+<ul>
+<li><strong>Snapshotting</strong>: The system periodically serializes the aggregate's in-memory state alongside its version (e.g., at version 100, <code>AccountSnapshot(Balance=1500, Version=100)</code>).</li>
+<li>When loading the aggregate, fetch the newest snapshot first ($O(1)$) and only replay events with <code>Version &gt; Snapshot.Version</code>.</li>
+<li><strong>Triggers</strong>: Periodic threshold (every $N=100$ events), time-based, or asynchronous background snapshot worker.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you handle schema evolution and breaking changes in immutable domain events (&quot;Versioning Events&quot;)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Because events are immutable and persisted permanently, old events cannot be casually rewritten in the database.</p>
+<ul>
+<li><strong>Strategies</strong>:</li>
+</ul>
+<ol>
+<li><strong>Upcasting</strong>: Middleware intercepts raw JSON during deserialization. If an event is version 1, an upcaster transforms it into version 2 schema (e.g., splitting <code>FullName</code> into <code>FirstName</code> and <code>LastName</code>) before handing it to the aggregate.</li>
+<li><strong>Additive Schema Evolution</strong>: Make changes backward-compatible: new properties must be nullable or have safe defaults; never delete or rename properties.</li>
+<li><strong>Event Migration / Copy-and-Replace</strong>: Create a background migration script that reads from stream V1, translates events, and writes to stream V2.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you guarantee idempotency and &quot;at-least-once&quot; projection updates in CQRS?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Projections subscribe to the event stream over message brokers or database change data capture (CDC).</p>
+<ul>
+<li>Network glitches cause event re-deliveries.</li>
+<li><strong>Projection Idempotency</strong>:</li>
+<li>Maintain a <code>last_processed_version</code> column in the projection database within the <strong>same local transaction</strong> as the projection update:</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">    UPDATE account_views 
+    SET balance = balance + @amount, last_version = @version 
+    WHERE account_id = @id AND last_version = @version - 1;</code></pre></div>
+<ul>
+<li>If an event with <code>version &lt;= last_version</code> arrives, the projection ignores it, preventing duplicate mutations.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How do you comply with GDPR &quot;Right to be Forgotten&quot; in an immutable Event Store?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>GDPR requires permanently deleting personal identifiable data (PII), which conflicts with append-only immutability.</p>
+<ul>
+<li><strong>Crypto-Shredding (Cryptographic Erasure)</strong>:</li>
+<li>Personal data fields (name, email, SSN) inside domain events are encrypted with a unique per-user symmetric key ($K_{\text{user}}$).</li>
+<li>The keys are stored in a dedicated key vault.</li>
+<li>When the user requests account deletion, simply destroy $K_{\text{user}}$.</li>
+<li>The events remain in the append-only store preserving cryptographic hashes and stream version integrity, but the PII is permanently and irrecoverably rendered unreadable ciphertext.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #131 (Palindrome Partitioning), how does Dynamic Programming optimize the backtracking search?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>Checking if a substring $s[i..j]$ is a palindrome naively requires $O(j - i)$ two-pointer comparisons.</li>
+<li>In backtracking, the same substring is evaluated repeatedly across different partitioning prefixes.</li>
+<li>Precomputing a 2D boolean table <code>dp[i, j]</code> using the recurrence:</li>
+</ul>
+<p>$$\text{dp}[i, j] = (s[i] == s[j]) \land (j - i \le 2 \lor \text{dp}[i+1, j-1])$$</p>
+<p>takes $O(N^2)$ time once.</p>
+<ul>
+<li>During backtracking, verifying if a substring is a valid palindrome is reduced from $O(N)$ to $O(1)$ memory lookup, dramatically pruning recursive branches and reducing execution time.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">What are the primary trade-offs and downsides of Event Sourcing?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Complexity</strong>: Significantly steeper learning curve than standard CRUD; developers must think in terms of immutable facts rather than current state.</li>
+<li><strong>Eventual Consistency</strong>: Read projections are asynchronously updated, requiring UI accommodation (optimistic rendering, spinners, or polling).</li>
+<li><strong>Storage Overhead</strong>: An append-only store grows monotonically and requires partitioning, archival, and snapshotting strategies.</li>
+<li><strong>Query Impedance</strong>: Directly querying the event store for ad-hoc business reporting is impractical; an external projection layer (CQRS) is mandatory.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you test an Event-Sourced Aggregate Root?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Event-sourced aggregates are pure domain models with zero external I/O dependencies, making them exceptionally easy and fast to unit test using the <strong>Given-When-Then</strong> specification pattern:</p>
+<ul>
+<li><strong>Given</strong>: A sequence of past historical events:</li>
+</ul>
+<p><code>[AccountOpened(balance=100), FundsDeposited(amount=50)]</code></p>
+<ul>
+<li><strong>When</strong>: A command is executed:</li>
+</ul>
+<p><code>account.Withdraw(30)</code></p>
+<ul>
+<li><strong>Then</strong>: Assert that the expected domain event is emitted:</li>
+</ul>
+<p><code>[FundsWithdrawn(amount=30, version=3)]</code></p>
+<ul>
+<li>Or assert that a domain exception is thrown:</li>
+</ul>
+<p><code>account.Withdraw(500) -&gt; throws InsufficientFundsException</code></p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day40.EventSourcing/EventSourcingEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd40-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d40-src-code-0" class="language-csharp">namespace Day40.EventSourcing;
+
+public class OptimisticConcurrencyException : Exception
+{
+    public OptimisticConcurrencyException(string message) : base(message) { }
+}
+
+public interface IDomainEvent
+{
+    string StreamId { get; }
+    long Version { get; }
+    DateTime OccurredAtUtc { get; }
+}
+
+public record AccountOpenedEvent(string AccountId, string OwnerName, decimal InitialBalance, long Version, DateTime OccurredAtUtc) : IDomainEvent
+{
+    public string StreamId =&gt; AccountId;
+}
+
+public record FundsDepositedEvent(string AccountId, decimal Amount, long Version, DateTime OccurredAtUtc) : IDomainEvent
+{
+    public string StreamId =&gt; AccountId;
+}
+
+public record FundsWithdrawnEvent(string AccountId, decimal Amount, long Version, DateTime OccurredAtUtc) : IDomainEvent
+{
+    public string StreamId =&gt; AccountId;
+}
+
+public record AccountClosedEvent(string AccountId, string Reason, long Version, DateTime OccurredAtUtc) : IDomainEvent
+{
+    public string StreamId =&gt; AccountId;
+}
+
+public record AccountSnapshot(string AccountId, string OwnerName, decimal Balance, bool IsClosed, long Version);
+
+public class BankAccountAggregate
+{
+    public string Id { get; private set; } = string.Empty;
+    public string OwnerName { get; private set; } = string.Empty;
+    public decimal Balance { get; private set; } = 0m;
+    public bool IsClosed { get; private set; } = false;
+    public long Version { get; private set; } = 0;
+
+    private readonly List&lt;IDomainEvent&gt; _uncommittedEvents = new();
+    public IReadOnlyList&lt;IDomainEvent&gt; UncommittedEvents =&gt; _uncommittedEvents.ToList();
+
+    public void ClearUncommittedEvents() =&gt; _uncommittedEvents.Clear();
+
+    public void LoadFromHistory(IEnumerable&lt;IDomainEvent&gt; history)
+    {
+        foreach (var evt in history)
+        {
+            Apply(evt);
+            Version = evt.Version;
+        }
+    }
+
+    public void RestoreFromSnapshot(AccountSnapshot snapshot)
+    {
+        Id = snapshot.AccountId;
+        OwnerName = snapshot.OwnerName;
+        Balance = snapshot.Balance;
+        IsClosed = snapshot.IsClosed;
+        Version = snapshot.Version;
+    }
+
+    public void Open(string accountId, string ownerName, decimal initialBalance)
+    {
+        if (Version &gt; 0) throw new InvalidOperationException(&quot;Account is already open&quot;);
+        if (initialBalance &lt; 0) throw new ArgumentException(&quot;Initial balance cannot be negative&quot;);
+
+        Emit(new AccountOpenedEvent(accountId, ownerName, initialBalance, Version + 1, DateTime.UtcNow));
+    }
+
+    public void Deposit(decimal amount)
+    {
+        if (IsClosed) throw new InvalidOperationException(&quot;Cannot deposit to closed account&quot;);
+        if (amount &lt;= 0) throw new ArgumentException(&quot;Deposit must be positive&quot;);
+
+        Emit(new FundsDepositedEvent(Id, amount, Version + 1, DateTime.UtcNow));
+    }
+
+    public void Withdraw(decimal amount)
+    {
+        if (IsClosed) throw new InvalidOperationException(&quot;Cannot withdraw from closed account&quot;);
+        if (amount &lt;= 0) throw new ArgumentException(&quot;Withdrawal must be positive&quot;);
+        if (Balance &lt; amount) throw new InvalidOperationException(&quot;Insufficient funds&quot;);
+
+        Emit(new FundsWithdrawnEvent(Id, amount, Version + 1, DateTime.UtcNow));
+    }
+
+    public void Close(string reason)
+    {
+        if (IsClosed) throw new InvalidOperationException(&quot;Account is already closed&quot;);
+        Emit(new AccountClosedEvent(Id, reason, Version + 1, DateTime.UtcNow));
+    }
+
+    private void Emit(IDomainEvent evt)
+    {
+        Apply(evt);
+        Version = evt.Version;
+        _uncommittedEvents.Add(evt);
+    }
+
+    private void Apply(IDomainEvent evt)
+    {
+        switch (evt)
+        {
+            case AccountOpenedEvent opened:
+                Id = opened.AccountId;
+                OwnerName = opened.OwnerName;
+                Balance = opened.InitialBalance;
+                IsClosed = false;
+                break;
+            case FundsDepositedEvent deposited:
+                Balance += deposited.Amount;
+                break;
+            case FundsWithdrawnEvent withdrawn:
+                Balance -= withdrawn.Amount;
+                break;
+            case AccountClosedEvent:
+                IsClosed = true;
+                break;
+        }
+    }
+}
+
+public class EventStore
+{
+    private readonly Dictionary&lt;string, List&lt;IDomainEvent&gt;&gt; _streams = new();
+    private readonly Dictionary&lt;string, AccountSnapshot&gt; _snapshots = new();
+    private readonly object _lock = new();
+
+    public event Action&lt;IDomainEvent&gt;? EventAppended;
+
+    public void AppendEvents(string streamId, long expectedVersion, IEnumerable&lt;IDomainEvent&gt; newEvents)
+    {
+        lock (_lock)
+        {
+            if (!_streams.TryGetValue(streamId, out var stream))
+            {
+                stream = new List&lt;IDomainEvent&gt;();
+                _streams[streamId] = stream;
+            }
+
+            long currentVersion = stream.Count &gt; 0 ? stream[^1].Version : 0;
+            if (currentVersion != expectedVersion)
+            {
+                throw new OptimisticConcurrencyException(
+                    $&quot;Stream &#x27;{streamId}&#x27; concurrency conflict. Expected version {expectedVersion}, actual {currentVersion}.&quot;);
+            }
+
+            foreach (var evt in newEvents)
+            {
+                stream.Add(evt);
+                EventAppended?.Invoke(evt);
+            }
+        }
+    }
+
+    public void SaveSnapshot(string streamId, AccountSnapshot snapshot)
+    {
+        lock (_lock)
+        {
+            _snapshots[streamId] = snapshot;
+        }
+    }
+
+    public BankAccountAggregate LoadAggregate(string streamId)
+    {
+        lock (_lock)
+        {
+            var aggregate = new BankAccountAggregate();
+            long fromVersion = 0;
+
+            if (_snapshots.TryGetValue(streamId, out var snapshot))
+            {
+                aggregate.RestoreFromSnapshot(snapshot);
+                fromVersion = snapshot.Version;
+            }
+
+            if (_streams.TryGetValue(streamId, out var stream))
+            {
+                var subsequentEvents = stream.Where(e =&gt; e.Version &gt; fromVersion);
+                aggregate.LoadFromHistory(subsequentEvents);
+            }
+
+            return aggregate;
+        }
+    }
+}
+
+public record AccountSummaryView(string AccountId, string OwnerName, decimal CurrentBalance, int TransactionCount, string Status);
+
+public class AccountProjectionManager
+{
+    private readonly Dictionary&lt;string, AccountSummaryView&gt; _readViews = new();
+    private readonly object _lock = new();
+
+    public AccountProjectionManager(EventStore eventStore)
+    {
+        eventStore.EventAppended += Project;
+    }
+
+    public AccountSummaryView? GetAccountView(string accountId)
+    {
+        lock (_lock)
+        {
+            return _readViews.TryGetValue(accountId, out var view) ? view : null;
+        }
+    }
+
+    private void Project(IDomainEvent evt)
+    {
+        lock (_lock)
+        {
+            switch (evt)
+            {
+                case AccountOpenedEvent opened:
+                    _readViews[opened.AccountId] = new AccountSummaryView(
+                        opened.AccountId,
+                        opened.OwnerName,
+                        opened.InitialBalance,
+                        TransactionCount: 1,
+                        Status: &quot;Active&quot;
+                    );
+                    break;
+                case FundsDepositedEvent deposited:
+                    if (_readViews.TryGetValue(deposited.AccountId, out var currentDep))
+                    {
+                        _readViews[deposited.AccountId] = currentDep with
+                        {
+                            CurrentBalance = currentDep.CurrentBalance + deposited.Amount,
+                            TransactionCount = currentDep.TransactionCount + 1
+                        };
+                    }
+                    break;
+                case FundsWithdrawnEvent withdrawn:
+                    if (_readViews.TryGetValue(withdrawn.AccountId, out var currentWd))
+                    {
+                        _readViews[withdrawn.AccountId] = currentWd with
+                        {
+                            CurrentBalance = currentWd.CurrentBalance - withdrawn.Amount,
+                            TransactionCount = currentWd.TransactionCount + 1
+                        };
+                    }
+                    break;
+                case AccountClosedEvent closed:
+                    if (_readViews.TryGetValue(closed.AccountId, out var currentCl))
+                    {
+                        _readViews[closed.AccountId] = currentCl with
+                        {
+                            Status = &quot;Closed&quot;,
+                            TransactionCount = currentCl.TransactionCount + 1
+                        };
+                    }
+                    break;
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day40.EventSourcing/PalindromePartitioningSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd40-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d40-src-code-1" class="language-csharp">namespace Day40.EventSourcing;
+
+public static class PalindromePartitioningSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #131: Palindrome Partitioning (Medium).
+    /// Uses DP precomputation table to check palindromes in O(1) time during backtracking.
+    /// Time Complexity: O(N * 2^N), Space Complexity: O(N^2) for DP table + O(N) recursion stack.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;string&gt;&gt; Partition(string s)
+    {
+        var result = new List&lt;IList&lt;string&gt;&gt;();
+        if (string.IsNullOrEmpty(s)) return result;
+
+        int n = s.Length;
+        // DP table: dp[i, j] is true if substring s[i..j] is a palindrome
+        var dp = new bool[n, n];
+
+        for (int i = 0; i &lt; n; i++)
+        {
+            dp[i, i] = true;
+        }
+
+        for (int len = 2; len &lt;= n; len++)
+        {
+            for (int i = 0; i &lt;= n - len; i++)
+            {
+                int j = i + len - 1;
+                if (s[i] == s[j])
+                {
+                    dp[i, j] = len == 2 || dp[i + 1, j - 1];
+                }
+            }
+        }
+
+        var current = new List&lt;string&gt;();
+        Backtrack(s, 0, dp, current, result);
+        return result;
+    }
+
+    private static void Backtrack(string s, int start, bool[,] dp, List&lt;string&gt; current, List&lt;IList&lt;string&gt;&gt; result)
+    {
+        if (start == s.Length)
+        {
+            result.Add(new List&lt;string&gt;(current));
+            return;
+        }
+
+        for (int end = start; end &lt; s.Length; end++)
+        {
+            if (dp[start, end])
+            {
+                current.Add(s.Substring(start, end - start + 1));
+                Backtrack(s, end + 1, dp, current, result);
+                current.RemoveAt(current.Count - 1);
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day40.EventSourcing.Tests/Day40Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd40-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d40-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day40.EventSourcing.Tests;
+
+public class Day40Tests
+{
+    [Fact]
+    public void BankAccountAggregate_DepositAndWithdraw_CalculatesCorrectBalance()
+    {
+        var account = new BankAccountAggregate();
+        account.Open(&quot;acc-101&quot;, &quot;Alice&quot;, 100m);
+        account.Deposit(50m);
+        account.Withdraw(30m);
+
+        Assert.Equal(&quot;acc-101&quot;, account.Id);
+        Assert.Equal(&quot;Alice&quot;, account.OwnerName);
+        Assert.Equal(120m, account.Balance);
+        Assert.Equal(3, account.Version);
+        Assert.Equal(3, account.UncommittedEvents.Count);
+    }
+
+    [Fact]
+    public void BankAccountAggregate_WithdrawExceedingBalance_ThrowsInvalidOperationException()
+    {
+        var account = new BankAccountAggregate();
+        account.Open(&quot;acc-102&quot;, &quot;Bob&quot;, 50m);
+
+        var ex = Assert.Throws&lt;InvalidOperationException&gt;(() =&gt; account.Withdraw(100m));
+        Assert.Contains(&quot;Insufficient funds&quot;, ex.Message);
+    }
+
+    [Fact]
+    public void EventStore_AppendAndLoadAggregate_ReconstructsStateFromEvents()
+    {
+        var store = new EventStore();
+        var account = new BankAccountAggregate();
+
+        account.Open(&quot;acc-103&quot;, &quot;Charlie&quot;, 200m);
+        account.Deposit(100m);
+        account.Withdraw(50m);
+
+        store.AppendEvents(account.Id, expectedVersion: 0, account.UncommittedEvents);
+
+        // Load fresh aggregate purely from event history replay
+        var rehydrated = store.LoadAggregate(&quot;acc-103&quot;);
+
+        Assert.Equal(&quot;acc-103&quot;, rehydrated.Id);
+        Assert.Equal(&quot;Charlie&quot;, rehydrated.OwnerName);
+        Assert.Equal(250m, rehydrated.Balance);
+        Assert.Equal(3, rehydrated.Version);
+        Assert.Empty(rehydrated.UncommittedEvents);
+    }
+
+    [Fact]
+    public void EventStore_OptimisticConcurrencyConflict_ThrowsException()
+    {
+        var store = new EventStore();
+        var account = new BankAccountAggregate();
+        account.Open(&quot;acc-104&quot;, &quot;David&quot;, 50m);
+        store.AppendEvents(&quot;acc-104&quot;, expectedVersion: 0, account.UncommittedEvents);
+
+        // Another thread attempts to append assuming version 0 when version is already 1
+        var conflictingAccount = new BankAccountAggregate();
+        conflictingAccount.Open(&quot;acc-104&quot;, &quot;David Duplicate&quot;, 100m);
+
+        Assert.Throws&lt;OptimisticConcurrencyException&gt;(() =&gt;
+        {
+            store.AppendEvents(&quot;acc-104&quot;, expectedVersion: 0, conflictingAccount.UncommittedEvents);
+        });
+    }
+
+    [Fact]
+    public void EventStore_SnapshotRestore_AcceleratesReplayFromSnapshot()
+    {
+        var store = new EventStore();
+        string accId = &quot;acc-105&quot;;
+
+        var acc = new BankAccountAggregate();
+        acc.Open(accId, &quot;Eve&quot;, 1000m);
+        acc.Deposit(500m); // Version 2, Balance 1500
+        store.AppendEvents(accId, 0, acc.UncommittedEvents);
+        acc.ClearUncommittedEvents();
+
+        // Create snapshot at Version 2
+        var snapshot = new AccountSnapshot(acc.Id, acc.OwnerName, acc.Balance, acc.IsClosed, acc.Version);
+        store.SaveSnapshot(accId, snapshot);
+
+        // Subsequent events after snapshot
+        acc.Deposit(200m); // Version 3
+        acc.Withdraw(100m); // Version 4
+        store.AppendEvents(accId, expectedVersion: 2, acc.UncommittedEvents);
+
+        // Load aggregate: should restore snapshot (v=2, 1500), then replay v=3 and v=4
+        var rehydrated = store.LoadAggregate(accId);
+
+        Assert.Equal(1600m, rehydrated.Balance);
+        Assert.Equal(4, rehydrated.Version);
+    }
+
+    [Fact]
+    public void AccountProjectionManager_MaterializesCQRSReadView()
+    {
+        var store = new EventStore();
+        var projection = new AccountProjectionManager(store);
+
+        var acc = new BankAccountAggregate();
+        acc.Open(&quot;acc-106&quot;, &quot;Frank&quot;, 500m);
+        acc.Deposit(250m);
+        acc.Withdraw(100m);
+        acc.Close(&quot;Customer request&quot;);
+
+        store.AppendEvents(acc.Id, 0, acc.UncommittedEvents);
+
+        var view = projection.GetAccountView(&quot;acc-106&quot;);
+
+        Assert.NotNull(view);
+        Assert.Equal(&quot;acc-106&quot;, view.AccountId);
+        Assert.Equal(&quot;Frank&quot;, view.OwnerName);
+        Assert.Equal(650m, view.CurrentBalance);
+        Assert.Equal(4, view.TransactionCount);
+        Assert.Equal(&quot;Closed&quot;, view.Status);
+    }
+
+    [Fact]
+    public void PalindromePartitioning_ExampleString_ReturnsAllValidPartitions()
+    {
+        string s = &quot;aab&quot;;
+        var partitions = PalindromePartitioningSolver.Partition(s);
+
+        // Expected: [[&quot;a&quot;,&quot;a&quot;,&quot;b&quot;], [&quot;aa&quot;,&quot;b&quot;]]
+        Assert.Equal(2, partitions.Count);
+        Assert.Contains(partitions, p =&gt; p.SequenceEqual([&quot;a&quot;, &quot;a&quot;, &quot;b&quot;]));
+        Assert.Contains(partitions, p =&gt; p.SequenceEqual([&quot;aa&quot;, &quot;b&quot;]));
+    }
+
+    [Fact]
+    public void PalindromePartitioning_SingleCharacterString_ReturnsSinglePartition()
+    {
+        var partitions = PalindromePartitioningSolver.Partition(&quot;a&quot;);
+
+        Assert.Single(partitions);
+        Assert.Equal([&quot;a&quot;], partitions[0]);
+    }
+
+    [Fact]
+    public void PalindromePartitioning_AllSameCharacters_ReturnsAllCombinations()
+    {
+        string s = &quot;aaa&quot;;
+        var partitions = PalindromePartitioningSolver.Partition(s);
+
+        // For &quot;aaa&quot;: [&quot;a&quot;,&quot;a&quot;,&quot;a&quot;], [&quot;a&quot;,&quot;aa&quot;], [&quot;aa&quot;,&quot;a&quot;], [&quot;aaa&quot;] -&gt; 4
+        Assert.Equal(4, partitions.Count);
+        Assert.Contains(partitions, p =&gt; p.SequenceEqual([&quot;a&quot;, &quot;a&quot;, &quot;a&quot;]));
+        Assert.Contains(partitions, p =&gt; p.SequenceEqual([&quot;aaa&quot;]));
+    }
+
+    [Fact]
+    public void PalindromePartitioning_NoPalindromesBeyondSingleChars_ReturnsSingleCharacterList()
+    {
+        string s = &quot;abc&quot;;
+        var partitions = PalindromePartitioningSolver.Partition(s);
+
+        Assert.Single(partitions);
+        Assert.Equal([&quot;a&quot;, &quot;b&quot;, &quot;c&quot;], partitions[0]);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 40 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

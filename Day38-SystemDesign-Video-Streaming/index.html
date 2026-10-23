@@ -1,0 +1,2284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 38: System Design: Video Streaming System | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 38</span>
+        <span class="badge badge-category">System Design &amp; ABR</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day37-SystemDesign-Chat-System/index.html" class="nav-btn">← Day 37</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+
+        </select>
+        <a href="../Day39-CAP-PACELC-DistributedSystems/index.html" class="nav-btn">Day 39 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 38: System Design: Video Streaming System</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d38Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d38P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d38P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#065f46"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d38P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d38Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 38: Video Streaming System (YouTube/Netflix) &amp; Permutations</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d38P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">ABR &amp; HLS Playlists (.m3u8)</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Master Playlist Index</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">#EXT-X-STREAM-INF:BANDWIDTH=5M</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">RESOLUTION=1920x1080 (1080p)</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">Renditions: 1080p, 720p, 480p, 360p</text>
+          <text x="50" y="196" fill="#fbbf24" font-size="9">Player switches bitrates dynamically</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Media Variant Chunks</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">#EXT-X-TARGETDURATION:4</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">#EXTINF:4.000, segment_0.ts</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">MPEG-2 TS or fragmented MP4 (.m4s)</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Short chunks prevent playback stalls</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d38P2)" stroke="#34d399" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">S3 Direct Upload &amp; CDN Cache</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Presigned Multipart S3</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Upload direct to S3 via HMAC URLs</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Zero web server bandwidth saturation</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">5MB-10MB chunks with parallel retries</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">ETag completion verification</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#34d399" font-size="11" font-weight="bold">CDN Edge Caching Strategy</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Chunks (.ts): max-age=31536000, immutable</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">&gt;98% edge cache hit ratio</text>
+          <text x="340" y="290" fill="#f43f5e" font-size="9">Playlists (.m3u8): max-age=10s</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Signed tokens protect premium VOD</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d38P3)" stroke="#e879f9" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#e879f9" font-size="14" font-weight="bold">LC #46 &amp; #47: Permutations</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Permutations I (Unique)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Backtracking with used[i] array</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Total permutations: N!</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Time: O(N * N!), Space: O(N)</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Exhaustive state-space search</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#e879f9" font-size="11" font-weight="bold">Permutations II (Duplicates)</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Sort array first</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">if (nums[i] == nums[i-1] &amp;&amp; !used[i-1])</text>
+          <text x="630" y="290" fill="#f43f5e" font-size="9">continue; // skip duplicate branch</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Prunes identical permutation paths</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: Video Streaming Architecture & Transcoding Pipelines</h1>
+<h2>1. Adaptive Bitrate Streaming (ABR): HLS vs MPEG-DASH</h2>
+<ul>
+<li><strong>HLS (HTTP Live Streaming)</strong>:</li>
+<li>Developed by Apple, industry standard for iOS, Safari, and widespread web players (video.js, hls.js).</li>
+<li>Uses <code>.m3u8</code> playlist files (UTF-8 formatted text) and MPEG-2 TS (<code>.ts</code>) or fragmented MP4 (<code>.fmp4</code> / <code>.m4s</code>) media chunks.</li>
+<li>Master playlist references child playlists; child playlists list discrete segments (typically 2 to 6 seconds each).</li>
+<li><strong>MPEG-DASH (Dynamic Adaptive Streaming over HTTP)</strong>:</li>
+<li>International standard (ISO/IEC 23009-1).</li>
+<li>Uses an XML Media Presentation Description (<code>.mpd</code>) file.</li>
+<li>Native in Android and Chrome.</li>
+<li><strong>Client-Side ABR Algorithm</strong>:</li>
+<li>The video player constantly monitors download throughput and playback buffer fullness.</li>
+<li>If buffer is draining and download speed drops below 2.5Mbps, player requests subsequent chunks from the 480p playlist instead of 1080p, preventing playback stalls and buffering spinners.</li>
+</ul>
+<h2>2. Ingestion & Transcoding Infrastructure</h2>
+<ul>
+<li><strong>Why Upload Direct to S3?</strong></li>
+<li>Routing 50GB 4K video files through application API servers exhausts web server RAM, network sockets, and CPU.</li>
+<li>Using presigned multipart URLs allows the client to stream parts directly to AWS S3 / Azure Blob Storage over HTTPS.</li>
+<li><strong>DAG Workflow Transcoding</strong>:</li>
+<li>Once upload finishes, S3 triggers an event to AWS SQS / Temporal orchestrator.</li>
+<li>Distributed GPU workers (FFmpeg / AWS Elemental MediaConvert) download the raw file, split it into chunks, transcode simultaneously across dozens of compute nodes, assemble <code>.m3u8</code> playlists, and push assets to the origin bucket.</li>
+</ul>
+<h2>3. LeetCode #46 & #47: Permutations Pruning</h2>
+<ul>
+<li><strong>Permutations I</strong>:</li>
+<li>Each state chooses an unused element: <code>for (int i = 0; i &lt; nums.Length; i++) if (!used[i])</code>.</li>
+<li>Recurse until <code>current.Count == nums.Length</code>. Total states: $N!$.</li>
+<li><strong>Permutations II</strong>:</li>
+<li>Why <code>!used[i - 1]</code>?</li>
+<li>If <code>nums[i] == nums[i - 1]</code> and <code>used[i - 1]</code> is true, <code>nums[i - 1]</code> is an <strong>ancestor</strong> in the current permutation path, which is valid (e.g., both elements appear in the sequence).</li>
+<li>If <code>used[i - 1]</code> is false, it means <code>nums[i - 1]</code> was previously chosen and <strong>backtracked/completed</strong> at the same depth. Picking <code>nums[i]</code> now would explore a duplicate subtree!</li>
+<li>Therefore, <code>if (i &gt; 0 &amp;&amp; nums[i] == nums[i - 1] &amp;&amp; !used[i - 1]) continue;</code> guarantees each unique value is picked exactly once at each permutation position.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 38: System Design: Video Streaming System (YouTube/Netflix)</h1>
+<h2>Architectural Overview</h2>
+<p>A video streaming system (YouTube, Netflix) ingests raw media files, transcodes them into multiple resolutions/bitrates, splits them into short chunk segments, and delivers them globally via Adaptive Bitrate Streaming (ABR) and CDN edge networks.</p>
+<p>This module implements key components of video streaming pipelines in .NET 8:</p>
+<ul>
+<li><strong>Adaptive Bitrate Streaming (ABR) & HLS Manifests</strong>:</li>
+<li>Master Playlist (<code>.m3u8</code>): Encodes multi-variant renditions (1080p @ 5Mbps, 720p @ 2.5Mbps, 480p @ 1.2Mbps, 360p @ 600kbps) with <code>#EXT-X-STREAM-INF</code>.</li>
+<li>Media Variant Playlist (<code>.m3u8</code>): Specifies target chunk duration (<code>#EXT-X-TARGETDURATION:4</code>) and sequenced <code>.ts</code> segment media URLs.</li>
+<li><strong>Direct S3 / Blob Multipart Uploads with HMAC Presigned URLs</strong>:</li>
+<li>Bypasses web servers by allowing clients to upload multi-gigabyte video chunks directly to object storage.</li>
+<li>Generates and verifies HMAC-SHA256 signatures with Unix timestamp expiration.</li>
+<li>Multipart session tracking ensuring all chunks are uploaded and verified via ETag before transcoding begins.</li>
+<li><strong>CDN Edge Caching Strategy</strong>:</li>
+<li>Master/Media Playlists: Short TTL (<code>max-age=10, must-revalidate</code>) for rapid adaptation and live stream updates.</li>
+<li>Video Segments (<code>.ts</code> / <code>.m4s</code>): Immutable assets with maximum TTL (<code>max-age=31536000, immutable</code>), maximizing edge cache hit ratios (>98%).</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Client Video Upload (10GB)
+            │
+            ├─ 1. POST /api/upload/initiate (PresignedUploadManager)
+            ├─ 2. Direct Multipart Upload (S3/Blob with HMAC presigned URLs)
+            ▼
+      Object Storage (S3 / GCS)
+            │
+            ▼ (S3 Event Notification)
+┌───────────────────────────────────────┐
+│     Transcoding Pipeline (FFmpeg)     │
+│ Chunk into 4-sec segments             │
+│ Transcode to 1080p, 720p, 480p, 360p  │
+└───────────────────┬───────────────────┘
+                    │
+                    ▼
+     Generate Master &amp; Media .m3u8
+                    │
+                    ▼
+┌───────────────────────────────────────┐
+│          CDN Edge Cache               │
+│ - Playlists: TTL 10s                  │
+│ - Chunks (.ts): TTL 1 Year (Immutable)│
+└───────────────────┬───────────────────┘
+                    │
+                    ▼
+     Client Video Player (HLS / DASH)
+     Dynamic resolution switching (ABR)</code></pre></div>
+<hr/>
+<h2>LeetCode #46 & #47: Permutations I & II (Medium)</h2>
+<ul>
+<li><strong>LeetCode #46 (Permutations)</strong>:</li>
+<li>Generate all $N!$ permutations of unique elements.</li>
+<li>Backtracking with a boolean <code>used</code> array.</li>
+<li><strong>LeetCode #47 (Permutations II)</strong>:</li>
+<li>Generate unique permutations of an array containing duplicates.</li>
+<li>Sorts array and applies the duplicate pruning condition:</li>
+</ul>
+<p><code>if (i &gt; 0 &amp;&amp; nums[i] == nums[i - 1] &amp;&amp; !used[i - 1]) continue;</code></p>
+<ul>
+<li>Guarantees $100\%$ unique permutations without post-processing set lookups.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day38-SystemDesign-Video-Streaming/tests/Day38.VideoStreaming.Tests/Day38.VideoStreaming.Tests.csproj</code></pre></div>
+<p>10 unit tests validate master/variant HLS playlist generation, HMAC presigned URL generation/verification, expiry handling, CDN cache-control policies, and permutations backtracking.</p>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How does Adaptive Bitrate Streaming (ABR) work in modern video architectures (YouTube, Netflix)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>ABR allows video playback to dynamically adapt to varying client network conditions and device capabilities in real time.</p>
+<ol>
+<li>During transcoding, the raw video is encoded into multiple bitrates/resolutions (e.g. 1080p, 720p, 480p, 360p) and sliced into short segments (typically 2 to 6 seconds each).</li>
+<li>The client video player downloads a Master Playlist (<code>.m3u8</code> or <code>.mpd</code>) detailing available bitrates.</li>
+<li>As the player downloads chunks, it monitors the download throughput and client playback buffer level (e.g. 15 seconds of buffered video).</li>
+<li>If network bandwidth degrades (e.g., mobile user entering an elevator), the player automatically requests the next 4-second chunk from a lower bitrate playlist (e.g. 480p instead of 1080p) without interrupting audio/video playback or causing buffering spinners.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the purpose of HLS Master vs Media playlists, and how are they structured?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Master Playlist (<code>master.m3u8</code>)</strong>:</li>
+<li>Serves as the index of all available renditions.</li>
+<li>Lists <code>#EXT-X-STREAM-INF</code> tags specifying <code>BANDWIDTH</code>, <code>RESOLUTION</code>, <code>CODECS</code>, and audio tracks, each pointing to a Variant Media Playlist URL.</li>
+<li><strong>Media Playlist (<code>1080p.m3u8</code>)</strong>:</li>
+<li>Contains the actual sequence of video chunk segments for a specific resolution.</li>
+<li>Specifies <code>#EXT-X-TARGETDURATION</code>, sequence numbers, and individual <code>#EXTINF</code> tags with chunk durations followed by the <code>.ts</code> or <code>.m4s</code> segment URLs.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why should client video uploads never pass through web application servers, and how do presigned multipart uploads solve this?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Routing massive video files (e.g. 10GB–50GB) through web application servers:</p>
+<ul>
+<li>Exhausts server RAM, saturates network interfaces, and ties up web server worker threads for minutes or hours.</li>
+<li>If the network drops at 99%, the entire file upload fails.</li>
+<li><strong>Presigned Multipart Upload Solution</strong>:</li>
+</ul>
+<ol>
+<li>The client requests an upload session from the API. The API contacts S3/GCS to initiate a multipart upload and returns signed upload URLs for each 5MB–10MB part.</li>
+<li>The client streams each part directly to the object storage bucket over HTTPS.</li>
+<li>Parts can be uploaded in parallel, and failed parts are retried individually without re-uploading the entire file.</li>
+<li>Once all parts are finished, the client notifies the API, which instructs S3 to assemble the completed object.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How do you design CDN caching strategies for video streaming to achieve &gt;98% cache hit ratio?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Segment video assets by mutability:</p>
+<ol>
+<li><strong>Video Chunks (<code>.ts</code>, <code>.m4s</code>)</strong>:</li>
+</ol>
+<ul>
+<li>Chunks are content-addressed and <strong>immutable</strong>. Chunk #42 of 1080p will never change.</li>
+<li>Set HTTP headers: <code>Cache-Control: public, max-age=31536000, immutable</code>.</li>
+<li>CDN edge nodes cache chunks indefinitely. Once cached at an edge POP, subsequent viewers in that geographic region fetch chunks from local edge NVMe drives rather than traversing back to the origin.</li>
+</ul>
+<ol>
+<li><strong>Playlists (<code>.m3u8</code>)</strong>:</li>
+</ol>
+<ul>
+<li>Master playlists are cached for short periods (e.g., <code>max-age=60</code> for VOD; <code>max-age=2</code> for Live streams).</li>
+<li>Live stream playlists append new chunks as the stream progresses, so edge caches must revalidate frequently.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you protect premium video content from unauthorized downloads and hotlinking (DRM &amp; Signed URLs)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Signed URLs / Cookies</strong>:</li>
+</ol>
+<ul>
+<li>Issue HMAC-signed tokens with expiration timestamps and client IP restrictions.</li>
+<li>CDN edge nodes validate the signature before serving playlist or chunk files; unauthorized requests receive HTTP 403 Forbidden without touching origin.</li>
+</ul>
+<ol>
+<li><strong>Digital Rights Management (DRM)</strong>:</li>
+</ol>
+<ul>
+<li>Encrypt video chunks using AES-128 (Common Encryption <code>cenc</code>).</li>
+<li>Integrated with platform DRM licensing systems: Apple FairPlay (iOS/Safari), Google Widevine (Android/Chrome), Microsoft PlayReady (Windows/Edge).</li>
+<li>The player requests an encrypted license key from a DRM Key Server via an authenticated API token. Without the hardware-backed key, the raw <code>.ts</code> files cannot be decoded.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does a distributed transcoding pipeline scale to handle thousands of concurrent video uploads?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>An S3 bucket notification emits an <code>ObjectCreated</code> event to an AWS SQS queue or Apache Kafka topic.</li>
+<li>A workflow orchestrator (e.g., Temporal or AWS Step Functions) partitions the video into chunks or keyframe (GOP) boundaries.</li>
+<li>GPU worker nodes (auto-scaled on spot instances) claim individual transcoding jobs:</li>
+</ol>
+<ul>
+<li>Node 1 encodes chunk 1–10 into 1080p H.264/AV1.</li>
+<li>Node 2 encodes chunk 1–10 into 720p.</li>
+<li>Node 3 encodes chunk 11–20 into 1080p.</li>
+</ul>
+<ol>
+<li>An aggregation worker stitches the manifests, generates thumbnails, and updates the database record to <code>Status = &quot;Published&quot;</code>.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What are the differences between H.264 (AVC), H.265 (HEVC), and AV1 codecs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>H.264 / AVC</strong>: Universal compatibility across 99.9% of devices, browsers, and legacy hardware. Moderate compression efficiency.</li>
+<li><strong>H.265 / HEVC</strong>: ~50% bitrate reduction compared to H.264 at identical visual quality. Standard for 4K/HDR; however, burdened by complex patent licensing pools, limiting native web browser support (predominantly Apple and Smart TVs).</li>
+<li><strong>AV1</strong>: Open-source, royalty-free codec developed by the Alliance for Open Media (Google, Netflix, Apple, Amazon). ~30% more efficient than HEVC, but requires high computational power to encode. Netflix and YouTube encode high-traffic videos in AV1 for massive bandwidth savings.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #46 (Permutations), what is the time complexity and recursion tree structure?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>For an array of size $N$, there are $N!$ leaf nodes in the recursion tree.</li>
+<li>At the root level, there are $N$ choices; at depth 1, there are $N - 1$ choices, ..., down to 1 choice at depth $N$.</li>
+<li>The number of operations to copy each permutation of length $N$ into the output list is $O(N)$.</li>
+<li>Total Time Complexity: $O(N \times N!)$.</li>
+<li>Space Complexity: $O(N)$ auxiliary space for the recursion stack and <code>used</code> boolean array.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #47 (Permutations II), why does `!used[i - 1]` correctly identify duplicate branches, and what would happen if `used[i - 1]` were checked instead?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>In a sorted array with duplicates (e.g., <code>[1, 1, 2]</code>):</li>
+<li>If <code>nums[i] == nums[i - 1]</code> and <code>!used[i - 1]</code>:</li>
+<li>It means <code>nums[i - 1]</code> was already chosen at the current recursion level, explored completely, and subsequently unmarked (<code>used[i - 1] = false</code>) during backtracking.</li>
+<li>Selecting <code>nums[i]</code> now would initiate an identical recursion subtree. Skipping when <code>!used[i - 1]</code> ensures only the first duplicate element is picked as the head of a branch at any level.</li>
+<li>If one checked <code>used[i - 1]</code> instead, it would prune elements that belong to the <em>same</em> permutation path (ancestor-descendant relationship), preventing valid duplicate occurrences (like <code>[1, 1, 2]</code>) from ever being formed.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you calculate video storage and bandwidth costs for a platform streaming 1 million hours of video daily?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Bandwidth Estimation</strong>:</li>
+</ol>
+<ul>
+<li>1M hours = 3,600,000,000 seconds.</li>
+<li>Assume average 1080p/720p ABR bitrate of 3 Mbps ($3 \times 10^6 \text{ bits/sec} = 0.375 \text{ MB/sec}$).</li>
+<li>Daily data transfer: $3.6 \times 10^9 \text{ sec} \times 0.375 \text{ MB} = 1.35 \times 10^9 \text{ MB} = 1.35 \text{ PB/day}$.</li>
+<li>At CDN negotiated volume rates (\$0.01 per GB), egress cost $\approx \$13,500\text{/day}$.</li>
+</ul>
+<ol>
+<li><strong>Storage Estimation</strong>:</li>
+</ol>
+<ul>
+<li>1 hour of video transcoded across 4 resolutions $\approx 2.5 \text{ GB}$.</li>
+<li>If 10,000 hours uploaded daily: $10,000 \times 2.5 \text{ GB} = 25 \text{ TB/day}$.</li>
+<li>Stored on S3 Standard / Infrequent Access with lifecycle tiering to Glacier after 90 days.</li>
+</ul>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day38.VideoStreaming/PermutationsSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd38-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d38-src-code-0" class="language-csharp">namespace Day38.VideoStreaming;
+
+public static class PermutationsSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #46: Permutations (Medium).
+    /// All elements in nums are distinct.
+    /// Time Complexity: O(N * N!), Space Complexity: O(N) stack.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; Permute(int[] nums)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (nums == null || nums.Length == 0) return result;
+
+        var used = new bool[nums.Length];
+        var current = new List&lt;int&gt;(nums.Length);
+        BacktrackPermute(nums, used, current, result);
+        return result;
+    }
+
+    private static void BacktrackPermute(int[] nums, bool[] used, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        if (current.Count == nums.Length)
+        {
+            result.Add(new List&lt;int&gt;(current));
+            return;
+        }
+
+        for (int i = 0; i &lt; nums.Length; i++)
+        {
+            if (used[i]) continue;
+
+            used[i] = true;
+            current.Add(nums[i]);
+            BacktrackPermute(nums, used, current, result);
+            current.RemoveAt(current.Count - 1);
+            used[i] = false;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #47: Permutations II (Medium).
+    /// Elements in nums may contain duplicates. Output must contain unique permutations.
+    /// Time Complexity: O(N * N!), Space Complexity: O(N).
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; PermuteUnique(int[] nums)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (nums == null || nums.Length == 0) return result;
+
+        Array.Sort(nums);
+        var used = new bool[nums.Length];
+        var current = new List&lt;int&gt;(nums.Length);
+        BacktrackPermuteUnique(nums, used, current, result);
+        return result;
+    }
+
+    private static void BacktrackPermuteUnique(int[] nums, bool[] used, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        if (current.Count == nums.Length)
+        {
+            result.Add(new List&lt;int&gt;(current));
+            return;
+        }
+
+        for (int i = 0; i &lt; nums.Length; i++)
+        {
+            if (used[i]) continue;
+
+            // If current element is duplicate of previous element, and previous duplicate
+            // was NOT used in current recursion branch, skip to avoid duplicate permutations.
+            if (i &gt; 0 &amp;&amp; nums[i] == nums[i - 1] &amp;&amp; !used[i - 1])
+            {
+                continue;
+            }
+
+            used[i] = true;
+            current.Add(nums[i]);
+            BacktrackPermuteUnique(nums, used, current, result);
+            current.RemoveAt(current.Count - 1);
+            used[i] = false;
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day38.VideoStreaming/VideoStreamingEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd38-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d38-src-code-1" class="language-csharp">using System.Security.Cryptography;
+using System.Text;
+
+namespace Day38.VideoStreaming;
+
+public enum VideoResolution
+{
+    Res360p,
+    Res480p,
+    Res720p,
+    Res1080p
+}
+
+public record VideoRendition(VideoResolution Resolution, int Width, int Height, int BitrateBps, string PlaylistName);
+
+public record VideoSegment(int Index, double DurationSeconds, string Uri);
+
+public class HlsPlaylistGenerator
+{
+    public static readonly IReadOnlyList&lt;VideoRendition&gt; StandardRenditions = new List&lt;VideoRendition&gt;
+    {
+        new(VideoResolution.Res1080p, 1920, 1080, 5000000, &quot;1080p.m3u8&quot;),
+        new(VideoResolution.Res720p, 1280, 720, 2500000, &quot;720p.m3u8&quot;),
+        new(VideoResolution.Res480p, 854, 480, 1200000, &quot;480p.m3u8&quot;),
+        new(VideoResolution.Res360p, 640, 360, 600000, &quot;360p.m3u8&quot;)
+    };
+
+    /// &lt;summary&gt;
+    /// Generates HLS Master Playlist referencing multiple ABR bitrate streams.
+    /// &lt;/summary&gt;
+    public static string GenerateMasterPlaylist(string baseUrl, IEnumerable&lt;VideoRendition&gt;? renditions = null)
+    {
+        renditions ??= StandardRenditions;
+        var sb = new StringBuilder();
+        sb.AppendLine(&quot;#EXTM3U&quot;);
+        sb.AppendLine(&quot;#EXT-X-VERSION:4&quot;);
+
+        foreach (var r in renditions.OrderByDescending(x =&gt; x.BitrateBps))
+        {
+            sb.AppendLine($&quot;#EXT-X-STREAM-INF:BANDWIDTH={r.BitrateBps},RESOLUTION={r.Width}x{r.Height},NAME=\&quot;{r.Height}p\&quot;&quot;);
+            sb.AppendLine($&quot;{baseUrl.TrimEnd(&#x27;/&#x27;)}/{r.PlaylistName}&quot;);
+        }
+
+        return sb.ToString();
+    }
+
+    /// &lt;summary&gt;
+    /// Generates HLS Media Variant Playlist (.m3u8) referencing .ts or .m4s video chunks.
+    /// &lt;/summary&gt;
+    public static string GenerateMediaPlaylist(double targetDuration, IEnumerable&lt;VideoSegment&gt; segments)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine(&quot;#EXTM3U&quot;);
+        sb.AppendLine(&quot;#EXT-X-VERSION:4&quot;);
+        sb.AppendLine($&quot;#EXT-X-TARGETDURATION:{Math.Ceiling(targetDuration)}&quot;);
+        sb.AppendLine(&quot;#EXT-X-MEDIA-SEQUENCE:0&quot;);
+        sb.AppendLine(&quot;#EXT-X-PLAYLIST-TYPE:VOD&quot;);
+
+        foreach (var seg in segments.OrderBy(s =&gt; s.Index))
+        {
+            sb.AppendLine($&quot;#EXTINF:{seg.DurationSeconds:0.000},&quot;);
+            sb.AppendLine(seg.Uri);
+        }
+
+        sb.AppendLine(&quot;#EXT-X-ENDLIST&quot;);
+        return sb.ToString();
+    }
+}
+
+public record MultipartUploadSession(
+    string UploadId,
+    string VideoId,
+    int TotalParts,
+    long PartSizeBytes,
+    Dictionary&lt;int, string&gt; CompletedParts
+);
+
+public class PresignedUploadManager
+{
+    private readonly byte[] _hmacSecret;
+    private readonly Dictionary&lt;string, MultipartUploadSession&gt; _activeSessions = new();
+    private readonly object _lock = new();
+
+    public PresignedUploadManager(string secretKey)
+    {
+        _hmacSecret = Encoding.UTF8.GetBytes(secretKey);
+    }
+
+    public MultipartUploadSession InitiateUpload(string videoId, long totalFileBytes, long partSizeBytes = 5 * 1024 * 1024)
+    {
+        int totalParts = (int)Math.Ceiling((double)totalFileBytes / partSizeBytes);
+        var session = new MultipartUploadSession(
+            UploadId: Guid.NewGuid().ToString(&quot;N&quot;),
+            VideoId: videoId,
+            TotalParts: totalParts,
+            PartSizeBytes: partSizeBytes,
+            CompletedParts: new Dictionary&lt;int, string&gt;()
+        );
+
+        lock (_lock)
+        {
+            _activeSessions[session.UploadId] = session;
+        }
+
+        return session;
+    }
+
+    public string GeneratePresignedPartUrl(string uploadId, int partNumber, TimeSpan validDuration)
+    {
+        long expiry = DateTimeOffset.UtcNow.Add(validDuration).ToUnixTimeSeconds();
+        string payload = $&quot;{uploadId}:{partNumber}:{expiry}&quot;;
+        using var hmac = new HMACSHA256(_hmacSecret);
+        var sigBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
+        string signature = Convert.ToHexString(sigBytes).ToLowerInvariant();
+
+        return $&quot;/storage/upload?uploadId={uploadId}&amp;part={partNumber}&amp;exp={expiry}&amp;sig={signature}&quot;;
+    }
+
+    public bool VerifyAndCompletePart(string uploadId, int partNumber, long expiry, string signature, string partEtag)
+    {
+        if (DateTimeOffset.UtcNow.ToUnixTimeSeconds() &gt; expiry)
+        {
+            return false; // Expired
+        }
+
+        string payload = $&quot;{uploadId}:{partNumber}:{expiry}&quot;;
+        using var hmac = new HMACSHA256(_hmacSecret);
+        var expectedSig = Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
+
+        if (expectedSig != signature)
+        {
+            return false; // Tampered signature
+        }
+
+        lock (_lock)
+        {
+            if (!_activeSessions.TryGetValue(uploadId, out var session))
+            {
+                return false;
+            }
+
+            session.CompletedParts[partNumber] = partEtag;
+            return true;
+        }
+    }
+
+    public bool IsUploadComplete(string uploadId)
+    {
+        lock (_lock)
+        {
+            if (_activeSessions.TryGetValue(uploadId, out var session))
+            {
+                return session.CompletedParts.Count == session.TotalParts;
+            }
+            return false;
+        }
+    }
+}
+
+public record CdnCacheHeaders(string CacheControl, int TtlSeconds);
+
+public static class CdnEdgeRules
+{
+    public static CdnCacheHeaders GetCachePolicy(string resourcePath)
+    {
+        if (resourcePath.EndsWith(&quot;.m3u8&quot;))
+        {
+            // Master/Media playlists are dynamic and short-lived
+            return new CdnCacheHeaders(&quot;public, max-age=10, must-revalidate&quot;, 10);
+        }
+        else if (resourcePath.EndsWith(&quot;.ts&quot;) || resourcePath.EndsWith(&quot;.m4s&quot;))
+        {
+            // Immutable video chunk segments - cache aggressively for 1 year
+            return new CdnCacheHeaders(&quot;public, max-age=31536000, immutable&quot;, 31536000);
+        }
+
+        return new CdnCacheHeaders(&quot;public, max-age=3600&quot;, 3600);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day38.VideoStreaming.Tests/Day38Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd38-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d38-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day38.VideoStreaming.Tests;
+
+public class Day38Tests
+{
+    [Fact]
+    public void Hls_GenerateMasterPlaylist_ContainsAllRenditionBandwidthsAndResolutions()
+    {
+        string baseUrl = &quot;https://cdn.videoplatform.com/vod/vid-101&quot;;
+        string master = HlsPlaylistGenerator.GenerateMasterPlaylist(baseUrl);
+
+        Assert.Contains(&quot;#EXTM3U&quot;, master);
+        Assert.Contains(&quot;BANDWIDTH=5000000&quot;, master);
+        Assert.Contains(&quot;RESOLUTION=1920x1080&quot;, master);
+        Assert.Contains(&quot;1080p.m3u8&quot;, master);
+        Assert.Contains(&quot;BANDWIDTH=600000&quot;, master);
+        Assert.Contains(&quot;360p.m3u8&quot;, master);
+    }
+
+    [Fact]
+    public void Hls_GenerateMediaPlaylist_ContainsTargetDurationAndSegments()
+    {
+        var segments = new List&lt;VideoSegment&gt;
+        {
+            new(0, 4.0, &quot;segment_0.ts&quot;),
+            new(1, 4.0, &quot;segment_1.ts&quot;),
+            new(2, 3.25, &quot;segment_2.ts&quot;)
+        };
+
+        string playlist = HlsPlaylistGenerator.GenerateMediaPlaylist(4.0, segments);
+
+        Assert.Contains(&quot;#EXT-X-TARGETDURATION:4&quot;, playlist);
+        Assert.Contains(&quot;#EXTINF:4.000,&quot;, playlist);
+        Assert.Contains(&quot;segment_0.ts&quot;, playlist);
+        Assert.Contains(&quot;#EXTINF:3.250,&quot;, playlist);
+        Assert.Contains(&quot;segment_2.ts&quot;, playlist);
+        Assert.Contains(&quot;#EXT-X-ENDLIST&quot;, playlist);
+    }
+
+    [Fact]
+    public void PresignedUpload_InitiateAndVerifyPart_SucceedsWithValidSignature()
+    {
+        var manager = new PresignedUploadManager(&quot;super-secret-hmac-key&quot;);
+        var session = manager.InitiateUpload(&quot;vid-42&quot;, totalFileBytes: 15 * 1024 * 1024, partSizeBytes: 5 * 1024 * 1024);
+
+        Assert.Equal(3, session.TotalParts);
+
+        string presignedUrl = manager.GeneratePresignedPartUrl(session.UploadId, partNumber: 1, TimeSpan.FromMinutes(10));
+        var queryParams = System.Web.HttpUtility.ParseQueryString(new Uri(&quot;https://dummy.com&quot; + presignedUrl).Query);
+
+        string uploadId = queryParams[&quot;uploadId&quot;]!;
+        int part = int.Parse(queryParams[&quot;part&quot;]!);
+        long exp = long.Parse(queryParams[&quot;exp&quot;]!);
+        string sig = queryParams[&quot;sig&quot;]!;
+
+        bool verified = manager.VerifyAndCompletePart(uploadId, part, exp, sig, &quot;etag-chunk-1&quot;);
+        Assert.True(verified);
+        Assert.False(manager.IsUploadComplete(uploadId)); // only 1 of 3 complete
+    }
+
+    [Fact]
+    public void PresignedUpload_TamperedSignature_FailsVerification()
+    {
+        var manager = new PresignedUploadManager(&quot;super-secret-hmac-key&quot;);
+        var session = manager.InitiateUpload(&quot;vid-tamper&quot;, 1000);
+
+        string presignedUrl = manager.GeneratePresignedPartUrl(session.UploadId, 1, TimeSpan.FromMinutes(10));
+        var queryParams = System.Web.HttpUtility.ParseQueryString(new Uri(&quot;https://dummy.com&quot; + presignedUrl).Query);
+
+        long exp = long.Parse(queryParams[&quot;exp&quot;]!);
+
+        bool verified = manager.VerifyAndCompletePart(session.UploadId, 1, exp, &quot;tampered-bad-signature&quot;, &quot;etag&quot;);
+        Assert.False(verified);
+    }
+
+    [Fact]
+    public void PresignedUpload_ExpiredSignature_FailsVerification()
+    {
+        var manager = new PresignedUploadManager(&quot;super-secret-hmac-key&quot;);
+        var session = manager.InitiateUpload(&quot;vid-exp&quot;, 1000);
+
+        // Expired in past
+        long pastExp = DateTimeOffset.UtcNow.AddMinutes(-5).ToUnixTimeSeconds();
+        bool verified = manager.VerifyAndCompletePart(session.UploadId, 1, pastExp, &quot;sig&quot;, &quot;etag&quot;);
+        Assert.False(verified);
+    }
+
+    [Fact]
+    public void PresignedUpload_FullCompletion_TracksAllParts()
+    {
+        var manager = new PresignedUploadManager(&quot;my-key&quot;);
+        var session = manager.InitiateUpload(&quot;vid-all&quot;, totalFileBytes: 10 * 1024 * 1024, partSizeBytes: 5 * 1024 * 1024);
+
+        Assert.Equal(2, session.TotalParts);
+
+        for (int p = 1; p &lt;= 2; p++)
+        {
+            var url = manager.GeneratePresignedPartUrl(session.UploadId, p, TimeSpan.FromMinutes(5));
+            var q = System.Web.HttpUtility.ParseQueryString(new Uri(&quot;https://dummy.com&quot; + url).Query);
+            manager.VerifyAndCompletePart(session.UploadId, p, long.Parse(q[&quot;exp&quot;]!), q[&quot;sig&quot;]!, $&quot;etag-{p}&quot;);
+        }
+
+        Assert.True(manager.IsUploadComplete(session.UploadId));
+    }
+
+    [Fact]
+    public void CdnEdgeRules_PlaylistAndChunkCachingHeaders_SetsAppropriateTtls()
+    {
+        var playlistCache = CdnEdgeRules.GetCachePolicy(&quot;/vod/1080p.m3u8&quot;);
+        var chunkCache = CdnEdgeRules.GetCachePolicy(&quot;/vod/segment_42.ts&quot;);
+
+        Assert.Contains(&quot;must-revalidate&quot;, playlistCache.CacheControl);
+        Assert.Equal(10, playlistCache.TtlSeconds);
+
+        Assert.Contains(&quot;immutable&quot;, chunkCache.CacheControl);
+        Assert.Equal(31536000, chunkCache.TtlSeconds);
+    }
+
+    [Fact]
+    public void Permutations_DistinctElements_ReturnsFactorialCount()
+    {
+        int[] nums = [1, 2, 3];
+        var perms = PermutationsSolver.Permute(nums);
+
+        // 3! = 6
+        Assert.Equal(6, perms.Count);
+        Assert.Contains(perms, p =&gt; p.SequenceEqual([1, 2, 3]));
+        Assert.Contains(perms, p =&gt; p.SequenceEqual([3, 2, 1]));
+    }
+
+    [Fact]
+    public void PermutationsUnique_WithDuplicates_ReturnsUniqueCount()
+    {
+        int[] nums = [1, 1, 2];
+        var perms = PermutationsSolver.PermuteUnique(nums);
+
+        // 3! / 2! = 3 unique permutations: [1,1,2], [1,2,1], [2,1,1]
+        Assert.Equal(3, perms.Count);
+        Assert.Contains(perms, p =&gt; p.SequenceEqual([1, 1, 2]));
+        Assert.Contains(perms, p =&gt; p.SequenceEqual([1, 2, 1]));
+        Assert.Contains(perms, p =&gt; p.SequenceEqual([2, 1, 1]));
+    }
+
+    [Fact]
+    public void PermutationsUnique_AllDuplicates_ReturnsSinglePermutation()
+    {
+        int[] nums = [5, 5, 5, 5];
+        var perms = PermutationsSolver.PermuteUnique(nums);
+
+        Assert.Single(perms);
+        Assert.Equal([5, 5, 5, 5], perms[0]);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: Video Streaming Architecture & Transcoding Pipelines</h1>
+<h2>1. Adaptive Bitrate Streaming (ABR): HLS vs MPEG-DASH</h2>
+<ul>
+<li><strong>HLS (HTTP Live Streaming)</strong>:</li>
+<li>Developed by Apple, industry standard for iOS, Safari, and widespread web players (video.js, hls.js).</li>
+<li>Uses <code>.m3u8</code> playlist files (UTF-8 formatted text) and MPEG-2 TS (<code>.ts</code>) or fragmented MP4 (<code>.fmp4</code> / <code>.m4s</code>) media chunks.</li>
+<li>Master playlist references child playlists; child playlists list discrete segments (typically 2 to 6 seconds each).</li>
+<li><strong>MPEG-DASH (Dynamic Adaptive Streaming over HTTP)</strong>:</li>
+<li>International standard (ISO/IEC 23009-1).</li>
+<li>Uses an XML Media Presentation Description (<code>.mpd</code>) file.</li>
+<li>Native in Android and Chrome.</li>
+<li><strong>Client-Side ABR Algorithm</strong>:</li>
+<li>The video player constantly monitors download throughput and playback buffer fullness.</li>
+<li>If buffer is draining and download speed drops below 2.5Mbps, player requests subsequent chunks from the 480p playlist instead of 1080p, preventing playback stalls and buffering spinners.</li>
+</ul>
+<h2>2. Ingestion & Transcoding Infrastructure</h2>
+<ul>
+<li><strong>Why Upload Direct to S3?</strong></li>
+<li>Routing 50GB 4K video files through application API servers exhausts web server RAM, network sockets, and CPU.</li>
+<li>Using presigned multipart URLs allows the client to stream parts directly to AWS S3 / Azure Blob Storage over HTTPS.</li>
+<li><strong>DAG Workflow Transcoding</strong>:</li>
+<li>Once upload finishes, S3 triggers an event to AWS SQS / Temporal orchestrator.</li>
+<li>Distributed GPU workers (FFmpeg / AWS Elemental MediaConvert) download the raw file, split it into chunks, transcode simultaneously across dozens of compute nodes, assemble <code>.m3u8</code> playlists, and push assets to the origin bucket.</li>
+</ul>
+<h2>3. LeetCode #46 & #47: Permutations Pruning</h2>
+<ul>
+<li><strong>Permutations I</strong>:</li>
+<li>Each state chooses an unused element: <code>for (int i = 0; i &lt; nums.Length; i++) if (!used[i])</code>.</li>
+<li>Recurse until <code>current.Count == nums.Length</code>. Total states: $N!$.</li>
+<li><strong>Permutations II</strong>:</li>
+<li>Why <code>!used[i - 1]</code>?</li>
+<li>If <code>nums[i] == nums[i - 1]</code> and <code>used[i - 1]</code> is true, <code>nums[i - 1]</code> is an <strong>ancestor</strong> in the current permutation path, which is valid (e.g., both elements appear in the sequence).</li>
+<li>If <code>used[i - 1]</code> is false, it means <code>nums[i - 1]</code> was previously chosen and <strong>backtracked/completed</strong> at the same depth. Picking <code>nums[i]</code> now would explore a duplicate subtree!</li>
+<li>Therefore, <code>if (i &gt; 0 &amp;&amp; nums[i] == nums[i - 1] &amp;&amp; !used[i - 1]) continue;</code> guarantees each unique value is picked exactly once at each permutation position.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 38: System Design: Video Streaming System (YouTube/Netflix)</h1>
+<h2>Architectural Overview</h2>
+<p>A video streaming system (YouTube, Netflix) ingests raw media files, transcodes them into multiple resolutions/bitrates, splits them into short chunk segments, and delivers them globally via Adaptive Bitrate Streaming (ABR) and CDN edge networks.</p>
+<p>This module implements key components of video streaming pipelines in .NET 8:</p>
+<ul>
+<li><strong>Adaptive Bitrate Streaming (ABR) & HLS Manifests</strong>:</li>
+<li>Master Playlist (<code>.m3u8</code>): Encodes multi-variant renditions (1080p @ 5Mbps, 720p @ 2.5Mbps, 480p @ 1.2Mbps, 360p @ 600kbps) with <code>#EXT-X-STREAM-INF</code>.</li>
+<li>Media Variant Playlist (<code>.m3u8</code>): Specifies target chunk duration (<code>#EXT-X-TARGETDURATION:4</code>) and sequenced <code>.ts</code> segment media URLs.</li>
+<li><strong>Direct S3 / Blob Multipart Uploads with HMAC Presigned URLs</strong>:</li>
+<li>Bypasses web servers by allowing clients to upload multi-gigabyte video chunks directly to object storage.</li>
+<li>Generates and verifies HMAC-SHA256 signatures with Unix timestamp expiration.</li>
+<li>Multipart session tracking ensuring all chunks are uploaded and verified via ETag before transcoding begins.</li>
+<li><strong>CDN Edge Caching Strategy</strong>:</li>
+<li>Master/Media Playlists: Short TTL (<code>max-age=10, must-revalidate</code>) for rapid adaptation and live stream updates.</li>
+<li>Video Segments (<code>.ts</code> / <code>.m4s</code>): Immutable assets with maximum TTL (<code>max-age=31536000, immutable</code>), maximizing edge cache hit ratios (>98%).</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Client Video Upload (10GB)
+            │
+            ├─ 1. POST /api/upload/initiate (PresignedUploadManager)
+            ├─ 2. Direct Multipart Upload (S3/Blob with HMAC presigned URLs)
+            ▼
+      Object Storage (S3 / GCS)
+            │
+            ▼ (S3 Event Notification)
+┌───────────────────────────────────────┐
+│     Transcoding Pipeline (FFmpeg)     │
+│ Chunk into 4-sec segments             │
+│ Transcode to 1080p, 720p, 480p, 360p  │
+└───────────────────┬───────────────────┘
+                    │
+                    ▼
+     Generate Master &amp; Media .m3u8
+                    │
+                    ▼
+┌───────────────────────────────────────┐
+│          CDN Edge Cache               │
+│ - Playlists: TTL 10s                  │
+│ - Chunks (.ts): TTL 1 Year (Immutable)│
+└───────────────────┬───────────────────┘
+                    │
+                    ▼
+     Client Video Player (HLS / DASH)
+     Dynamic resolution switching (ABR)</code></pre></div>
+<hr/>
+<h2>LeetCode #46 & #47: Permutations I & II (Medium)</h2>
+<ul>
+<li><strong>LeetCode #46 (Permutations)</strong>:</li>
+<li>Generate all $N!$ permutations of unique elements.</li>
+<li>Backtracking with a boolean <code>used</code> array.</li>
+<li><strong>LeetCode #47 (Permutations II)</strong>:</li>
+<li>Generate unique permutations of an array containing duplicates.</li>
+<li>Sorts array and applies the duplicate pruning condition:</li>
+</ul>
+<p><code>if (i &gt; 0 &amp;&amp; nums[i] == nums[i - 1] &amp;&amp; !used[i - 1]) continue;</code></p>
+<ul>
+<li>Guarantees $100\%$ unique permutations without post-processing set lookups.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day38-SystemDesign-Video-Streaming/tests/Day38.VideoStreaming.Tests/Day38.VideoStreaming.Tests.csproj</code></pre></div>
+<p>10 unit tests validate master/variant HLS playlist generation, HMAC presigned URL generation/verification, expiry handling, CDN cache-control policies, and permutations backtracking.</p>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How does Adaptive Bitrate Streaming (ABR) work in modern video architectures (YouTube, Netflix)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>ABR allows video playback to dynamically adapt to varying client network conditions and device capabilities in real time.</p>
+<ol>
+<li>During transcoding, the raw video is encoded into multiple bitrates/resolutions (e.g. 1080p, 720p, 480p, 360p) and sliced into short segments (typically 2 to 6 seconds each).</li>
+<li>The client video player downloads a Master Playlist (<code>.m3u8</code> or <code>.mpd</code>) detailing available bitrates.</li>
+<li>As the player downloads chunks, it monitors the download throughput and client playback buffer level (e.g. 15 seconds of buffered video).</li>
+<li>If network bandwidth degrades (e.g., mobile user entering an elevator), the player automatically requests the next 4-second chunk from a lower bitrate playlist (e.g. 480p instead of 1080p) without interrupting audio/video playback or causing buffering spinners.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the purpose of HLS Master vs Media playlists, and how are they structured?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Master Playlist (<code>master.m3u8</code>)</strong>:</li>
+<li>Serves as the index of all available renditions.</li>
+<li>Lists <code>#EXT-X-STREAM-INF</code> tags specifying <code>BANDWIDTH</code>, <code>RESOLUTION</code>, <code>CODECS</code>, and audio tracks, each pointing to a Variant Media Playlist URL.</li>
+<li><strong>Media Playlist (<code>1080p.m3u8</code>)</strong>:</li>
+<li>Contains the actual sequence of video chunk segments for a specific resolution.</li>
+<li>Specifies <code>#EXT-X-TARGETDURATION</code>, sequence numbers, and individual <code>#EXTINF</code> tags with chunk durations followed by the <code>.ts</code> or <code>.m4s</code> segment URLs.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why should client video uploads never pass through web application servers, and how do presigned multipart uploads solve this?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Routing massive video files (e.g. 10GB–50GB) through web application servers:</p>
+<ul>
+<li>Exhausts server RAM, saturates network interfaces, and ties up web server worker threads for minutes or hours.</li>
+<li>If the network drops at 99%, the entire file upload fails.</li>
+<li><strong>Presigned Multipart Upload Solution</strong>:</li>
+</ul>
+<ol>
+<li>The client requests an upload session from the API. The API contacts S3/GCS to initiate a multipart upload and returns signed upload URLs for each 5MB–10MB part.</li>
+<li>The client streams each part directly to the object storage bucket over HTTPS.</li>
+<li>Parts can be uploaded in parallel, and failed parts are retried individually without re-uploading the entire file.</li>
+<li>Once all parts are finished, the client notifies the API, which instructs S3 to assemble the completed object.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How do you design CDN caching strategies for video streaming to achieve &gt;98% cache hit ratio?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Segment video assets by mutability:</p>
+<ol>
+<li><strong>Video Chunks (<code>.ts</code>, <code>.m4s</code>)</strong>:</li>
+</ol>
+<ul>
+<li>Chunks are content-addressed and <strong>immutable</strong>. Chunk #42 of 1080p will never change.</li>
+<li>Set HTTP headers: <code>Cache-Control: public, max-age=31536000, immutable</code>.</li>
+<li>CDN edge nodes cache chunks indefinitely. Once cached at an edge POP, subsequent viewers in that geographic region fetch chunks from local edge NVMe drives rather than traversing back to the origin.</li>
+</ul>
+<ol>
+<li><strong>Playlists (<code>.m3u8</code>)</strong>:</li>
+</ol>
+<ul>
+<li>Master playlists are cached for short periods (e.g., <code>max-age=60</code> for VOD; <code>max-age=2</code> for Live streams).</li>
+<li>Live stream playlists append new chunks as the stream progresses, so edge caches must revalidate frequently.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you protect premium video content from unauthorized downloads and hotlinking (DRM &amp; Signed URLs)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Signed URLs / Cookies</strong>:</li>
+</ol>
+<ul>
+<li>Issue HMAC-signed tokens with expiration timestamps and client IP restrictions.</li>
+<li>CDN edge nodes validate the signature before serving playlist or chunk files; unauthorized requests receive HTTP 403 Forbidden without touching origin.</li>
+</ul>
+<ol>
+<li><strong>Digital Rights Management (DRM)</strong>:</li>
+</ol>
+<ul>
+<li>Encrypt video chunks using AES-128 (Common Encryption <code>cenc</code>).</li>
+<li>Integrated with platform DRM licensing systems: Apple FairPlay (iOS/Safari), Google Widevine (Android/Chrome), Microsoft PlayReady (Windows/Edge).</li>
+<li>The player requests an encrypted license key from a DRM Key Server via an authenticated API token. Without the hardware-backed key, the raw <code>.ts</code> files cannot be decoded.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does a distributed transcoding pipeline scale to handle thousands of concurrent video uploads?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>An S3 bucket notification emits an <code>ObjectCreated</code> event to an AWS SQS queue or Apache Kafka topic.</li>
+<li>A workflow orchestrator (e.g., Temporal or AWS Step Functions) partitions the video into chunks or keyframe (GOP) boundaries.</li>
+<li>GPU worker nodes (auto-scaled on spot instances) claim individual transcoding jobs:</li>
+</ol>
+<ul>
+<li>Node 1 encodes chunk 1–10 into 1080p H.264/AV1.</li>
+<li>Node 2 encodes chunk 1–10 into 720p.</li>
+<li>Node 3 encodes chunk 11–20 into 1080p.</li>
+</ul>
+<ol>
+<li>An aggregation worker stitches the manifests, generates thumbnails, and updates the database record to <code>Status = &quot;Published&quot;</code>.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What are the differences between H.264 (AVC), H.265 (HEVC), and AV1 codecs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>H.264 / AVC</strong>: Universal compatibility across 99.9% of devices, browsers, and legacy hardware. Moderate compression efficiency.</li>
+<li><strong>H.265 / HEVC</strong>: ~50% bitrate reduction compared to H.264 at identical visual quality. Standard for 4K/HDR; however, burdened by complex patent licensing pools, limiting native web browser support (predominantly Apple and Smart TVs).</li>
+<li><strong>AV1</strong>: Open-source, royalty-free codec developed by the Alliance for Open Media (Google, Netflix, Apple, Amazon). ~30% more efficient than HEVC, but requires high computational power to encode. Netflix and YouTube encode high-traffic videos in AV1 for massive bandwidth savings.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #46 (Permutations), what is the time complexity and recursion tree structure?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>For an array of size $N$, there are $N!$ leaf nodes in the recursion tree.</li>
+<li>At the root level, there are $N$ choices; at depth 1, there are $N - 1$ choices, ..., down to 1 choice at depth $N$.</li>
+<li>The number of operations to copy each permutation of length $N$ into the output list is $O(N)$.</li>
+<li>Total Time Complexity: $O(N \times N!)$.</li>
+<li>Space Complexity: $O(N)$ auxiliary space for the recursion stack and <code>used</code> boolean array.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #47 (Permutations II), why does `!used[i - 1]` correctly identify duplicate branches, and what would happen if `used[i - 1]` were checked instead?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>In a sorted array with duplicates (e.g., <code>[1, 1, 2]</code>):</li>
+<li>If <code>nums[i] == nums[i - 1]</code> and <code>!used[i - 1]</code>:</li>
+<li>It means <code>nums[i - 1]</code> was already chosen at the current recursion level, explored completely, and subsequently unmarked (<code>used[i - 1] = false</code>) during backtracking.</li>
+<li>Selecting <code>nums[i]</code> now would initiate an identical recursion subtree. Skipping when <code>!used[i - 1]</code> ensures only the first duplicate element is picked as the head of a branch at any level.</li>
+<li>If one checked <code>used[i - 1]</code> instead, it would prune elements that belong to the <em>same</em> permutation path (ancestor-descendant relationship), preventing valid duplicate occurrences (like <code>[1, 1, 2]</code>) from ever being formed.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you calculate video storage and bandwidth costs for a platform streaming 1 million hours of video daily?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Bandwidth Estimation</strong>:</li>
+</ol>
+<ul>
+<li>1M hours = 3,600,000,000 seconds.</li>
+<li>Assume average 1080p/720p ABR bitrate of 3 Mbps ($3 \times 10^6 \text{ bits/sec} = 0.375 \text{ MB/sec}$).</li>
+<li>Daily data transfer: $3.6 \times 10^9 \text{ sec} \times 0.375 \text{ MB} = 1.35 \times 10^9 \text{ MB} = 1.35 \text{ PB/day}$.</li>
+<li>At CDN negotiated volume rates (\$0.01 per GB), egress cost $\approx \$13,500\text{/day}$.</li>
+</ul>
+<ol>
+<li><strong>Storage Estimation</strong>:</li>
+</ol>
+<ul>
+<li>1 hour of video transcoded across 4 resolutions $\approx 2.5 \text{ GB}$.</li>
+<li>If 10,000 hours uploaded daily: $10,000 \times 2.5 \text{ GB} = 25 \text{ TB/day}$.</li>
+<li>Stored on S3 Standard / Infrequent Access with lifecycle tiering to Glacier after 90 days.</li>
+</ul>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day38.VideoStreaming/PermutationsSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd38-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d38-src-code-0" class="language-csharp">namespace Day38.VideoStreaming;
+
+public static class PermutationsSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #46: Permutations (Medium).
+    /// All elements in nums are distinct.
+    /// Time Complexity: O(N * N!), Space Complexity: O(N) stack.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; Permute(int[] nums)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (nums == null || nums.Length == 0) return result;
+
+        var used = new bool[nums.Length];
+        var current = new List&lt;int&gt;(nums.Length);
+        BacktrackPermute(nums, used, current, result);
+        return result;
+    }
+
+    private static void BacktrackPermute(int[] nums, bool[] used, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        if (current.Count == nums.Length)
+        {
+            result.Add(new List&lt;int&gt;(current));
+            return;
+        }
+
+        for (int i = 0; i &lt; nums.Length; i++)
+        {
+            if (used[i]) continue;
+
+            used[i] = true;
+            current.Add(nums[i]);
+            BacktrackPermute(nums, used, current, result);
+            current.RemoveAt(current.Count - 1);
+            used[i] = false;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #47: Permutations II (Medium).
+    /// Elements in nums may contain duplicates. Output must contain unique permutations.
+    /// Time Complexity: O(N * N!), Space Complexity: O(N).
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; PermuteUnique(int[] nums)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (nums == null || nums.Length == 0) return result;
+
+        Array.Sort(nums);
+        var used = new bool[nums.Length];
+        var current = new List&lt;int&gt;(nums.Length);
+        BacktrackPermuteUnique(nums, used, current, result);
+        return result;
+    }
+
+    private static void BacktrackPermuteUnique(int[] nums, bool[] used, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        if (current.Count == nums.Length)
+        {
+            result.Add(new List&lt;int&gt;(current));
+            return;
+        }
+
+        for (int i = 0; i &lt; nums.Length; i++)
+        {
+            if (used[i]) continue;
+
+            // If current element is duplicate of previous element, and previous duplicate
+            // was NOT used in current recursion branch, skip to avoid duplicate permutations.
+            if (i &gt; 0 &amp;&amp; nums[i] == nums[i - 1] &amp;&amp; !used[i - 1])
+            {
+                continue;
+            }
+
+            used[i] = true;
+            current.Add(nums[i]);
+            BacktrackPermuteUnique(nums, used, current, result);
+            current.RemoveAt(current.Count - 1);
+            used[i] = false;
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day38.VideoStreaming/VideoStreamingEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd38-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d38-src-code-1" class="language-csharp">using System.Security.Cryptography;
+using System.Text;
+
+namespace Day38.VideoStreaming;
+
+public enum VideoResolution
+{
+    Res360p,
+    Res480p,
+    Res720p,
+    Res1080p
+}
+
+public record VideoRendition(VideoResolution Resolution, int Width, int Height, int BitrateBps, string PlaylistName);
+
+public record VideoSegment(int Index, double DurationSeconds, string Uri);
+
+public class HlsPlaylistGenerator
+{
+    public static readonly IReadOnlyList&lt;VideoRendition&gt; StandardRenditions = new List&lt;VideoRendition&gt;
+    {
+        new(VideoResolution.Res1080p, 1920, 1080, 5000000, &quot;1080p.m3u8&quot;),
+        new(VideoResolution.Res720p, 1280, 720, 2500000, &quot;720p.m3u8&quot;),
+        new(VideoResolution.Res480p, 854, 480, 1200000, &quot;480p.m3u8&quot;),
+        new(VideoResolution.Res360p, 640, 360, 600000, &quot;360p.m3u8&quot;)
+    };
+
+    /// &lt;summary&gt;
+    /// Generates HLS Master Playlist referencing multiple ABR bitrate streams.
+    /// &lt;/summary&gt;
+    public static string GenerateMasterPlaylist(string baseUrl, IEnumerable&lt;VideoRendition&gt;? renditions = null)
+    {
+        renditions ??= StandardRenditions;
+        var sb = new StringBuilder();
+        sb.AppendLine(&quot;#EXTM3U&quot;);
+        sb.AppendLine(&quot;#EXT-X-VERSION:4&quot;);
+
+        foreach (var r in renditions.OrderByDescending(x =&gt; x.BitrateBps))
+        {
+            sb.AppendLine($&quot;#EXT-X-STREAM-INF:BANDWIDTH={r.BitrateBps},RESOLUTION={r.Width}x{r.Height},NAME=\&quot;{r.Height}p\&quot;&quot;);
+            sb.AppendLine($&quot;{baseUrl.TrimEnd(&#x27;/&#x27;)}/{r.PlaylistName}&quot;);
+        }
+
+        return sb.ToString();
+    }
+
+    /// &lt;summary&gt;
+    /// Generates HLS Media Variant Playlist (.m3u8) referencing .ts or .m4s video chunks.
+    /// &lt;/summary&gt;
+    public static string GenerateMediaPlaylist(double targetDuration, IEnumerable&lt;VideoSegment&gt; segments)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine(&quot;#EXTM3U&quot;);
+        sb.AppendLine(&quot;#EXT-X-VERSION:4&quot;);
+        sb.AppendLine($&quot;#EXT-X-TARGETDURATION:{Math.Ceiling(targetDuration)}&quot;);
+        sb.AppendLine(&quot;#EXT-X-MEDIA-SEQUENCE:0&quot;);
+        sb.AppendLine(&quot;#EXT-X-PLAYLIST-TYPE:VOD&quot;);
+
+        foreach (var seg in segments.OrderBy(s =&gt; s.Index))
+        {
+            sb.AppendLine($&quot;#EXTINF:{seg.DurationSeconds:0.000},&quot;);
+            sb.AppendLine(seg.Uri);
+        }
+
+        sb.AppendLine(&quot;#EXT-X-ENDLIST&quot;);
+        return sb.ToString();
+    }
+}
+
+public record MultipartUploadSession(
+    string UploadId,
+    string VideoId,
+    int TotalParts,
+    long PartSizeBytes,
+    Dictionary&lt;int, string&gt; CompletedParts
+);
+
+public class PresignedUploadManager
+{
+    private readonly byte[] _hmacSecret;
+    private readonly Dictionary&lt;string, MultipartUploadSession&gt; _activeSessions = new();
+    private readonly object _lock = new();
+
+    public PresignedUploadManager(string secretKey)
+    {
+        _hmacSecret = Encoding.UTF8.GetBytes(secretKey);
+    }
+
+    public MultipartUploadSession InitiateUpload(string videoId, long totalFileBytes, long partSizeBytes = 5 * 1024 * 1024)
+    {
+        int totalParts = (int)Math.Ceiling((double)totalFileBytes / partSizeBytes);
+        var session = new MultipartUploadSession(
+            UploadId: Guid.NewGuid().ToString(&quot;N&quot;),
+            VideoId: videoId,
+            TotalParts: totalParts,
+            PartSizeBytes: partSizeBytes,
+            CompletedParts: new Dictionary&lt;int, string&gt;()
+        );
+
+        lock (_lock)
+        {
+            _activeSessions[session.UploadId] = session;
+        }
+
+        return session;
+    }
+
+    public string GeneratePresignedPartUrl(string uploadId, int partNumber, TimeSpan validDuration)
+    {
+        long expiry = DateTimeOffset.UtcNow.Add(validDuration).ToUnixTimeSeconds();
+        string payload = $&quot;{uploadId}:{partNumber}:{expiry}&quot;;
+        using var hmac = new HMACSHA256(_hmacSecret);
+        var sigBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
+        string signature = Convert.ToHexString(sigBytes).ToLowerInvariant();
+
+        return $&quot;/storage/upload?uploadId={uploadId}&amp;part={partNumber}&amp;exp={expiry}&amp;sig={signature}&quot;;
+    }
+
+    public bool VerifyAndCompletePart(string uploadId, int partNumber, long expiry, string signature, string partEtag)
+    {
+        if (DateTimeOffset.UtcNow.ToUnixTimeSeconds() &gt; expiry)
+        {
+            return false; // Expired
+        }
+
+        string payload = $&quot;{uploadId}:{partNumber}:{expiry}&quot;;
+        using var hmac = new HMACSHA256(_hmacSecret);
+        var expectedSig = Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload))).ToLowerInvariant();
+
+        if (expectedSig != signature)
+        {
+            return false; // Tampered signature
+        }
+
+        lock (_lock)
+        {
+            if (!_activeSessions.TryGetValue(uploadId, out var session))
+            {
+                return false;
+            }
+
+            session.CompletedParts[partNumber] = partEtag;
+            return true;
+        }
+    }
+
+    public bool IsUploadComplete(string uploadId)
+    {
+        lock (_lock)
+        {
+            if (_activeSessions.TryGetValue(uploadId, out var session))
+            {
+                return session.CompletedParts.Count == session.TotalParts;
+            }
+            return false;
+        }
+    }
+}
+
+public record CdnCacheHeaders(string CacheControl, int TtlSeconds);
+
+public static class CdnEdgeRules
+{
+    public static CdnCacheHeaders GetCachePolicy(string resourcePath)
+    {
+        if (resourcePath.EndsWith(&quot;.m3u8&quot;))
+        {
+            // Master/Media playlists are dynamic and short-lived
+            return new CdnCacheHeaders(&quot;public, max-age=10, must-revalidate&quot;, 10);
+        }
+        else if (resourcePath.EndsWith(&quot;.ts&quot;) || resourcePath.EndsWith(&quot;.m4s&quot;))
+        {
+            // Immutable video chunk segments - cache aggressively for 1 year
+            return new CdnCacheHeaders(&quot;public, max-age=31536000, immutable&quot;, 31536000);
+        }
+
+        return new CdnCacheHeaders(&quot;public, max-age=3600&quot;, 3600);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day38.VideoStreaming.Tests/Day38Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd38-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d38-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day38.VideoStreaming.Tests;
+
+public class Day38Tests
+{
+    [Fact]
+    public void Hls_GenerateMasterPlaylist_ContainsAllRenditionBandwidthsAndResolutions()
+    {
+        string baseUrl = &quot;https://cdn.videoplatform.com/vod/vid-101&quot;;
+        string master = HlsPlaylistGenerator.GenerateMasterPlaylist(baseUrl);
+
+        Assert.Contains(&quot;#EXTM3U&quot;, master);
+        Assert.Contains(&quot;BANDWIDTH=5000000&quot;, master);
+        Assert.Contains(&quot;RESOLUTION=1920x1080&quot;, master);
+        Assert.Contains(&quot;1080p.m3u8&quot;, master);
+        Assert.Contains(&quot;BANDWIDTH=600000&quot;, master);
+        Assert.Contains(&quot;360p.m3u8&quot;, master);
+    }
+
+    [Fact]
+    public void Hls_GenerateMediaPlaylist_ContainsTargetDurationAndSegments()
+    {
+        var segments = new List&lt;VideoSegment&gt;
+        {
+            new(0, 4.0, &quot;segment_0.ts&quot;),
+            new(1, 4.0, &quot;segment_1.ts&quot;),
+            new(2, 3.25, &quot;segment_2.ts&quot;)
+        };
+
+        string playlist = HlsPlaylistGenerator.GenerateMediaPlaylist(4.0, segments);
+
+        Assert.Contains(&quot;#EXT-X-TARGETDURATION:4&quot;, playlist);
+        Assert.Contains(&quot;#EXTINF:4.000,&quot;, playlist);
+        Assert.Contains(&quot;segment_0.ts&quot;, playlist);
+        Assert.Contains(&quot;#EXTINF:3.250,&quot;, playlist);
+        Assert.Contains(&quot;segment_2.ts&quot;, playlist);
+        Assert.Contains(&quot;#EXT-X-ENDLIST&quot;, playlist);
+    }
+
+    [Fact]
+    public void PresignedUpload_InitiateAndVerifyPart_SucceedsWithValidSignature()
+    {
+        var manager = new PresignedUploadManager(&quot;super-secret-hmac-key&quot;);
+        var session = manager.InitiateUpload(&quot;vid-42&quot;, totalFileBytes: 15 * 1024 * 1024, partSizeBytes: 5 * 1024 * 1024);
+
+        Assert.Equal(3, session.TotalParts);
+
+        string presignedUrl = manager.GeneratePresignedPartUrl(session.UploadId, partNumber: 1, TimeSpan.FromMinutes(10));
+        var queryParams = System.Web.HttpUtility.ParseQueryString(new Uri(&quot;https://dummy.com&quot; + presignedUrl).Query);
+
+        string uploadId = queryParams[&quot;uploadId&quot;]!;
+        int part = int.Parse(queryParams[&quot;part&quot;]!);
+        long exp = long.Parse(queryParams[&quot;exp&quot;]!);
+        string sig = queryParams[&quot;sig&quot;]!;
+
+        bool verified = manager.VerifyAndCompletePart(uploadId, part, exp, sig, &quot;etag-chunk-1&quot;);
+        Assert.True(verified);
+        Assert.False(manager.IsUploadComplete(uploadId)); // only 1 of 3 complete
+    }
+
+    [Fact]
+    public void PresignedUpload_TamperedSignature_FailsVerification()
+    {
+        var manager = new PresignedUploadManager(&quot;super-secret-hmac-key&quot;);
+        var session = manager.InitiateUpload(&quot;vid-tamper&quot;, 1000);
+
+        string presignedUrl = manager.GeneratePresignedPartUrl(session.UploadId, 1, TimeSpan.FromMinutes(10));
+        var queryParams = System.Web.HttpUtility.ParseQueryString(new Uri(&quot;https://dummy.com&quot; + presignedUrl).Query);
+
+        long exp = long.Parse(queryParams[&quot;exp&quot;]!);
+
+        bool verified = manager.VerifyAndCompletePart(session.UploadId, 1, exp, &quot;tampered-bad-signature&quot;, &quot;etag&quot;);
+        Assert.False(verified);
+    }
+
+    [Fact]
+    public void PresignedUpload_ExpiredSignature_FailsVerification()
+    {
+        var manager = new PresignedUploadManager(&quot;super-secret-hmac-key&quot;);
+        var session = manager.InitiateUpload(&quot;vid-exp&quot;, 1000);
+
+        // Expired in past
+        long pastExp = DateTimeOffset.UtcNow.AddMinutes(-5).ToUnixTimeSeconds();
+        bool verified = manager.VerifyAndCompletePart(session.UploadId, 1, pastExp, &quot;sig&quot;, &quot;etag&quot;);
+        Assert.False(verified);
+    }
+
+    [Fact]
+    public void PresignedUpload_FullCompletion_TracksAllParts()
+    {
+        var manager = new PresignedUploadManager(&quot;my-key&quot;);
+        var session = manager.InitiateUpload(&quot;vid-all&quot;, totalFileBytes: 10 * 1024 * 1024, partSizeBytes: 5 * 1024 * 1024);
+
+        Assert.Equal(2, session.TotalParts);
+
+        for (int p = 1; p &lt;= 2; p++)
+        {
+            var url = manager.GeneratePresignedPartUrl(session.UploadId, p, TimeSpan.FromMinutes(5));
+            var q = System.Web.HttpUtility.ParseQueryString(new Uri(&quot;https://dummy.com&quot; + url).Query);
+            manager.VerifyAndCompletePart(session.UploadId, p, long.Parse(q[&quot;exp&quot;]!), q[&quot;sig&quot;]!, $&quot;etag-{p}&quot;);
+        }
+
+        Assert.True(manager.IsUploadComplete(session.UploadId));
+    }
+
+    [Fact]
+    public void CdnEdgeRules_PlaylistAndChunkCachingHeaders_SetsAppropriateTtls()
+    {
+        var playlistCache = CdnEdgeRules.GetCachePolicy(&quot;/vod/1080p.m3u8&quot;);
+        var chunkCache = CdnEdgeRules.GetCachePolicy(&quot;/vod/segment_42.ts&quot;);
+
+        Assert.Contains(&quot;must-revalidate&quot;, playlistCache.CacheControl);
+        Assert.Equal(10, playlistCache.TtlSeconds);
+
+        Assert.Contains(&quot;immutable&quot;, chunkCache.CacheControl);
+        Assert.Equal(31536000, chunkCache.TtlSeconds);
+    }
+
+    [Fact]
+    public void Permutations_DistinctElements_ReturnsFactorialCount()
+    {
+        int[] nums = [1, 2, 3];
+        var perms = PermutationsSolver.Permute(nums);
+
+        // 3! = 6
+        Assert.Equal(6, perms.Count);
+        Assert.Contains(perms, p =&gt; p.SequenceEqual([1, 2, 3]));
+        Assert.Contains(perms, p =&gt; p.SequenceEqual([3, 2, 1]));
+    }
+
+    [Fact]
+    public void PermutationsUnique_WithDuplicates_ReturnsUniqueCount()
+    {
+        int[] nums = [1, 1, 2];
+        var perms = PermutationsSolver.PermuteUnique(nums);
+
+        // 3! / 2! = 3 unique permutations: [1,1,2], [1,2,1], [2,1,1]
+        Assert.Equal(3, perms.Count);
+        Assert.Contains(perms, p =&gt; p.SequenceEqual([1, 1, 2]));
+        Assert.Contains(perms, p =&gt; p.SequenceEqual([1, 2, 1]));
+        Assert.Contains(perms, p =&gt; p.SequenceEqual([2, 1, 1]));
+    }
+
+    [Fact]
+    public void PermutationsUnique_AllDuplicates_ReturnsSinglePermutation()
+    {
+        int[] nums = [5, 5, 5, 5];
+        var perms = PermutationsSolver.PermuteUnique(nums);
+
+        Assert.Single(perms);
+        Assert.Equal([5, 5, 5, 5], perms[0]);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 38 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

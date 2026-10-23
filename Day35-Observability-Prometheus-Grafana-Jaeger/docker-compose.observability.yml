@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # OpenTelemetry Collector - unified telemetry gateway
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics exporter
+    depends_on:
+      - jaeger
+
+  # Jaeger - distributed tracing backend and UI
+  jaeger:
+    image: jaegertracing/all-in-one:1.55
+    container_name: jaeger
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "14268:14268" # Jaeger collector HTTP
+      - "14250:14250" # Jaeger gRPC
+
+  # Prometheus - time-series metrics scraper and TSDB
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090" # Prometheus UI & PromQL API
+    depends_on:
+      - otel-collector
+
+  # Grafana - unified dashboards and visualization
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000" # Grafana UI
+    depends_on:
+      - prometheus
+      - jaeger

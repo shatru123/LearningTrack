@@ -1,0 +1,2386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 37: System Design: High-Throughput Chat System | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 37</span>
+        <span class="badge badge-category">System Design &amp; WebSockets</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day36-SystemDesign-Notification-Service/index.html" class="nav-btn">← Day 36</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+
+        </select>
+        <a href="../Day38-SystemDesign-Video-Streaming/index.html" class="nav-btn">Day 38 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 37: System Design: High-Throughput Chat System</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d37Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d37P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d37P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d37P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#155e75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d37Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 37: High-Throughput Chat System &amp; Combination Sum I &amp; II</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d37P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">WebSocket Gateway &amp; Scale</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">C10M Sockets Architecture</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Non-blocking epoll / Kestrel sockets</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">Reduced TCP buffer allocation (4KB)</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">1M concurrent idle sockets per 64GB node</text>
+          <text x="50" y="196" fill="#fbbf24" font-size="9">NLB Layer 4 TLS termination</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#a855f7" font-size="11" font-weight="bold">Presence &amp; Ephemeral TTL</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Client heartbeats every 30s</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">Redis SET presence ONLINE EX 60</text>
+          <text x="50" y="290" fill="#f43f5e" font-size="9">Auto-offline on abrupt disconnect</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Typing indicators bypass DB entirely</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d37P2)" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#a855f7" font-size="14" font-weight="bold">Sequencing &amp; Redis Pub/Sub</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Monotonic Channel Sequencer</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Redis INCR channel:{id}:seq</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Strict monotonic ordering: 1, 2, 3...</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">Eliminates clock drift &amp; race conditions</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Clients detect missing sequence gaps</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#a855f7" font-size="11" font-weight="bold">Cross-Server Pub/Sub Backplane</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Server 1 publishes to chat:channel</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Server 2 receives and pushes to Bob</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">ScyllaDB append: ((channel_id), seq)</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Fast contiguous SSTable range queries</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d37P3)" stroke="#22d3ee" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#22d3ee" font-size="14" font-weight="bold">LC #39 &amp; #40: Combination Sum</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Combination Sum I (Reuse)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Unlimited element reuse allowed</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Recurse on same index i</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Sort candidates for early pruning</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">if (candidates[i] &gt; remain) break;</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#22d3ee" font-size="11" font-weight="bold">Combination Sum II (Single Use)</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Each element used at most once</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Recurse on index i + 1</text>
+          <text x="630" y="290" fill="#f43f5e" font-size="9">if (i &gt; start &amp;&amp; c[i] == c[i-1]) continue;</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Zero duplicate combination results</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: High-Throughput Chat Architecture</h1>
+<h2>1. WebSocket Connection Management & Gateway Tier</h2>
+<ul>
+<li><strong>C10M Problem (10 Million Connections)</strong>:</li>
+<li>Long-lived persistent TCP connections consume file descriptors and socket buffers.</li>
+<li>Linux tuning: <code>sysctl -w fs.file-max=2097152</code>, <code>ulimit -n 1048576</code>, tuning <code>tcp_rmem</code> and <code>tcp_wmem</code> buffer sizes (down from 128KB to 4KB per socket idle) allows a single 64GB RAM node to hold 1M idle WebSocket connections.</li>
+<li><strong>Connection Routing</strong>:</li>
+<li>Load balancers (Envoy, NGINX) use IP hash or consistent hashing for sticky routing, or simple round-robin with WebSocket upgrade handling.</li>
+<li>Gateway servers maintain an internal mapping: <code>Dictionary&lt;UserId, List&lt;WebSocketSession&gt;&gt;</code>.</li>
+</ul>
+<h2>2. Message Ordering & Storage Engines</h2>
+<ul>
+<li><strong>Why NTP Wall Clocks Fail</strong>:</li>
+<li>In distributed systems, clock skew between servers can be 50–200ms. If Message B arrives 10ms after Message A but Server 2's clock is 50ms behind Server 1, sorting by timestamp reverses message order.</li>
+<li><strong>Monotonic Sequencer Solutions</strong>:</li>
+<li><strong>Redis INCR per channel</strong>: <code>INCR channel:{id}:seq</code> provides an atomic 64-bit integer.</li>
+<li><strong>Snowflake IDs</strong>: 64-bit IDs containing timestamp prefix + machine ID + local sequence counter (guarantees rough time ordering, but gaps can exist).</li>
+<li><strong>Storage: Apache Cassandra / ScyllaDB</strong>:</li>
+<li>Primary Key: <code>((channel_id), sequence_number) WITH CLUSTERING ORDER BY (sequence_number ASC)</code>.</li>
+<li>Partitioning by <code>channel_id</code> groups all messages of a room on the same storage node/replica. Sequential range queries (<code>SELECT * WHERE channel_id = ? AND sequence_number &gt; ? LIMIT 50</code>) hit a contiguous SSTable disk block with sub-millisecond seek latency.</li>
+</ul>
+<h2>3. LeetCode #39 & #40: Backtracking Combinations Tree</h2>
+<ul>
+<li><strong>State Space</strong>:</li>
+<li>At each node, decide whether to include <code>candidates[i]</code> and recurse on the remainder.</li>
+<li>Sorting the array beforehand enables immediate termination of the loop (<code>if (candidates[i] &gt; remain) break;</code>), pruning massive subtrees.</li>
+<li><strong>Combination Sum I vs II</strong>:</li>
+<li>In I, elements can be picked repeatedly $\implies$ next call is <code>Backtrack(i, remain - candidates[i])</code>.</li>
+<li>In II, elements cannot be reused $\implies$ next call is <code>Backtrack(i + 1, remain - candidates[i])</code>.</li>
+<li>In II, duplicate elements exist $\implies$ duplicate branches at the same depth are skipped via <code>if (i &gt; start &amp;&amp; candidates[i] == candidates[i - 1]) continue;</code>.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 37: System Design: High-Throughput Chat System</h1>
+<h2>Architectural Overview</h2>
+<p>Real-time chat systems (Slack, Discord, WhatsApp) support hundreds of millions of concurrent WebSocket connections, instant messaging, presence tracking, and ordered message histories.</p>
+<p>This module implements a distributed real-time chat architecture in .NET 8 featuring:</p>
+<ul>
+<li><strong>WebSocket Session Management & Scale</strong>: Decouples client connections across distributed gateway hubs (<code>DistributedChatHub</code>).</li>
+<li><strong>Presence Service</strong>: Heartbeat ping/pong mechanism tracking user states (<code>Online</code>, <code>Offline</code>, <code>Away</code>) with timeout-based expiration and instant disconnection cleanup.</li>
+<li><strong>Cross-Server Pub/Sub Replication</strong>: Simulates Redis Pub/Sub backplane. When Alice sends a message to Server East, it publishes to the Redis topic; Server West receives the event and pushes to Bob over his active local WebSocket.</li>
+<li><strong>Monotonic Message Sequencing</strong>: Channel-level sequencers assign sequential integer IDs ($1, 2, 3, \dots$), resolving clock-drift race conditions across distributed gateway nodes and guaranteeing total causal order.</li>
+<li><strong>Read Receipts & Typing Indicators</strong>: Tracks <code>last_read_sequence</code> per user per channel and broadcasts transient typing indicators to peer participants without echoing to sender.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text"> Client A (Alice)                        Client B (Bob)
+        │                                       │
+WebSocket Connection                    WebSocket Connection
+        ▼                                       ▼
+┌──────────────┐                        ┌──────────────┐
+│ Chat Hub 1   │                        │ Chat Hub 2   │
+│ (US-East)    │                        │ (US-West)    │
+└───────┬──────┘                        └───────▲──────┘
+        │                                       │
+        │ 1. Assign Sequence #                  │ 3. Forward to Bob
+        │ 2. Publish to Redis                   │
+        ▼                                       │
+┌───────────────────────────────────────────────┴──────┐
+│                Redis Pub/Sub Cluster                 │
+│         Topic: chat:channel:{channel_id}             │
+└───────────────────────┬──────────────────────────────┘
+                        │
+                        ▼ (Async Append)
+        ┌───────────────────────────────┐
+        │   ScyllaDB / Cassandra Store  │
+        │ (Partition: channel_id,       │
+        │  Clustering: sequence_number) │
+        └───────────────────────────────┘</code></pre></div>
+<hr/>
+<h2>LeetCode #39 & #40: Combination Sum I & II (Medium)</h2>
+<ul>
+<li><strong>LeetCode #39 (Combination Sum I)</strong>:</li>
+<li>Elements can be reused infinitely.</li>
+<li>Recursion advances with index <code>i</code> (allowing current element reuse).</li>
+<li>Prunes early when sorted candidate exceeds remaining sum.</li>
+<li><strong>LeetCode #40 (Combination Sum II)</strong>:</li>
+<li>Input array contains duplicate numbers; each element used at most once.</li>
+<li>Recursion advances with <code>i + 1</code>.</li>
+<li>Prunes duplicate sibling branches:</li>
+</ul>
+<p><code>if (i &gt; start &amp;&amp; candidates[i] == candidates[i - 1]) continue;</code></p>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day37-SystemDesign-Chat-System/tests/Day37.ChatSystem.Tests/Day37.ChatSystem.Tests.csproj</code></pre></div>
+<p>10 unit tests validate presence heartbeats and timeouts, channel sequence monotonicity, cross-server pub/sub delivery, read receipts, typing indicators, and combination backtracking.</p>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do you scale a WebSocket gateway to maintain 10 million concurrent active connections?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>OS & Kernel Tuning</strong>:</li>
+</ol>
+<ul>
+<li>Increase file descriptor limits (<code>ulimit -n 1048576</code>).</li>
+<li>Reduce TCP read/write buffer allocations (<code>net.ipv4.tcp_rmem = 4096 87380 4194304</code>, <code>net.ipv4.tcp_wmem</code>). For 1M idle connections, saving 50KB RAM per socket saves 50GB of memory.</li>
+<li>Enable <code>SO_REUSEPORT</code> and <code>epoll</code>/<code>kqueue</code> event-driven non-blocking I/O (built into .NET Kestrel/Sockets).</li>
+</ul>
+<ol>
+<li><strong>Stateless Gateway Tier</strong>:</li>
+</ol>
+<ul>
+<li>Deploy a cluster of WebSocket gateways behind Layer 4 Network Load Balancers (AWS NLB) with TLS termination.</li>
+<li>Maintain minimal session state in the gateway (only socket handle and user ID).</li>
+</ul>
+<ol>
+<li><strong>Session Registry</strong>:</li>
+</ol>
+<ul>
+<li>Store mapping of <code>UserId -&gt; GatewayNodeIP</code> in Redis with TTL heartbeats so other services know which gateway holds a specific user's socket.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why is Redis Pub/Sub alone insufficient for chat message persistence, and how do you pair it with a database?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Redis Pub/Sub is strictly "fire-and-forget":</p>
+<ul>
+<li>If a client is temporarily offline, or a network flap occurs between Redis and the gateway, messages published to Redis Pub/Sub are lost forever. Redis does not buffer messages for disconnected pub/sub subscribers.</li>
+<li><strong>Production Architecture</strong>:</li>
+</ul>
+<ol>
+<li>The API receives the message.</li>
+<li>The message is written first to persistent storage (Cassandra/ScyllaDB) or an append-only commit log (Kafka / Redis Streams).</li>
+<li>Then the message is published to Redis Pub/Sub for real-time delivery to online users.</li>
+<li>When an offline user reconnects, they query the database for messages where <code>sequence_number &gt; last_received_sequence</code>.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you guarantee strict causal message ordering in a group chat across distributed servers without NTP clock synchronization?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>NTP clock drift between servers makes timestamps non-monotonic and prone to race conditions.</p>
+<ul>
+<li><strong>Per-Channel Atomic Sequencers</strong>:</li>
+<li>Each chat room/channel has an independent monotonic sequence counter.</li>
+<li>Implement using Redis <code>INCR channel:{id}:seq</code> or an atomic database sequence.</li>
+<li>Every message sent to the channel receives an incremented sequence number ($1, 2, 3, \dots$).</li>
+<li><strong>Client Synchronization</strong>:</li>
+<li>The client displays messages sorted by <code>sequence_number</code>.</li>
+<li>If a client receives sequence #5 and previously had #3, it immediately detects a gap (missing #4) and requests the missing message from the server's history endpoint before rendering.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is the optimal database schema for storing chat messages in Apache Cassandra / ScyllaDB?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Cassandra uses a two-part primary key: Partition Key and Clustering Columns.</p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">CREATE TABLE channel_messages (
+    channel_id uuid,
+    sequence_id bigint,
+    message_id uuid,
+    sender_id uuid,
+    content text,
+    created_at timestamp,
+    PRIMARY KEY ((channel_id), sequence_id)
+) WITH CLUSTERING ORDER BY (sequence_id ASC);</code></pre></div>
+<ul>
+<li><code>channel_id</code> is the Partition Key: all messages for a given room are stored together on the same cluster replica nodes.</li>
+<li><code>sequence_id</code> is the Clustering Column: messages are written to disk sorted contiguously. Fetching the last 50 messages (<code>WHERE channel_id = ? AND sequence_id &gt; ? LIMIT 50</code>) is a fast sequential disk read.</li>
+<li>For extremely active channels (millions of messages), add a bucket (e.g. <code>(channel_id, year_month)</code>) to prevent giant partitions (> 100MB).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you design a Presence Service (Online/Offline/Last Seen) for 100 million users without overloading databases?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Heartbeat & Ephemeral TTL</strong>:</li>
+</ol>
+<ul>
+<li>Clients send a lightweight ping every 30 seconds over the existing WebSocket connection.</li>
+<li>The gateway writes to Redis: <code>SET user:{id}:presence &quot;ONLINE&quot; EX 60</code>.</li>
+<li>If a client abruptly disconnects without TCP FIN (e.g., cell tower loss, tunnel), the Redis key expires after 60s, automatically marking them offline.</li>
+</ul>
+<ol>
+<li><strong>Fan-out Optimization</strong>:</li>
+</ol>
+<ul>
+<li>Do NOT broadcast presence changes to all friends on every heartbeat.</li>
+<li>Instead, only broadcast presence transitions (Offline $\to$ Online, Online $\to$ Offline).</li>
+<li>Use lazy-loading: When user opens a friend list or chat room, query the presence state of only the visible users in that viewport.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you implement &quot;Message Read Receipts&quot; (Single check, Double check, Blue check)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Instead of storing a read receipt record per message per user (which causes massive write amplification in group chats):</p>
+<ul>
+<li>Store a single monotonic pointer per user per channel: <code>LastReadSequenceNumber</code>.</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">  CREATE TABLE channel_read_pointers (
+      channel_id uuid,
+      user_id uuid,
+      last_read_sequence bigint,
+      PRIMARY KEY (channel_id, user_id)
+  );</code></pre></div>
+<ul>
+<li>When a user views the chat up to message #500, update their pointer to 500.</li>
+<li>Any message with <code>sequence_number &lt;= 500</code> is implicitly read by that user.</li>
+<li>To render read status in a 1-on-1 chat: If Bob's <code>last_read_sequence &gt;= Alice&#x27;s message sequence</code>, show blue checkmark.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How do you implement transient features like &quot;Typing Indicators&quot; without disk writes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Typing indicators are ephemeral, short-lived events that should never be persisted to a relational or NoSQL database.</p>
+<ol>
+<li>When user types, client sends a lightweight WebSocket payload: <code>{&quot;action&quot;: &quot;typing&quot;, &quot;channelId&quot;: &quot;123&quot;}</code>.</li>
+<li>The gateway server throttles typing events from the client (e.g., at most once every 3 seconds).</li>
+<li>The event is pushed directly to Redis Pub/Sub topic <code>channel:typing:{channelId}</code>.</li>
+<li>Gateway servers holding connections for other members of that channel forward the typing event to their sockets.</li>
+<li>The receiving client shows the typing bubble and starts a 4-second local animation timer; if no refresh arrives, it clears automatically.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #39 (Combination Sum), why is the recursive call invoked with index `i` rather than `0` or `i + 1`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>If invoked with <code>0</code>, the algorithm would explore combinations in different permutations (e.g., both <code>[2, 3]</code> and <code>[3, 2]</code>), resulting in duplicate combinations.</li>
+<li>If invoked with <code>i + 1</code>, each element could only be used at most once, which fails the requirement that the same number may be chosen an unlimited number of times.</li>
+<li>By invoking with <code>i</code>, we allow the current candidate to be reused repeatedly while enforcing that future choices are $\ge$ the current candidate index, guaranteeing all generated combinations are strictly sorted and unique.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #40 (Combination Sum II), why is sorting mandatory before backtracking?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Early Pruning</strong>: When candidates are sorted, if <code>candidates[i] &gt; remain</code>, we know every candidate after index <code>i</code> is also greater than <code>remain</code>. We can <code>break</code> out of the loop immediately rather than continuing useless iterations.</li>
+<li><strong>Duplicate Subtree Elimination</strong>: Sorting brings duplicate values together. The condition <code>if (i &gt; start &amp;&amp; candidates[i] == candidates[i - 1]) continue;</code> allows us to skip identical sibling branches at the current recursion level, preventing duplicate combinations in the output.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you handle End-to-End Encryption (E2EE) in a distributed chat architecture?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>In E2EE (e.g. Signal Protocol / WhatsApp):</p>
+<ol>
+<li>The server is treated as an untrusted, blind relay. The server only sees ciphertext and cryptographic metadata (pre-keys, identity keys, ratcheting parameters).</li>
+<li>Users register public identity keys and one-time prekeys with a Key Distribution Center (KDC).</li>
+<li>To start a chat, Alice fetches Bob's prekeys, initiates the Double Ratchet Algorithm, and generates a shared session key.</li>
+<li>Alice encrypts the payload locally; the server stores and routes the encrypted blob. Only Bob's private device key can decrypt the message.</li>
+<li>Search and media processing must be executed locally on the client device.</li>
+</ol>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day37.ChatSystem/ChatSystemEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd37-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d37-src-code-0" class="language-csharp">using System.Collections.Concurrent;
+
+namespace Day37.ChatSystem;
+
+public enum UserPresenceState
+{
+    Offline,
+    Online,
+    Away
+}
+
+public record UserPresence(string UserId, UserPresenceState State, DateTime LastSeenUtc);
+
+public class PresenceTracker
+{
+    private readonly ConcurrentDictionary&lt;string, DateTime&gt; _heartbeats = new();
+    private readonly TimeSpan _onlineTimeout;
+
+    public PresenceTracker(TimeSpan? onlineTimeout = null)
+    {
+        _onlineTimeout = onlineTimeout ?? TimeSpan.FromSeconds(30);
+    }
+
+    public void Heartbeat(string userId)
+    {
+        _heartbeats[userId] = DateTime.UtcNow;
+    }
+
+    public void ExplicitDisconnect(string userId)
+    {
+        _heartbeats.TryRemove(userId, out _);
+    }
+
+    public UserPresence GetPresence(string userId)
+    {
+        if (_heartbeats.TryGetValue(userId, out var lastSeen))
+        {
+            if (DateTime.UtcNow - lastSeen &lt;= _onlineTimeout)
+            {
+                return new UserPresence(userId, UserPresenceState.Online, lastSeen);
+            }
+        }
+        return new UserPresence(userId, UserPresenceState.Offline, lastSeen == default ? DateTime.MinValue : lastSeen);
+    }
+}
+
+public record ChatMessage(
+    string MessageId,
+    string ChannelId,
+    string SenderId,
+    string Content,
+    long SequenceNumber,
+    DateTime TimestampUtc
+);
+
+public class ChannelSequencer
+{
+    private readonly ConcurrentDictionary&lt;string, long&gt; _channelSequences = new();
+
+    public long GetNextSequenceNumber(string channelId)
+    {
+        return _channelSequences.AddOrUpdate(channelId, 1, (_, current) =&gt; current + 1);
+    }
+
+    public long GetCurrentSequence(string channelId)
+    {
+        return _channelSequences.TryGetValue(channelId, out var seq) ? seq : 0;
+    }
+}
+
+public interface IChatClientConnection
+{
+    string ConnectionId { get; }
+    string UserId { get; }
+    Task ReceiveMessageAsync(ChatMessage message);
+    Task ReceiveTypingIndicatorAsync(string channelId, string userId, bool isTyping);
+}
+
+public class MockWebSocketClient : IChatClientConnection
+{
+    public string ConnectionId { get; } = Guid.NewGuid().ToString(&quot;N&quot;);
+    public string UserId { get; }
+    public List&lt;ChatMessage&gt; ReceivedMessages { get; } = new();
+    public List&lt;(string ChannelId, string UserId, bool IsTyping)&gt; TypingEvents { get; } = new();
+
+    public MockWebSocketClient(string userId)
+    {
+        UserId = userId;
+    }
+
+    public Task ReceiveMessageAsync(ChatMessage message)
+    {
+        ReceivedMessages.Add(message);
+        return Task.CompletedTask;
+    }
+
+    public Task ReceiveTypingIndicatorAsync(string channelId, string userId, bool isTyping)
+    {
+        TypingEvents.Add((channelId, userId, isTyping));
+        return Task.CompletedTask;
+    }
+}
+
+public class DistributedChatHub
+{
+    public string ServerId { get; }
+    private readonly ChannelSequencer _sequencer;
+    private readonly ConcurrentDictionary&lt;string, List&lt;IChatClientConnection&gt;&gt; _channelSubscribers = new();
+    private readonly ConcurrentDictionary&lt;string, long&gt; _userReadReceipts = new(); // key: &quot;userId:channelId&quot; -&gt; seq
+    private readonly List&lt;ChatMessage&gt; _messageHistory = new();
+    private readonly object _historyLock = new();
+
+    // Event bus simulating Redis Pub/Sub for cross-server message replication
+    public static event Action&lt;string, ChatMessage&gt;? CrossServerMessagePublished;
+    public static event Action&lt;string, string, bool&gt;? CrossServerTypingPublished;
+
+    public DistributedChatHub(string serverId, ChannelSequencer sequencer)
+    {
+        ServerId = serverId;
+        _sequencer = sequencer;
+
+        CrossServerMessagePublished += HandleCrossServerMessage;
+        CrossServerTypingPublished += HandleCrossServerTyping;
+    }
+
+    public void Subscribe(string channelId, IChatClientConnection client)
+    {
+        _channelSubscribers.AddOrUpdate(
+            channelId,
+            _ =&gt; [client],
+            (_, list) =&gt; { lock (list) { list.Add(client); } return list; }
+        );
+    }
+
+    public void Unsubscribe(string channelId, IChatClientConnection client)
+    {
+        if (_channelSubscribers.TryGetValue(channelId, out var list))
+        {
+            lock (list)
+            {
+                list.Remove(client);
+            }
+        }
+    }
+
+    public async Task&lt;ChatMessage&gt; SendMessageAsync(string channelId, string senderId, string content)
+    {
+        long seq = _sequencer.GetNextSequenceNumber(channelId);
+        var message = new ChatMessage(
+            MessageId: Guid.NewGuid().ToString(&quot;N&quot;),
+            ChannelId: channelId,
+            SenderId: senderId,
+            Content: content,
+            SequenceNumber: seq,
+            TimestampUtc: DateTime.UtcNow
+        );
+
+        // Store to channel history
+        lock (_historyLock)
+        {
+            _messageHistory.Add(message);
+        }
+
+        // Broadcast to Redis pub/sub
+        CrossServerMessagePublished?.Invoke(channelId, message);
+
+        return await Task.FromResult(message);
+    }
+
+    public void SendTyping(string channelId, string userId, bool isTyping)
+    {
+        CrossServerTypingPublished?.Invoke(channelId, userId, isTyping);
+    }
+
+    public void MarkRead(string userId, string channelId, long sequenceNumber)
+    {
+        _userReadReceipts[$&quot;{userId}:{channelId}&quot;] = sequenceNumber;
+    }
+
+    public long GetLastReadSequence(string userId, string channelId)
+    {
+        return _userReadReceipts.TryGetValue($&quot;{userId}:{channelId}&quot;, out var seq) ? seq : 0;
+    }
+
+    public IReadOnlyList&lt;ChatMessage&gt; GetMessageHistory(string channelId)
+    {
+        lock (_historyLock)
+        {
+            return _messageHistory.Where(m =&gt; m.ChannelId == channelId).OrderBy(m =&gt; m.SequenceNumber).ToList();
+        }
+    }
+
+    private void HandleCrossServerMessage(string channelId, ChatMessage message)
+    {
+        if (_channelSubscribers.TryGetValue(channelId, out var list))
+        {
+            List&lt;IChatClientConnection&gt; clients;
+            lock (list)
+            {
+                clients = list.ToList();
+            }
+
+            foreach (var client in clients)
+            {
+                _ = client.ReceiveMessageAsync(message);
+            }
+        }
+    }
+
+    private void HandleCrossServerTyping(string channelId, string userId, bool isTyping)
+    {
+        if (_channelSubscribers.TryGetValue(channelId, out var list))
+        {
+            List&lt;IChatClientConnection&gt; clients;
+            lock (list)
+            {
+                clients = list.ToList();
+            }
+
+            foreach (var client in clients)
+            {
+                if (client.UserId != userId) // don&#x27;t echo to self
+                {
+                    _ = client.ReceiveTypingIndicatorAsync(channelId, userId, isTyping);
+                }
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day37.ChatSystem/CombinationSumSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd37-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d37-src-code-1" class="language-csharp">namespace Day37.ChatSystem;
+
+public static class CombinationSumSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #39: Combination Sum (Medium).
+    /// Candidates are distinct. Elements can be chosen unlimited number of times.
+    /// Time Complexity: O(2^T) where T = target / min(candidates). Space: O(T) stack.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; CombinationSum(int[] candidates, int target)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (candidates == null || candidates.Length == 0) return result;
+
+        Array.Sort(candidates);
+        var current = new List&lt;int&gt;();
+        BacktrackSum1(candidates, target, 0, current, result);
+        return result;
+    }
+
+    private static void BacktrackSum1(int[] candidates, int remain, int start, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        if (remain == 0)
+        {
+            result.Add(new List&lt;int&gt;(current));
+            return;
+        }
+
+        for (int i = start; i &lt; candidates.Length; i++)
+        {
+            if (candidates[i] &gt; remain) break; // Prune: sorted array, no subsequent elements can fit
+
+            current.Add(candidates[i]);
+            // Pass &#x27;i&#x27; instead of &#x27;i + 1&#x27; to allow reuse of current element
+            BacktrackSum1(candidates, remain - candidates[i], i, current, result);
+            current.RemoveAt(current.Count - 1);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #40: Combination Sum II (Medium).
+    /// Candidates may contain duplicates. Each element can be used AT MOST ONCE.
+    /// Result must not contain duplicate combinations.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; CombinationSum2(int[] candidates, int target)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (candidates == null || candidates.Length == 0) return result;
+
+        Array.Sort(candidates);
+        var current = new List&lt;int&gt;();
+        BacktrackSum2(candidates, target, 0, current, result);
+        return result;
+    }
+
+    private static void BacktrackSum2(int[] candidates, int remain, int start, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        if (remain == 0)
+        {
+            result.Add(new List&lt;int&gt;(current));
+            return;
+        }
+
+        for (int i = start; i &lt; candidates.Length; i++)
+        {
+            if (candidates[i] &gt; remain) break; // Prune
+
+            // Skip duplicate sibling branches at the same tree depth
+            if (i &gt; start &amp;&amp; candidates[i] == candidates[i - 1])
+            {
+                continue;
+            }
+
+            current.Add(candidates[i]);
+            // Pass &#x27;i + 1&#x27; so each element is only used once
+            BacktrackSum2(candidates, remain - candidates[i], i + 1, current, result);
+            current.RemoveAt(current.Count - 1);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day37.ChatSystem.Tests/Day37Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd37-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d37-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day37.ChatSystem.Tests;
+
+public class Day37Tests
+{
+    [Fact]
+    public void PresenceTracker_Heartbeat_RecordsUserOnline()
+    {
+        var tracker = new PresenceTracker(TimeSpan.FromSeconds(10));
+        tracker.Heartbeat(&quot;alice&quot;);
+
+        var presence = tracker.GetPresence(&quot;alice&quot;);
+
+        Assert.Equal(UserPresenceState.Online, presence.State);
+        Assert.Equal(&quot;alice&quot;, presence.UserId);
+        Assert.True(DateTime.UtcNow - presence.LastSeenUtc &lt; TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void PresenceTracker_ExpiredHeartbeat_ReportsOffline()
+    {
+        var tracker = new PresenceTracker(TimeSpan.FromMilliseconds(1));
+        tracker.Heartbeat(&quot;bob&quot;);
+
+        Thread.Sleep(5); // allow 1ms timeout to elapse
+
+        var presence = tracker.GetPresence(&quot;bob&quot;);
+        Assert.Equal(UserPresenceState.Offline, presence.State);
+    }
+
+    [Fact]
+    public void PresenceTracker_ExplicitDisconnect_RemovesPresenceInstantly()
+    {
+        var tracker = new PresenceTracker(TimeSpan.FromMinutes(5));
+        tracker.Heartbeat(&quot;charlie&quot;);
+        Assert.Equal(UserPresenceState.Online, tracker.GetPresence(&quot;charlie&quot;).State);
+
+        tracker.ExplicitDisconnect(&quot;charlie&quot;);
+        Assert.Equal(UserPresenceState.Offline, tracker.GetPresence(&quot;charlie&quot;).State);
+    }
+
+    [Fact]
+    public void ChannelSequencer_MonotonicallyIncrementsPerChannel()
+    {
+        var sequencer = new ChannelSequencer();
+        string c1 = &quot;chan-tech&quot;;
+        string c2 = &quot;chan-random&quot;;
+
+        Assert.Equal(1, sequencer.GetNextSequenceNumber(c1));
+        Assert.Equal(2, sequencer.GetNextSequenceNumber(c1));
+        Assert.Equal(1, sequencer.GetNextSequenceNumber(c2));
+        Assert.Equal(3, sequencer.GetNextSequenceNumber(c1));
+        Assert.Equal(2, sequencer.GetNextSequenceNumber(c2));
+    }
+
+    [Fact]
+    public async Task DistributedChatHub_CrossServerBroadcast_DeliversToSubscribersOnDifferentServers()
+    {
+        var sequencer = new ChannelSequencer();
+        var serverEast = new DistributedChatHub(&quot;server-us-east-1&quot;, sequencer);
+        var serverWest = new DistributedChatHub(&quot;server-us-west-1&quot;, sequencer);
+
+        var clientEast = new MockWebSocketClient(&quot;user-alice&quot;);
+        var clientWest = new MockWebSocketClient(&quot;user-bob&quot;);
+
+        string channelId = &quot;general-room&quot;;
+        serverEast.Subscribe(channelId, clientEast);
+        serverWest.Subscribe(channelId, clientWest);
+
+        // Alice sends message on East server
+        var sentMsg = await serverEast.SendMessageAsync(channelId, &quot;user-alice&quot;, &quot;Hello from US East!&quot;);
+
+        // Assert both Alice (East) and Bob (West) received it via simulated Redis pub/sub
+        Assert.Single(clientEast.ReceivedMessages);
+        Assert.Single(clientWest.ReceivedMessages);
+        Assert.Equal(&quot;Hello from US East!&quot;, clientEast.ReceivedMessages[0].Content);
+        Assert.Equal(&quot;Hello from US East!&quot;, clientWest.ReceivedMessages[0].Content);
+        Assert.Equal(sentMsg.SequenceNumber, clientWest.ReceivedMessages[0].SequenceNumber);
+    }
+
+    [Fact]
+    public async Task DistributedChatHub_ReadReceiptsAndHistory_TracksProgression()
+    {
+        var sequencer = new ChannelSequencer();
+        var hub = new DistributedChatHub(&quot;server-1&quot;, sequencer);
+        string channelId = &quot;dev-room&quot;;
+
+        await hub.SendMessageAsync(channelId, &quot;dev1&quot;, &quot;Commit 1&quot;);
+        await hub.SendMessageAsync(channelId, &quot;dev2&quot;, &quot;Commit 2&quot;);
+        var m3 = await hub.SendMessageAsync(channelId, &quot;dev1&quot;, &quot;Commit 3&quot;);
+
+        var history = hub.GetMessageHistory(channelId);
+        Assert.Equal(3, history.Count);
+        Assert.Equal([1, 2, 3], history.Select(h =&gt; h.SequenceNumber).ToList());
+
+        hub.MarkRead(&quot;dev2&quot;, channelId, m3.SequenceNumber);
+        Assert.Equal(3, hub.GetLastReadSequence(&quot;dev2&quot;, channelId));
+    }
+
+    [Fact]
+    public void DistributedChatHub_TypingIndicator_BroadcastsToOtherUsersOnly()
+    {
+        var sequencer = new ChannelSequencer();
+        var hub = new DistributedChatHub(&quot;server-hub&quot;, sequencer);
+        string channelId = &quot;pair-chat&quot;;
+
+        var clientA = new MockWebSocketClient(&quot;user-a&quot;);
+        var clientB = new MockWebSocketClient(&quot;user-b&quot;);
+
+        hub.Subscribe(channelId, clientA);
+        hub.Subscribe(channelId, clientB);
+
+        hub.SendTyping(channelId, &quot;user-a&quot;, true);
+
+        // Client A shouldn&#x27;t receive their own typing event
+        Assert.Empty(clientA.TypingEvents);
+        // Client B should receive Client A&#x27;s typing event
+        Assert.Single(clientB.TypingEvents);
+        Assert.Equal(&quot;user-a&quot;, clientB.TypingEvents[0].UserId);
+        Assert.True(clientB.TypingEvents[0].IsTyping);
+    }
+
+    [Fact]
+    public void CombinationSum1_StandardTarget_FindsAllValidCombinations()
+    {
+        int[] candidates = [2, 3, 6, 7];
+        int target = 7;
+
+        var result = CombinationSumSolver.CombinationSum(candidates, target);
+
+        // Expected: [2, 2, 3] and [7]
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, c =&gt; c.SequenceEqual([2, 2, 3]));
+        Assert.Contains(result, c =&gt; c.SequenceEqual([7]));
+    }
+
+    [Fact]
+    public void CombinationSum2_WithDuplicates_FindsUniqueCombinations()
+    {
+        int[] candidates = [10, 1, 2, 7, 6, 1, 5];
+        int target = 8;
+
+        var result = CombinationSumSolver.CombinationSum2(candidates, target);
+
+        // Expected combinations for sum 8:
+        // [1, 1, 6], [1, 2, 5], [1, 7], [2, 6]
+        Assert.Equal(4, result.Count);
+        Assert.Contains(result, c =&gt; c.SequenceEqual([1, 1, 6]));
+        Assert.Contains(result, c =&gt; c.SequenceEqual([1, 2, 5]));
+        Assert.Contains(result, c =&gt; c.SequenceEqual([1, 7]));
+        Assert.Contains(result, c =&gt; c.SequenceEqual([2, 6]));
+    }
+
+    [Fact]
+    public void CombinationSum_UnachievableTarget_ReturnsEmpty()
+    {
+        int[] candidates = [5, 10, 15];
+        int target = 7;
+
+        var res1 = CombinationSumSolver.CombinationSum(candidates, target);
+        var res2 = CombinationSumSolver.CombinationSum2(candidates, target);
+
+        Assert.Empty(res1);
+        Assert.Empty(res2);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: High-Throughput Chat Architecture</h1>
+<h2>1. WebSocket Connection Management & Gateway Tier</h2>
+<ul>
+<li><strong>C10M Problem (10 Million Connections)</strong>:</li>
+<li>Long-lived persistent TCP connections consume file descriptors and socket buffers.</li>
+<li>Linux tuning: <code>sysctl -w fs.file-max=2097152</code>, <code>ulimit -n 1048576</code>, tuning <code>tcp_rmem</code> and <code>tcp_wmem</code> buffer sizes (down from 128KB to 4KB per socket idle) allows a single 64GB RAM node to hold 1M idle WebSocket connections.</li>
+<li><strong>Connection Routing</strong>:</li>
+<li>Load balancers (Envoy, NGINX) use IP hash or consistent hashing for sticky routing, or simple round-robin with WebSocket upgrade handling.</li>
+<li>Gateway servers maintain an internal mapping: <code>Dictionary&lt;UserId, List&lt;WebSocketSession&gt;&gt;</code>.</li>
+</ul>
+<h2>2. Message Ordering & Storage Engines</h2>
+<ul>
+<li><strong>Why NTP Wall Clocks Fail</strong>:</li>
+<li>In distributed systems, clock skew between servers can be 50–200ms. If Message B arrives 10ms after Message A but Server 2's clock is 50ms behind Server 1, sorting by timestamp reverses message order.</li>
+<li><strong>Monotonic Sequencer Solutions</strong>:</li>
+<li><strong>Redis INCR per channel</strong>: <code>INCR channel:{id}:seq</code> provides an atomic 64-bit integer.</li>
+<li><strong>Snowflake IDs</strong>: 64-bit IDs containing timestamp prefix + machine ID + local sequence counter (guarantees rough time ordering, but gaps can exist).</li>
+<li><strong>Storage: Apache Cassandra / ScyllaDB</strong>:</li>
+<li>Primary Key: <code>((channel_id), sequence_number) WITH CLUSTERING ORDER BY (sequence_number ASC)</code>.</li>
+<li>Partitioning by <code>channel_id</code> groups all messages of a room on the same storage node/replica. Sequential range queries (<code>SELECT * WHERE channel_id = ? AND sequence_number &gt; ? LIMIT 50</code>) hit a contiguous SSTable disk block with sub-millisecond seek latency.</li>
+</ul>
+<h2>3. LeetCode #39 & #40: Backtracking Combinations Tree</h2>
+<ul>
+<li><strong>State Space</strong>:</li>
+<li>At each node, decide whether to include <code>candidates[i]</code> and recurse on the remainder.</li>
+<li>Sorting the array beforehand enables immediate termination of the loop (<code>if (candidates[i] &gt; remain) break;</code>), pruning massive subtrees.</li>
+<li><strong>Combination Sum I vs II</strong>:</li>
+<li>In I, elements can be picked repeatedly $\implies$ next call is <code>Backtrack(i, remain - candidates[i])</code>.</li>
+<li>In II, elements cannot be reused $\implies$ next call is <code>Backtrack(i + 1, remain - candidates[i])</code>.</li>
+<li>In II, duplicate elements exist $\implies$ duplicate branches at the same depth are skipped via <code>if (i &gt; start &amp;&amp; candidates[i] == candidates[i - 1]) continue;</code>.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 37: System Design: High-Throughput Chat System</h1>
+<h2>Architectural Overview</h2>
+<p>Real-time chat systems (Slack, Discord, WhatsApp) support hundreds of millions of concurrent WebSocket connections, instant messaging, presence tracking, and ordered message histories.</p>
+<p>This module implements a distributed real-time chat architecture in .NET 8 featuring:</p>
+<ul>
+<li><strong>WebSocket Session Management & Scale</strong>: Decouples client connections across distributed gateway hubs (<code>DistributedChatHub</code>).</li>
+<li><strong>Presence Service</strong>: Heartbeat ping/pong mechanism tracking user states (<code>Online</code>, <code>Offline</code>, <code>Away</code>) with timeout-based expiration and instant disconnection cleanup.</li>
+<li><strong>Cross-Server Pub/Sub Replication</strong>: Simulates Redis Pub/Sub backplane. When Alice sends a message to Server East, it publishes to the Redis topic; Server West receives the event and pushes to Bob over his active local WebSocket.</li>
+<li><strong>Monotonic Message Sequencing</strong>: Channel-level sequencers assign sequential integer IDs ($1, 2, 3, \dots$), resolving clock-drift race conditions across distributed gateway nodes and guaranteeing total causal order.</li>
+<li><strong>Read Receipts & Typing Indicators</strong>: Tracks <code>last_read_sequence</code> per user per channel and broadcasts transient typing indicators to peer participants without echoing to sender.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text"> Client A (Alice)                        Client B (Bob)
+        │                                       │
+WebSocket Connection                    WebSocket Connection
+        ▼                                       ▼
+┌──────────────┐                        ┌──────────────┐
+│ Chat Hub 1   │                        │ Chat Hub 2   │
+│ (US-East)    │                        │ (US-West)    │
+└───────┬──────┘                        └───────▲──────┘
+        │                                       │
+        │ 1. Assign Sequence #                  │ 3. Forward to Bob
+        │ 2. Publish to Redis                   │
+        ▼                                       │
+┌───────────────────────────────────────────────┴──────┐
+│                Redis Pub/Sub Cluster                 │
+│         Topic: chat:channel:{channel_id}             │
+└───────────────────────┬──────────────────────────────┘
+                        │
+                        ▼ (Async Append)
+        ┌───────────────────────────────┐
+        │   ScyllaDB / Cassandra Store  │
+        │ (Partition: channel_id,       │
+        │  Clustering: sequence_number) │
+        └───────────────────────────────┘</code></pre></div>
+<hr/>
+<h2>LeetCode #39 & #40: Combination Sum I & II (Medium)</h2>
+<ul>
+<li><strong>LeetCode #39 (Combination Sum I)</strong>:</li>
+<li>Elements can be reused infinitely.</li>
+<li>Recursion advances with index <code>i</code> (allowing current element reuse).</li>
+<li>Prunes early when sorted candidate exceeds remaining sum.</li>
+<li><strong>LeetCode #40 (Combination Sum II)</strong>:</li>
+<li>Input array contains duplicate numbers; each element used at most once.</li>
+<li>Recursion advances with <code>i + 1</code>.</li>
+<li>Prunes duplicate sibling branches:</li>
+</ul>
+<p><code>if (i &gt; start &amp;&amp; candidates[i] == candidates[i - 1]) continue;</code></p>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day37-SystemDesign-Chat-System/tests/Day37.ChatSystem.Tests/Day37.ChatSystem.Tests.csproj</code></pre></div>
+<p>10 unit tests validate presence heartbeats and timeouts, channel sequence monotonicity, cross-server pub/sub delivery, read receipts, typing indicators, and combination backtracking.</p>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do you scale a WebSocket gateway to maintain 10 million concurrent active connections?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>OS & Kernel Tuning</strong>:</li>
+</ol>
+<ul>
+<li>Increase file descriptor limits (<code>ulimit -n 1048576</code>).</li>
+<li>Reduce TCP read/write buffer allocations (<code>net.ipv4.tcp_rmem = 4096 87380 4194304</code>, <code>net.ipv4.tcp_wmem</code>). For 1M idle connections, saving 50KB RAM per socket saves 50GB of memory.</li>
+<li>Enable <code>SO_REUSEPORT</code> and <code>epoll</code>/<code>kqueue</code> event-driven non-blocking I/O (built into .NET Kestrel/Sockets).</li>
+</ul>
+<ol>
+<li><strong>Stateless Gateway Tier</strong>:</li>
+</ol>
+<ul>
+<li>Deploy a cluster of WebSocket gateways behind Layer 4 Network Load Balancers (AWS NLB) with TLS termination.</li>
+<li>Maintain minimal session state in the gateway (only socket handle and user ID).</li>
+</ul>
+<ol>
+<li><strong>Session Registry</strong>:</li>
+</ol>
+<ul>
+<li>Store mapping of <code>UserId -&gt; GatewayNodeIP</code> in Redis with TTL heartbeats so other services know which gateway holds a specific user's socket.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why is Redis Pub/Sub alone insufficient for chat message persistence, and how do you pair it with a database?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Redis Pub/Sub is strictly "fire-and-forget":</p>
+<ul>
+<li>If a client is temporarily offline, or a network flap occurs between Redis and the gateway, messages published to Redis Pub/Sub are lost forever. Redis does not buffer messages for disconnected pub/sub subscribers.</li>
+<li><strong>Production Architecture</strong>:</li>
+</ul>
+<ol>
+<li>The API receives the message.</li>
+<li>The message is written first to persistent storage (Cassandra/ScyllaDB) or an append-only commit log (Kafka / Redis Streams).</li>
+<li>Then the message is published to Redis Pub/Sub for real-time delivery to online users.</li>
+<li>When an offline user reconnects, they query the database for messages where <code>sequence_number &gt; last_received_sequence</code>.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you guarantee strict causal message ordering in a group chat across distributed servers without NTP clock synchronization?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>NTP clock drift between servers makes timestamps non-monotonic and prone to race conditions.</p>
+<ul>
+<li><strong>Per-Channel Atomic Sequencers</strong>:</li>
+<li>Each chat room/channel has an independent monotonic sequence counter.</li>
+<li>Implement using Redis <code>INCR channel:{id}:seq</code> or an atomic database sequence.</li>
+<li>Every message sent to the channel receives an incremented sequence number ($1, 2, 3, \dots$).</li>
+<li><strong>Client Synchronization</strong>:</li>
+<li>The client displays messages sorted by <code>sequence_number</code>.</li>
+<li>If a client receives sequence #5 and previously had #3, it immediately detects a gap (missing #4) and requests the missing message from the server's history endpoint before rendering.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is the optimal database schema for storing chat messages in Apache Cassandra / ScyllaDB?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Cassandra uses a two-part primary key: Partition Key and Clustering Columns.</p>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">CREATE TABLE channel_messages (
+    channel_id uuid,
+    sequence_id bigint,
+    message_id uuid,
+    sender_id uuid,
+    content text,
+    created_at timestamp,
+    PRIMARY KEY ((channel_id), sequence_id)
+) WITH CLUSTERING ORDER BY (sequence_id ASC);</code></pre></div>
+<ul>
+<li><code>channel_id</code> is the Partition Key: all messages for a given room are stored together on the same cluster replica nodes.</li>
+<li><code>sequence_id</code> is the Clustering Column: messages are written to disk sorted contiguously. Fetching the last 50 messages (<code>WHERE channel_id = ? AND sequence_id &gt; ? LIMIT 50</code>) is a fast sequential disk read.</li>
+<li>For extremely active channels (millions of messages), add a bucket (e.g. <code>(channel_id, year_month)</code>) to prevent giant partitions (> 100MB).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you design a Presence Service (Online/Offline/Last Seen) for 100 million users without overloading databases?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Heartbeat & Ephemeral TTL</strong>:</li>
+</ol>
+<ul>
+<li>Clients send a lightweight ping every 30 seconds over the existing WebSocket connection.</li>
+<li>The gateway writes to Redis: <code>SET user:{id}:presence &quot;ONLINE&quot; EX 60</code>.</li>
+<li>If a client abruptly disconnects without TCP FIN (e.g., cell tower loss, tunnel), the Redis key expires after 60s, automatically marking them offline.</li>
+</ul>
+<ol>
+<li><strong>Fan-out Optimization</strong>:</li>
+</ol>
+<ul>
+<li>Do NOT broadcast presence changes to all friends on every heartbeat.</li>
+<li>Instead, only broadcast presence transitions (Offline $\to$ Online, Online $\to$ Offline).</li>
+<li>Use lazy-loading: When user opens a friend list or chat room, query the presence state of only the visible users in that viewport.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you implement &quot;Message Read Receipts&quot; (Single check, Double check, Blue check)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Instead of storing a read receipt record per message per user (which causes massive write amplification in group chats):</p>
+<ul>
+<li>Store a single monotonic pointer per user per channel: <code>LastReadSequenceNumber</code>.</li>
+</ul>
+<div class="code-block-container"><pre class="language-sql"><code class="language-sql">  CREATE TABLE channel_read_pointers (
+      channel_id uuid,
+      user_id uuid,
+      last_read_sequence bigint,
+      PRIMARY KEY (channel_id, user_id)
+  );</code></pre></div>
+<ul>
+<li>When a user views the chat up to message #500, update their pointer to 500.</li>
+<li>Any message with <code>sequence_number &lt;= 500</code> is implicitly read by that user.</li>
+<li>To render read status in a 1-on-1 chat: If Bob's <code>last_read_sequence &gt;= Alice&#x27;s message sequence</code>, show blue checkmark.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How do you implement transient features like &quot;Typing Indicators&quot; without disk writes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Typing indicators are ephemeral, short-lived events that should never be persisted to a relational or NoSQL database.</p>
+<ol>
+<li>When user types, client sends a lightweight WebSocket payload: <code>{&quot;action&quot;: &quot;typing&quot;, &quot;channelId&quot;: &quot;123&quot;}</code>.</li>
+<li>The gateway server throttles typing events from the client (e.g., at most once every 3 seconds).</li>
+<li>The event is pushed directly to Redis Pub/Sub topic <code>channel:typing:{channelId}</code>.</li>
+<li>Gateway servers holding connections for other members of that channel forward the typing event to their sockets.</li>
+<li>The receiving client shows the typing bubble and starts a 4-second local animation timer; if no refresh arrives, it clears automatically.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #39 (Combination Sum), why is the recursive call invoked with index `i` rather than `0` or `i + 1`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>If invoked with <code>0</code>, the algorithm would explore combinations in different permutations (e.g., both <code>[2, 3]</code> and <code>[3, 2]</code>), resulting in duplicate combinations.</li>
+<li>If invoked with <code>i + 1</code>, each element could only be used at most once, which fails the requirement that the same number may be chosen an unlimited number of times.</li>
+<li>By invoking with <code>i</code>, we allow the current candidate to be reused repeatedly while enforcing that future choices are $\ge$ the current candidate index, guaranteeing all generated combinations are strictly sorted and unique.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #40 (Combination Sum II), why is sorting mandatory before backtracking?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Early Pruning</strong>: When candidates are sorted, if <code>candidates[i] &gt; remain</code>, we know every candidate after index <code>i</code> is also greater than <code>remain</code>. We can <code>break</code> out of the loop immediately rather than continuing useless iterations.</li>
+<li><strong>Duplicate Subtree Elimination</strong>: Sorting brings duplicate values together. The condition <code>if (i &gt; start &amp;&amp; candidates[i] == candidates[i - 1]) continue;</code> allows us to skip identical sibling branches at the current recursion level, preventing duplicate combinations in the output.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you handle End-to-End Encryption (E2EE) in a distributed chat architecture?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>In E2EE (e.g. Signal Protocol / WhatsApp):</p>
+<ol>
+<li>The server is treated as an untrusted, blind relay. The server only sees ciphertext and cryptographic metadata (pre-keys, identity keys, ratcheting parameters).</li>
+<li>Users register public identity keys and one-time prekeys with a Key Distribution Center (KDC).</li>
+<li>To start a chat, Alice fetches Bob's prekeys, initiates the Double Ratchet Algorithm, and generates a shared session key.</li>
+<li>Alice encrypts the payload locally; the server stores and routes the encrypted blob. Only Bob's private device key can decrypt the message.</li>
+<li>Search and media processing must be executed locally on the client device.</li>
+</ol>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day37.ChatSystem/ChatSystemEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd37-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d37-src-code-0" class="language-csharp">using System.Collections.Concurrent;
+
+namespace Day37.ChatSystem;
+
+public enum UserPresenceState
+{
+    Offline,
+    Online,
+    Away
+}
+
+public record UserPresence(string UserId, UserPresenceState State, DateTime LastSeenUtc);
+
+public class PresenceTracker
+{
+    private readonly ConcurrentDictionary&lt;string, DateTime&gt; _heartbeats = new();
+    private readonly TimeSpan _onlineTimeout;
+
+    public PresenceTracker(TimeSpan? onlineTimeout = null)
+    {
+        _onlineTimeout = onlineTimeout ?? TimeSpan.FromSeconds(30);
+    }
+
+    public void Heartbeat(string userId)
+    {
+        _heartbeats[userId] = DateTime.UtcNow;
+    }
+
+    public void ExplicitDisconnect(string userId)
+    {
+        _heartbeats.TryRemove(userId, out _);
+    }
+
+    public UserPresence GetPresence(string userId)
+    {
+        if (_heartbeats.TryGetValue(userId, out var lastSeen))
+        {
+            if (DateTime.UtcNow - lastSeen &lt;= _onlineTimeout)
+            {
+                return new UserPresence(userId, UserPresenceState.Online, lastSeen);
+            }
+        }
+        return new UserPresence(userId, UserPresenceState.Offline, lastSeen == default ? DateTime.MinValue : lastSeen);
+    }
+}
+
+public record ChatMessage(
+    string MessageId,
+    string ChannelId,
+    string SenderId,
+    string Content,
+    long SequenceNumber,
+    DateTime TimestampUtc
+);
+
+public class ChannelSequencer
+{
+    private readonly ConcurrentDictionary&lt;string, long&gt; _channelSequences = new();
+
+    public long GetNextSequenceNumber(string channelId)
+    {
+        return _channelSequences.AddOrUpdate(channelId, 1, (_, current) =&gt; current + 1);
+    }
+
+    public long GetCurrentSequence(string channelId)
+    {
+        return _channelSequences.TryGetValue(channelId, out var seq) ? seq : 0;
+    }
+}
+
+public interface IChatClientConnection
+{
+    string ConnectionId { get; }
+    string UserId { get; }
+    Task ReceiveMessageAsync(ChatMessage message);
+    Task ReceiveTypingIndicatorAsync(string channelId, string userId, bool isTyping);
+}
+
+public class MockWebSocketClient : IChatClientConnection
+{
+    public string ConnectionId { get; } = Guid.NewGuid().ToString(&quot;N&quot;);
+    public string UserId { get; }
+    public List&lt;ChatMessage&gt; ReceivedMessages { get; } = new();
+    public List&lt;(string ChannelId, string UserId, bool IsTyping)&gt; TypingEvents { get; } = new();
+
+    public MockWebSocketClient(string userId)
+    {
+        UserId = userId;
+    }
+
+    public Task ReceiveMessageAsync(ChatMessage message)
+    {
+        ReceivedMessages.Add(message);
+        return Task.CompletedTask;
+    }
+
+    public Task ReceiveTypingIndicatorAsync(string channelId, string userId, bool isTyping)
+    {
+        TypingEvents.Add((channelId, userId, isTyping));
+        return Task.CompletedTask;
+    }
+}
+
+public class DistributedChatHub
+{
+    public string ServerId { get; }
+    private readonly ChannelSequencer _sequencer;
+    private readonly ConcurrentDictionary&lt;string, List&lt;IChatClientConnection&gt;&gt; _channelSubscribers = new();
+    private readonly ConcurrentDictionary&lt;string, long&gt; _userReadReceipts = new(); // key: &quot;userId:channelId&quot; -&gt; seq
+    private readonly List&lt;ChatMessage&gt; _messageHistory = new();
+    private readonly object _historyLock = new();
+
+    // Event bus simulating Redis Pub/Sub for cross-server message replication
+    public static event Action&lt;string, ChatMessage&gt;? CrossServerMessagePublished;
+    public static event Action&lt;string, string, bool&gt;? CrossServerTypingPublished;
+
+    public DistributedChatHub(string serverId, ChannelSequencer sequencer)
+    {
+        ServerId = serverId;
+        _sequencer = sequencer;
+
+        CrossServerMessagePublished += HandleCrossServerMessage;
+        CrossServerTypingPublished += HandleCrossServerTyping;
+    }
+
+    public void Subscribe(string channelId, IChatClientConnection client)
+    {
+        _channelSubscribers.AddOrUpdate(
+            channelId,
+            _ =&gt; [client],
+            (_, list) =&gt; { lock (list) { list.Add(client); } return list; }
+        );
+    }
+
+    public void Unsubscribe(string channelId, IChatClientConnection client)
+    {
+        if (_channelSubscribers.TryGetValue(channelId, out var list))
+        {
+            lock (list)
+            {
+                list.Remove(client);
+            }
+        }
+    }
+
+    public async Task&lt;ChatMessage&gt; SendMessageAsync(string channelId, string senderId, string content)
+    {
+        long seq = _sequencer.GetNextSequenceNumber(channelId);
+        var message = new ChatMessage(
+            MessageId: Guid.NewGuid().ToString(&quot;N&quot;),
+            ChannelId: channelId,
+            SenderId: senderId,
+            Content: content,
+            SequenceNumber: seq,
+            TimestampUtc: DateTime.UtcNow
+        );
+
+        // Store to channel history
+        lock (_historyLock)
+        {
+            _messageHistory.Add(message);
+        }
+
+        // Broadcast to Redis pub/sub
+        CrossServerMessagePublished?.Invoke(channelId, message);
+
+        return await Task.FromResult(message);
+    }
+
+    public void SendTyping(string channelId, string userId, bool isTyping)
+    {
+        CrossServerTypingPublished?.Invoke(channelId, userId, isTyping);
+    }
+
+    public void MarkRead(string userId, string channelId, long sequenceNumber)
+    {
+        _userReadReceipts[$&quot;{userId}:{channelId}&quot;] = sequenceNumber;
+    }
+
+    public long GetLastReadSequence(string userId, string channelId)
+    {
+        return _userReadReceipts.TryGetValue($&quot;{userId}:{channelId}&quot;, out var seq) ? seq : 0;
+    }
+
+    public IReadOnlyList&lt;ChatMessage&gt; GetMessageHistory(string channelId)
+    {
+        lock (_historyLock)
+        {
+            return _messageHistory.Where(m =&gt; m.ChannelId == channelId).OrderBy(m =&gt; m.SequenceNumber).ToList();
+        }
+    }
+
+    private void HandleCrossServerMessage(string channelId, ChatMessage message)
+    {
+        if (_channelSubscribers.TryGetValue(channelId, out var list))
+        {
+            List&lt;IChatClientConnection&gt; clients;
+            lock (list)
+            {
+                clients = list.ToList();
+            }
+
+            foreach (var client in clients)
+            {
+                _ = client.ReceiveMessageAsync(message);
+            }
+        }
+    }
+
+    private void HandleCrossServerTyping(string channelId, string userId, bool isTyping)
+    {
+        if (_channelSubscribers.TryGetValue(channelId, out var list))
+        {
+            List&lt;IChatClientConnection&gt; clients;
+            lock (list)
+            {
+                clients = list.ToList();
+            }
+
+            foreach (var client in clients)
+            {
+                if (client.UserId != userId) // don&#x27;t echo to self
+                {
+                    _ = client.ReceiveTypingIndicatorAsync(channelId, userId, isTyping);
+                }
+            }
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day37.ChatSystem/CombinationSumSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd37-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d37-src-code-1" class="language-csharp">namespace Day37.ChatSystem;
+
+public static class CombinationSumSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #39: Combination Sum (Medium).
+    /// Candidates are distinct. Elements can be chosen unlimited number of times.
+    /// Time Complexity: O(2^T) where T = target / min(candidates). Space: O(T) stack.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; CombinationSum(int[] candidates, int target)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (candidates == null || candidates.Length == 0) return result;
+
+        Array.Sort(candidates);
+        var current = new List&lt;int&gt;();
+        BacktrackSum1(candidates, target, 0, current, result);
+        return result;
+    }
+
+    private static void BacktrackSum1(int[] candidates, int remain, int start, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        if (remain == 0)
+        {
+            result.Add(new List&lt;int&gt;(current));
+            return;
+        }
+
+        for (int i = start; i &lt; candidates.Length; i++)
+        {
+            if (candidates[i] &gt; remain) break; // Prune: sorted array, no subsequent elements can fit
+
+            current.Add(candidates[i]);
+            // Pass &#x27;i&#x27; instead of &#x27;i + 1&#x27; to allow reuse of current element
+            BacktrackSum1(candidates, remain - candidates[i], i, current, result);
+            current.RemoveAt(current.Count - 1);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #40: Combination Sum II (Medium).
+    /// Candidates may contain duplicates. Each element can be used AT MOST ONCE.
+    /// Result must not contain duplicate combinations.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; CombinationSum2(int[] candidates, int target)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (candidates == null || candidates.Length == 0) return result;
+
+        Array.Sort(candidates);
+        var current = new List&lt;int&gt;();
+        BacktrackSum2(candidates, target, 0, current, result);
+        return result;
+    }
+
+    private static void BacktrackSum2(int[] candidates, int remain, int start, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        if (remain == 0)
+        {
+            result.Add(new List&lt;int&gt;(current));
+            return;
+        }
+
+        for (int i = start; i &lt; candidates.Length; i++)
+        {
+            if (candidates[i] &gt; remain) break; // Prune
+
+            // Skip duplicate sibling branches at the same tree depth
+            if (i &gt; start &amp;&amp; candidates[i] == candidates[i - 1])
+            {
+                continue;
+            }
+
+            current.Add(candidates[i]);
+            // Pass &#x27;i + 1&#x27; so each element is only used once
+            BacktrackSum2(candidates, remain - candidates[i], i + 1, current, result);
+            current.RemoveAt(current.Count - 1);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day37.ChatSystem.Tests/Day37Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd37-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d37-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day37.ChatSystem.Tests;
+
+public class Day37Tests
+{
+    [Fact]
+    public void PresenceTracker_Heartbeat_RecordsUserOnline()
+    {
+        var tracker = new PresenceTracker(TimeSpan.FromSeconds(10));
+        tracker.Heartbeat(&quot;alice&quot;);
+
+        var presence = tracker.GetPresence(&quot;alice&quot;);
+
+        Assert.Equal(UserPresenceState.Online, presence.State);
+        Assert.Equal(&quot;alice&quot;, presence.UserId);
+        Assert.True(DateTime.UtcNow - presence.LastSeenUtc &lt; TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public void PresenceTracker_ExpiredHeartbeat_ReportsOffline()
+    {
+        var tracker = new PresenceTracker(TimeSpan.FromMilliseconds(1));
+        tracker.Heartbeat(&quot;bob&quot;);
+
+        Thread.Sleep(5); // allow 1ms timeout to elapse
+
+        var presence = tracker.GetPresence(&quot;bob&quot;);
+        Assert.Equal(UserPresenceState.Offline, presence.State);
+    }
+
+    [Fact]
+    public void PresenceTracker_ExplicitDisconnect_RemovesPresenceInstantly()
+    {
+        var tracker = new PresenceTracker(TimeSpan.FromMinutes(5));
+        tracker.Heartbeat(&quot;charlie&quot;);
+        Assert.Equal(UserPresenceState.Online, tracker.GetPresence(&quot;charlie&quot;).State);
+
+        tracker.ExplicitDisconnect(&quot;charlie&quot;);
+        Assert.Equal(UserPresenceState.Offline, tracker.GetPresence(&quot;charlie&quot;).State);
+    }
+
+    [Fact]
+    public void ChannelSequencer_MonotonicallyIncrementsPerChannel()
+    {
+        var sequencer = new ChannelSequencer();
+        string c1 = &quot;chan-tech&quot;;
+        string c2 = &quot;chan-random&quot;;
+
+        Assert.Equal(1, sequencer.GetNextSequenceNumber(c1));
+        Assert.Equal(2, sequencer.GetNextSequenceNumber(c1));
+        Assert.Equal(1, sequencer.GetNextSequenceNumber(c2));
+        Assert.Equal(3, sequencer.GetNextSequenceNumber(c1));
+        Assert.Equal(2, sequencer.GetNextSequenceNumber(c2));
+    }
+
+    [Fact]
+    public async Task DistributedChatHub_CrossServerBroadcast_DeliversToSubscribersOnDifferentServers()
+    {
+        var sequencer = new ChannelSequencer();
+        var serverEast = new DistributedChatHub(&quot;server-us-east-1&quot;, sequencer);
+        var serverWest = new DistributedChatHub(&quot;server-us-west-1&quot;, sequencer);
+
+        var clientEast = new MockWebSocketClient(&quot;user-alice&quot;);
+        var clientWest = new MockWebSocketClient(&quot;user-bob&quot;);
+
+        string channelId = &quot;general-room&quot;;
+        serverEast.Subscribe(channelId, clientEast);
+        serverWest.Subscribe(channelId, clientWest);
+
+        // Alice sends message on East server
+        var sentMsg = await serverEast.SendMessageAsync(channelId, &quot;user-alice&quot;, &quot;Hello from US East!&quot;);
+
+        // Assert both Alice (East) and Bob (West) received it via simulated Redis pub/sub
+        Assert.Single(clientEast.ReceivedMessages);
+        Assert.Single(clientWest.ReceivedMessages);
+        Assert.Equal(&quot;Hello from US East!&quot;, clientEast.ReceivedMessages[0].Content);
+        Assert.Equal(&quot;Hello from US East!&quot;, clientWest.ReceivedMessages[0].Content);
+        Assert.Equal(sentMsg.SequenceNumber, clientWest.ReceivedMessages[0].SequenceNumber);
+    }
+
+    [Fact]
+    public async Task DistributedChatHub_ReadReceiptsAndHistory_TracksProgression()
+    {
+        var sequencer = new ChannelSequencer();
+        var hub = new DistributedChatHub(&quot;server-1&quot;, sequencer);
+        string channelId = &quot;dev-room&quot;;
+
+        await hub.SendMessageAsync(channelId, &quot;dev1&quot;, &quot;Commit 1&quot;);
+        await hub.SendMessageAsync(channelId, &quot;dev2&quot;, &quot;Commit 2&quot;);
+        var m3 = await hub.SendMessageAsync(channelId, &quot;dev1&quot;, &quot;Commit 3&quot;);
+
+        var history = hub.GetMessageHistory(channelId);
+        Assert.Equal(3, history.Count);
+        Assert.Equal([1, 2, 3], history.Select(h =&gt; h.SequenceNumber).ToList());
+
+        hub.MarkRead(&quot;dev2&quot;, channelId, m3.SequenceNumber);
+        Assert.Equal(3, hub.GetLastReadSequence(&quot;dev2&quot;, channelId));
+    }
+
+    [Fact]
+    public void DistributedChatHub_TypingIndicator_BroadcastsToOtherUsersOnly()
+    {
+        var sequencer = new ChannelSequencer();
+        var hub = new DistributedChatHub(&quot;server-hub&quot;, sequencer);
+        string channelId = &quot;pair-chat&quot;;
+
+        var clientA = new MockWebSocketClient(&quot;user-a&quot;);
+        var clientB = new MockWebSocketClient(&quot;user-b&quot;);
+
+        hub.Subscribe(channelId, clientA);
+        hub.Subscribe(channelId, clientB);
+
+        hub.SendTyping(channelId, &quot;user-a&quot;, true);
+
+        // Client A shouldn&#x27;t receive their own typing event
+        Assert.Empty(clientA.TypingEvents);
+        // Client B should receive Client A&#x27;s typing event
+        Assert.Single(clientB.TypingEvents);
+        Assert.Equal(&quot;user-a&quot;, clientB.TypingEvents[0].UserId);
+        Assert.True(clientB.TypingEvents[0].IsTyping);
+    }
+
+    [Fact]
+    public void CombinationSum1_StandardTarget_FindsAllValidCombinations()
+    {
+        int[] candidates = [2, 3, 6, 7];
+        int target = 7;
+
+        var result = CombinationSumSolver.CombinationSum(candidates, target);
+
+        // Expected: [2, 2, 3] and [7]
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, c =&gt; c.SequenceEqual([2, 2, 3]));
+        Assert.Contains(result, c =&gt; c.SequenceEqual([7]));
+    }
+
+    [Fact]
+    public void CombinationSum2_WithDuplicates_FindsUniqueCombinations()
+    {
+        int[] candidates = [10, 1, 2, 7, 6, 1, 5];
+        int target = 8;
+
+        var result = CombinationSumSolver.CombinationSum2(candidates, target);
+
+        // Expected combinations for sum 8:
+        // [1, 1, 6], [1, 2, 5], [1, 7], [2, 6]
+        Assert.Equal(4, result.Count);
+        Assert.Contains(result, c =&gt; c.SequenceEqual([1, 1, 6]));
+        Assert.Contains(result, c =&gt; c.SequenceEqual([1, 2, 5]));
+        Assert.Contains(result, c =&gt; c.SequenceEqual([1, 7]));
+        Assert.Contains(result, c =&gt; c.SequenceEqual([2, 6]));
+    }
+
+    [Fact]
+    public void CombinationSum_UnachievableTarget_ReturnsEmpty()
+    {
+        int[] candidates = [5, 10, 15];
+        int target = 7;
+
+        var res1 = CombinationSumSolver.CombinationSum(candidates, target);
+        var res2 = CombinationSumSolver.CombinationSum2(candidates, target);
+
+        Assert.Empty(res1);
+        Assert.Empty(res2);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 37 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

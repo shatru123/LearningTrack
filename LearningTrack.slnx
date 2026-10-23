@@ -213,7 +213,74 @@
   <Folder Name="/Day31-Transactional-Outbox-Pattern/src/">
     <Project Path="Day31-Transactional-Outbox-Pattern/src/Day31.TransactionalOutbox/Day31.TransactionalOutbox.csproj" />
   </Folder>
-  <Folder Name="/Day31-Transactional-Outbox-Pattern/tests/">
-    <Project Path="Day31-Transactional-Outbox-Pattern/tests/Day31.TransactionalOutbox.Tests/Day31.TransactionalOutbox.Tests.csproj" />
+  <Folder Name="/Day32-Saga-Orchestration-MassTransit/" />
+  <Folder Name="/Day32-Saga-Orchestration-MassTransit/src/">
+    <Project Path="Day32-Saga-Orchestration-MassTransit/src/Day32.SagaOrchestration/Day32.SagaOrchestration.csproj" />
+  </Folder>
+  <Folder Name="/Day32-Saga-Orchestration-MassTransit/tests/">
+    <Project Path="Day32-Saga-Orchestration-MassTransit/tests/Day32.SagaOrchestration.Tests/Day32.SagaOrchestration.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day33-Distributed-Idempotency/" />
+  <Folder Name="/Day33-Distributed-Idempotency/src/">
+    <Project Path="Day33-Distributed-Idempotency/src/Day33.DistributedIdempotency/Day33.DistributedIdempotency.csproj" />
+  </Folder>
+  <Folder Name="/Day33-Distributed-Idempotency/tests/">
+    <Project Path="Day33-Distributed-Idempotency/tests/Day33.DistributedIdempotency.Tests/Day33.DistributedIdempotency.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day34-OpenTelemetry-DistributedTracing/" />
+  <Folder Name="/Day34-OpenTelemetry-DistributedTracing/src/">
+    <Project Path="Day34-OpenTelemetry-DistributedTracing/src/Day34.OpenTelemetryTracing/Day34.OpenTelemetryTracing.csproj" />
+  </Folder>
+  <Folder Name="/Day34-OpenTelemetry-DistributedTracing/tests/">
+    <Project Path="Day34-OpenTelemetry-DistributedTracing/tests/Day34.OpenTelemetryTracing.Tests/Day34.OpenTelemetryTracing.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day35-Observability-Prometheus-Grafana-Jaeger/" />
+  <Folder Name="/Day35-Observability-Prometheus-Grafana-Jaeger/src/">
+    <Project Path="Day35-Observability-Prometheus-Grafana-Jaeger/src/Day35.ObservabilityStack/Day35.ObservabilityStack.csproj" />
+  </Folder>
+  <Folder Name="/Day35-Observability-Prometheus-Grafana-Jaeger/tests/">
+    <Project Path="Day35-Observability-Prometheus-Grafana-Jaeger/tests/Day35.ObservabilityStack.Tests/Day35.ObservabilityStack.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day36-SystemDesign-Notification-Service/" />
+  <Folder Name="/Day36-SystemDesign-Notification-Service/src/">
+    <Project Path="Day36-SystemDesign-Notification-Service/src/Day36.NotificationService/Day36.NotificationService.csproj" />
+  </Folder>
+  <Folder Name="/Day36-SystemDesign-Notification-Service/tests/">
+    <Project Path="Day36-SystemDesign-Notification-Service/tests/Day36.NotificationService.Tests/Day36.NotificationService.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day37-SystemDesign-Chat-System/" />
+  <Folder Name="/Day37-SystemDesign-Chat-System/src/">
+    <Project Path="Day37-SystemDesign-Chat-System/src/Day37.ChatSystem/Day37.ChatSystem.csproj" />
+  </Folder>
+  <Folder Name="/Day37-SystemDesign-Chat-System/tests/">
+    <Project Path="Day37-SystemDesign-Chat-System/tests/Day37.ChatSystem.Tests/Day37.ChatSystem.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day38-SystemDesign-Video-Streaming/" />
+  <Folder Name="/Day38-SystemDesign-Video-Streaming/src/">
+    <Project Path="Day38-SystemDesign-Video-Streaming/src/Day38.VideoStreaming/Day38.VideoStreaming.csproj" />
+  </Folder>
+  <Folder Name="/Day38-SystemDesign-Video-Streaming/tests/">
+    <Project Path="Day38-SystemDesign-Video-Streaming/tests/Day38.VideoStreaming.Tests/Day38.VideoStreaming.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day39-CAP-PACELC-DistributedSystems/" />
+  <Folder Name="/Day39-CAP-PACELC-DistributedSystems/src/">
+    <Project Path="Day39-CAP-PACELC-DistributedSystems/src/Day39.DistributedConsensus/Day39.DistributedConsensus.csproj" />
+  </Folder>
+  <Folder Name="/Day39-CAP-PACELC-DistributedSystems/tests/">
+    <Project Path="Day39-CAP-PACELC-DistributedSystems/tests/Day39.DistributedConsensus.Tests/Day39.DistributedConsensus.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day40-EventSourcing-CQRS/" />
+  <Folder Name="/Day40-EventSourcing-CQRS/src/">
+    <Project Path="Day40-EventSourcing-CQRS/src/Day40.EventSourcing/Day40.EventSourcing.csproj" />
+  </Folder>
+  <Folder Name="/Day40-EventSourcing-CQRS/tests/">
+    <Project Path="Day40-EventSourcing-CQRS/tests/Day40.EventSourcing.Tests/Day40.EventSourcing.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day41-Docker-DotNet-Cgroups/" />
+  <Folder Name="/Day41-Docker-DotNet-Cgroups/src/">
+    <Project Path="Day41-Docker-DotNet-Cgroups/src/Day41.DockerDotNet/Day41.DockerDotNet.csproj" />
+  </Folder>
+  <Folder Name="/Day41-Docker-DotNet-Cgroups/tests/">
+    <Project Path="Day41-Docker-DotNet-Cgroups/tests/Day41.DockerDotNet.Tests/Day41.DockerDotNet.Tests.csproj" />
   </Folder>
 </Solution>

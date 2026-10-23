@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 41: Docker Deep Dive for .NET Services | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 41</span>
+        <span class="badge badge-category">DevOps &amp; Containers</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day40-EventSourcing-CQRS/index.html" class="nav-btn">← Day 40</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+
+        </select>
+        <span class="nav-btn" style="opacity:0.4; cursor:default;">Next Day →</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 41: Docker Deep Dive for .NET Services</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d41Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d41P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d41P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#065f46"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d41P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7c2d12"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d41Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 41: Docker Deep Dive for .NET Services &amp; Dynamic Programming</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d41P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Multi-Stage &amp; Chiseled Runtime</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Layer Caching Optimization</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">COPY *.csproj before source</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">RUN dotnet restore cached in layer</text>
+          <text x="50" y="179" fill="#cbd5e1" font-size="9">Zero package re-downloads on edit</text>
+          <text x="50" y="196" fill="#fbbf24" font-size="9">Sub-second incremental build times</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Ubuntu Chiseled Security</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">aspnet:8.0-jammy-chiseled base</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">USER app (UID 1654, non-root)</text>
+          <text x="50" y="290" fill="#f43f5e" font-size="9">Zero shells, zero package managers</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Near-zero CVE attack surface</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d41P2)" stroke="#34d399" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Cgroups &amp; GC Auto-Tuning</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Preventing 137 OOMKilled</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">DOTNET_GCHeapHardLimitPercent=75</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Caps managed heap at 75% limit</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">Reserves 25% for native buffers</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Thread stacks &amp; JIT code cache safe</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#34d399" font-size="11" font-weight="bold">Server vs Workstation GC</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">DOTNET_gcServer=1 for multi-core</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Dedicated GC thread per CPU quota</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">Workstation GC for &lt;= 1 CPU / 512MB</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Eliminates thread context switching</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d41P3)" stroke="#ea580c" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#ea580c" font-size="14" font-weight="bold">LC #70 &amp; #746: Dynamic Programming</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Climbing Stairs (LC #70)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Fibonacci recurrence: dp[i] = dp[i-1] + dp[i-2]</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Base cases: dp[1]=1, dp[2]=2</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Rolling variables: O(1) space</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Time: O(N) linear</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#ea580c" font-size="11" font-weight="bold">Min Cost Climbing Stairs (LC #746)</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">dp[i] = min(dp[i-1]+c[i-1], dp[i-2]+c[i-2])</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Start at step 0 or 1</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Two rolling variables: O(1) space</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Optimal substructure &amp; overlapping subproblems</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: Docker & Linux Cgroups for .NET Services</h1>
+<h2>1. Linux Cgroups (Control Groups) v1 vs v2</h2>
+<ul>
+<li>In containerized environments, the host Linux kernel imposes memory and CPU constraints via <strong>cgroups</strong>:</li>
+<li><strong>cgroups v1</strong>: Memory limits configured in <code>/sys/fs/cgroup/memory/memory.limit_in_bytes</code>.</li>
+<li><strong>cgroups v2</strong>: Unified hierarchy in <code>/sys/fs/cgroup/memory.max</code>.</li>
+<li>.NET 8 has full native awareness of cgroups v1 and v2. By default, the .NET runtime polls cgroups to determine available memory and CPU cores rather than reading total host machine specifications.</li>
+</ul>
+<h2>2. Preventing Linux OOMKilled (Exit Code 137)</h2>
+<ul>
+<li><strong>Why do .NET containers get OOMKilled?</strong></li>
+<li>If a container is given a 512MB limit in Kubernetes (<code>resources.limits.memory: 512Mi</code>), and <code>DOTNET_GCHeapHardLimitPercent</code> is not configured, .NET GC by default may allow the managed heap to expand up to ~75-80% of container memory.</li>
+<li>However, total container memory = $\text{Managed GC Heap} + \text{Native Memory} + \text{Thread Stacks (1MB per thread)} + \text{JIT Code Cache} + \text{Socket/I/O Buffers}$.</li>
+<li>Under heavy load or sudden thread creation, native memory pushes total usage past 512MB. The Linux kernel immediately sends <code>SIGKILL</code> (<code>exit code 137</code>), terminating the container without a managed exception or stack trace!</li>
+<li><strong>Recommended Configuration</strong>:</li>
+<li>Set <code>DOTNET_GCHeapHardLimitPercent=75</code> (reserving 25% for native buffers and OS overhead).</li>
+<li>On containers with $\le 1$ core or $\le 512$MB RAM, evaluate Workstation GC (<code>DOTNET_gcServer=0</code>) to eliminate multi-heap thread overhead.</li>
+</ul>
+<h2>3. Chiseled Ubuntu Images vs Alpine</h2>
+<ul>
+<li><strong>Alpine Linux</strong>:</li>
+<li>Uses <code>musl libc</code> instead of <code>glibc</code>.</li>
+<li>Can cause compatibility and performance issues with native P/Invoke libraries or optimized SIMD vectorization.</li>
+<li><strong>Ubuntu Chiseled (<code>aspnet:8.0-jammy-chiseled</code>)</strong>:</li>
+<li>Created by Canonical and Microsoft.</li>
+<li>Strips everything from Ubuntu except the exact shared libraries needed by .NET (including <code>glibc</code> and <code>OpenSSL</code>).</li>
+<li>No <code>bash</code>, no <code>sh</code>, no <code>apt</code>, no <code>curl</code>, no <code>cat</code>.</li>
+<li>Image size is ~100MB (similar to Alpine) but retains 100% <code>glibc</code> compatibility and dramatically reduces CVE exposure to near zero.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 41: Docker Deep Dive for .NET Services</h1>
+<h2>Architectural Overview</h2>
+<p>Containerizing modern .NET microservices requires deep knowledge of Linux container internals, cgroups resource isolation, garbage collector tuning, and container supply-chain security.</p>
+<p>This module demonstrates production container engineering for .NET 8 services:</p>
+<ul>
+<li><strong>Multi-Stage Build Pipeline</strong>:</li>
+<li>Build stage with full .NET SDK image (<code>mcr.microsoft.com/dotnet/sdk:8.0</code>).</li>
+<li>Publish stage creating release binaries without app hosts (<code>/p:UseAppHost=false</code>).</li>
+<li>Runtime stage with ultra-minimal Ubuntu Chiseled image (<code>mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled</code>) reducing attack surface to zero package managers and zero interactive shells.</li>
+<li><strong>Docker Layer Caching Optimization</strong>:</li>
+<li>Copies <code>.csproj</code> files and executes <code>dotnet restore</code> in an isolated layer before copying the full source tree, allowing subsequent code changes to build instantly without re-downloading NuGet dependencies.</li>
+<li><strong>Non-Root Security Hardening</strong>:</li>
+<li>Drops root privileges by executing under unprivileged <code>USER app</code> (UID 1654), preventing container escape vulnerabilities from compromising host systems.</li>
+<li><strong>Cgroups & .NET GC Tuning</strong>:</li>
+<li>Analyzes cgroup v1 and v2 memory limits.</li>
+<li>Automatically configures <code>DOTNET_GCHeapHardLimitPercent=75</code>, reserving 25% of container RAM for unmanaged allocations (native buffers, thread stacks, JIT compilation) to prevent Linux OOM Killer (<code>137 OOMKilled</code>) termination.</li>
+<li>Balances Server GC (<code>DOTNET_gcServer=1</code>) thread counts across allocated container CPU quotas.</li>
+<li><strong>Static Dockerfile Linter & Analyzer</strong>: Validates Dockerfile structure against enterprise security and performance guidelines.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">       Dockerfile Build Flow                    Container Runtime Memory Layout
+┌─────────────────────────────────┐       ┌─────────────────────────────────────────┐
+│ Stage 1: Build (dotnet SDK)    │       │        Total Container Limit (cgroup)   │
+│ - COPY *.csproj                 │       │               (e.g., 512 MB)            │
+│ - RUN dotnet restore (CACHED!)  │       ├───────────────────────────┬─────────────┤
+│ - COPY . .                      │       │   Managed GC Heap (75%)   │ Native (25%)│
+│ - RUN dotnet build              │       │         (384 MB)          │   (128 MB)  │
+└───────────────┬─────────────────┘       │                           │             │
+                │                         │   - Generation 0, 1, 2    │ Thread Stacks│
+                ▼                         │   - Large Object Heap     │ JIT Buffers │
+┌─────────────────────────────────┐       │   - Pinned Object Heap    │ OS &amp; Sockets│
+│ Stage 2: Publish                │       └───────────────────────────┴─────────────┘
+│ - dotnet publish -c Release     │
+└───────────────┬─────────────────┘
+                │
+                ▼
+┌─────────────────────────────────┐
+│ Stage 3: Chiseled Runtime       │
+│ - Base: aspnet:8.0-chiseled     │
+│ - USER app (UID 1654, non-root) │
+│ - COPY --from=publish           │
+│ - Zero shell, zero apt-get      │
+└─────────────────────────────────┘</code></pre></div>
+<hr/>
+<h2>LeetCode #70 & #746: Climbing Stairs & Min Cost Climbing Stairs (Easy)</h2>
+<ul>
+<li><strong>LeetCode #70 (Climbing Stairs)</strong>:</li>
+<li>Dynamic programming Fibonacci recurrence: $dp[i] = dp[i-1] + dp[i-2]$.</li>
+<li>Solved in $O(N)$ time with $O(1)$ auxiliary memory using two rolling variables.</li>
+<li><strong>LeetCode #746 (Min Cost Climbing Stairs)</strong>:</li>
+<li>Dynamic programming recurrence: $dp[i] = \min(dp[i-1] + cost[i-1], dp[i-2] + cost[i-2])$.</li>
+<li>Solved in $O(N)$ time and $O(1)$ space.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day41-Docker-DotNet-Cgroups/tests/Day41.DockerDotNet.Tests/Day41.DockerDotNet.Tests.csproj</code></pre></div>
+<p>10 unit tests validate container GC heap calculations, Server vs Workstation GC thread allocation, Dockerfile security audits, and dynamic programming stairs solvers.</p>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why does a .NET container get terminated with exit code 137 (OOMKilled) in Kubernetes even when managed memory appears low?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Exit code 137 indicates the Linux kernel terminated the process with <code>SIGKILL</code> (signal 9: $128 + 9 = 137$) because cgroup memory limit was breached.</p>
+<ul>
+<li>The .NET Garbage Collector only manages the <strong>Managed GC Heap</strong>.</li>
+<li>A .NET process additionally consumes <strong>Native Memory</strong>:</li>
+<li>Thread stacks (by default, 1 MB virtual memory per thread in Linux).</li>
+<li>JIT compilation code cache and type metadata.</li>
+<li>Native socket buffers and libuv / socket network buffers.</li>
+<li>Native memory from third-party libraries (e.g. gRPC, OpenTelemetry, image processing, OpenSSL).</li>
+<li>If container limit is 500MB and GC heap is 380MB, but 150 threads spawn or native buffers surge by 150MB, total memory exceeds 500MB and the cgroup OOM killer instantly kills the pod.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is `DOTNET_GCHeapHardLimitPercent` and how does it prevent container OOMKills?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>DOTNET_GCHeapHardLimitPercent</code> configures the maximum percentage of the container's cgroup memory limit that the .NET Garbage Collector is allowed to allocate for the managed heap.</p>
+<ul>
+<li>In a container with 1GB limit, configuring <code>DOTNET_GCHeapHardLimitPercent=75</code> instructs the GC that the managed heap must never exceed 750MB.</li>
+<li>As the heap approaches 750MB, the GC triggers aggressive Gen 2 collections rather than continuing to expand.</li>
+<li>The remaining 250MB (25%) is permanently preserved as a safety cushion for unmanaged memory, thread stacks, and OS page cache, preventing kernel OOMKills.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do Server GC and Workstation GC behave inside Docker containers with CPU limits?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Server GC (<code>DOTNET_gcServer=1</code>)</strong>:</li>
+<li>Creates a dedicated GC heap and a dedicated GC background thread for <em>each</em> logical CPU core recognized by the runtime.</li>
+<li>In a large multi-core node where a container is constrained to <code>resources.limits.cpu: &quot;1&quot;</code>, if .NET reads host cores (e.g. 64 cores), Server GC allocates 64 separate heaps and threads! This causes catastrophic thread context switching and massive memory overhead.</li>
+<li>.NET 8 correctly parses cgroup CPU quotas (<code>cpu.cfs_quota_us / cpu.cfs_period_us</code>).</li>
+<li><em>Recommendation</em>: For small containers ($\le 1$ core or $\le 512$MB RAM), switch to Workstation GC (<code>DOTNET_gcServer=0</code>). For $\ge 2$ cores, Server GC offers superior throughput.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Why is Docker layer order critical for .NET builds, and how does copying `.csproj` first optimize CI/CD pipelines?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Docker caches intermediate image layers based on content hashes.</p>
+<ul>
+<li>If you run <code>COPY . .</code> followed by <code>RUN dotnet restore</code>, any change to a single comment or <code>.cs</code> file invalidates the copy layer and <strong>forces <code>dotnet restore</code> to re-execute from scratch</strong>, downloading hundreds of megabytes of NuGet packages on every commit.</li>
+<li>By structuring the Dockerfile as:</li>
+</ul>
+<div class="code-block-container"><pre class="language-dockerfile"><code class="language-dockerfile">  COPY *.csproj .
+  RUN dotnet restore
+  COPY . .
+  RUN dotnet build --no-restore</code></pre></div>
+<p>Docker caches the <code>restore</code> layer. As long as <code>.csproj</code> has not changed, NuGet restore completes in 0.0 seconds from local Docker layer cache.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What are the security benefits of using Ubuntu Chiseled containers (`aspnet:8.0-jammy-chiseled`) over Alpine or standard Ubuntu?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Standard Ubuntu/Debian</strong>: Includes package managers (<code>apt</code>, <code>dpkg</code>), shells (<code>bash</code>, <code>sh</code>), coreutils (<code>curl</code>, <code>wget</code>, <code>cat</code>, <code>ls</code>), and dozens of unnecessary packages, creating a large CVE attack surface and giving attackers tools for lateral movement if RCE occurs.</li>
+<li><strong>Alpine Linux</strong>: Uses <code>musl libc</code>, which can cause compatibility quirks with P/Invoke native binaries, ICU globalization issues, and slower allocator performance compared to <code>glibc</code>.</li>
+<li><strong>Ubuntu Chiseled</strong>:</li>
+<li>Contains only the exact binary dependencies required by the .NET runtime (including <code>glibc</code> and <code>OpenSSL</code>).</li>
+<li>Contains <strong>zero package managers</strong>, <strong>zero shells</strong>, and <strong>zero utilities</strong>.</li>
+<li>Attackers cannot invoke <code>curl | bash</code> or spawn interactive reverse shells.</li>
+<li>Yields near-zero vulnerability scan results in Trivy/Docker Scout while retaining standard <code>glibc</code> performance.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">Why should production containers always run under `USER app` instead of `root`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>By default, Docker containers run as UID 0 (<code>root</code>), which corresponds to root on the underlying host Linux kernel unless user namespaces are enabled.</p>
+<ul>
+<li>If a security vulnerability (e.g. container escape via kernel privilege escalation, runc CVE-2024-21626, or volume mount abuse) is exploited in a root container, the attacker immediately gains root access to the entire host Kubernetes node.</li>
+<li>Running as an unprivileged user (in .NET 8: <code>USER app</code>, UID 1654) limits the blast radius: the compromised process cannot access host hardware, read other containers' data, or modify system files.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How does .NET 8 handle cgroups v1 vs cgroups v2 in modern Linux kernels (e.g. RHEL 9, Ubuntu 22.04+)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>cgroups v1</strong>: Multi-hierarchy system where memory, cpu, and blkio were managed under separate <code>/sys/fs/cgroup/memory</code> and <code>/sys/fs/cgroup/cpu</code> controllers.</li>
+<li><strong>cgroups v2</strong>: Unified single-hierarchy controller (<code>/sys/fs/cgroup/memory.max</code>, <code>memory.current</code>, <code>cpu.max</code>).</li>
+<li>.NET 8 automatically detects whether the kernel is running cgroups v1 or v2 at runtime startup:</li>
+<li>If cgroups v2 is active, it reads <code>memory.max</code> for container limits.</li>
+<li>It dynamically adjusts GC heap boundaries and thread pool sizing without requiring manual flags or environment overrides.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #70 (Climbing Stairs), why is the solution equivalent to the Fibonacci sequence?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>To reach step $n$, the climber must take either:</p>
+<ol>
+<li>A 1-step leap from step $n - 1$, or</li>
+<li>A 2-step leap from step $n - 2$.</li>
+</ol>
+<p>These two sets of paths are mutually exclusive and collectively exhaustive.</p>
+<p>Therefore, the number of distinct ways to reach step $n$ is:</p>
+<p>$$\text{ways}(n) = \text{ways}(n - 1) + \text{ways}(n - 2)$$</p>
+<p>With base cases $\text{ways}(1) = 1$ and $\text{ways}(2) = 2$, this matches the Fibonacci sequence shifted by one index. Solved iteratively in $O(N)$ time and $O(1)$ memory.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #746 (Min Cost Climbing Stairs), what is the optimal DP state transition?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $dp[i]$ be the minimum cost to reach step $i$.</p>
+<ul>
+<li>You can reach step $i$ from step $i - 1$ (paying $cost[i - 1]$) or from step $i - 2$ (paying $cost[i - 2]$).</li>
+<li>Recurrence:</li>
+</ul>
+<p>$$dp[i] = \min(dp[i - 1] + cost[i - 1],\; dp[i - 2] + cost[i - 2])$$</p>
+<ul>
+<li>Since you can start at index 0 or index 1, the base cases are $dp[0] = 0$ and $dp[1] = 0$.</li>
+<li>To reach the top of the staircase ($i = \text{cost.Length}$), only the previous two values are needed, allowing $O(1)$ rolling variable space.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">What are best practices for Kubernetes Liveness and Readiness Probes for a containerized .NET service?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Separate Liveness and Readiness Endpoints</strong>:</li>
+</ol>
+<ul>
+<li><code>/healthz/live</code>: Checks if the process is responsive (returns 200). Should NEVER check external dependencies (DB, Redis). If DB is down, failing liveness causes Kubernetes to restart the pod, causing a catastrophic restart storm.</li>
+<li><code>/healthz/ready</code>: Checks if the pod can accept traffic (verifies DB connection, Redis ping, warm caches). If failing, Kubernetes removes the pod from the Service load balancer without restarting it.</li>
+</ul>
+<ol>
+<li><strong>Use ASP.NET Core Health Checks</strong>:</li>
+</ol>
+<ul>
+<li><code>services.AddHealthChecks().AddCheck(&quot;db&quot;, ...);</code></li>
+<li>Map with <code>app.MapHealthChecks(&quot;/healthz/ready&quot;)</code> and <code>app.MapHealthChecks(&quot;/healthz/live&quot;, new HealthCheckOptions { Predicate = _ =&gt; false })</code>.</li>
+</ul>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day41.DockerDotNet/ClimbingStairsSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd41-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d41-src-code-0" class="language-csharp">namespace Day41.DockerDotNet;
+
+public static class ClimbingStairsSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #70: Climbing Stairs (Easy).
+    /// Fibonacci recurrence: dp[i] = dp[i - 1] + dp[i - 2].
+    /// Time Complexity: O(N), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int ClimbStairs(int n)
+    {
+        if (n &lt;= 0) return 0;
+        if (n == 1) return 1;
+        if (n == 2) return 2;
+
+        int prev2 = 1;
+        int prev1 = 2;
+
+        for (int i = 3; i &lt;= n; i++)
+        {
+            int current = prev1 + prev2;
+            prev2 = prev1;
+            prev1 = current;
+        }
+
+        return prev1;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #746: Min Cost Climbing Stairs (Easy).
+    /// Recurrence: dp[i] = min(dp[i - 1] + cost[i - 1], dp[i - 2] + cost[i - 2]).
+    /// Time Complexity: O(N), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int MinCostClimbingStairs(int[] cost)
+    {
+        if (cost == null || cost.Length &lt; 2) return 0;
+
+        int prev2 = 0; // min cost to reach step 0
+        int prev1 = 0; // min cost to reach step 1
+
+        for (int i = 2; i &lt;= cost.Length; i++)
+        {
+            int current = Math.Min(prev1 + cost[i - 1], prev2 + cost[i - 2]);
+            prev2 = prev1;
+            prev1 = current;
+        }
+
+        return prev1;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day41.DockerDotNet/DockerfileAnalyzer.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd41-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d41-src-code-1" class="language-csharp">namespace Day41.DockerDotNet;
+
+public record ContainerGcConfiguration(
+    long ContainerMemoryLimitBytes,
+    int HeapHardLimitPercent,
+    long CalculatedHeapLimitBytes,
+    long NativeAndOsBufferBytes,
+    bool IsServerGcEnabled,
+    int ExpectedGcThreads
+);
+
+public static class ContainerMemoryCalculator
+{
+    /// &lt;summary&gt;
+    /// Calculates .NET GC Heap limits and safe native/OS headroom from cgroup memory limits.
+    /// &lt;/summary&gt;
+    public static ContainerGcConfiguration ComputeGcProfile(
+        long containerMemoryLimitBytes,
+        int heapLimitPercent = 75,
+        bool serverGc = true,
+        int allocatedCores = 2)
+    {
+        if (heapLimitPercent &lt;= 0 || heapLimitPercent &gt; 95)
+            throw new ArgumentOutOfRangeException(nameof(heapLimitPercent), &quot;Heap percent should be between 1 and 95&quot;);
+
+        long heapLimit = (long)(containerMemoryLimitBytes * (heapLimitPercent / 100.0));
+        long buffer = containerMemoryLimitBytes - heapLimit;
+        int gcThreads = serverGc ? Math.Max(1, allocatedCores) : 1;
+
+        return new ContainerGcConfiguration(
+            ContainerMemoryLimitBytes: containerMemoryLimitBytes,
+            HeapHardLimitPercent: heapLimitPercent,
+            CalculatedHeapLimitBytes: heapLimit,
+            NativeAndOsBufferBytes: buffer,
+            IsServerGcEnabled: serverGc,
+            ExpectedGcThreads: gcThreads
+        );
+    }
+}
+
+public record DockerfileAuditResult(
+    bool HasMultiStageBuild,
+    bool HasLayerCachingOptimization,
+    bool UsesNonRootUser,
+    bool UsesChiseledOrMinimalRuntime,
+    List&lt;string&gt; Recommendations
+);
+
+public static class DockerfileLintValidator
+{
+    public static DockerfileAuditResult Audit(string dockerfileText)
+    {
+        var lines = dockerfileText.Split(&#x27;\n&#x27;, StringSplitOptions.TrimEntries);
+        var recommendations = new List&lt;string&gt;();
+
+        int fromCount = lines.Count(l =&gt; l.StartsWith(&quot;FROM &quot;, StringComparison.OrdinalIgnoreCase));
+        bool multiStage = fromCount &gt; 1;
+        if (!multiStage) recommendations.Add(&quot;Use multi-stage builds to exclude SDK from runtime image&quot;);
+
+        // Check restore before full copy
+        int copyCsprojIdx = Array.FindIndex(lines, l =&gt; l.Contains(&quot;COPY&quot;, StringComparison.OrdinalIgnoreCase) &amp;&amp; l.Contains(&quot;.csproj&quot;, StringComparison.OrdinalIgnoreCase));
+        int restoreIdx = Array.FindIndex(lines, l =&gt; l.Contains(&quot;dotnet restore&quot;, StringComparison.OrdinalIgnoreCase));
+        int copyAllIdx = Array.FindIndex(lines, l =&gt; l.Contains(&quot;COPY . .&quot;, StringComparison.OrdinalIgnoreCase));
+
+        bool layerCaching = copyCsprojIdx != -1 &amp;&amp; restoreIdx != -1 &amp;&amp; copyAllIdx != -1 &amp;&amp;
+                            copyCsprojIdx &lt; restoreIdx &amp;&amp; restoreIdx &lt; copyAllIdx;
+
+        if (!layerCaching) recommendations.Add(&quot;Optimize layer caching: copy .csproj and run dotnet restore before copying full source&quot;);
+
+        bool nonRoot = lines.Any(l =&gt; l.StartsWith(&quot;USER &quot;, StringComparison.OrdinalIgnoreCase) &amp;&amp; !l.Contains(&quot;root&quot;, StringComparison.OrdinalIgnoreCase));
+        if (!nonRoot) recommendations.Add(&quot;Specify an unprivileged non-root user (e.g. USER app)&quot;);
+
+        bool minimal = lines.Any(l =&gt; l.Contains(&quot;chiseled&quot;, StringComparison.OrdinalIgnoreCase) || l.Contains(&quot;alpine&quot;, StringComparison.OrdinalIgnoreCase));
+        if (!minimal) recommendations.Add(&quot;Use chiseled or alpine base image to minimize attack surface&quot;);
+
+        return new DockerfileAuditResult(
+            HasMultiStageBuild: multiStage,
+            HasLayerCachingOptimization: layerCaching,
+            UsesNonRootUser: nonRoot,
+            UsesChiseledOrMinimalRuntime: minimal,
+            Recommendations: recommendations
+        );
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day41.DockerDotNet.Tests/Day41Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd41-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d41-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day41.DockerDotNet.Tests;
+
+public class Day41Tests
+{
+    [Fact]
+    public void ContainerGc_Calculates75PercentHeapLimit_LeavingHeadroomForNativeAndOS()
+    {
+        // 512 MB container limit
+        long limitBytes = 512L * 1024 * 1024;
+        var profile = ContainerMemoryCalculator.ComputeGcProfile(limitBytes, heapLimitPercent: 75, serverGc: true, allocatedCores: 2);
+
+        // 75% of 512MB = 384MB
+        long expectedHeap = 384L * 1024 * 1024;
+        long expectedBuffer = 128L * 1024 * 1024;
+
+        Assert.Equal(expectedHeap, profile.CalculatedHeapLimitBytes);
+        Assert.Equal(expectedBuffer, profile.NativeAndOsBufferBytes);
+        Assert.True(profile.IsServerGcEnabled);
+        Assert.Equal(2, profile.ExpectedGcThreads);
+    }
+
+    [Fact]
+    public void ContainerGc_ServerGcThreadCount_ScalesWithCpuCores()
+    {
+        long limitBytes = 1024L * 1024 * 1024;
+        var profile = ContainerMemoryCalculator.ComputeGcProfile(limitBytes, heapLimitPercent: 80, serverGc: true, allocatedCores: 8);
+
+        Assert.Equal(8, profile.ExpectedGcThreads);
+    }
+
+    [Fact]
+    public void ContainerGc_WorkstationGc_UsesSingleThread()
+    {
+        long limitBytes = 1024L * 1024 * 1024;
+        var profile = ContainerMemoryCalculator.ComputeGcProfile(limitBytes, heapLimitPercent: 80, serverGc: false, allocatedCores: 8);
+
+        Assert.Equal(1, profile.ExpectedGcThreads);
+        Assert.False(profile.IsServerGcEnabled);
+    }
+
+    [Fact]
+    public void DockerfileValidator_AuditsProductionDockerfile_PassesAllChecks()
+    {
+        string dockerfile = &quot;&quot;&quot;
+        FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+        WORKDIR /src
+        COPY Day41.DockerDotNet.csproj .
+        RUN dotnet restore Day41.DockerDotNet.csproj
+        COPY . .
+        RUN dotnet build Day41.DockerDotNet.csproj -c Release --no-restore
+
+        FROM build AS publish
+        RUN dotnet publish Day41.DockerDotNet.csproj -c Release -o /app/publish
+
+        FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled AS final
+        WORKDIR /app
+        USER app
+        COPY --from=publish /app/publish .
+        ENTRYPOINT [&quot;dotnet&quot;, &quot;Day41.DockerDotNet.dll&quot;]
+        &quot;&quot;&quot;;
+
+        var audit = DockerfileLintValidator.Audit(dockerfile);
+
+        Assert.True(audit.HasMultiStageBuild);
+        Assert.True(audit.HasLayerCachingOptimization);
+        Assert.True(audit.UsesNonRootUser);
+        Assert.True(audit.UsesChiseledOrMinimalRuntime);
+        Assert.Empty(audit.Recommendations);
+    }
+
+    [Fact]
+    public void DockerfileValidator_FlagsSingleStageAndRootUser_WhenMissing()
+    {
+        string badDockerfile = &quot;&quot;&quot;
+        FROM mcr.microsoft.com/dotnet/sdk:8.0
+        WORKDIR /app
+        COPY . .
+        RUN dotnet run
+        &quot;&quot;&quot;;
+
+        var audit = DockerfileLintValidator.Audit(badDockerfile);
+
+        Assert.False(audit.HasMultiStageBuild);
+        Assert.False(audit.HasLayerCachingOptimization);
+        Assert.False(audit.UsesNonRootUser);
+        Assert.False(audit.UsesChiseledOrMinimalRuntime);
+        Assert.NotEmpty(audit.Recommendations);
+    }
+
+    [Fact]
+    public void ClimbingStairs_BaseCases_ReturnsExpectedWays()
+    {
+        Assert.Equal(1, ClimbingStairsSolver.ClimbStairs(1));
+        Assert.Equal(2, ClimbingStairsSolver.ClimbStairs(2));
+    }
+
+    [Fact]
+    public void ClimbingStairs_LargerValues_MatchesFibonacciRecurrence()
+    {
+        // n=3: (1+1+1), (1+2), (2+1) -&gt; 3
+        Assert.Equal(3, ClimbingStairsSolver.ClimbStairs(3));
+        // n=4: 5
+        Assert.Equal(5, ClimbingStairsSolver.ClimbStairs(4));
+        // n=5: 8
+        Assert.Equal(8, ClimbingStairsSolver.ClimbStairs(5));
+    }
+
+    [Fact]
+    public void MinCostClimbingStairs_Example1_ReturnsMinimumCost()
+    {
+        int[] cost = [10, 15, 20];
+        // Start at index 1 (cost 15) and jump 2 steps to reach the top -&gt; min cost 15
+        int result = ClimbingStairsSolver.MinCostClimbingStairs(cost);
+        Assert.Equal(15, result);
+    }
+
+    [Fact]
+    public void MinCostClimbingStairs_Example2_ReturnsMinimumCost()
+    {
+        int[] cost = [1, 100, 1, 1, 1, 100, 1, 1, 100, 1];
+        int result = ClimbingStairsSolver.MinCostClimbingStairs(cost);
+        Assert.Equal(6, result);
+    }
+
+    [Fact]
+    public void MinCostClimbingStairs_TwoSteps_ReturnsMinimumOfBoth()
+    {
+        int[] cost = [10, 20];
+        int result = ClimbingStairsSolver.MinCostClimbingStairs(cost);
+        Assert.Equal(10, result);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: Docker & Linux Cgroups for .NET Services</h1>
+<h2>1. Linux Cgroups (Control Groups) v1 vs v2</h2>
+<ul>
+<li>In containerized environments, the host Linux kernel imposes memory and CPU constraints via <strong>cgroups</strong>:</li>
+<li><strong>cgroups v1</strong>: Memory limits configured in <code>/sys/fs/cgroup/memory/memory.limit_in_bytes</code>.</li>
+<li><strong>cgroups v2</strong>: Unified hierarchy in <code>/sys/fs/cgroup/memory.max</code>.</li>
+<li>.NET 8 has full native awareness of cgroups v1 and v2. By default, the .NET runtime polls cgroups to determine available memory and CPU cores rather than reading total host machine specifications.</li>
+</ul>
+<h2>2. Preventing Linux OOMKilled (Exit Code 137)</h2>
+<ul>
+<li><strong>Why do .NET containers get OOMKilled?</strong></li>
+<li>If a container is given a 512MB limit in Kubernetes (<code>resources.limits.memory: 512Mi</code>), and <code>DOTNET_GCHeapHardLimitPercent</code> is not configured, .NET GC by default may allow the managed heap to expand up to ~75-80% of container memory.</li>
+<li>However, total container memory = $\text{Managed GC Heap} + \text{Native Memory} + \text{Thread Stacks (1MB per thread)} + \text{JIT Code Cache} + \text{Socket/I/O Buffers}$.</li>
+<li>Under heavy load or sudden thread creation, native memory pushes total usage past 512MB. The Linux kernel immediately sends <code>SIGKILL</code> (<code>exit code 137</code>), terminating the container without a managed exception or stack trace!</li>
+<li><strong>Recommended Configuration</strong>:</li>
+<li>Set <code>DOTNET_GCHeapHardLimitPercent=75</code> (reserving 25% for native buffers and OS overhead).</li>
+<li>On containers with $\le 1$ core or $\le 512$MB RAM, evaluate Workstation GC (<code>DOTNET_gcServer=0</code>) to eliminate multi-heap thread overhead.</li>
+</ul>
+<h2>3. Chiseled Ubuntu Images vs Alpine</h2>
+<ul>
+<li><strong>Alpine Linux</strong>:</li>
+<li>Uses <code>musl libc</code> instead of <code>glibc</code>.</li>
+<li>Can cause compatibility and performance issues with native P/Invoke libraries or optimized SIMD vectorization.</li>
+<li><strong>Ubuntu Chiseled (<code>aspnet:8.0-jammy-chiseled</code>)</strong>:</li>
+<li>Created by Canonical and Microsoft.</li>
+<li>Strips everything from Ubuntu except the exact shared libraries needed by .NET (including <code>glibc</code> and <code>OpenSSL</code>).</li>
+<li>No <code>bash</code>, no <code>sh</code>, no <code>apt</code>, no <code>curl</code>, no <code>cat</code>.</li>
+<li>Image size is ~100MB (similar to Alpine) but retains 100% <code>glibc</code> compatibility and dramatically reduces CVE exposure to near zero.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 41: Docker Deep Dive for .NET Services</h1>
+<h2>Architectural Overview</h2>
+<p>Containerizing modern .NET microservices requires deep knowledge of Linux container internals, cgroups resource isolation, garbage collector tuning, and container supply-chain security.</p>
+<p>This module demonstrates production container engineering for .NET 8 services:</p>
+<ul>
+<li><strong>Multi-Stage Build Pipeline</strong>:</li>
+<li>Build stage with full .NET SDK image (<code>mcr.microsoft.com/dotnet/sdk:8.0</code>).</li>
+<li>Publish stage creating release binaries without app hosts (<code>/p:UseAppHost=false</code>).</li>
+<li>Runtime stage with ultra-minimal Ubuntu Chiseled image (<code>mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled</code>) reducing attack surface to zero package managers and zero interactive shells.</li>
+<li><strong>Docker Layer Caching Optimization</strong>:</li>
+<li>Copies <code>.csproj</code> files and executes <code>dotnet restore</code> in an isolated layer before copying the full source tree, allowing subsequent code changes to build instantly without re-downloading NuGet dependencies.</li>
+<li><strong>Non-Root Security Hardening</strong>:</li>
+<li>Drops root privileges by executing under unprivileged <code>USER app</code> (UID 1654), preventing container escape vulnerabilities from compromising host systems.</li>
+<li><strong>Cgroups & .NET GC Tuning</strong>:</li>
+<li>Analyzes cgroup v1 and v2 memory limits.</li>
+<li>Automatically configures <code>DOTNET_GCHeapHardLimitPercent=75</code>, reserving 25% of container RAM for unmanaged allocations (native buffers, thread stacks, JIT compilation) to prevent Linux OOM Killer (<code>137 OOMKilled</code>) termination.</li>
+<li>Balances Server GC (<code>DOTNET_gcServer=1</code>) thread counts across allocated container CPU quotas.</li>
+<li><strong>Static Dockerfile Linter & Analyzer</strong>: Validates Dockerfile structure against enterprise security and performance guidelines.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">       Dockerfile Build Flow                    Container Runtime Memory Layout
+┌─────────────────────────────────┐       ┌─────────────────────────────────────────┐
+│ Stage 1: Build (dotnet SDK)    │       │        Total Container Limit (cgroup)   │
+│ - COPY *.csproj                 │       │               (e.g., 512 MB)            │
+│ - RUN dotnet restore (CACHED!)  │       ├───────────────────────────┬─────────────┤
+│ - COPY . .                      │       │   Managed GC Heap (75%)   │ Native (25%)│
+│ - RUN dotnet build              │       │         (384 MB)          │   (128 MB)  │
+└───────────────┬─────────────────┘       │                           │             │
+                │                         │   - Generation 0, 1, 2    │ Thread Stacks│
+                ▼                         │   - Large Object Heap     │ JIT Buffers │
+┌─────────────────────────────────┐       │   - Pinned Object Heap    │ OS &amp; Sockets│
+│ Stage 2: Publish                │       └───────────────────────────┴─────────────┘
+│ - dotnet publish -c Release     │
+└───────────────┬─────────────────┘
+                │
+                ▼
+┌─────────────────────────────────┐
+│ Stage 3: Chiseled Runtime       │
+│ - Base: aspnet:8.0-chiseled     │
+│ - USER app (UID 1654, non-root) │
+│ - COPY --from=publish           │
+│ - Zero shell, zero apt-get      │
+└─────────────────────────────────┘</code></pre></div>
+<hr/>
+<h2>LeetCode #70 & #746: Climbing Stairs & Min Cost Climbing Stairs (Easy)</h2>
+<ul>
+<li><strong>LeetCode #70 (Climbing Stairs)</strong>:</li>
+<li>Dynamic programming Fibonacci recurrence: $dp[i] = dp[i-1] + dp[i-2]$.</li>
+<li>Solved in $O(N)$ time with $O(1)$ auxiliary memory using two rolling variables.</li>
+<li><strong>LeetCode #746 (Min Cost Climbing Stairs)</strong>:</li>
+<li>Dynamic programming recurrence: $dp[i] = \min(dp[i-1] + cost[i-1], dp[i-2] + cost[i-2])$.</li>
+<li>Solved in $O(N)$ time and $O(1)$ space.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day41-Docker-DotNet-Cgroups/tests/Day41.DockerDotNet.Tests/Day41.DockerDotNet.Tests.csproj</code></pre></div>
+<p>10 unit tests validate container GC heap calculations, Server vs Workstation GC thread allocation, Dockerfile security audits, and dynamic programming stairs solvers.</p>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why does a .NET container get terminated with exit code 137 (OOMKilled) in Kubernetes even when managed memory appears low?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Exit code 137 indicates the Linux kernel terminated the process with <code>SIGKILL</code> (signal 9: $128 + 9 = 137$) because cgroup memory limit was breached.</p>
+<ul>
+<li>The .NET Garbage Collector only manages the <strong>Managed GC Heap</strong>.</li>
+<li>A .NET process additionally consumes <strong>Native Memory</strong>:</li>
+<li>Thread stacks (by default, 1 MB virtual memory per thread in Linux).</li>
+<li>JIT compilation code cache and type metadata.</li>
+<li>Native socket buffers and libuv / socket network buffers.</li>
+<li>Native memory from third-party libraries (e.g. gRPC, OpenTelemetry, image processing, OpenSSL).</li>
+<li>If container limit is 500MB and GC heap is 380MB, but 150 threads spawn or native buffers surge by 150MB, total memory exceeds 500MB and the cgroup OOM killer instantly kills the pod.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is `DOTNET_GCHeapHardLimitPercent` and how does it prevent container OOMKills?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>DOTNET_GCHeapHardLimitPercent</code> configures the maximum percentage of the container's cgroup memory limit that the .NET Garbage Collector is allowed to allocate for the managed heap.</p>
+<ul>
+<li>In a container with 1GB limit, configuring <code>DOTNET_GCHeapHardLimitPercent=75</code> instructs the GC that the managed heap must never exceed 750MB.</li>
+<li>As the heap approaches 750MB, the GC triggers aggressive Gen 2 collections rather than continuing to expand.</li>
+<li>The remaining 250MB (25%) is permanently preserved as a safety cushion for unmanaged memory, thread stacks, and OS page cache, preventing kernel OOMKills.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do Server GC and Workstation GC behave inside Docker containers with CPU limits?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Server GC (<code>DOTNET_gcServer=1</code>)</strong>:</li>
+<li>Creates a dedicated GC heap and a dedicated GC background thread for <em>each</em> logical CPU core recognized by the runtime.</li>
+<li>In a large multi-core node where a container is constrained to <code>resources.limits.cpu: &quot;1&quot;</code>, if .NET reads host cores (e.g. 64 cores), Server GC allocates 64 separate heaps and threads! This causes catastrophic thread context switching and massive memory overhead.</li>
+<li>.NET 8 correctly parses cgroup CPU quotas (<code>cpu.cfs_quota_us / cpu.cfs_period_us</code>).</li>
+<li><em>Recommendation</em>: For small containers ($\le 1$ core or $\le 512$MB RAM), switch to Workstation GC (<code>DOTNET_gcServer=0</code>). For $\ge 2$ cores, Server GC offers superior throughput.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Why is Docker layer order critical for .NET builds, and how does copying `.csproj` first optimize CI/CD pipelines?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Docker caches intermediate image layers based on content hashes.</p>
+<ul>
+<li>If you run <code>COPY . .</code> followed by <code>RUN dotnet restore</code>, any change to a single comment or <code>.cs</code> file invalidates the copy layer and <strong>forces <code>dotnet restore</code> to re-execute from scratch</strong>, downloading hundreds of megabytes of NuGet packages on every commit.</li>
+<li>By structuring the Dockerfile as:</li>
+</ul>
+<div class="code-block-container"><pre class="language-dockerfile"><code class="language-dockerfile">  COPY *.csproj .
+  RUN dotnet restore
+  COPY . .
+  RUN dotnet build --no-restore</code></pre></div>
+<p>Docker caches the <code>restore</code> layer. As long as <code>.csproj</code> has not changed, NuGet restore completes in 0.0 seconds from local Docker layer cache.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What are the security benefits of using Ubuntu Chiseled containers (`aspnet:8.0-jammy-chiseled`) over Alpine or standard Ubuntu?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Standard Ubuntu/Debian</strong>: Includes package managers (<code>apt</code>, <code>dpkg</code>), shells (<code>bash</code>, <code>sh</code>), coreutils (<code>curl</code>, <code>wget</code>, <code>cat</code>, <code>ls</code>), and dozens of unnecessary packages, creating a large CVE attack surface and giving attackers tools for lateral movement if RCE occurs.</li>
+<li><strong>Alpine Linux</strong>: Uses <code>musl libc</code>, which can cause compatibility quirks with P/Invoke native binaries, ICU globalization issues, and slower allocator performance compared to <code>glibc</code>.</li>
+<li><strong>Ubuntu Chiseled</strong>:</li>
+<li>Contains only the exact binary dependencies required by the .NET runtime (including <code>glibc</code> and <code>OpenSSL</code>).</li>
+<li>Contains <strong>zero package managers</strong>, <strong>zero shells</strong>, and <strong>zero utilities</strong>.</li>
+<li>Attackers cannot invoke <code>curl | bash</code> or spawn interactive reverse shells.</li>
+<li>Yields near-zero vulnerability scan results in Trivy/Docker Scout while retaining standard <code>glibc</code> performance.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">Why should production containers always run under `USER app` instead of `root`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>By default, Docker containers run as UID 0 (<code>root</code>), which corresponds to root on the underlying host Linux kernel unless user namespaces are enabled.</p>
+<ul>
+<li>If a security vulnerability (e.g. container escape via kernel privilege escalation, runc CVE-2024-21626, or volume mount abuse) is exploited in a root container, the attacker immediately gains root access to the entire host Kubernetes node.</li>
+<li>Running as an unprivileged user (in .NET 8: <code>USER app</code>, UID 1654) limits the blast radius: the compromised process cannot access host hardware, read other containers' data, or modify system files.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How does .NET 8 handle cgroups v1 vs cgroups v2 in modern Linux kernels (e.g. RHEL 9, Ubuntu 22.04+)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>cgroups v1</strong>: Multi-hierarchy system where memory, cpu, and blkio were managed under separate <code>/sys/fs/cgroup/memory</code> and <code>/sys/fs/cgroup/cpu</code> controllers.</li>
+<li><strong>cgroups v2</strong>: Unified single-hierarchy controller (<code>/sys/fs/cgroup/memory.max</code>, <code>memory.current</code>, <code>cpu.max</code>).</li>
+<li>.NET 8 automatically detects whether the kernel is running cgroups v1 or v2 at runtime startup:</li>
+<li>If cgroups v2 is active, it reads <code>memory.max</code> for container limits.</li>
+<li>It dynamically adjusts GC heap boundaries and thread pool sizing without requiring manual flags or environment overrides.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #70 (Climbing Stairs), why is the solution equivalent to the Fibonacci sequence?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>To reach step $n$, the climber must take either:</p>
+<ol>
+<li>A 1-step leap from step $n - 1$, or</li>
+<li>A 2-step leap from step $n - 2$.</li>
+</ol>
+<p>These two sets of paths are mutually exclusive and collectively exhaustive.</p>
+<p>Therefore, the number of distinct ways to reach step $n$ is:</p>
+<p>$$\text{ways}(n) = \text{ways}(n - 1) + \text{ways}(n - 2)$$</p>
+<p>With base cases $\text{ways}(1) = 1$ and $\text{ways}(2) = 2$, this matches the Fibonacci sequence shifted by one index. Solved iteratively in $O(N)$ time and $O(1)$ memory.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #746 (Min Cost Climbing Stairs), what is the optimal DP state transition?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $dp[i]$ be the minimum cost to reach step $i$.</p>
+<ul>
+<li>You can reach step $i$ from step $i - 1$ (paying $cost[i - 1]$) or from step $i - 2$ (paying $cost[i - 2]$).</li>
+<li>Recurrence:</li>
+</ul>
+<p>$$dp[i] = \min(dp[i - 1] + cost[i - 1],\; dp[i - 2] + cost[i - 2])$$</p>
+<ul>
+<li>Since you can start at index 0 or index 1, the base cases are $dp[0] = 0$ and $dp[1] = 0$.</li>
+<li>To reach the top of the staircase ($i = \text{cost.Length}$), only the previous two values are needed, allowing $O(1)$ rolling variable space.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">What are best practices for Kubernetes Liveness and Readiness Probes for a containerized .NET service?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Separate Liveness and Readiness Endpoints</strong>:</li>
+</ol>
+<ul>
+<li><code>/healthz/live</code>: Checks if the process is responsive (returns 200). Should NEVER check external dependencies (DB, Redis). If DB is down, failing liveness causes Kubernetes to restart the pod, causing a catastrophic restart storm.</li>
+<li><code>/healthz/ready</code>: Checks if the pod can accept traffic (verifies DB connection, Redis ping, warm caches). If failing, Kubernetes removes the pod from the Service load balancer without restarting it.</li>
+</ul>
+<ol>
+<li><strong>Use ASP.NET Core Health Checks</strong>:</li>
+</ol>
+<ul>
+<li><code>services.AddHealthChecks().AddCheck(&quot;db&quot;, ...);</code></li>
+<li>Map with <code>app.MapHealthChecks(&quot;/healthz/ready&quot;)</code> and <code>app.MapHealthChecks(&quot;/healthz/live&quot;, new HealthCheckOptions { Predicate = _ =&gt; false })</code>.</li>
+</ul>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day41.DockerDotNet/ClimbingStairsSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd41-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d41-src-code-0" class="language-csharp">namespace Day41.DockerDotNet;
+
+public static class ClimbingStairsSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #70: Climbing Stairs (Easy).
+    /// Fibonacci recurrence: dp[i] = dp[i - 1] + dp[i - 2].
+    /// Time Complexity: O(N), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int ClimbStairs(int n)
+    {
+        if (n &lt;= 0) return 0;
+        if (n == 1) return 1;
+        if (n == 2) return 2;
+
+        int prev2 = 1;
+        int prev1 = 2;
+
+        for (int i = 3; i &lt;= n; i++)
+        {
+            int current = prev1 + prev2;
+            prev2 = prev1;
+            prev1 = current;
+        }
+
+        return prev1;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #746: Min Cost Climbing Stairs (Easy).
+    /// Recurrence: dp[i] = min(dp[i - 1] + cost[i - 1], dp[i - 2] + cost[i - 2]).
+    /// Time Complexity: O(N), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int MinCostClimbingStairs(int[] cost)
+    {
+        if (cost == null || cost.Length &lt; 2) return 0;
+
+        int prev2 = 0; // min cost to reach step 0
+        int prev1 = 0; // min cost to reach step 1
+
+        for (int i = 2; i &lt;= cost.Length; i++)
+        {
+            int current = Math.Min(prev1 + cost[i - 1], prev2 + cost[i - 2]);
+            prev2 = prev1;
+            prev1 = current;
+        }
+
+        return prev1;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day41.DockerDotNet/DockerfileAnalyzer.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd41-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d41-src-code-1" class="language-csharp">namespace Day41.DockerDotNet;
+
+public record ContainerGcConfiguration(
+    long ContainerMemoryLimitBytes,
+    int HeapHardLimitPercent,
+    long CalculatedHeapLimitBytes,
+    long NativeAndOsBufferBytes,
+    bool IsServerGcEnabled,
+    int ExpectedGcThreads
+);
+
+public static class ContainerMemoryCalculator
+{
+    /// &lt;summary&gt;
+    /// Calculates .NET GC Heap limits and safe native/OS headroom from cgroup memory limits.
+    /// &lt;/summary&gt;
+    public static ContainerGcConfiguration ComputeGcProfile(
+        long containerMemoryLimitBytes,
+        int heapLimitPercent = 75,
+        bool serverGc = true,
+        int allocatedCores = 2)
+    {
+        if (heapLimitPercent &lt;= 0 || heapLimitPercent &gt; 95)
+            throw new ArgumentOutOfRangeException(nameof(heapLimitPercent), &quot;Heap percent should be between 1 and 95&quot;);
+
+        long heapLimit = (long)(containerMemoryLimitBytes * (heapLimitPercent / 100.0));
+        long buffer = containerMemoryLimitBytes - heapLimit;
+        int gcThreads = serverGc ? Math.Max(1, allocatedCores) : 1;
+
+        return new ContainerGcConfiguration(
+            ContainerMemoryLimitBytes: containerMemoryLimitBytes,
+            HeapHardLimitPercent: heapLimitPercent,
+            CalculatedHeapLimitBytes: heapLimit,
+            NativeAndOsBufferBytes: buffer,
+            IsServerGcEnabled: serverGc,
+            ExpectedGcThreads: gcThreads
+        );
+    }
+}
+
+public record DockerfileAuditResult(
+    bool HasMultiStageBuild,
+    bool HasLayerCachingOptimization,
+    bool UsesNonRootUser,
+    bool UsesChiseledOrMinimalRuntime,
+    List&lt;string&gt; Recommendations
+);
+
+public static class DockerfileLintValidator
+{
+    public static DockerfileAuditResult Audit(string dockerfileText)
+    {
+        var lines = dockerfileText.Split(&#x27;\n&#x27;, StringSplitOptions.TrimEntries);
+        var recommendations = new List&lt;string&gt;();
+
+        int fromCount = lines.Count(l =&gt; l.StartsWith(&quot;FROM &quot;, StringComparison.OrdinalIgnoreCase));
+        bool multiStage = fromCount &gt; 1;
+        if (!multiStage) recommendations.Add(&quot;Use multi-stage builds to exclude SDK from runtime image&quot;);
+
+        // Check restore before full copy
+        int copyCsprojIdx = Array.FindIndex(lines, l =&gt; l.Contains(&quot;COPY&quot;, StringComparison.OrdinalIgnoreCase) &amp;&amp; l.Contains(&quot;.csproj&quot;, StringComparison.OrdinalIgnoreCase));
+        int restoreIdx = Array.FindIndex(lines, l =&gt; l.Contains(&quot;dotnet restore&quot;, StringComparison.OrdinalIgnoreCase));
+        int copyAllIdx = Array.FindIndex(lines, l =&gt; l.Contains(&quot;COPY . .&quot;, StringComparison.OrdinalIgnoreCase));
+
+        bool layerCaching = copyCsprojIdx != -1 &amp;&amp; restoreIdx != -1 &amp;&amp; copyAllIdx != -1 &amp;&amp;
+                            copyCsprojIdx &lt; restoreIdx &amp;&amp; restoreIdx &lt; copyAllIdx;
+
+        if (!layerCaching) recommendations.Add(&quot;Optimize layer caching: copy .csproj and run dotnet restore before copying full source&quot;);
+
+        bool nonRoot = lines.Any(l =&gt; l.StartsWith(&quot;USER &quot;, StringComparison.OrdinalIgnoreCase) &amp;&amp; !l.Contains(&quot;root&quot;, StringComparison.OrdinalIgnoreCase));
+        if (!nonRoot) recommendations.Add(&quot;Specify an unprivileged non-root user (e.g. USER app)&quot;);
+
+        bool minimal = lines.Any(l =&gt; l.Contains(&quot;chiseled&quot;, StringComparison.OrdinalIgnoreCase) || l.Contains(&quot;alpine&quot;, StringComparison.OrdinalIgnoreCase));
+        if (!minimal) recommendations.Add(&quot;Use chiseled or alpine base image to minimize attack surface&quot;);
+
+        return new DockerfileAuditResult(
+            HasMultiStageBuild: multiStage,
+            HasLayerCachingOptimization: layerCaching,
+            UsesNonRootUser: nonRoot,
+            UsesChiseledOrMinimalRuntime: minimal,
+            Recommendations: recommendations
+        );
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day41.DockerDotNet.Tests/Day41Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd41-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d41-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day41.DockerDotNet.Tests;
+
+public class Day41Tests
+{
+    [Fact]
+    public void ContainerGc_Calculates75PercentHeapLimit_LeavingHeadroomForNativeAndOS()
+    {
+        // 512 MB container limit
+        long limitBytes = 512L * 1024 * 1024;
+        var profile = ContainerMemoryCalculator.ComputeGcProfile(limitBytes, heapLimitPercent: 75, serverGc: true, allocatedCores: 2);
+
+        // 75% of 512MB = 384MB
+        long expectedHeap = 384L * 1024 * 1024;
+        long expectedBuffer = 128L * 1024 * 1024;
+
+        Assert.Equal(expectedHeap, profile.CalculatedHeapLimitBytes);
+        Assert.Equal(expectedBuffer, profile.NativeAndOsBufferBytes);
+        Assert.True(profile.IsServerGcEnabled);
+        Assert.Equal(2, profile.ExpectedGcThreads);
+    }
+
+    [Fact]
+    public void ContainerGc_ServerGcThreadCount_ScalesWithCpuCores()
+    {
+        long limitBytes = 1024L * 1024 * 1024;
+        var profile = ContainerMemoryCalculator.ComputeGcProfile(limitBytes, heapLimitPercent: 80, serverGc: true, allocatedCores: 8);
+
+        Assert.Equal(8, profile.ExpectedGcThreads);
+    }
+
+    [Fact]
+    public void ContainerGc_WorkstationGc_UsesSingleThread()
+    {
+        long limitBytes = 1024L * 1024 * 1024;
+        var profile = ContainerMemoryCalculator.ComputeGcProfile(limitBytes, heapLimitPercent: 80, serverGc: false, allocatedCores: 8);
+
+        Assert.Equal(1, profile.ExpectedGcThreads);
+        Assert.False(profile.IsServerGcEnabled);
+    }
+
+    [Fact]
+    public void DockerfileValidator_AuditsProductionDockerfile_PassesAllChecks()
+    {
+        string dockerfile = &quot;&quot;&quot;
+        FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+        WORKDIR /src
+        COPY Day41.DockerDotNet.csproj .
+        RUN dotnet restore Day41.DockerDotNet.csproj
+        COPY . .
+        RUN dotnet build Day41.DockerDotNet.csproj -c Release --no-restore
+
+        FROM build AS publish
+        RUN dotnet publish Day41.DockerDotNet.csproj -c Release -o /app/publish
+
+        FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled AS final
+        WORKDIR /app
+        USER app
+        COPY --from=publish /app/publish .
+        ENTRYPOINT [&quot;dotnet&quot;, &quot;Day41.DockerDotNet.dll&quot;]
+        &quot;&quot;&quot;;
+
+        var audit = DockerfileLintValidator.Audit(dockerfile);
+
+        Assert.True(audit.HasMultiStageBuild);
+        Assert.True(audit.HasLayerCachingOptimization);
+        Assert.True(audit.UsesNonRootUser);
+        Assert.True(audit.UsesChiseledOrMinimalRuntime);
+        Assert.Empty(audit.Recommendations);
+    }
+
+    [Fact]
+    public void DockerfileValidator_FlagsSingleStageAndRootUser_WhenMissing()
+    {
+        string badDockerfile = &quot;&quot;&quot;
+        FROM mcr.microsoft.com/dotnet/sdk:8.0
+        WORKDIR /app
+        COPY . .
+        RUN dotnet run
+        &quot;&quot;&quot;;
+
+        var audit = DockerfileLintValidator.Audit(badDockerfile);
+
+        Assert.False(audit.HasMultiStageBuild);
+        Assert.False(audit.HasLayerCachingOptimization);
+        Assert.False(audit.UsesNonRootUser);
+        Assert.False(audit.UsesChiseledOrMinimalRuntime);
+        Assert.NotEmpty(audit.Recommendations);
+    }
+
+    [Fact]
+    public void ClimbingStairs_BaseCases_ReturnsExpectedWays()
+    {
+        Assert.Equal(1, ClimbingStairsSolver.ClimbStairs(1));
+        Assert.Equal(2, ClimbingStairsSolver.ClimbStairs(2));
+    }
+
+    [Fact]
+    public void ClimbingStairs_LargerValues_MatchesFibonacciRecurrence()
+    {
+        // n=3: (1+1+1), (1+2), (2+1) -&gt; 3
+        Assert.Equal(3, ClimbingStairsSolver.ClimbStairs(3));
+        // n=4: 5
+        Assert.Equal(5, ClimbingStairsSolver.ClimbStairs(4));
+        // n=5: 8
+        Assert.Equal(8, ClimbingStairsSolver.ClimbStairs(5));
+    }
+
+    [Fact]
+    public void MinCostClimbingStairs_Example1_ReturnsMinimumCost()
+    {
+        int[] cost = [10, 15, 20];
+        // Start at index 1 (cost 15) and jump 2 steps to reach the top -&gt; min cost 15
+        int result = ClimbingStairsSolver.MinCostClimbingStairs(cost);
+        Assert.Equal(15, result);
+    }
+
+    [Fact]
+    public void MinCostClimbingStairs_Example2_ReturnsMinimumCost()
+    {
+        int[] cost = [1, 100, 1, 1, 1, 100, 1, 1, 100, 1];
+        int result = ClimbingStairsSolver.MinCostClimbingStairs(cost);
+        Assert.Equal(6, result);
+    }
+
+    [Fact]
+    public void MinCostClimbingStairs_TwoSteps_ReturnsMinimumOfBoth()
+    {
+        int[] cost = [10, 20];
+        int result = ClimbingStairsSolver.MinCostClimbingStairs(cost);
+        Assert.Equal(10, result);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 41 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

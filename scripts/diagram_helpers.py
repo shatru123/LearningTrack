@@ -36,6 +36,16 @@ DAYS_INFO = [
     {"num": 29, "dir": "Day29-RabbitMQ-Core-Exchanges-Queues", "title": "RabbitMQ Core Concepts: Exchanges & Queues", "category": "RabbitMQ & Messaging"},
     {"num": 30, "dir": "Day30-RabbitMQ-DLQ-MassTransit", "title": "RabbitMQ Dead-Letter Queues & MassTransit", "category": "RabbitMQ & Messaging"},
     {"num": 31, "dir": "Day31-Transactional-Outbox-Pattern", "title": "The Transactional Outbox Pattern", "category": "Distributed Systems"},
+    {"num": 32, "dir": "Day32-Saga-Orchestration-MassTransit", "title": "Saga Pattern: Orchestration vs Choreography", "category": "Distributed Systems"},
+    {"num": 33, "dir": "Day33-Distributed-Idempotency", "title": "Distributed Idempotency & De-duplication", "category": "Distributed Systems"},
+    {"num": 34, "dir": "Day34-OpenTelemetry-DistributedTracing", "title": "OpenTelemetry in .NET: Distributed Tracing", "category": "Observability & Tracing"},
+    {"num": 35, "dir": "Day35-Observability-Prometheus-Grafana-Jaeger", "title": "Observability Stack: Prometheus, Grafana & Jaeger", "category": "Observability & Metrics"},
+    {"num": 36, "dir": "Day36-SystemDesign-Notification-Service", "title": "System Design: Notification Service", "category": "System Design & Queues"},
+    {"num": 37, "dir": "Day37-SystemDesign-Chat-System", "title": "System Design: High-Throughput Chat System", "category": "System Design & WebSockets"},
+    {"num": 38, "dir": "Day38-SystemDesign-Video-Streaming", "title": "System Design: Video Streaming System", "category": "System Design & ABR"},
+    {"num": 39, "dir": "Day39-CAP-PACELC-DistributedSystems", "title": "CAP Theorem & PACELC in Practice", "category": "Distributed Consensus"},
+    {"num": 40, "dir": "Day40-EventSourcing-CQRS", "title": "Event Sourcing & CQRS Foundations", "category": "Event Sourcing & CQRS"},
+    {"num": 41, "dir": "Day41-Docker-DotNet-Cgroups", "title": "Docker Deep Dive for .NET Services", "category": "DevOps & Containers"},
 ]
 
 def get_day_svg(day_num):
@@ -1617,6 +1627,625 @@ def get_day_svg(day_num):
           <text x="630" y="274" fill="#f43f5e" font-size="9">Find(u) == Find(v) &#8594; Cycle detected!</text>
           <text x="630" y="290" fill="#34d399" font-size="9">Return (u, v) as redundant edge</text>
           <text x="630" y="306" fill="#94a3b8" font-size="9">Linear O(N * alpha(N)) time, O(N) space</text>
+        </svg>
+        """
+    if day_num == 32:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d32Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d32P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d32P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d32P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#14532d"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d32Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 32: Saga Pattern: Orchestration vs Choreography &amp; Bidirectional BFS</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d32P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Saga Orchestrator (MassTransit)</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">State Machine Definition</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">MassTransitStateMachine&lt;OrderState&gt;</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">Initial &#8594; Submitted &#8594; InventoryReserved</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">PaymentAuthorized &#8594; Completed</text>
+          <text x="50" y="196" fill="#f43f5e" font-size="9">CorrelateById: CorrelationId Guid</text>
+          
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Compensating Transactions</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">PaymentFailedEvent triggers rollback</text>
+          <text x="50" y="274" fill="#f43f5e" font-size="9">ReleaseInventoryCommand sent</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">Semantic reversal of committed actions</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Pivot Step: Point of no return</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d32P2)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#c084fc" font-size="14" font-weight="bold">Orchestration vs Choreography</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Choreography (Event-Driven)</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Decentralized: services emit domain events</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">High decoupling, simple for 2-3 services</text>
+          <text x="340" y="179" fill="#f43f5e" font-size="9">Risk: Cyclic dependencies, tracing fog</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Hard to track global process state</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#a855f7" font-size="11" font-weight="bold">Orchestration (Central Coordinator)</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Single coordinator owns workflow state</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Explicit timeouts, retries, and errors</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">MassTransit Saga Repository (Postgres)</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Standard for enterprise order checkout</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d32P3)" stroke="#4ade80" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#4ade80" font-size="14" font-weight="bold">LC #127: Word Ladder (Hard)</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Bidirectional BFS Strategy</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Search forward from beginWord</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Search backward from endWord</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Always expand the smaller frontier</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Frontier intersection &#8594; Shortest path</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#34d399" font-size="11" font-weight="bold">Complexity Reduction</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Standard BFS: O(B^d) branching factor</text>
+          <text x="630" y="274" fill="#4ade80" font-size="9">Bidirectional: O(2 * B^(d/2))</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Exponentially smaller search tree</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Runtime drops from 800ms to 25ms</text>
+        </svg>
+        """
+
+    if day_num == 33:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d33Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d33P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d33P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#155e75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d33P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d33Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 33: Distributed Idempotency &amp; Quickselect Selection</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d33P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Idempotency Protocol</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Key &amp; Payload Hashing</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Idempotency-Key header (UUID)</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">SHA-256 fingerprint over request body</text>
+          <text x="50" y="179" fill="#f43f5e" font-size="9">Payload mismatch &#8594; 422 Unprocessable</text>
+          <text x="50" y="196" fill="#cbd5e1" font-size="9">Guarantees cryptographic integrity</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">State &amp; Response Replay</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Status: Processing | Completed | Failed</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">Completed: Replay cached 200/201 response</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">FromCache = true header flag</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Zero duplicate business mutations</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d33P2)" stroke="#22d3ee" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#22d3ee" font-size="14" font-weight="bold">Lock Leases &amp; Fault Recovery</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">In-Flight Concurrency</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Concurrent duplicate arrives</text>
+          <text x="340" y="162" fill="#f43f5e" font-size="9">Status == Processing &amp;&amp; Lease active</text>
+          <text x="340" y="179" fill="#fbbf24" font-size="9">Returns HTTP 409 Conflict</text>
+          <text x="340" y="196" fill="#cbd5e1" font-size="9">Prevents concurrent double execution</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#22d3ee" font-size="11" font-weight="bold">Crash Recovery via Lease TTL</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Worker crashes while processing</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">LockedUntilUtc &lt; now (lease expired)</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">New worker safely re-acquires lock</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">No permanent deadlocks on server crashes</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d33P3)" stroke="#e879f9" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#e879f9" font-size="14" font-weight="bold">LC #215: Kth Largest Element</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Quickselect (Randomized Pivot)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Hoare's Selection: target = N - k</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Average Time: O(N) linear!</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Space: O(1) iterative in-place</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Random pivot avoids sorted worst case</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#e879f9" font-size="11" font-weight="bold">Min-Heap for Streaming Data</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">PriorityQueue&lt;int, int&gt; bounded to K</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Dequeue when count &gt; K</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Time: O(N log K), Space: O(K)</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Ideal for unbounded incoming streams</text>
+        </svg>
+        """
+
+    if day_num == 34:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d34Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d34P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d34P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#047857"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d34P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#b45309"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d34Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 34: OpenTelemetry in .NET: Distributed Tracing &amp; Task Scheduling</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d34P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">W3C TraceContext Protocol</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">traceparent Header</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">00-{trace_id}-{span_id}-{flags}</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">Trace ID: 32 hex chars (end-to-end)</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">Span ID: 16 hex chars (current op)</text>
+          <text x="50" y="196" fill="#fbbf24" font-size="9">Flags: 01 = Sampled/Recorded</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#a855f7" font-size="11" font-weight="bold">Baggage Propagation</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Contextual metadata: tenant.id=corp-1</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">Propagates across all downstream hops</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">Injected in HTTP headers &amp; RabbitMQ</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Ambient context for logs and routing</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d34P2)" stroke="#34d399" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Multi-Hop Span Hierarchy</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">ActivitySource &amp; Kinds</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Gateway: Server Span</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">OrderService: Server Span (Child 1)</text>
+          <text x="340" y="179" fill="#38bdf8" font-size="9">RabbitMQ: Producer Span (Child 2)</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Inventory: Consumer Span (Child 3)</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#34d399" font-size="11" font-weight="bold">Zero-Allocation Diagnostics</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Returns null if no listeners registered</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Zero heap overhead when tracing off</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">ActivityEvent milestones &amp; tags</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Correlates distributed transactions</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d34P3)" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#f59e0b" font-size="14" font-weight="bold">LC #621: Task Scheduler</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Greedy Math Formula</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">(maxFreq - 1) * (n + 1) + maxCount</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Ans = Max(tasks.Length, slots)</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Time: O(N) linear, Space: O(1)</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Optimal execution time calculation</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#f59e0b" font-size="11" font-weight="bold">Max-Heap + Cooldown Queue</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">PriorityQueue simulates CPU ticks</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Cooldown queue enforces n cooldown</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Re-enqueues tasks as cooldown expires</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Models real OS job scheduler</text>
+        </svg>
+        """
+
+    if day_num == 35:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d35Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d35P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d35P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d35P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0284c7"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d35Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 35: Observability Stack: Prometheus, Grafana, Jaeger &amp; Design Twitter</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d35P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">RED &amp; USE Metric Models</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">RED (Service Level)</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Rate: Requests / second counter</text>
+          <text x="50" y="162" fill="#f43f5e" font-size="9">Errors: 5xx responses counter</text>
+          <text x="50" y="179" fill="#34d399" font-size="9">Duration: Latency histogram (ms)</text>
+          <text x="50" y="196" fill="#cbd5e1" font-size="9">Measures consumer experience</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">USE (Hardware/Resource Level)</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Utilization: CPU % busy gauge</text>
+          <text x="50" y="274" fill="#fbbf24" font-size="9">Saturation: ThreadPool backlog queue</text>
+          <text x="50" y="290" fill="#f43f5e" font-size="9">Errors: Network drops &amp; device faults</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Identifies underlying bottlenecks</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d35P2)" stroke="#e879f9" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#e879f9" font-size="14" font-weight="bold">Percentiles &amp; Correlation</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">P50 / P95 / P99 Tail Latency</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Averages hide critical tail outliers</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Nearest-rank percentile formula</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">Prometheus histogram_quantile()</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Explicit bucket boundaries</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#e879f9" font-size="11" font-weight="bold">Metrics + Traces + Logs</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Exemplars link metric spikes to traces</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Structured logs embed trace_id &amp; span_id</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">One-click drilldown in Grafana</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Prometheus &#8594; Jaeger &#8594; Loki</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d35P3)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#38bdf8" font-size="14" font-weight="bold">LC #355: Design Twitter</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">K-Way Merge via Max-Heap</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Users have chronologically sorted tweets</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">PriorityQueue merges top 10 tweets</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Time: O(F log F + 10 log F)</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Space: O(F) where F = followees</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Fan-out: Push vs Pull</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Standard users: Fan-out on write (push)</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Celebrities: Fan-out on read (pull)</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Solves write amplification at scale</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Enterprise news feed architecture</text>
+        </svg>
+        """
+
+    if day_num == 36:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d36Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d36P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d36P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#065f46"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d36P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#831843"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d36Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 36: System Design: Notification Service &amp; Subsets I &amp; II</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d36P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Multi-Channel Notification Engine</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Channel Routing</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Email (SendGrid), SMS (Twilio)</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">Push (FCM / APNs), In-App WebSockets</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">Priority: High (OTP) &gt; Normal &gt; Low</text>
+          <text x="50" y="196" fill="#fbbf24" font-size="9">Priority queue preempts bulk queues</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Failover &amp; Circuit Breakers</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Primary provider degradation (Twilio)</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">Auto-switch to AWS SNS fallback</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">Idempotency deduplication cache</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Prevents double-charging / spam</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d36P2)" stroke="#34d399" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Throttling &amp; User Opt-Outs</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Sliding-Window Rate Limiting</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Max 5 SMS/min per user (token bucket)</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Purges timestamps older than window</text>
+          <text x="340" y="179" fill="#f43f5e" font-size="9">Prevents notification fatigue &amp; spam</text>
+          <text x="340" y="196" fill="#cbd5e1" font-size="9">Protects provider billing quotas</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#34d399" font-size="11" font-weight="bold">Preference Enforcement</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">User opt-out channel bitmask/matrix</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Quiet hours: Do-not-disturb timezone</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">Non-urgent alerts deferred to 8am</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Regulatory compliance (GDPR/TCPA)</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d36P3)" stroke="#f43f5e" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#f43f5e" font-size="14" font-weight="bold">LC #78 &amp; #90: Subsets I &amp; II</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Power Set Backtracking (LC #78)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">DFS state space exploration</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Total subsets: 2^N</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Bitmask: 0 to (1 &lt;&lt; N) - 1</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Time: O(N * 2^N), Space: O(N)</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#f43f5e" font-size="11" font-weight="bold">Duplicate Pruning (LC #90)</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Sort array first</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">if (i &gt; start &amp;&amp; nums[i] == nums[i-1])</text>
+          <text x="630" y="290" fill="#f43f5e" font-size="9">continue; // skip duplicate siblings</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">100% unique subsets without set allocs</text>
+        </svg>
+        """
+
+    if day_num == 37:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d37Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d37P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d37P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d37P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#155e75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d37Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 37: High-Throughput Chat System &amp; Combination Sum I &amp; II</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d37P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">WebSocket Gateway &amp; Scale</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">C10M Sockets Architecture</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Non-blocking epoll / Kestrel sockets</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">Reduced TCP buffer allocation (4KB)</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">1M concurrent idle sockets per 64GB node</text>
+          <text x="50" y="196" fill="#fbbf24" font-size="9">NLB Layer 4 TLS termination</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#a855f7" font-size="11" font-weight="bold">Presence &amp; Ephemeral TTL</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Client heartbeats every 30s</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">Redis SET presence ONLINE EX 60</text>
+          <text x="50" y="290" fill="#f43f5e" font-size="9">Auto-offline on abrupt disconnect</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Typing indicators bypass DB entirely</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d37P2)" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#a855f7" font-size="14" font-weight="bold">Sequencing &amp; Redis Pub/Sub</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Monotonic Channel Sequencer</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Redis INCR channel:{id}:seq</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Strict monotonic ordering: 1, 2, 3...</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">Eliminates clock drift &amp; race conditions</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Clients detect missing sequence gaps</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#a855f7" font-size="11" font-weight="bold">Cross-Server Pub/Sub Backplane</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Server 1 publishes to chat:channel</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Server 2 receives and pushes to Bob</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">ScyllaDB append: ((channel_id), seq)</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Fast contiguous SSTable range queries</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d37P3)" stroke="#22d3ee" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#22d3ee" font-size="14" font-weight="bold">LC #39 &amp; #40: Combination Sum</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Combination Sum I (Reuse)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Unlimited element reuse allowed</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Recurse on same index i</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Sort candidates for early pruning</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">if (candidates[i] &gt; remain) break;</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#22d3ee" font-size="11" font-weight="bold">Combination Sum II (Single Use)</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Each element used at most once</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Recurse on index i + 1</text>
+          <text x="630" y="290" fill="#f43f5e" font-size="9">if (i &gt; start &amp;&amp; c[i] == c[i-1]) continue;</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Zero duplicate combination results</text>
+        </svg>
+        """
+
+    if day_num == 38:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d38Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d38P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d38P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#065f46"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d38P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d38Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 38: Video Streaming System (YouTube/Netflix) &amp; Permutations</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d38P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">ABR &amp; HLS Playlists (.m3u8)</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Master Playlist Index</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">#EXT-X-STREAM-INF:BANDWIDTH=5M</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">RESOLUTION=1920x1080 (1080p)</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">Renditions: 1080p, 720p, 480p, 360p</text>
+          <text x="50" y="196" fill="#fbbf24" font-size="9">Player switches bitrates dynamically</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Media Variant Chunks</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">#EXT-X-TARGETDURATION:4</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">#EXTINF:4.000, segment_0.ts</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">MPEG-2 TS or fragmented MP4 (.m4s)</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Short chunks prevent playback stalls</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d38P2)" stroke="#34d399" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">S3 Direct Upload &amp; CDN Cache</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Presigned Multipart S3</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Upload direct to S3 via HMAC URLs</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Zero web server bandwidth saturation</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">5MB-10MB chunks with parallel retries</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">ETag completion verification</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#34d399" font-size="11" font-weight="bold">CDN Edge Caching Strategy</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Chunks (.ts): max-age=31536000, immutable</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">&gt;98% edge cache hit ratio</text>
+          <text x="340" y="290" fill="#f43f5e" font-size="9">Playlists (.m3u8): max-age=10s</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Signed tokens protect premium VOD</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d38P3)" stroke="#e879f9" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#e879f9" font-size="14" font-weight="bold">LC #46 &amp; #47: Permutations</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Permutations I (Unique)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Backtracking with used[i] array</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Total permutations: N!</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Time: O(N * N!), Space: O(N)</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Exhaustive state-space search</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#e879f9" font-size="11" font-weight="bold">Permutations II (Duplicates)</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Sort array first</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">if (nums[i] == nums[i-1] &amp;&amp; !used[i-1])</text>
+          <text x="630" y="290" fill="#f43f5e" font-size="9">continue; // skip duplicate branch</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Prunes identical permutation paths</text>
+        </svg>
+        """
+
+    if day_num == 39:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d39Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d39P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d39P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#14532d"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d39P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d39Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 39: CAP &amp; PACELC Theorems &amp; 2D Word Search / Phone Backtracking</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d39P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">CAP &amp; PACELC Theorems</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">CAP Under Partition (P)</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Partitions are inevitable physical reality</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">CP: Preserves consistency, drops writes</text>
+          <text x="50" y="179" fill="#fbbf24" font-size="9">AP: Preserves availability, accepts stale</text>
+          <text x="50" y="196" fill="#f43f5e" font-size="9">No real distributed system can choose CA</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#a855f7" font-size="11" font-weight="bold">PACELC Normal State (E)</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Else: Latency (L) vs Consistency (C)</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">PC/EC: Spanner, CockroachDB</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">PA/EL: Cassandra, DynamoDB, Couchbase</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">PC/EL: MongoDB primary reads</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d39P2)" stroke="#4ade80" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#4ade80" font-size="14" font-weight="bold">Tunable Quorums (N, W, R)</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Strong Consistency (R + W &gt; N)</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Pigeonhole: Read &amp; write sets overlap</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">N=3, W=2, R=2 &#8594; 2+2=4 &gt; 3 (Strong)</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">N=3, W=1, R=1 &#8594; Eventual consistency</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Guarantees linearizable client reads</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#4ade80" font-size="11" font-weight="bold">Read Repair &amp; LWW</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Coordinator resolves version conflicts</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Latest version wins (LWW / Vector clock)</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">Asynchronously heals stale replica nodes</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Self-healing cluster data consistency</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d39P3)" stroke="#e879f9" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#e879f9" font-size="14" font-weight="bold">LC #79 &amp; #17: DFS Backtracking</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Word Search (2D Grid DFS)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">In-place cell marking: board[r][c] = '#'</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">O(1) auxiliary space (no hash set alloc)</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Time: O(M * N * 3^L)</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Restores original char on backtrack</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#e879f9" font-size="11" font-weight="bold">Letter Combinations (Phone)</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Keypad digit mapping: '2' &#8594; "abc"</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Cartesian product generation</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Time: O(4^N * N), Space: O(N)</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Recursive backtracking formulation</text>
+        </svg>
+        """
+
+    if day_num == 40:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d40Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d40P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d40P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d40P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#065f46"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d40Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 40: Event Sourcing, CQRS &amp; Palindrome Partitioning</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d40P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Event Sourcing Core</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Append-Only Event Store</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Immutable domain events</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">State = FoldLeft(Initial, Events)</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">100% auditability &amp; time travel</text>
+          <text x="50" y="196" fill="#fbbf24" font-size="9">Zero destructive UPDATEs</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Optimistic Concurrency &amp; OCC</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">ExpectedVersion check on stream</text>
+          <text x="50" y="274" fill="#f43f5e" font-size="9">Unique constraint: (stream_id, version)</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">Rejects concurrent write collisions</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Snapshots bound replay time to O(k)</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d40P2)" stroke="#c084fc" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#c084fc" font-size="14" font-weight="bold">CQRS Read Projections</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Command / Query Separation</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Commands: Hit Aggregate Root (Write)</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Queries: Hit Denormalized Views (Read)</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">Asymmetric scaling: 99% reads</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Postgres, Redis, or Elasticsearch views</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#c084fc" font-size="11" font-weight="bold">Eventual Consistency in UI</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Projections update asynchronously</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Optimistic UI updates</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">Read-your-own-writes version tokens</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">GDPR crypto-shredding keys</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d40P3)" stroke="#34d399" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#34d399" font-size="14" font-weight="bold">LC #131: Palindrome Partition</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">DP Table Precomputation</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">dp[i, j] = true if s[i..j] is palindrome</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">dp[i, j] = (s[i] == s[j]) &amp;&amp; dp[i+1, j-1]</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">O(N^2) table initialization</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">O(1) lookup during backtracking</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#34d399" font-size="11" font-weight="bold">Backtracking DFS</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Traverse all partitioning points</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Eliminates repeated string reversals</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Time: O(N * 2^N), Space: O(N^2)</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">High-performance partition generation</text>
+        </svg>
+        """
+
+    if day_num == 41:
+        return """
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d41Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d41P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d41P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#065f46"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d41P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7c2d12"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d41Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 41: Docker Deep Dive for .NET Services &amp; Dynamic Programming</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d41P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Multi-Stage &amp; Chiseled Runtime</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Layer Caching Optimization</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">COPY *.csproj before source</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">RUN dotnet restore cached in layer</text>
+          <text x="50" y="179" fill="#cbd5e1" font-size="9">Zero package re-downloads on edit</text>
+          <text x="50" y="196" fill="#fbbf24" font-size="9">Sub-second incremental build times</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Ubuntu Chiseled Security</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">aspnet:8.0-jammy-chiseled base</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">USER app (UID 1654, non-root)</text>
+          <text x="50" y="290" fill="#f43f5e" font-size="9">Zero shells, zero package managers</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Near-zero CVE attack surface</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d41P2)" stroke="#34d399" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Cgroups &amp; GC Auto-Tuning</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Preventing 137 OOMKilled</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">DOTNET_GCHeapHardLimitPercent=75</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Caps managed heap at 75% limit</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">Reserves 25% for native buffers</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Thread stacks &amp; JIT code cache safe</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#34d399" font-size="11" font-weight="bold">Server vs Workstation GC</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">DOTNET_gcServer=1 for multi-core</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Dedicated GC thread per CPU quota</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">Workstation GC for &lt;= 1 CPU / 512MB</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Eliminates thread context switching</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d41P3)" stroke="#ea580c" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#ea580c" font-size="14" font-weight="bold">LC #70 &amp; #746: Dynamic Programming</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Climbing Stairs (LC #70)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Fibonacci recurrence: dp[i] = dp[i-1] + dp[i-2]</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Base cases: dp[1]=1, dp[2]=2</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Rolling variables: O(1) space</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Time: O(N) linear</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#ea580c" font-size="11" font-weight="bold">Min Cost Climbing Stairs (LC #746)</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">dp[i] = min(dp[i-1]+c[i-1], dp[i-2]+c[i-2])</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Start at step 0 or 1</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Two rolling variables: O(1) space</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Optimal substructure &amp; overlapping subproblems</text>
         </svg>
         """
 

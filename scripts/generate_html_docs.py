@@ -36,6 +36,16 @@ DAYS_INFO = [
     {"num": 29, "dir": "Day29-RabbitMQ-Core-Exchanges-Queues", "title": "RabbitMQ Core Concepts: Exchanges & Queues", "category": "RabbitMQ & Messaging"},
     {"num": 30, "dir": "Day30-RabbitMQ-DLQ-MassTransit", "title": "RabbitMQ Dead-Letter Queues & MassTransit", "category": "RabbitMQ & Messaging"},
     {"num": 31, "dir": "Day31-Transactional-Outbox-Pattern", "title": "The Transactional Outbox Pattern", "category": "Distributed Systems"},
+    {"num": 32, "dir": "Day32-Saga-Orchestration-MassTransit", "title": "Saga Pattern: Orchestration vs Choreography", "category": "Distributed Systems"},
+    {"num": 33, "dir": "Day33-Distributed-Idempotency", "title": "Distributed Idempotency & De-duplication", "category": "Distributed Systems"},
+    {"num": 34, "dir": "Day34-OpenTelemetry-DistributedTracing", "title": "OpenTelemetry in .NET: Distributed Tracing", "category": "Observability & Tracing"},
+    {"num": 35, "dir": "Day35-Observability-Prometheus-Grafana-Jaeger", "title": "Observability Stack: Prometheus, Grafana & Jaeger", "category": "Observability & Metrics"},
+    {"num": 36, "dir": "Day36-SystemDesign-Notification-Service", "title": "System Design: Notification Service", "category": "System Design & Queues"},
+    {"num": 37, "dir": "Day37-SystemDesign-Chat-System", "title": "System Design: High-Throughput Chat System", "category": "System Design & WebSockets"},
+    {"num": 38, "dir": "Day38-SystemDesign-Video-Streaming", "title": "System Design: Video Streaming System", "category": "System Design & ABR"},
+    {"num": 39, "dir": "Day39-CAP-PACELC-DistributedSystems", "title": "CAP Theorem & PACELC in Practice", "category": "Distributed Consensus"},
+    {"num": 40, "dir": "Day40-EventSourcing-CQRS", "title": "Event Sourcing & CQRS Foundations", "category": "Event Sourcing & CQRS"},
+    {"num": 41, "dir": "Day41-Docker-DotNet-Cgroups", "title": "Docker Deep Dive for .NET Services", "category": "DevOps & Containers"},
 ]
 
 from diagram_helpers import get_day_svg
@@ -803,12 +813,12 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
   <div class="container">
     <header>
       <h1>100-Day .NET + AI Engineering Track</h1>
-      <p class="lead">Interactive Knowledge Hub containing all 31 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
+      <p class="lead">Interactive Knowledge Hub containing all 41 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
       <div class="stats-bar">
-        <div class="stat-pill">Completed: <span>31 / 100 Days</span></div>
-        <div class="stat-pill">Deep Notes: <span>31 Architectural Guides</span></div>
-        <div class="stat-pill">Interview Q&amp;A: <span>310 Senior Scenarios &amp; Answers</span></div>
-        <div class="stat-pill">Test Suite: <span>345 / 345 Passed (100%)</span></div>
+        <div class="stat-pill">Completed: <span>41 / 100 Days</span></div>
+        <div class="stat-pill">Deep Notes: <span>41 Architectural Guides</span></div>
+        <div class="stat-pill">Interview Q&amp;A: <span>410 Senior Scenarios &amp; Answers</span></div>
+        <div class="stat-pill">Test Suite: <span>445 / 445 Passed (100%)</span></div>
         <div class="stat-pill">Platform: <span>.NET 8 / C# 12</span></div>
       </div>
     </header>

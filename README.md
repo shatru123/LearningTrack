@@ -1,8 +1,8 @@
 # 100-Day .NET + AI Engineering Track
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
-[![Status](https://img.shields.io/badge/Roadmap-Days%201--31%20Completed-brightgreen.svg)](#completed-curriculum-days-131)
-[![Tests](https://img.shields.io/badge/Tests-345%20Passed-brightgreen.svg)](#running-builds-and-tests)
+[![Status](https://img.shields.io/badge/Roadmap-Days%201--41%20Completed-brightgreen.svg)](#completed-curriculum-days-141)
+[![Tests](https://img.shields.io/badge/Tests-445%20Passed-brightgreen.svg)](#running-builds-and-tests)
 
 Practical engineering implementations, performance benchmarks, systems architecture labs, and Data Structures & Algorithms (DSA) exercises across the 100-Day .NET + AI Engineering journey.
 
@@ -17,7 +17,7 @@ Practical engineering implementations, performance benchmarks, systems architect
 
 ## Status
 
-**Days 1–31: Completed** (Phase 1 [Days 1–25] concluded; Phase 2 [Days 26–31] in progress)
+**Days 1–41: Completed** (Phase 1 [Days 1–25] concluded; Phase 2 [Days 26–41] in progress)
 
 Detailed status table: [roadmap/progress.md](roadmap/progress.md)  
 Roadmap overview: [roadmap/100-day-roadmap.md](roadmap/100-day-roadmap.md)
@@ -33,7 +33,7 @@ Read complete daily guides, deep architectural notes, interview questions, and c
 
 ---
 
-## Completed Curriculum (Days 1–31)
+## Completed Curriculum (Days 1–41)
 
 Each day includes complete practical implementations, xUnit test suites, comprehensive engineering notes, and practical scenarios.
 
@@ -70,6 +70,16 @@ Each day includes complete practical implementations, xUnit test suites, compreh
 | **Day 29** | RabbitMQ Core Concepts: Exchanges & Queues | AMQP 0-9-1 architecture simulator: Exchanges (`Direct`, `Topic` with `*` & `#`, `Fanout`, `Headers`), Publisher Confirms, Consumer Manual Ack/Nack, DLX, Prefetch QoS fair dispatch, DSA (LeetCode #130 Surrounded Regions & #994 Rotting Oranges) | [Day29-RabbitMQ-Core-Exchanges-Queues](Day29-RabbitMQ-Core-Exchanges-Queues/) • [README](Day29-RabbitMQ-Core-Exchanges-Queues/README.md) • [Notes](Day29-RabbitMQ-Core-Exchanges-Queues/notes.md) • [Interview Qs](Day29-RabbitMQ-Core-Exchanges-Queues/interview-questions.md) |
 | **Day 30** | RabbitMQ Dead-Letter Queues & MassTransit | AMQP DLX (`x-dead-letter-exchange`), TTL delayed retry loops (`x-message-ttl`), poison message triage with `x-death` headers, MassTransit Saga State Machine (`OrderStateInstance`), DSA (LeetCode #207 Course Schedule & #210 Course Schedule II via Kahn's BFS & 3-Color DFS) | [Day30-RabbitMQ-DLQ-MassTransit](Day30-RabbitMQ-DLQ-MassTransit/) • [README](Day30-RabbitMQ-DLQ-MassTransit/README.md) • [Notes](Day30-RabbitMQ-DLQ-MassTransit/notes.md) • [Interview Qs](Day30-RabbitMQ-DLQ-MassTransit/interview-questions.md) |
 | **Day 31** | The Transactional Outbox Pattern | Dual-Write hazard prevention, atomic unit-of-work (`Order` + `OutboxMessage`), Outbox Publisher background worker (`SELECT ... FOR UPDATE SKIP LOCKED` lease lock), Idempotent Consumer Inbox pattern, DSA (LeetCode #684 Redundant Connection via DSU with path compression & union by rank) | [Day31-Transactional-Outbox-Pattern](Day31-Transactional-Outbox-Pattern/) • [README](Day31-Transactional-Outbox-Pattern/README.md) • [Notes](Day31-Transactional-Outbox-Pattern/notes.md) • [Interview Qs](Day31-Transactional-Outbox-Pattern/interview-questions.md) |
+| **Day 32** | Saga Pattern: Orchestration vs Choreography | MassTransit Saga State Machine (`OrderStateInstance`), routing slips, semantic compensations, Garcia-Molina transaction classification, DSA (LeetCode #127 Word Ladder - Hard via Bidirectional BFS) | [Day32-Saga-Orchestration-MassTransit](Day32-Saga-Orchestration-MassTransit/) • [README](Day32-Saga-Orchestration-MassTransit/README.md) • [Notes](Day32-Saga-Orchestration-MassTransit/notes.md) • [Interview Qs](Day32-Saga-Orchestration-MassTransit/interview-questions.md) |
+| **Day 33** | Distributed Idempotency & De-duplication | IETF Idempotency-Key protocol, SHA-256 payload integrity check, lock lease TTL crash recovery, HTTP 409 conflict, cached replay, DSA (LeetCode #215 Kth Largest Element via Quickselect & Min-Heap) | [Day33-Distributed-Idempotency](Day33-Distributed-Idempotency/) • [README](Day33-Distributed-Idempotency/README.md) • [Notes](Day33-Distributed-Idempotency/notes.md) • [Interview Qs](Day33-Distributed-Idempotency/interview-questions.md) |
+| **Day 34** | OpenTelemetry in .NET: Distributed Tracing | BCL `ActivitySource` & `Activity`, W3C TraceContext (`traceparent`, `tracestate`), multi-hop propagation across Gateway -> OrderService -> RabbitMQ -> Inventory, Baggage, DSA (LeetCode #621 Task Scheduler) | [Day34-OpenTelemetry-DistributedTracing](Day34-OpenTelemetry-DistributedTracing/) • [README](Day34-OpenTelemetry-DistributedTracing/README.md) • [Notes](Day34-OpenTelemetry-DistributedTracing/notes.md) • [Interview Qs](Day34-OpenTelemetry-DistributedTracing/interview-questions.md) |
+| **Day 35** | Observability Stack: Prometheus, Grafana & Jaeger | RED & USE metrics via `System.Diagnostics.Metrics` (`Meter`, `Counter`, `Histogram`, `ObservableGauge`), P50/P90/P95/P99 latency math, OTLP Collector stack, DSA (LeetCode #355 Design Twitter via K-Way Merge) | [Day35-Observability-Prometheus-Grafana-Jaeger](Day35-Observability-Prometheus-Grafana-Jaeger/) • [README](Day35-Observability-Prometheus-Grafana-Jaeger/README.md) • [Notes](Day35-Observability-Prometheus-Grafana-Jaeger/notes.md) • [Interview Qs](Day35-Observability-Prometheus-Grafana-Jaeger/interview-questions.md) |
+| **Day 36** | System Design: Notification Service | High-scale multi-channel engine (Email, SMS, Push, In-App), priority queues (High/Norm/Low), provider failover, sliding-window rate limiting, user opt-out matrix, DSA (LeetCode #78 & #90 Subsets I & II) | [Day36-SystemDesign-Notification-Service](Day36-SystemDesign-Notification-Service/) • [README](Day36-SystemDesign-Notification-Service/README.md) • [Notes](Day36-SystemDesign-Notification-Service/notes.md) • [Interview Qs](Day36-SystemDesign-Notification-Service/interview-questions.md) |
+| **Day 37** | System Design: High-Throughput Chat System | WebSocket session manager, presence tracker (heartbeat/TTL), cross-server Redis Pub/Sub replication, monotonic channel sequencer, read receipts, DSA (LeetCode #39 & #40 Combination Sum I & II) | [Day37-SystemDesign-Chat-System](Day37-SystemDesign-Chat-System/) • [README](Day37-SystemDesign-Chat-System/README.md) • [Notes](Day37-SystemDesign-Chat-System/notes.md) • [Interview Qs](Day37-SystemDesign-Chat-System/interview-questions.md) |
+| **Day 38** | System Design: Video Streaming System | Adaptive Bitrate Streaming (ABR) HLS master & variant `.m3u8` manifests, direct S3 presigned multipart upload with HMAC-SHA256, CDN edge caching (`immutable`), DSA (LeetCode #46 & #47 Permutations I & II) | [Day38-SystemDesign-Video-Streaming](Day38-SystemDesign-Video-Streaming/) • [README](Day38-SystemDesign-Video-Streaming/README.md) • [Notes](Day38-SystemDesign-Video-Streaming/notes.md) • [Interview Qs](Day38-SystemDesign-Video-Streaming/interview-questions.md) |
+| **Day 39** | CAP Theorem & PACELC in Practice | CAP proof (Gilbert & Lynch), PACELC matrix, tunable quorum simulator ($R+W>N$), read repair, Last-Write-Wins (LWW) conflict resolution, DSA (LeetCode #79 Word Search & #17 Letter Combinations) | [Day39-CAP-PACELC-DistributedSystems](Day39-CAP-PACELC-DistributedSystems/) • [README](Day39-CAP-PACELC-DistributedSystems/README.md) • [Notes](Day39-CAP-PACELC-DistributedSystems/notes.md) • [Interview Qs](Day39-CAP-PACELC-DistributedSystems/interview-questions.md) |
+| **Day 40** | Event Sourcing & CQRS Foundations | Append-only Event Store, Aggregate Root (`BankAccountAggregate`), `ExpectedVersion` optimistic concurrency, snapshotting, materialized CQRS read views, DSA (LeetCode #131 Palindrome Partitioning) | [Day40-EventSourcing-CQRS](Day40-EventSourcing-CQRS/) • [README](Day40-EventSourcing-CQRS/README.md) • [Notes](Day40-EventSourcing-CQRS/notes.md) • [Interview Qs](Day40-EventSourcing-CQRS/interview-questions.md) |
+| **Day 41** | Docker Deep Dive for .NET Services | Multi-stage Dockerfile, layer caching optimization, Ubuntu Chiseled non-root (`USER app`), cgroups v1/v2 memory limit tuning, `DOTNET_GCHeapHardLimitPercent=75`, DSA (LeetCode #70 & #746 Climbing Stairs) | [Day41-Docker-DotNet-Cgroups](Day41-Docker-DotNet-Cgroups/) • [README](Day41-Docker-DotNet-Cgroups/README.md) • [Notes](Day41-Docker-DotNet-Cgroups/notes.md) • [Interview Qs](Day41-Docker-DotNet-Cgroups/interview-questions.md) |
 
 ---
 
@@ -83,7 +93,7 @@ dotnet build
 dotnet test LearningTrack.sln
 ```
 
-All 345 automated unit and integration tests validate the implementations across Days 1–31.
+All 445 automated unit and integration tests validate the implementations across Days 1–41.
 
 
 

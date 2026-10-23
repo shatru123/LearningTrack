@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 35: Observability Stack: Prometheus, Grafana &amp; Jaeger | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 35</span>
+        <span class="badge badge-category">Observability &amp; Metrics</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day34-OpenTelemetry-DistributedTracing/index.html" class="nav-btn">← Day 34</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+
+        </select>
+        <a href="../Day36-SystemDesign-Notification-Service/index.html" class="nav-btn">Day 36 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 35: Observability Stack: Prometheus, Grafana &amp; Jaeger</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d35Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d35P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d35P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d35P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0284c7"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d35Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 35: Observability Stack: Prometheus, Grafana, Jaeger &amp; Design Twitter</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d35P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">RED &amp; USE Metric Models</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">RED (Service Level)</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Rate: Requests / second counter</text>
+          <text x="50" y="162" fill="#f43f5e" font-size="9">Errors: 5xx responses counter</text>
+          <text x="50" y="179" fill="#34d399" font-size="9">Duration: Latency histogram (ms)</text>
+          <text x="50" y="196" fill="#cbd5e1" font-size="9">Measures consumer experience</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">USE (Hardware/Resource Level)</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Utilization: CPU % busy gauge</text>
+          <text x="50" y="274" fill="#fbbf24" font-size="9">Saturation: ThreadPool backlog queue</text>
+          <text x="50" y="290" fill="#f43f5e" font-size="9">Errors: Network drops &amp; device faults</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Identifies underlying bottlenecks</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d35P2)" stroke="#e879f9" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#e879f9" font-size="14" font-weight="bold">Percentiles &amp; Correlation</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">P50 / P95 / P99 Tail Latency</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Averages hide critical tail outliers</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Nearest-rank percentile formula</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">Prometheus histogram_quantile()</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Explicit bucket boundaries</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#e879f9" font-size="11" font-weight="bold">Metrics + Traces + Logs</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Exemplars link metric spikes to traces</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Structured logs embed trace_id &amp; span_id</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">One-click drilldown in Grafana</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Prometheus &#8594; Jaeger &#8594; Loki</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d35P3)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#38bdf8" font-size="14" font-weight="bold">LC #355: Design Twitter</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">K-Way Merge via Max-Heap</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Users have chronologically sorted tweets</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">PriorityQueue merges top 10 tweets</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Time: O(F log F + 10 log F)</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Space: O(F) where F = followees</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#38bdf8" font-size="11" font-weight="bold">Fan-out: Push vs Pull</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Standard users: Fan-out on write (push)</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Celebrities: Fan-out on read (pull)</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Solves write amplification at scale</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Enterprise news feed architecture</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: Observability Stack & Metric Architectures</h1>
+<h2>1. RED vs USE Methodologies</h2>
+<ul>
+<li><strong>RED Method (Tom Wilkie)</strong>:</li>
+<li>Focused on <strong>Services</strong> (Request-driven architectures, HTTP / gRPC).</li>
+<li><strong>Rate</strong>: Number of requests per second.</li>
+<li><strong>Errors</strong>: Number of failing requests per second.</li>
+<li><strong>Duration</strong>: Distribution of time taken by requests.</li>
+<li><strong>USE Method (Brendan Gregg)</strong>:</li>
+<li>Focused on <strong>Resources</strong> (Hardware, OS, CPUs, Disks, Network interfaces, ThreadPools).</li>
+<li><strong>Utilization</strong>: The average time that the resource was busy servicing work (e.g., 85% CPU).</li>
+<li><strong>Saturation</strong>: The degree to which extra work is queued waiting for the resource (e.g., Run Queue length > Core count).</li>
+<li><strong>Errors</strong>: Count of error events (e.g., dropped packets, disk drive I/O retries).</li>
+</ul>
+<h2>2. Percentiles & Histogram Quantile Math</h2>
+<p>Averages (means) are dangerously misleading in distributed systems due to multimodal distributions and long tail latency.</p>
+<ul>
+<li>If 99 requests take 10ms and 1 request takes 1,000ms:</li>
+<li>Mean = 19.9ms (looks healthy).</li>
+<li>P99 = 1,000ms (unacceptable 1-second delay for 1 in 100 users).</li>
+<li><strong>Nearest-Rank Percentile Formula</strong>:</li>
+</ul>
+<p>$$\text{Rank} = \frac{P}{100} \times (N - 1)$$</p>
+<p>Linear interpolation between $\lfloor \text{Rank} \rfloor$ and $\lceil \text{Rank} \rceil$ provides accurate tail latency curves.</p>
+<ul>
+<li>In Prometheus, <code>histogram_quantile(0.99, sum(rate(http_duration_bucket[5m])) by (le))</code> uses linear interpolation across pre-aggregated exponential or explicit bucket bounds.</li>
+</ul>
+<h2>3. LeetCode #355: Fan-out on Read vs Fan-out on Write</h2>
+<ul>
+<li><strong>Fan-out on Read (Pull)</strong>:</li>
+<li>Tweets are stored per user. When generating a feed, query all followees and perform a $k$-way merge using a min/max-heap.</li>
+<li><em>Pros</em>: Instant $O(1)$ post tweet; inactive users consume zero background compute.</li>
+<li><em>Cons</em>: Heavy read latency when following hundreds of users ($O(F \log F)$).</li>
+<li><strong>Fan-out on Write (Push)</strong>:</li>
+<li>When a user tweets, push the tweet ID into the Redis timeline cache of every follower.</li>
+<li><em>Pros</em>: Extremely fast $O(1)$ feed reads.</li>
+<li><em>Cons</em>: "Celebrity problem" — a user with 50 million followers triggers 50 million Redis writes per tweet!</li>
+<li><strong>Hybrid Production Architecture (Twitter / X)</strong>:</li>
+<li>Normal users: Fan-out on write (push to followers).</li>
+<li>Celebrities (>25k followers): Fan-out on read (merged dynamically into the feed at read time).</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 35: Observability Stack: Prometheus, Grafana & Jaeger</h1>
+<h2>Architectural Overview</h2>
+<p>A resilient microservice architecture requires the Three Pillars of Observability: <strong>Metrics</strong>, <strong>Traces</strong>, and <strong>Logs</strong>, unified under OpenTelemetry.</p>
+<p>This module implements production metrics instrumentation in .NET 8 using <code>System.Diagnostics.Metrics</code>:</p>
+<ul>
+<li><strong>RED Method (Service-Oriented Architecture)</strong>:</li>
+<li><strong>Rate</strong>: <code>http.server.requests.count</code> (throughput in req/sec).</li>
+<li><strong>Errors</strong>: <code>http.server.requests.errors</code> (HTTP 5xx failures / error rate).</li>
+<li><strong>Duration</strong>: <code>http.server.request.duration.ms</code> (latency histogram).</li>
+<li><strong>USE Method (Infrastructure & Host Resources)</strong>:</li>
+<li><strong>Utilization</strong>: <code>system.cpu.utilization</code> (CPU active percentage).</li>
+<li><strong>Saturation</strong>: <code>threadpool.queue.saturation</code> (ThreadPool backlog depth).</li>
+<li><strong>Errors</strong>: <code>system.hardware.errors</code> (device / network packet drop counts).</li>
+<li><strong>Statistical Percentiles</strong>: High-precision calculation of P50 (median), P90, P95, and P99 latencies using nearest-rank percentile interpolation over histogram observations.</li>
+<li><strong>Prometheus Buckets</strong>: Cumulative upper-bound histogram representation for PromQL <code>histogram_quantile(0.99, rate(http_duration_bucket[5m]))</code>.</li>
+<li><strong>Three-Way Correlation</strong>: Injecting active <code>trace_id</code> and <code>span_id</code> directly into structured JSON logs for instant drilldown from Grafana metric alerts to Jaeger traces and Loki logs.</li>
+<li><strong>Full Observability Stack</strong>: Complete <code>docker-compose.observability.yml</code> running OpenTelemetry Collector, Jaeger, Prometheus, and Grafana.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">       .NET Application (System.Diagnostics.Metrics &amp; Activity)
+                                │
+                 OTLP (gRPC 4317 / HTTP 4318)
+                                ▼
+                 ┌─────────────────────────────┐
+                 │    OpenTelemetry Collector  │
+                 └──────────────┬──────────────┘
+                                │
+        ┌───────────────────────┼────────────────────────┐
+        │ Metrics (port 8889)   │ Traces (gRPC 14250)    │ Logs
+        ▼                       ▼                        ▼
+┌──────────────┐        ┌──────────────┐         ┌──────────────┐
+│  Prometheus  │        │    Jaeger    │         │     Loki     │
+│ (Time Series)│        │ (Trace Spans)│         │ (Aggregated) │
+└───────┬──────┘        └───────┬──────┘         └───────┬──────┘
+        │                       │                        │
+        └───────────────────────┼────────────────────────┘
+                                ▼
+                     ┌─────────────────────┐
+                     │  Grafana Dashboard  │
+                     │  (Correlated Views) │
+                     └─────────────────────┘</code></pre></div>
+<hr/>
+<h2>LeetCode #355: Design Twitter (Medium)</h2>
+<p>Design a news feed system supporting <code>PostTweet</code>, <code>GetNewsFeed</code>, <code>Follow</code>, and <code>Unfollow</code>:</p>
+<ul>
+<li><strong>Algorithm</strong>: $K$-way merge over user tweet streams using a Priority Queue (Max-Heap by timestamp).</li>
+<li><strong>Complexity</strong>: $O(F \log F + 10 \log F)$ time to fetch top 10 tweets where $F$ is follower count; $O(1)$ post tweet; $O(F)$ space.</li>
+<li><strong>System Design Trade-off</strong>: Fan-out on Read (Pull model) vs Fan-out on Write (Push model with Redis inbox for celebrities).</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day35-Observability-Prometheus-Grafana-Jaeger/tests/Day35.ObservabilityStack.Tests/Day35.ObservabilityStack.Tests.csproj</code></pre></div>
+<p>10 unit tests validate RED/USE metrics counters, P50/P90/P95/P99 latency calculations, Prometheus histogram buckets, structured logging correlation, and Twitter feed mechanics.</p>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why are averages (means) considered an antipattern for monitoring service latencies, and why are percentiles (P95, P99) preferred?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Averages conceal outliers in skewed distributions. A microservice handling 10,000 req/sec might have an average latency of 25ms, while the 99th percentile is 3,500ms. In modern web architectures where an incoming user request fan-outs to 50 downstream microservices:</p>
+<p>$$\text{Probability of hitting a P99 dependency} = 1 - (0.99)^{50} \approx 39.5\%$$</p>
+<p>Nearly 40% of all user requests will experience a P99 tail latency! Relying on percentiles like P90, P95, and P99 guarantees SLA observability for the users experiencing degraded performance.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the mathematical and architectural difference between RED and USE metrics?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>RED (Rate, Errors, Duration)</strong>: Formulated for request-driven software services (HTTP APIs, gRPC, microservices). It measures what the <em>user/consumer</em> experiences. Rate = load; Errors = availability; Duration = responsiveness.</li>
+<li><strong>USE (Utilization, Saturation, Errors)</strong>: Formulated for hardware and infrastructure resources (CPU, RAM, disk I/O, network sockets, thread pools). Utilization = percent busy time; Saturation = queued backlog waiting to be serviced; Errors = low-level driver or device faults.</li>
+<li><em>Rule of thumb</em>: When investigating an alert, look at RED metrics to identify <em>which service</em> is degraded, then look at USE metrics to identify <em>which resource bottleneck</em> is causing it.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How does Prometheus calculate `histogram_quantile(0.99, ...)` from discrete histogram buckets?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Prometheus histograms record cumulative counts in pre-defined buckets (<code>le</code> = less than or equal to).</p>
+<ol>
+<li>Prometheus aggregates the bucket counters across the specified time window via <code>rate()</code>.</li>
+<li>It identifies the target rank: $0.99 \times \text{Total Count}$.</li>
+<li>It finds the specific bucket $[le_1, le_2]$ that contains this rank.</li>
+<li>It performs <strong>linear interpolation</strong> within that bucket assuming uniform distribution of observations between $le_1$ and $le_2$.</li>
+</ol>
+<ul>
+<li><em>Implication</em>: If bucket boundaries are poorly spaced (e.g. jumping from 100ms to 5,000ms), the computed percentile will be an imprecise mathematical approximation.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is an OpenTelemetry Exemplar and how does it bridge Metrics and Traces?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>An Exemplar is an exact trace ID and span ID attached to a specific metric measurement observation in a histogram bucket.</p>
+<ul>
+<li>When an unusually slow request of 2,400ms is recorded into the <code>[1000, 5000]</code> bucket, OpenTelemetry attaches <code>trace_id = &quot;abc123xyz&quot;</code> to that histogram sample.</li>
+<li>In Grafana, when viewing a spike in P99 latency, clicking on the data point displays the linked Exemplar. Clicking it instantly opens the exact trace in Jaeger, eliminating manual searching through millions of log lines.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">In `System.Diagnostics.Metrics`, what is the difference between `Counter&lt;T&gt;`, `Histogram&lt;T&gt;`, and `ObservableGauge&lt;T&gt;`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><code>Counter&lt;T&gt;</code>: Monotonically increasing value (only positive deltas, e.g. requests processed, bytes received). Cannot decrease.</li>
+<li><code>Histogram&lt;T&gt;</code>: Measures distributions of values (e.g. durations, payload sizes). The SDK aggregates these into statistical buckets, counts, and sums.</li>
+<li><code>ObservableGauge&lt;T&gt;</code>: Asynchronous callback-based metric polled by the SDK at scraping intervals. Used for instantaneous values that fluctuate up and down (e.g. CPU percentage, current memory in use, queue length).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you design an observability pipeline to prevent metric cardinality explosion?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>High cardinality occurs when metric tags have unbounded unique values (e.g., <code>user_id</code>, <code>order_id</code>, <code>email</code>, timestamp).</p>
+<ul>
+<li>Storing 1,000,000 distinct <code>user_id</code> tags multiplies time series in Prometheus TSDB memory exponentially, leading to an OOM crash.</li>
+<li><strong>Rules</strong>:</li>
+</ul>
+<ol>
+<li>Only use discrete, bounded enums for metric tags: <code>http.method</code>, <code>http.status_code</code>, <code>http.route</code> (templated <code>/orders/{id}</code>, never raw <code>/orders/12345</code>).</li>
+<li>Put high-cardinality identifiers (<code>order_id</code>, <code>user_id</code>) in <strong>Traces (Spans)</strong> and <strong>Logs</strong>, where columnar databases (Loki, ClickHouse, Jaeger) handle high cardinality efficiently.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Explain the trade-offs between &quot;Push&quot; (OTLP/StatsD) vs &quot;Pull&quot; (Prometheus scraping) metric architectures.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Pull (Prometheus)</strong>:</li>
+<li>Prometheus periodically scrapes <code>/metrics</code> HTTP endpoints.</li>
+<li><em>Pros</em>: Centralized rate control (scraping cannot overwhelm the server); easy liveness detection (if scrape fails, service is down); no state in client services.</li>
+<li><em>Cons</em>: Difficult to scrape short-lived ephemeral batch jobs or serverless functions (requires Pushgateway); complex firewall traversal across VPCs.</li>
+<li><strong>Push (OTLP to OTel Collector)</strong>:</li>
+<li>Applications push telemetry batches to a local collector daemon.</li>
+<li><em>Pros</em>: Uniform across metrics, traces, and logs; supports serverless/lambda environments; easy NAT/firewall egress.</li>
+<li><em>Cons</em>: Risk of overwhelming downstream telemetry backends during traffic bursts if collector queues overflow.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #355 (Design Twitter), how does the $K$-way merge algorithm operate for `GetNewsFeed`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Each user has a chronologically sorted list of their own tweets.</p>
+<ol>
+<li>When generating the feed for user $U$, identify all followed users $F_1, F_2, \dots, F_k$ plus $U$.</li>
+<li>For each user who has posted at least one tweet, enqueue their most recent tweet into a Max-Heap along with their user ID and tweet index. The heap size is at most $|F| + 1$.</li>
+<li>Dequeue the root tweet (the globally newest across all feeds) and add to the result feed.</li>
+<li>Advance that user's index to their next newest tweet and enqueue it into the heap.</li>
+<li>Repeat until 10 tweets have been harvested or the heap is empty.</li>
+</ol>
+<ul>
+<li>Time Complexity: $O(F \log F + 10 \log F) = O(F \log F)$.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How would you scale the Twitter news feed system for a celebrity with 100 million followers?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Using pure Fan-out on Write would require inserting 100,000,000 timeline entries into Redis whenever the celebrity tweets, causing massive write amplification and lag.</p>
+<ul>
+<li><strong>Solution (Hybrid Fan-out)</strong>:</li>
+</ul>
+<ol>
+<li>Categorize users into standard users and celebrities (e.g. followers $> 50,000$).</li>
+<li>For standard users: Fan-out on Write to follower timeline caches.</li>
+<li>For celebrities: Do not fan out on write. Instead, when a follower opens their feed, do a fast parallel fetch of the recent tweets from celebrities they follow and dynamically merge them (fan-out on read) with their pre-computed inbox timeline in RAM.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does OpenTelemetry Collector act as a pipeline buffer and aggregator in enterprise deployments?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Rather than having hundreds of microservice pods directly connect to Prometheus, Jaeger, and Datadog:</p>
+<ol>
+<li>Microservices send OTLP over localhost/mesh to an OTel Collector agent or daemonset.</li>
+<li>The Collector pipeline has three stages:</li>
+</ol>
+<ul>
+<li><strong>Receivers</strong>: Accept OTLP (gRPC/HTTP), Zipkin, Jaeger.</li>
+<li><strong>Processors</strong>: <code>memory_limiter</code>, <code>batch</code> (coalesce into bulk network requests), <code>filter</code> (drop unwanted metrics), and <code>tail_sampling</code> (keep only slow or failed traces).</li>
+<li><strong>Exporters</strong>: Fan out identical telemetry data to multiple targets simultaneously (e.g., Prometheus for metrics, Jaeger for tracing, AWS CloudWatch for auditing).</li>
+</ul>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day35.ObservabilityStack/MetricsAndLatencyEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd35-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d35-src-code-0" class="language-csharp">using System.Diagnostics;
+using System.Diagnostics.Metrics;
+
+namespace Day35.ObservabilityStack;
+
+public record LatencyPercentiles(double P50, double P90, double P95, double P99, int TotalCount, double Mean);
+
+public record HistogramBucket(double UpperBound, int CumulativeCount);
+
+public class ObservabilityMetricsManager : IDisposable
+{
+    public const string MeterName = &quot;Day35.ObservabilityStack&quot;;
+    public const string Version = &quot;1.0.0&quot;;
+    public static readonly Meter Meter = new(MeterName, Version);
+
+    // RED Metrics
+    public readonly Counter&lt;long&gt; RequestCounter;
+    public readonly Counter&lt;long&gt; ErrorCounter;
+    public readonly Histogram&lt;double&gt; RequestDurationHistogram;
+
+    // USE Metrics
+    public double SimulatedCpuUtilization { get; set; } = 42.5;
+    public long SimulatedThreadPoolQueueLength { get; set; } = 12;
+    public readonly Counter&lt;long&gt; HardwareErrorCounter;
+
+    private readonly MeterListener _listener;
+    private readonly List&lt;double&gt; _observedDurations = new();
+    private long _totalRequests = 0;
+    private long _totalErrors = 0;
+    private readonly object _lock = new();
+
+    public long TotalRequests =&gt; Interlocked.Read(ref _totalRequests);
+    public long TotalErrors =&gt; Interlocked.Read(ref _totalErrors);
+    public IReadOnlyList&lt;double&gt; ObservedDurations
+    {
+        get
+        {
+            lock (_lock) return _observedDurations.ToList();
+        }
+    }
+
+    public ObservabilityMetricsManager()
+    {
+        RequestCounter = Meter.CreateCounter&lt;long&gt;(&quot;http.server.requests.count&quot;, &quot;requests&quot;, &quot;Total incoming HTTP requests&quot;);
+        ErrorCounter = Meter.CreateCounter&lt;long&gt;(&quot;http.server.requests.errors&quot;, &quot;errors&quot;, &quot;Total HTTP requests resulting in 5xx errors&quot;);
+        RequestDurationHistogram = Meter.CreateHistogram&lt;double&gt;(&quot;http.server.request.duration.ms&quot;, &quot;ms&quot;, &quot;HTTP request processing duration in milliseconds&quot;);
+
+        Meter.CreateObservableGauge(&quot;system.cpu.utilization&quot;, () =&gt; SimulatedCpuUtilization, &quot;%&quot;, &quot;Simulated CPU Utilization&quot;);
+        Meter.CreateObservableGauge(&quot;threadpool.queue.saturation&quot;, () =&gt; SimulatedThreadPoolQueueLength, &quot;items&quot;, &quot;ThreadPool queued work items&quot;);
+        HardwareErrorCounter = Meter.CreateCounter&lt;long&gt;(&quot;system.hardware.errors&quot;, &quot;errors&quot;, &quot;Hardware / disk / network drop errors&quot;);
+
+        _listener = new MeterListener
+        {
+            InstrumentPublished = (instrument, listener) =&gt;
+            {
+                if (instrument.Meter.Name == MeterName)
+                {
+                    listener.EnableMeasurementEvents(instrument);
+                }
+            }
+        };
+
+        _listener.SetMeasurementEventCallback&lt;long&gt;((instrument, measurement, tags, state) =&gt;
+        {
+            if (instrument.Name == &quot;http.server.requests.count&quot;)
+            {
+                Interlocked.Add(ref _totalRequests, measurement);
+            }
+            else if (instrument.Name == &quot;http.server.requests.errors&quot;)
+            {
+                Interlocked.Add(ref _totalErrors, measurement);
+            }
+        });
+
+        _listener.SetMeasurementEventCallback&lt;double&gt;((instrument, measurement, tags, state) =&gt;
+        {
+            if (instrument.Name == &quot;http.server.request.duration.ms&quot;)
+            {
+                lock (_lock)
+                {
+                    _observedDurations.Add(measurement);
+                }
+            }
+        });
+
+        _listener.Start();
+    }
+
+    public void RecordRequest(double durationMs, bool isError = false, string route = &quot;/api/v1/resource&quot;, int statusCode = 200)
+    {
+        var tagList = new TagList
+        {
+            { &quot;http.route&quot;, route },
+            { &quot;http.status_code&quot;, statusCode }
+        };
+
+        RequestCounter.Add(1, tagList);
+        RequestDurationHistogram.Record(durationMs, tagList);
+
+        if (isError)
+        {
+            ErrorCounter.Add(1, tagList);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Computes P50, P90, P95, P99 percentiles from a collection of recorded latencies.
+    /// Uses the standard Nearest-Rank percentile method.
+    /// &lt;/summary&gt;
+    public static LatencyPercentiles CalculatePercentiles(IEnumerable&lt;double&gt; latencies)
+    {
+        var list = latencies.OrderBy(x =&gt; x).ToList();
+        if (list.Count == 0)
+        {
+            return new LatencyPercentiles(0, 0, 0, 0, 0, 0);
+        }
+
+        double p50 = GetPercentile(list, 50);
+        double p90 = GetPercentile(list, 90);
+        double p95 = GetPercentile(list, 95);
+        double p99 = GetPercentile(list, 99);
+        double mean = list.Average();
+
+        return new LatencyPercentiles(p50, p90, p95, p99, list.Count, Math.Round(mean, 2));
+    }
+
+    private static double GetPercentile(List&lt;double&gt; sorted, double percentile)
+    {
+        if (sorted.Count == 1) return sorted[0];
+        double rank = (percentile / 100.0) * (sorted.Count - 1);
+        int lower = (int)Math.Floor(rank);
+        int upper = (int)Math.Ceiling(rank);
+        if (lower == upper) return sorted[lower];
+        double weight = rank - lower;
+        return Math.Round(sorted[lower] * (1 - weight) + sorted[upper] * weight, 2);
+    }
+
+    /// &lt;summary&gt;
+    /// Simulates Prometheus-style cumulative histogram buckets.
+    /// Standard Prometheus boundaries: 5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1000ms, +Inf.
+    /// &lt;/summary&gt;
+    public static List&lt;HistogramBucket&gt; BuildPrometheusBuckets(IEnumerable&lt;double&gt; latencies, double[]? boundaries = null)
+    {
+        boundaries ??= [5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, double.PositiveInfinity];
+        var list = latencies.ToList();
+        var buckets = new List&lt;HistogramBucket&gt;();
+
+        foreach (var boundary in boundaries)
+        {
+            int count = list.Count(v =&gt; v &lt;= boundary);
+            buckets.Add(new HistogramBucket(boundary, count));
+        }
+
+        return buckets;
+    }
+
+    /// &lt;summary&gt;
+    /// Correlates telemetry by generating structured log payloads with trace_id and span_id.
+    /// &lt;/summary&gt;
+    public static string FormatStructuredLog(string message, string traceId, string spanId, string logLevel = &quot;Information&quot;)
+    {
+        return $&quot;{{\&quot;timestamp\&quot;:\&quot;{DateTime.UtcNow:O}\&quot;,\&quot;level\&quot;:\&quot;{logLevel}\&quot;,\&quot;trace_id\&quot;:\&quot;{traceId}\&quot;,\&quot;span_id\&quot;:\&quot;{spanId}\&quot;,\&quot;message\&quot;:\&quot;{message}\&quot;}}&quot;;
+    }
+
+    public void Dispose()
+    {
+        _listener.Dispose();
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day35.ObservabilityStack/TwitterFeedSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd35-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d35-src-code-1" class="language-csharp">namespace Day35.ObservabilityStack;
+
+public class TwitterFeedSolver
+{
+    private static int _globalTimestamp = 0;
+
+    public record Tweet(int TweetId, int Timestamp);
+
+    private readonly Dictionary&lt;int, List&lt;Tweet&gt;&gt; _userTweets = new();
+    private readonly Dictionary&lt;int, HashSet&lt;int&gt;&gt; _following = new();
+
+    public TwitterFeedSolver()
+    {
+    }
+
+    /// &lt;summary&gt;
+    /// Composes a new tweet with ID tweetId by the user userId.
+    /// Time Complexity: O(1).
+    /// &lt;/summary&gt;
+    public void PostTweet(int userId, int tweetId)
+    {
+        if (!_userTweets.ContainsKey(userId))
+        {
+            _userTweets[userId] = new List&lt;Tweet&gt;();
+        }
+
+        var timestamp = Interlocked.Increment(ref _globalTimestamp);
+        _userTweets[userId].Add(new Tweet(tweetId, timestamp));
+    }
+
+    /// &lt;summary&gt;
+    /// Retrieves the 10 most recent tweet IDs in the user&#x27;s news feed (from self and followees).
+    /// Ordered from most recent to least recent.
+    /// Uses Max-Heap (k-way merge) over sorted tweet lists.
+    /// Time Complexity: O(F * log F + 10 * log F) where F = number of followees, Space: O(F).
+    /// &lt;/summary&gt;
+    public IList&lt;int&gt; GetNewsFeed(int userId)
+    {
+        var result = new List&lt;int&gt;(10);
+
+        // Gather all users contributing to this user&#x27;s feed: self + followed users
+        var relevantUsers = new HashSet&lt;int&gt; { userId };
+        if (_following.TryGetValue(userId, out var followees))
+        {
+            foreach (var f in followees)
+            {
+                relevantUsers.Add(f);
+            }
+        }
+
+        // Max-heap of (Tweet, user, indexInUserList).
+        // PriorityQueue in .NET is min-heap by default, so use -timestamp as priority for max-heap behavior.
+        var maxHeap = new PriorityQueue&lt;(Tweet Tweet, int UserId, int Index), int&gt;();
+
+        foreach (var u in relevantUsers)
+        {
+            if (_userTweets.TryGetValue(u, out var tweets) &amp;&amp; tweets.Count &gt; 0)
+            {
+                int lastIdx = tweets.Count - 1;
+                var latestTweet = tweets[lastIdx];
+                maxHeap.Enqueue((latestTweet, u, lastIdx), -latestTweet.Timestamp);
+            }
+        }
+
+        while (maxHeap.Count &gt; 0 &amp;&amp; result.Count &lt; 10)
+        {
+            var (tweet, u, idx) = maxHeap.Dequeue();
+            result.Add(tweet.TweetId);
+
+            int nextIdx = idx - 1;
+            if (nextIdx &gt;= 0)
+            {
+                var nextTweet = _userTweets[u][nextIdx];
+                maxHeap.Enqueue((nextTweet, u, nextIdx), -nextTweet.Timestamp);
+            }
+        }
+
+        return result;
+    }
+
+    /// &lt;summary&gt;
+    /// Follower starts following followee.
+    /// A user cannot follow themselves.
+    /// &lt;/summary&gt;
+    public void Follow(int followerId, int followeeId)
+    {
+        if (followerId == followeeId) return;
+
+        if (!_following.ContainsKey(followerId))
+        {
+            _following[followerId] = new HashSet&lt;int&gt;();
+        }
+
+        _following[followerId].Add(followeeId);
+    }
+
+    /// &lt;summary&gt;
+    /// Follower unfollows followee.
+    /// &lt;/summary&gt;
+    public void Unfollow(int followerId, int followeeId)
+    {
+        if (followerId == followeeId) return;
+
+        if (_following.TryGetValue(followerId, out var followees))
+        {
+            followees.Remove(followeeId);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day35.ObservabilityStack.Tests/Day35Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd35-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d35-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day35.ObservabilityStack.Tests;
+
+public class Day35Tests
+{
+    [Fact]
+    public void ObservabilityMetrics_RecordsRequestAndErrorCounts()
+    {
+        using var manager = new ObservabilityMetricsManager();
+
+        manager.RecordRequest(durationMs: 45.2, isError: false, route: &quot;/checkout&quot;, statusCode: 200);
+        manager.RecordRequest(durationMs: 120.5, isError: true, route: &quot;/checkout&quot;, statusCode: 500);
+        manager.RecordRequest(durationMs: 15.0, isError: false, route: &quot;/items&quot;, statusCode: 200);
+
+        Assert.Equal(3, manager.TotalRequests);
+        Assert.Equal(1, manager.TotalErrors);
+        Assert.Equal(3, manager.ObservedDurations.Count);
+    }
+
+    [Fact]
+    public void ObservabilityMetrics_Percentiles_CalculatesAccurateP50P90P95P99()
+    {
+        // 100 values from 1.0 to 100.0
+        var latencies = Enumerable.Range(1, 100).Select(i =&gt; (double)i).ToArray();
+
+        var percentiles = ObservabilityMetricsManager.CalculatePercentiles(latencies);
+
+        Assert.Equal(100, percentiles.TotalCount);
+        Assert.Equal(50.5, percentiles.P50);
+        Assert.Equal(90.1, percentiles.P90);
+        Assert.Equal(95.05, percentiles.P95);
+        Assert.Equal(99.01, percentiles.P99);
+        Assert.Equal(50.5, percentiles.Mean);
+    }
+
+    [Fact]
+    public void ObservabilityMetrics_PrometheusBuckets_GeneratesCumulativeCounts()
+    {
+        double[] latencies = [3.0, 8.0, 15.0, 40.0, 85.0, 200.0, 600.0, 1500.0];
+
+        var buckets = ObservabilityMetricsManager.BuildPrometheusBuckets(latencies);
+
+        // Standard boundaries: 5, 10, 25, 50, 100, 250, 500, 1000, +Inf
+        var b5 = buckets.First(b =&gt; b.UpperBound == 5.0);
+        var b10 = buckets.First(b =&gt; b.UpperBound == 10.0);
+        var b25 = buckets.First(b =&gt; b.UpperBound == 25.0);
+        var b100 = buckets.First(b =&gt; b.UpperBound == 100.0);
+        var bInf = buckets.First(b =&gt; double.IsPositiveInfinity(b.UpperBound));
+
+        Assert.Equal(1, b5.CumulativeCount); // 3.0
+        Assert.Equal(2, b10.CumulativeCount); // 3.0, 8.0
+        Assert.Equal(3, b25.CumulativeCount); // 3.0, 8.0, 15.0
+        Assert.Equal(5, b100.CumulativeCount); // 3, 8, 15, 40, 85
+        Assert.Equal(8, bInf.CumulativeCount); // all 8
+    }
+
+    [Fact]
+    public void ObservabilityMetrics_StructuredLog_ContainsTraceAndSpanIds()
+    {
+        string traceId = &quot;4bf92f3577b34da6a3ce929d0e0e4736&quot;;
+        string spanId = &quot;00f067aa0ba902b7&quot;;
+        string msg = &quot;Payment processing started&quot;;
+
+        string log = ObservabilityMetricsManager.FormatStructuredLog(msg, traceId, spanId, &quot;Information&quot;);
+
+        Assert.Contains(traceId, log);
+        Assert.Contains(spanId, log);
+        Assert.Contains(&quot;Information&quot;, log);
+        Assert.Contains(msg, log);
+    }
+
+    [Fact]
+    public void ObservabilityMetrics_EmptyLatencies_ReturnsZeroPercentiles()
+    {
+        var percentiles = ObservabilityMetricsManager.CalculatePercentiles([]);
+
+        Assert.Equal(0, percentiles.TotalCount);
+        Assert.Equal(0, percentiles.P50);
+        Assert.Equal(0, percentiles.P99);
+    }
+
+    [Fact]
+    public void Twitter_PostTweetAndGetNewsFeed_ReturnsOwnTweetsInDescendingOrder()
+    {
+        var twitter = new TwitterFeedSolver();
+        twitter.PostTweet(userId: 1, tweetId: 101);
+        twitter.PostTweet(userId: 1, tweetId: 102);
+        twitter.PostTweet(userId: 1, tweetId: 103);
+
+        var feed = twitter.GetNewsFeed(userId: 1);
+
+        Assert.Equal([103, 102, 101], feed);
+    }
+
+    [Fact]
+    public void Twitter_FollowAndGetNewsFeed_ReturnsCombinedTweetsOrderedByTimestamp()
+    {
+        var twitter = new TwitterFeedSolver();
+        twitter.PostTweet(userId: 1, tweetId: 5);
+        twitter.PostTweet(userId: 2, tweetId: 6);
+
+        // User 1 follows User 2
+        twitter.Follow(followerId: 1, followeeId: 2);
+
+        var feed = twitter.GetNewsFeed(userId: 1);
+
+        // Tweet 6 was posted after Tweet 5
+        Assert.Equal([6, 5], feed);
+    }
+
+    [Fact]
+    public void Twitter_Unfollow_StopsShowingUnfollowedTweets()
+    {
+        var twitter = new TwitterFeedSolver();
+        twitter.PostTweet(userId: 1, tweetId: 11);
+        twitter.PostTweet(userId: 2, tweetId: 22);
+
+        twitter.Follow(1, 2);
+        Assert.Equal([22, 11], twitter.GetNewsFeed(1));
+
+        twitter.Unfollow(1, 2);
+        Assert.Equal([11], twitter.GetNewsFeed(1));
+    }
+
+    [Fact]
+    public void Twitter_GetNewsFeed_CapsAt10MostRecentTweets()
+    {
+        var twitter = new TwitterFeedSolver();
+
+        // User posts 15 tweets
+        for (int i = 1; i &lt;= 15; i++)
+        {
+            twitter.PostTweet(userId: 42, tweetId: i);
+        }
+
+        var feed = twitter.GetNewsFeed(userId: 42);
+
+        Assert.Equal(10, feed.Count);
+        // Most recent should be 15 down to 6
+        Assert.Equal([15, 14, 13, 12, 11, 10, 9, 8, 7, 6], feed);
+    }
+
+    [Fact]
+    public void Twitter_SelfFollowAndUnfollow_DoesNotCorruptSelfTweetsInFeed()
+    {
+        var twitter = new TwitterFeedSolver();
+        twitter.PostTweet(userId: 7, tweetId: 701);
+
+        twitter.Follow(followerId: 7, followeeId: 7); // Self-follow attempt
+        twitter.Unfollow(followerId: 7, followeeId: 7); // Self-unfollow attempt
+
+        var feed = twitter.GetNewsFeed(userId: 7);
+
+        Assert.Single(feed);
+        Assert.Equal(701, feed[0]);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: Observability Stack & Metric Architectures</h1>
+<h2>1. RED vs USE Methodologies</h2>
+<ul>
+<li><strong>RED Method (Tom Wilkie)</strong>:</li>
+<li>Focused on <strong>Services</strong> (Request-driven architectures, HTTP / gRPC).</li>
+<li><strong>Rate</strong>: Number of requests per second.</li>
+<li><strong>Errors</strong>: Number of failing requests per second.</li>
+<li><strong>Duration</strong>: Distribution of time taken by requests.</li>
+<li><strong>USE Method (Brendan Gregg)</strong>:</li>
+<li>Focused on <strong>Resources</strong> (Hardware, OS, CPUs, Disks, Network interfaces, ThreadPools).</li>
+<li><strong>Utilization</strong>: The average time that the resource was busy servicing work (e.g., 85% CPU).</li>
+<li><strong>Saturation</strong>: The degree to which extra work is queued waiting for the resource (e.g., Run Queue length > Core count).</li>
+<li><strong>Errors</strong>: Count of error events (e.g., dropped packets, disk drive I/O retries).</li>
+</ul>
+<h2>2. Percentiles & Histogram Quantile Math</h2>
+<p>Averages (means) are dangerously misleading in distributed systems due to multimodal distributions and long tail latency.</p>
+<ul>
+<li>If 99 requests take 10ms and 1 request takes 1,000ms:</li>
+<li>Mean = 19.9ms (looks healthy).</li>
+<li>P99 = 1,000ms (unacceptable 1-second delay for 1 in 100 users).</li>
+<li><strong>Nearest-Rank Percentile Formula</strong>:</li>
+</ul>
+<p>$$\text{Rank} = \frac{P}{100} \times (N - 1)$$</p>
+<p>Linear interpolation between $\lfloor \text{Rank} \rfloor$ and $\lceil \text{Rank} \rceil$ provides accurate tail latency curves.</p>
+<ul>
+<li>In Prometheus, <code>histogram_quantile(0.99, sum(rate(http_duration_bucket[5m])) by (le))</code> uses linear interpolation across pre-aggregated exponential or explicit bucket bounds.</li>
+</ul>
+<h2>3. LeetCode #355: Fan-out on Read vs Fan-out on Write</h2>
+<ul>
+<li><strong>Fan-out on Read (Pull)</strong>:</li>
+<li>Tweets are stored per user. When generating a feed, query all followees and perform a $k$-way merge using a min/max-heap.</li>
+<li><em>Pros</em>: Instant $O(1)$ post tweet; inactive users consume zero background compute.</li>
+<li><em>Cons</em>: Heavy read latency when following hundreds of users ($O(F \log F)$).</li>
+<li><strong>Fan-out on Write (Push)</strong>:</li>
+<li>When a user tweets, push the tweet ID into the Redis timeline cache of every follower.</li>
+<li><em>Pros</em>: Extremely fast $O(1)$ feed reads.</li>
+<li><em>Cons</em>: "Celebrity problem" — a user with 50 million followers triggers 50 million Redis writes per tweet!</li>
+<li><strong>Hybrid Production Architecture (Twitter / X)</strong>:</li>
+<li>Normal users: Fan-out on write (push to followers).</li>
+<li>Celebrities (>25k followers): Fan-out on read (merged dynamically into the feed at read time).</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 35: Observability Stack: Prometheus, Grafana & Jaeger</h1>
+<h2>Architectural Overview</h2>
+<p>A resilient microservice architecture requires the Three Pillars of Observability: <strong>Metrics</strong>, <strong>Traces</strong>, and <strong>Logs</strong>, unified under OpenTelemetry.</p>
+<p>This module implements production metrics instrumentation in .NET 8 using <code>System.Diagnostics.Metrics</code>:</p>
+<ul>
+<li><strong>RED Method (Service-Oriented Architecture)</strong>:</li>
+<li><strong>Rate</strong>: <code>http.server.requests.count</code> (throughput in req/sec).</li>
+<li><strong>Errors</strong>: <code>http.server.requests.errors</code> (HTTP 5xx failures / error rate).</li>
+<li><strong>Duration</strong>: <code>http.server.request.duration.ms</code> (latency histogram).</li>
+<li><strong>USE Method (Infrastructure & Host Resources)</strong>:</li>
+<li><strong>Utilization</strong>: <code>system.cpu.utilization</code> (CPU active percentage).</li>
+<li><strong>Saturation</strong>: <code>threadpool.queue.saturation</code> (ThreadPool backlog depth).</li>
+<li><strong>Errors</strong>: <code>system.hardware.errors</code> (device / network packet drop counts).</li>
+<li><strong>Statistical Percentiles</strong>: High-precision calculation of P50 (median), P90, P95, and P99 latencies using nearest-rank percentile interpolation over histogram observations.</li>
+<li><strong>Prometheus Buckets</strong>: Cumulative upper-bound histogram representation for PromQL <code>histogram_quantile(0.99, rate(http_duration_bucket[5m]))</code>.</li>
+<li><strong>Three-Way Correlation</strong>: Injecting active <code>trace_id</code> and <code>span_id</code> directly into structured JSON logs for instant drilldown from Grafana metric alerts to Jaeger traces and Loki logs.</li>
+<li><strong>Full Observability Stack</strong>: Complete <code>docker-compose.observability.yml</code> running OpenTelemetry Collector, Jaeger, Prometheus, and Grafana.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">       .NET Application (System.Diagnostics.Metrics &amp; Activity)
+                                │
+                 OTLP (gRPC 4317 / HTTP 4318)
+                                ▼
+                 ┌─────────────────────────────┐
+                 │    OpenTelemetry Collector  │
+                 └──────────────┬──────────────┘
+                                │
+        ┌───────────────────────┼────────────────────────┐
+        │ Metrics (port 8889)   │ Traces (gRPC 14250)    │ Logs
+        ▼                       ▼                        ▼
+┌──────────────┐        ┌──────────────┐         ┌──────────────┐
+│  Prometheus  │        │    Jaeger    │         │     Loki     │
+│ (Time Series)│        │ (Trace Spans)│         │ (Aggregated) │
+└───────┬──────┘        └───────┬──────┘         └───────┬──────┘
+        │                       │                        │
+        └───────────────────────┼────────────────────────┘
+                                ▼
+                     ┌─────────────────────┐
+                     │  Grafana Dashboard  │
+                     │  (Correlated Views) │
+                     └─────────────────────┘</code></pre></div>
+<hr/>
+<h2>LeetCode #355: Design Twitter (Medium)</h2>
+<p>Design a news feed system supporting <code>PostTweet</code>, <code>GetNewsFeed</code>, <code>Follow</code>, and <code>Unfollow</code>:</p>
+<ul>
+<li><strong>Algorithm</strong>: $K$-way merge over user tweet streams using a Priority Queue (Max-Heap by timestamp).</li>
+<li><strong>Complexity</strong>: $O(F \log F + 10 \log F)$ time to fetch top 10 tweets where $F$ is follower count; $O(1)$ post tweet; $O(F)$ space.</li>
+<li><strong>System Design Trade-off</strong>: Fan-out on Read (Pull model) vs Fan-out on Write (Push model with Redis inbox for celebrities).</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day35-Observability-Prometheus-Grafana-Jaeger/tests/Day35.ObservabilityStack.Tests/Day35.ObservabilityStack.Tests.csproj</code></pre></div>
+<p>10 unit tests validate RED/USE metrics counters, P50/P90/P95/P99 latency calculations, Prometheus histogram buckets, structured logging correlation, and Twitter feed mechanics.</p>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Why are averages (means) considered an antipattern for monitoring service latencies, and why are percentiles (P95, P99) preferred?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Averages conceal outliers in skewed distributions. A microservice handling 10,000 req/sec might have an average latency of 25ms, while the 99th percentile is 3,500ms. In modern web architectures where an incoming user request fan-outs to 50 downstream microservices:</p>
+<p>$$\text{Probability of hitting a P99 dependency} = 1 - (0.99)^{50} \approx 39.5\%$$</p>
+<p>Nearly 40% of all user requests will experience a P99 tail latency! Relying on percentiles like P90, P95, and P99 guarantees SLA observability for the users experiencing degraded performance.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the mathematical and architectural difference between RED and USE metrics?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>RED (Rate, Errors, Duration)</strong>: Formulated for request-driven software services (HTTP APIs, gRPC, microservices). It measures what the <em>user/consumer</em> experiences. Rate = load; Errors = availability; Duration = responsiveness.</li>
+<li><strong>USE (Utilization, Saturation, Errors)</strong>: Formulated for hardware and infrastructure resources (CPU, RAM, disk I/O, network sockets, thread pools). Utilization = percent busy time; Saturation = queued backlog waiting to be serviced; Errors = low-level driver or device faults.</li>
+<li><em>Rule of thumb</em>: When investigating an alert, look at RED metrics to identify <em>which service</em> is degraded, then look at USE metrics to identify <em>which resource bottleneck</em> is causing it.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How does Prometheus calculate `histogram_quantile(0.99, ...)` from discrete histogram buckets?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Prometheus histograms record cumulative counts in pre-defined buckets (<code>le</code> = less than or equal to).</p>
+<ol>
+<li>Prometheus aggregates the bucket counters across the specified time window via <code>rate()</code>.</li>
+<li>It identifies the target rank: $0.99 \times \text{Total Count}$.</li>
+<li>It finds the specific bucket $[le_1, le_2]$ that contains this rank.</li>
+<li>It performs <strong>linear interpolation</strong> within that bucket assuming uniform distribution of observations between $le_1$ and $le_2$.</li>
+</ol>
+<ul>
+<li><em>Implication</em>: If bucket boundaries are poorly spaced (e.g. jumping from 100ms to 5,000ms), the computed percentile will be an imprecise mathematical approximation.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">What is an OpenTelemetry Exemplar and how does it bridge Metrics and Traces?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>An Exemplar is an exact trace ID and span ID attached to a specific metric measurement observation in a histogram bucket.</p>
+<ul>
+<li>When an unusually slow request of 2,400ms is recorded into the <code>[1000, 5000]</code> bucket, OpenTelemetry attaches <code>trace_id = &quot;abc123xyz&quot;</code> to that histogram sample.</li>
+<li>In Grafana, when viewing a spike in P99 latency, clicking on the data point displays the linked Exemplar. Clicking it instantly opens the exact trace in Jaeger, eliminating manual searching through millions of log lines.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">In `System.Diagnostics.Metrics`, what is the difference between `Counter&lt;T&gt;`, `Histogram&lt;T&gt;`, and `ObservableGauge&lt;T&gt;`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><code>Counter&lt;T&gt;</code>: Monotonically increasing value (only positive deltas, e.g. requests processed, bytes received). Cannot decrease.</li>
+<li><code>Histogram&lt;T&gt;</code>: Measures distributions of values (e.g. durations, payload sizes). The SDK aggregates these into statistical buckets, counts, and sums.</li>
+<li><code>ObservableGauge&lt;T&gt;</code>: Asynchronous callback-based metric polled by the SDK at scraping intervals. Used for instantaneous values that fluctuate up and down (e.g. CPU percentage, current memory in use, queue length).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you design an observability pipeline to prevent metric cardinality explosion?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>High cardinality occurs when metric tags have unbounded unique values (e.g., <code>user_id</code>, <code>order_id</code>, <code>email</code>, timestamp).</p>
+<ul>
+<li>Storing 1,000,000 distinct <code>user_id</code> tags multiplies time series in Prometheus TSDB memory exponentially, leading to an OOM crash.</li>
+<li><strong>Rules</strong>:</li>
+</ul>
+<ol>
+<li>Only use discrete, bounded enums for metric tags: <code>http.method</code>, <code>http.status_code</code>, <code>http.route</code> (templated <code>/orders/{id}</code>, never raw <code>/orders/12345</code>).</li>
+<li>Put high-cardinality identifiers (<code>order_id</code>, <code>user_id</code>) in <strong>Traces (Spans)</strong> and <strong>Logs</strong>, where columnar databases (Loki, ClickHouse, Jaeger) handle high cardinality efficiently.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Explain the trade-offs between &quot;Push&quot; (OTLP/StatsD) vs &quot;Pull&quot; (Prometheus scraping) metric architectures.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Pull (Prometheus)</strong>:</li>
+<li>Prometheus periodically scrapes <code>/metrics</code> HTTP endpoints.</li>
+<li><em>Pros</em>: Centralized rate control (scraping cannot overwhelm the server); easy liveness detection (if scrape fails, service is down); no state in client services.</li>
+<li><em>Cons</em>: Difficult to scrape short-lived ephemeral batch jobs or serverless functions (requires Pushgateway); complex firewall traversal across VPCs.</li>
+<li><strong>Push (OTLP to OTel Collector)</strong>:</li>
+<li>Applications push telemetry batches to a local collector daemon.</li>
+<li><em>Pros</em>: Uniform across metrics, traces, and logs; supports serverless/lambda environments; easy NAT/firewall egress.</li>
+<li><em>Cons</em>: Risk of overwhelming downstream telemetry backends during traffic bursts if collector queues overflow.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #355 (Design Twitter), how does the $K$-way merge algorithm operate for `GetNewsFeed`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Each user has a chronologically sorted list of their own tweets.</p>
+<ol>
+<li>When generating the feed for user $U$, identify all followed users $F_1, F_2, \dots, F_k$ plus $U$.</li>
+<li>For each user who has posted at least one tweet, enqueue their most recent tweet into a Max-Heap along with their user ID and tweet index. The heap size is at most $|F| + 1$.</li>
+<li>Dequeue the root tweet (the globally newest across all feeds) and add to the result feed.</li>
+<li>Advance that user's index to their next newest tweet and enqueue it into the heap.</li>
+<li>Repeat until 10 tweets have been harvested or the heap is empty.</li>
+</ol>
+<ul>
+<li>Time Complexity: $O(F \log F + 10 \log F) = O(F \log F)$.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How would you scale the Twitter news feed system for a celebrity with 100 million followers?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Using pure Fan-out on Write would require inserting 100,000,000 timeline entries into Redis whenever the celebrity tweets, causing massive write amplification and lag.</p>
+<ul>
+<li><strong>Solution (Hybrid Fan-out)</strong>:</li>
+</ul>
+<ol>
+<li>Categorize users into standard users and celebrities (e.g. followers $> 50,000$).</li>
+<li>For standard users: Fan-out on Write to follower timeline caches.</li>
+<li>For celebrities: Do not fan out on write. Instead, when a follower opens their feed, do a fast parallel fetch of the recent tweets from celebrities they follow and dynamically merge them (fan-out on read) with their pre-computed inbox timeline in RAM.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does OpenTelemetry Collector act as a pipeline buffer and aggregator in enterprise deployments?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Rather than having hundreds of microservice pods directly connect to Prometheus, Jaeger, and Datadog:</p>
+<ol>
+<li>Microservices send OTLP over localhost/mesh to an OTel Collector agent or daemonset.</li>
+<li>The Collector pipeline has three stages:</li>
+</ol>
+<ul>
+<li><strong>Receivers</strong>: Accept OTLP (gRPC/HTTP), Zipkin, Jaeger.</li>
+<li><strong>Processors</strong>: <code>memory_limiter</code>, <code>batch</code> (coalesce into bulk network requests), <code>filter</code> (drop unwanted metrics), and <code>tail_sampling</code> (keep only slow or failed traces).</li>
+<li><strong>Exporters</strong>: Fan out identical telemetry data to multiple targets simultaneously (e.g., Prometheus for metrics, Jaeger for tracing, AWS CloudWatch for auditing).</li>
+</ul>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day35.ObservabilityStack/MetricsAndLatencyEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd35-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d35-src-code-0" class="language-csharp">using System.Diagnostics;
+using System.Diagnostics.Metrics;
+
+namespace Day35.ObservabilityStack;
+
+public record LatencyPercentiles(double P50, double P90, double P95, double P99, int TotalCount, double Mean);
+
+public record HistogramBucket(double UpperBound, int CumulativeCount);
+
+public class ObservabilityMetricsManager : IDisposable
+{
+    public const string MeterName = &quot;Day35.ObservabilityStack&quot;;
+    public const string Version = &quot;1.0.0&quot;;
+    public static readonly Meter Meter = new(MeterName, Version);
+
+    // RED Metrics
+    public readonly Counter&lt;long&gt; RequestCounter;
+    public readonly Counter&lt;long&gt; ErrorCounter;
+    public readonly Histogram&lt;double&gt; RequestDurationHistogram;
+
+    // USE Metrics
+    public double SimulatedCpuUtilization { get; set; } = 42.5;
+    public long SimulatedThreadPoolQueueLength { get; set; } = 12;
+    public readonly Counter&lt;long&gt; HardwareErrorCounter;
+
+    private readonly MeterListener _listener;
+    private readonly List&lt;double&gt; _observedDurations = new();
+    private long _totalRequests = 0;
+    private long _totalErrors = 0;
+    private readonly object _lock = new();
+
+    public long TotalRequests =&gt; Interlocked.Read(ref _totalRequests);
+    public long TotalErrors =&gt; Interlocked.Read(ref _totalErrors);
+    public IReadOnlyList&lt;double&gt; ObservedDurations
+    {
+        get
+        {
+            lock (_lock) return _observedDurations.ToList();
+        }
+    }
+
+    public ObservabilityMetricsManager()
+    {
+        RequestCounter = Meter.CreateCounter&lt;long&gt;(&quot;http.server.requests.count&quot;, &quot;requests&quot;, &quot;Total incoming HTTP requests&quot;);
+        ErrorCounter = Meter.CreateCounter&lt;long&gt;(&quot;http.server.requests.errors&quot;, &quot;errors&quot;, &quot;Total HTTP requests resulting in 5xx errors&quot;);
+        RequestDurationHistogram = Meter.CreateHistogram&lt;double&gt;(&quot;http.server.request.duration.ms&quot;, &quot;ms&quot;, &quot;HTTP request processing duration in milliseconds&quot;);
+
+        Meter.CreateObservableGauge(&quot;system.cpu.utilization&quot;, () =&gt; SimulatedCpuUtilization, &quot;%&quot;, &quot;Simulated CPU Utilization&quot;);
+        Meter.CreateObservableGauge(&quot;threadpool.queue.saturation&quot;, () =&gt; SimulatedThreadPoolQueueLength, &quot;items&quot;, &quot;ThreadPool queued work items&quot;);
+        HardwareErrorCounter = Meter.CreateCounter&lt;long&gt;(&quot;system.hardware.errors&quot;, &quot;errors&quot;, &quot;Hardware / disk / network drop errors&quot;);
+
+        _listener = new MeterListener
+        {
+            InstrumentPublished = (instrument, listener) =&gt;
+            {
+                if (instrument.Meter.Name == MeterName)
+                {
+                    listener.EnableMeasurementEvents(instrument);
+                }
+            }
+        };
+
+        _listener.SetMeasurementEventCallback&lt;long&gt;((instrument, measurement, tags, state) =&gt;
+        {
+            if (instrument.Name == &quot;http.server.requests.count&quot;)
+            {
+                Interlocked.Add(ref _totalRequests, measurement);
+            }
+            else if (instrument.Name == &quot;http.server.requests.errors&quot;)
+            {
+                Interlocked.Add(ref _totalErrors, measurement);
+            }
+        });
+
+        _listener.SetMeasurementEventCallback&lt;double&gt;((instrument, measurement, tags, state) =&gt;
+        {
+            if (instrument.Name == &quot;http.server.request.duration.ms&quot;)
+            {
+                lock (_lock)
+                {
+                    _observedDurations.Add(measurement);
+                }
+            }
+        });
+
+        _listener.Start();
+    }
+
+    public void RecordRequest(double durationMs, bool isError = false, string route = &quot;/api/v1/resource&quot;, int statusCode = 200)
+    {
+        var tagList = new TagList
+        {
+            { &quot;http.route&quot;, route },
+            { &quot;http.status_code&quot;, statusCode }
+        };
+
+        RequestCounter.Add(1, tagList);
+        RequestDurationHistogram.Record(durationMs, tagList);
+
+        if (isError)
+        {
+            ErrorCounter.Add(1, tagList);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Computes P50, P90, P95, P99 percentiles from a collection of recorded latencies.
+    /// Uses the standard Nearest-Rank percentile method.
+    /// &lt;/summary&gt;
+    public static LatencyPercentiles CalculatePercentiles(IEnumerable&lt;double&gt; latencies)
+    {
+        var list = latencies.OrderBy(x =&gt; x).ToList();
+        if (list.Count == 0)
+        {
+            return new LatencyPercentiles(0, 0, 0, 0, 0, 0);
+        }
+
+        double p50 = GetPercentile(list, 50);
+        double p90 = GetPercentile(list, 90);
+        double p95 = GetPercentile(list, 95);
+        double p99 = GetPercentile(list, 99);
+        double mean = list.Average();
+
+        return new LatencyPercentiles(p50, p90, p95, p99, list.Count, Math.Round(mean, 2));
+    }
+
+    private static double GetPercentile(List&lt;double&gt; sorted, double percentile)
+    {
+        if (sorted.Count == 1) return sorted[0];
+        double rank = (percentile / 100.0) * (sorted.Count - 1);
+        int lower = (int)Math.Floor(rank);
+        int upper = (int)Math.Ceiling(rank);
+        if (lower == upper) return sorted[lower];
+        double weight = rank - lower;
+        return Math.Round(sorted[lower] * (1 - weight) + sorted[upper] * weight, 2);
+    }
+
+    /// &lt;summary&gt;
+    /// Simulates Prometheus-style cumulative histogram buckets.
+    /// Standard Prometheus boundaries: 5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1000ms, +Inf.
+    /// &lt;/summary&gt;
+    public static List&lt;HistogramBucket&gt; BuildPrometheusBuckets(IEnumerable&lt;double&gt; latencies, double[]? boundaries = null)
+    {
+        boundaries ??= [5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, double.PositiveInfinity];
+        var list = latencies.ToList();
+        var buckets = new List&lt;HistogramBucket&gt;();
+
+        foreach (var boundary in boundaries)
+        {
+            int count = list.Count(v =&gt; v &lt;= boundary);
+            buckets.Add(new HistogramBucket(boundary, count));
+        }
+
+        return buckets;
+    }
+
+    /// &lt;summary&gt;
+    /// Correlates telemetry by generating structured log payloads with trace_id and span_id.
+    /// &lt;/summary&gt;
+    public static string FormatStructuredLog(string message, string traceId, string spanId, string logLevel = &quot;Information&quot;)
+    {
+        return $&quot;{{\&quot;timestamp\&quot;:\&quot;{DateTime.UtcNow:O}\&quot;,\&quot;level\&quot;:\&quot;{logLevel}\&quot;,\&quot;trace_id\&quot;:\&quot;{traceId}\&quot;,\&quot;span_id\&quot;:\&quot;{spanId}\&quot;,\&quot;message\&quot;:\&quot;{message}\&quot;}}&quot;;
+    }
+
+    public void Dispose()
+    {
+        _listener.Dispose();
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day35.ObservabilityStack/TwitterFeedSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd35-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d35-src-code-1" class="language-csharp">namespace Day35.ObservabilityStack;
+
+public class TwitterFeedSolver
+{
+    private static int _globalTimestamp = 0;
+
+    public record Tweet(int TweetId, int Timestamp);
+
+    private readonly Dictionary&lt;int, List&lt;Tweet&gt;&gt; _userTweets = new();
+    private readonly Dictionary&lt;int, HashSet&lt;int&gt;&gt; _following = new();
+
+    public TwitterFeedSolver()
+    {
+    }
+
+    /// &lt;summary&gt;
+    /// Composes a new tweet with ID tweetId by the user userId.
+    /// Time Complexity: O(1).
+    /// &lt;/summary&gt;
+    public void PostTweet(int userId, int tweetId)
+    {
+        if (!_userTweets.ContainsKey(userId))
+        {
+            _userTweets[userId] = new List&lt;Tweet&gt;();
+        }
+
+        var timestamp = Interlocked.Increment(ref _globalTimestamp);
+        _userTweets[userId].Add(new Tweet(tweetId, timestamp));
+    }
+
+    /// &lt;summary&gt;
+    /// Retrieves the 10 most recent tweet IDs in the user&#x27;s news feed (from self and followees).
+    /// Ordered from most recent to least recent.
+    /// Uses Max-Heap (k-way merge) over sorted tweet lists.
+    /// Time Complexity: O(F * log F + 10 * log F) where F = number of followees, Space: O(F).
+    /// &lt;/summary&gt;
+    public IList&lt;int&gt; GetNewsFeed(int userId)
+    {
+        var result = new List&lt;int&gt;(10);
+
+        // Gather all users contributing to this user&#x27;s feed: self + followed users
+        var relevantUsers = new HashSet&lt;int&gt; { userId };
+        if (_following.TryGetValue(userId, out var followees))
+        {
+            foreach (var f in followees)
+            {
+                relevantUsers.Add(f);
+            }
+        }
+
+        // Max-heap of (Tweet, user, indexInUserList).
+        // PriorityQueue in .NET is min-heap by default, so use -timestamp as priority for max-heap behavior.
+        var maxHeap = new PriorityQueue&lt;(Tweet Tweet, int UserId, int Index), int&gt;();
+
+        foreach (var u in relevantUsers)
+        {
+            if (_userTweets.TryGetValue(u, out var tweets) &amp;&amp; tweets.Count &gt; 0)
+            {
+                int lastIdx = tweets.Count - 1;
+                var latestTweet = tweets[lastIdx];
+                maxHeap.Enqueue((latestTweet, u, lastIdx), -latestTweet.Timestamp);
+            }
+        }
+
+        while (maxHeap.Count &gt; 0 &amp;&amp; result.Count &lt; 10)
+        {
+            var (tweet, u, idx) = maxHeap.Dequeue();
+            result.Add(tweet.TweetId);
+
+            int nextIdx = idx - 1;
+            if (nextIdx &gt;= 0)
+            {
+                var nextTweet = _userTweets[u][nextIdx];
+                maxHeap.Enqueue((nextTweet, u, nextIdx), -nextTweet.Timestamp);
+            }
+        }
+
+        return result;
+    }
+
+    /// &lt;summary&gt;
+    /// Follower starts following followee.
+    /// A user cannot follow themselves.
+    /// &lt;/summary&gt;
+    public void Follow(int followerId, int followeeId)
+    {
+        if (followerId == followeeId) return;
+
+        if (!_following.ContainsKey(followerId))
+        {
+            _following[followerId] = new HashSet&lt;int&gt;();
+        }
+
+        _following[followerId].Add(followeeId);
+    }
+
+    /// &lt;summary&gt;
+    /// Follower unfollows followee.
+    /// &lt;/summary&gt;
+    public void Unfollow(int followerId, int followeeId)
+    {
+        if (followerId == followeeId) return;
+
+        if (_following.TryGetValue(followerId, out var followees))
+        {
+            followees.Remove(followeeId);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day35.ObservabilityStack.Tests/Day35Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd35-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d35-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day35.ObservabilityStack.Tests;
+
+public class Day35Tests
+{
+    [Fact]
+    public void ObservabilityMetrics_RecordsRequestAndErrorCounts()
+    {
+        using var manager = new ObservabilityMetricsManager();
+
+        manager.RecordRequest(durationMs: 45.2, isError: false, route: &quot;/checkout&quot;, statusCode: 200);
+        manager.RecordRequest(durationMs: 120.5, isError: true, route: &quot;/checkout&quot;, statusCode: 500);
+        manager.RecordRequest(durationMs: 15.0, isError: false, route: &quot;/items&quot;, statusCode: 200);
+
+        Assert.Equal(3, manager.TotalRequests);
+        Assert.Equal(1, manager.TotalErrors);
+        Assert.Equal(3, manager.ObservedDurations.Count);
+    }
+
+    [Fact]
+    public void ObservabilityMetrics_Percentiles_CalculatesAccurateP50P90P95P99()
+    {
+        // 100 values from 1.0 to 100.0
+        var latencies = Enumerable.Range(1, 100).Select(i =&gt; (double)i).ToArray();
+
+        var percentiles = ObservabilityMetricsManager.CalculatePercentiles(latencies);
+
+        Assert.Equal(100, percentiles.TotalCount);
+        Assert.Equal(50.5, percentiles.P50);
+        Assert.Equal(90.1, percentiles.P90);
+        Assert.Equal(95.05, percentiles.P95);
+        Assert.Equal(99.01, percentiles.P99);
+        Assert.Equal(50.5, percentiles.Mean);
+    }
+
+    [Fact]
+    public void ObservabilityMetrics_PrometheusBuckets_GeneratesCumulativeCounts()
+    {
+        double[] latencies = [3.0, 8.0, 15.0, 40.0, 85.0, 200.0, 600.0, 1500.0];
+
+        var buckets = ObservabilityMetricsManager.BuildPrometheusBuckets(latencies);
+
+        // Standard boundaries: 5, 10, 25, 50, 100, 250, 500, 1000, +Inf
+        var b5 = buckets.First(b =&gt; b.UpperBound == 5.0);
+        var b10 = buckets.First(b =&gt; b.UpperBound == 10.0);
+        var b25 = buckets.First(b =&gt; b.UpperBound == 25.0);
+        var b100 = buckets.First(b =&gt; b.UpperBound == 100.0);
+        var bInf = buckets.First(b =&gt; double.IsPositiveInfinity(b.UpperBound));
+
+        Assert.Equal(1, b5.CumulativeCount); // 3.0
+        Assert.Equal(2, b10.CumulativeCount); // 3.0, 8.0
+        Assert.Equal(3, b25.CumulativeCount); // 3.0, 8.0, 15.0
+        Assert.Equal(5, b100.CumulativeCount); // 3, 8, 15, 40, 85
+        Assert.Equal(8, bInf.CumulativeCount); // all 8
+    }
+
+    [Fact]
+    public void ObservabilityMetrics_StructuredLog_ContainsTraceAndSpanIds()
+    {
+        string traceId = &quot;4bf92f3577b34da6a3ce929d0e0e4736&quot;;
+        string spanId = &quot;00f067aa0ba902b7&quot;;
+        string msg = &quot;Payment processing started&quot;;
+
+        string log = ObservabilityMetricsManager.FormatStructuredLog(msg, traceId, spanId, &quot;Information&quot;);
+
+        Assert.Contains(traceId, log);
+        Assert.Contains(spanId, log);
+        Assert.Contains(&quot;Information&quot;, log);
+        Assert.Contains(msg, log);
+    }
+
+    [Fact]
+    public void ObservabilityMetrics_EmptyLatencies_ReturnsZeroPercentiles()
+    {
+        var percentiles = ObservabilityMetricsManager.CalculatePercentiles([]);
+
+        Assert.Equal(0, percentiles.TotalCount);
+        Assert.Equal(0, percentiles.P50);
+        Assert.Equal(0, percentiles.P99);
+    }
+
+    [Fact]
+    public void Twitter_PostTweetAndGetNewsFeed_ReturnsOwnTweetsInDescendingOrder()
+    {
+        var twitter = new TwitterFeedSolver();
+        twitter.PostTweet(userId: 1, tweetId: 101);
+        twitter.PostTweet(userId: 1, tweetId: 102);
+        twitter.PostTweet(userId: 1, tweetId: 103);
+
+        var feed = twitter.GetNewsFeed(userId: 1);
+
+        Assert.Equal([103, 102, 101], feed);
+    }
+
+    [Fact]
+    public void Twitter_FollowAndGetNewsFeed_ReturnsCombinedTweetsOrderedByTimestamp()
+    {
+        var twitter = new TwitterFeedSolver();
+        twitter.PostTweet(userId: 1, tweetId: 5);
+        twitter.PostTweet(userId: 2, tweetId: 6);
+
+        // User 1 follows User 2
+        twitter.Follow(followerId: 1, followeeId: 2);
+
+        var feed = twitter.GetNewsFeed(userId: 1);
+
+        // Tweet 6 was posted after Tweet 5
+        Assert.Equal([6, 5], feed);
+    }
+
+    [Fact]
+    public void Twitter_Unfollow_StopsShowingUnfollowedTweets()
+    {
+        var twitter = new TwitterFeedSolver();
+        twitter.PostTweet(userId: 1, tweetId: 11);
+        twitter.PostTweet(userId: 2, tweetId: 22);
+
+        twitter.Follow(1, 2);
+        Assert.Equal([22, 11], twitter.GetNewsFeed(1));
+
+        twitter.Unfollow(1, 2);
+        Assert.Equal([11], twitter.GetNewsFeed(1));
+    }
+
+    [Fact]
+    public void Twitter_GetNewsFeed_CapsAt10MostRecentTweets()
+    {
+        var twitter = new TwitterFeedSolver();
+
+        // User posts 15 tweets
+        for (int i = 1; i &lt;= 15; i++)
+        {
+            twitter.PostTweet(userId: 42, tweetId: i);
+        }
+
+        var feed = twitter.GetNewsFeed(userId: 42);
+
+        Assert.Equal(10, feed.Count);
+        // Most recent should be 15 down to 6
+        Assert.Equal([15, 14, 13, 12, 11, 10, 9, 8, 7, 6], feed);
+    }
+
+    [Fact]
+    public void Twitter_SelfFollowAndUnfollow_DoesNotCorruptSelfTweetsInFeed()
+    {
+        var twitter = new TwitterFeedSolver();
+        twitter.PostTweet(userId: 7, tweetId: 701);
+
+        twitter.Follow(followerId: 7, followeeId: 7); // Self-follow attempt
+        twitter.Unfollow(followerId: 7, followeeId: 7); // Self-unfollow attempt
+
+        var feed = twitter.GetNewsFeed(userId: 7);
+
+        Assert.Single(feed);
+        Assert.Equal(701, feed[0]);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 35 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

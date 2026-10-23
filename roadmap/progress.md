@@ -45,8 +45,17 @@
 | Day 29 | RabbitMQ Core Concepts: Exchanges & Queues (LC #130 & #994) | ✅ Completed |
 | Day 30 | RabbitMQ Dead-Letter Queues & MassTransit (LC #207 & #210) | ✅ Completed |
 | Day 31 | The Transactional Outbox Pattern (LC #684) | ✅ Completed |
+| Day 32 | Saga Pattern: Orchestration vs Choreography (LC #127 Hard) | ✅ Completed |
+| Day 33 | Distributed Idempotency & De-duplication (LC #215) | ✅ Completed |
+| Day 34 | OpenTelemetry in .NET: Distributed Tracing (LC #621) | ✅ Completed |
+| Day 35 | Observability Stack: Prometheus, Grafana & Jaeger (LC #355) | ✅ Completed |
+| Day 36 | System Design: Notification Service (LC #78 & #90) | ✅ Completed |
+| Day 37 | System Design: High-Throughput Chat System (LC #39 & #40) | ✅ Completed |
+| Day 38 | System Design: Video Streaming System (LC #46 & #47) | ✅ Completed |
+| Day 39 | CAP Theorem & PACELC in Practice (LC #79 & #17) | ✅ Completed |
+| Day 40 | Event Sourcing & CQRS Foundations (LC #131) | ✅ Completed |
+| Day 41 | Docker Deep Dive for .NET Services (LC #70 & #746) | ✅ Completed |
 
 ## Next
 
-Day 32 — gRPC Services in ASP.NET Core: Protobuf Contracts & Streaming.
-
+Day 42 — Kubernetes for .NET Developers: Deployments, Services, Ingress & Secrets.

@@ -1,0 +1,2356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 36: System Design: Notification Service | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 36</span>
+        <span class="badge badge-category">System Design &amp; Queues</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html" class="nav-btn">← Day 35</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+
+        </select>
+        <a href="../Day37-SystemDesign-Chat-System/index.html" class="nav-btn">Day 37 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 36: System Design: Notification Service</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d36Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d36P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d36P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#065f46"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d36P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#831843"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d36Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 36: System Design: Notification Service &amp; Subsets I &amp; II</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d36P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Multi-Channel Notification Engine</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Channel Routing</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Email (SendGrid), SMS (Twilio)</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">Push (FCM / APNs), In-App WebSockets</text>
+          <text x="50" y="179" fill="#38bdf8" font-size="9">Priority: High (OTP) &gt; Normal &gt; Low</text>
+          <text x="50" y="196" fill="#fbbf24" font-size="9">Priority queue preempts bulk queues</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">Failover &amp; Circuit Breakers</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Primary provider degradation (Twilio)</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">Auto-switch to AWS SNS fallback</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">Idempotency deduplication cache</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Prevents double-charging / spam</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d36P2)" stroke="#34d399" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#34d399" font-size="14" font-weight="bold">Throttling &amp; User Opt-Outs</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Sliding-Window Rate Limiting</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Max 5 SMS/min per user (token bucket)</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">Purges timestamps older than window</text>
+          <text x="340" y="179" fill="#f43f5e" font-size="9">Prevents notification fatigue &amp; spam</text>
+          <text x="340" y="196" fill="#cbd5e1" font-size="9">Protects provider billing quotas</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#34d399" font-size="11" font-weight="bold">Preference Enforcement</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">User opt-out channel bitmask/matrix</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Quiet hours: Do-not-disturb timezone</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">Non-urgent alerts deferred to 8am</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Regulatory compliance (GDPR/TCPA)</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d36P3)" stroke="#f43f5e" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#f43f5e" font-size="14" font-weight="bold">LC #78 &amp; #90: Subsets I &amp; II</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Power Set Backtracking (LC #78)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">DFS state space exploration</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Total subsets: 2^N</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Bitmask: 0 to (1 &lt;&lt; N) - 1</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Time: O(N * 2^N), Space: O(N)</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#f43f5e" font-size="11" font-weight="bold">Duplicate Pruning (LC #90)</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Sort array first</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">if (i &gt; start &amp;&amp; nums[i] == nums[i-1])</text>
+          <text x="630" y="290" fill="#f43f5e" font-size="9">continue; // skip duplicate siblings</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">100% unique subsets without set allocs</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: Notification Service Architecture</h1>
+<h2>1. High-Scale Notification Pipeline Design</h2>
+<ul>
+<li><strong>Scale Requirements</strong>:</li>
+<li>10M daily active users $\times$ 10 notifications/day = 100M notifications/day.</li>
+<li>Average load: $\approx 1,160$ messages/sec; Peak load: $15,000$ messages/sec (e.g. Flash sales, Breaking news).</li>
+<li><strong>Decoupled Architecture</strong>:</li>
+<li>Ingress API: Validates payload, verifies idempotency key, pushes message to Kafka/RabbitMQ.</li>
+<li>Workers: Consume by channel and priority. For example, <code>sms-high-priority</code> topic has dedicated worker pools with strict SLAs (< 5s for OTPs), while <code>email-marketing-low</code> has rate-controlled worker pools to avoid blacklisting.</li>
+<li><strong>Circuit Breakers & Vendor Fallbacks</strong>:</li>
+<li>External vendors (Twilio, SendGrid, APNs, FCM) have fluctuating error rates and rate limits.</li>
+<li>Wrap provider calls in Polly Circuit Breakers. If Twilio error rate exceeds 15% in a 30s window, trip the breaker and divert traffic to AWS SNS or Infobip automatically.</li>
+</ul>
+<h2>2. Throttling & User Preferences</h2>
+<ul>
+<li><strong>Sliding-Window Rate Limiting</strong>:</li>
+<li>Redis Sorted Sets (<code>ZADD timestamp, ZREMRANGEBYSCORE 0 now - window, ZCARD</code>) allow sliding-window rate limiting per <code>(user_id, channel)</code>.</li>
+<li>Enforces quiet hours (e.g. 10 PM – 8 AM in recipient's local timezone) by deferring non-urgent messages until morning.</li>
+<li><strong>Preference Storage</strong>:</li>
+<li>Cassandra or DynamoDB with primary key <code>(user_id)</code> and a bitmask/JSON column of channel opt-outs (<code>sms: false, email: true, push: true</code>). Read-heavy cached in Redis.</li>
+</ul>
+<h2>3. LeetCode #78 & #90 (Subsets) Backtracking Mechanics</h2>
+<ul>
+<li>The recursion tree for subsets forms a state-space tree where each decision point represents including or excluding an element.</li>
+<li>For Subsets II (with duplicates):</li>
+<li>Sorting brings duplicate numbers adjacent: e.g. <code>[1, 2, 2]</code>.</li>
+<li>Sibling branches represent choices at the <strong>same recursion level</strong> (<code>i &gt; start</code>). If <code>nums[i] == nums[i - 1]</code>, choosing <code>nums[i]</code> would generate the identical subtree already explored by <code>nums[i - 1]</code>.</li>
+<li>Skipping <code>nums[i]</code> when <code>i &gt; start</code> prunes duplicate branches cleanly in $O(1)$ without allocating secondary sets.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 36: System Design: Notification Service</h1>
+<h2>Architectural Overview</h2>
+<p>A large-scale notification system must deliver billions of notifications across multiple delivery channels (Email, SMS, Mobile Push, In-App WebSockets) with strict latency guarantees, priority isolation, and abuse protections.</p>
+<p>This module implements a resilient notification dispatch engine in .NET 8 featuring:</p>
+<ul>
+<li><strong>Priority-Based Dispatch Queues</strong>: Separate prioritized scheduling (<code>High</code> for OTPs/Security alerts, <code>Normal</code> for transactional receipts, <code>Low</code> for marketing/digests). High-priority items always preempt low-priority items.</li>
+<li><strong>Provider Abstraction & Automated Failover</strong>: Interface <code>INotificationProvider</code> with multi-vendor redundancy (e.g., Primary Twilio -> Secondary AWS SNS fallback on circuit degradation).</li>
+<li><strong>Per-User Rate Limiting & Throttling</strong>: Sliding window rate limiter preventing user notification fatigue and provider API overage (e.g. max 5 SMS/min).</li>
+<li><strong>User Preference & Opt-Out Matrix</strong>: Fine-grained subscription settings honoring user preferences per channel.</li>
+<li><strong>Idempotent Deduplication</strong>: Cache-backed idempotency key verification preventing duplicate charges or duplicate SMS delivery during network retries.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Incoming Notification Request
+               │
+               ▼
+     ┌───────────────────┐
+     │ Idempotency Check │ ──(Duplicate)──&gt; Return Cached / Deduplicated
+     └─────────┬─────────┘
+               │ (New)
+               ▼
+     ┌───────────────────┐
+     │ User Preferences  │ ──(Opted Out)──&gt; Reject (Opted Out)
+     └─────────┬─────────┘
+               │ (Subscribed)
+               ▼
+     ┌───────────────────┐
+     │   Rate Limiter    │ ──(Exceeded)───&gt; Reject (Throttled)
+     └─────────┬─────────┘
+               │ (Under limit)
+               ▼
+     ┌───────────────────┐
+     │  Priority Queue   │
+     │ High &gt; Norm &gt; Low │
+     └─────────┬─────────┘
+               │
+      Dispatch to Provider
+               │
+       ┌───────┴───────┐
+       ▼               ▼
+[Primary Provider] ──(Fails)──&gt; [Secondary Fallback Provider]
+ (Twilio / FCM)                  (AWS SNS / APNS)</code></pre></div>
+<hr/>
+<h2>LeetCode #78 & #90: Subsets I & II (Medium)</h2>
+<ul>
+<li><strong>LeetCode #78 (Subsets)</strong>:</li>
+<li>Generate power set of size $2^N$ for unique elements.</li>
+<li>Implemented via Backtracking (DFS tree exploration) and Bit Manipulation ($2^N$ binary bitmasks).</li>
+<li><strong>LeetCode #90 (Subsets II)</strong>:</li>
+<li>Generate power set when array contains duplicate elements.</li>
+<li>Sorts input and skips duplicate sibling branches:</li>
+</ul>
+<p><code>if (i &gt; start &amp;&amp; nums[i] == nums[i - 1]) continue;</code></p>
+<ul>
+<li>Guarantees $100\%$ unique subset generation without post-processing HashSet allocations.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day36-SystemDesign-Notification-Service/tests/Day36.NotificationService.Tests/Day36.NotificationService.Tests.csproj</code></pre></div>
+<p>10 unit tests validate priority queue ordering, automated provider failover, user opt-out enforcement, sliding-window rate limiting, idempotency deduplication, and power set generation.</p>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do you design a notification system capable of handling 100 million notifications per day with peak bursts?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Asynchronous Ingestion API</strong>: A stateless, highly-scalable API gateway receives notification requests, writes to an in-memory Redis deduplication store, and enqueues tasks into partitioned message queues (Kafka or RabbitMQ).</li>
+<li><strong>Topic Partitioning by Channel & Priority</strong>: Separate message queues by delivery speed requirements (<code>sms-critical</code>, <code>push-critical</code>, <code>email-bulk</code>). Critical queues (OTPs, password resets) have dedicated auto-scaled worker pools with unshared provider capacity.</li>
+<li><strong>Worker Fleet</strong>: Workers consume messages, verify user preferences from a read-through Redis cache, evaluate rate limit token buckets, and call downstream external providers (Twilio, SendGrid, FCM, APNs) using connection pooling and HTTP keep-alive.</li>
+<li><strong>Dead-Letter Queues (DLQ)</strong>: Failed deliveries after exponential retries are deposited into a DLQ for operational triage and alert auditing.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How do you ensure high-priority notifications (OTPs) are delivered within 5 seconds even when millions of marketing notifications are queued?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Never mix operational priority levels in the same FIFO message queue.</p>
+<ul>
+<li>Use <strong>Priority-Isolated Queuing</strong>: Maintain physically or logically separate queues for <code>High</code> (OTP, 2FA, fraud alerts), <code>Normal</code> (order confirmations, delivery tracking), and <code>Low</code> (marketing newsletters, weekly digests).</li>
+<li>Dedicated worker capacity: Dedicate 70% of worker threads/pods strictly to the <code>High</code> priority queue. If the <code>Low</code> queue experiences a massive backlog (e.g., 5 million marketing emails), it only impacts the <code>Low</code> workers; the <code>High</code> queue remains virtually empty and processed in sub-second latency.</li>
+<li>Provider prioritization: Reserve separate sub-accounts or dedicated outbound IP pools with vendors (e.g. Twilio High-Throughput Short Codes) exclusively for transactional traffic to prevent marketing email reputation degradation or rate limits from throttling OTPs.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you implement rate limiting per user per channel (e.g. max 3 SMS per hour) at scale?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Use a <strong>Distributed Sliding Window</strong> in Redis using Sorted Sets (<code>ZSET</code>):</p>
+<ul>
+<li>Key: <code>ratelimit:sms:{userId}</code></li>
+<li>When an SMS request arrives at time $T$:</li>
+</ul>
+<ol>
+<li><code>ZREMRANGEBYSCORE key 0 (T - 3600)</code> (remove timestamps older than 1 hour).</li>
+<li><code>ZCARD key</code> (count remaining timestamps in the 1-hour window).</li>
+<li>If count $\ge 3$, reject with "Rate limit exceeded".</li>
+<li>Else, <code>ZADD key T T</code> and <code>EXPIRE key 3600</code>. Allow execution.</li>
+</ol>
+<ul>
+<li>Executed via an atomic Redis Lua script to prevent race conditions across parallel worker nodes.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How do you handle third-party notification provider outages (e.g., Twilio outage)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Provider Abstraction</strong>: Define a generic <code>INotificationProvider</code> interface so application logic is completely decoupled from provider SDKs.</li>
+<li><strong>Circuit Breakers (Polly in .NET)</strong>: Track failure rates and timeout percentages. If Twilio returns HTTP 5xx or times out on > 20% of calls over 30 seconds, trip the breaker to <code>Open</code> state.</li>
+<li><strong>Automated Secondary Failover</strong>: When the primary circuit opens or throws an exception, dynamically re-route traffic to secondary providers (e.g. AWS SNS, Sinch, Infobip).</li>
+<li><strong>Health Checking & Canary Probing</strong>: The circuit transitions to <code>Half-Open</code> after 60 seconds, sending test canary probes to verify primary recovery before switching traffic back.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you prevent duplicate notification delivery when clients retry failed requests?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Idempotency Keys</strong>: Require an <code>Idempotency-Key</code> (e.g., derived from <code>eventId</code> or <code>orderId + action</code>).</li>
+<li><strong>Atomic Lock / Cache</strong>: Before processing, the worker attempts an atomic <code>SET key:notification:{idempotencyKey} &quot;PROCESSING&quot; EX 300 NX</code> in Redis.</li>
+</ol>
+<ul>
+<li>If key already exists, return immediate cached success without re-sending.</li>
+</ul>
+<ol>
+<li><strong>Provider-Level Idempotency</strong>: Forward the idempotency key to downstream providers that support it (e.g. Stripe, SendGrid, FCM message IDs) so that even if the internal worker crashes mid-network transmission, the vendor will not dispatch two duplicate physical SMS/emails.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you store and enforce user notification preferences and &quot;Do Not Disturb&quot; (quiet hours)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>Store user preferences in a primary NoSQL database (DynamoDB/Cassandra) with high read availability, cached in Redis:</li>
+</ul>
+<div class="code-block-container"><pre class="language-json"><code class="language-json">  {
+    &quot;userId&quot;: &quot;usr_99&quot;,
+    &quot;optedOut&quot;: [&quot;marketing_email&quot;, &quot;promotional_sms&quot;],
+    &quot;quietHours&quot;: { &quot;start&quot;: &quot;22:00&quot;, &quot;end&quot;: &quot;08:00&quot;, &quot;timezone&quot;: &quot;America/New_York&quot; }
+  }</code></pre></div>
+<ul>
+<li>Before queuing or dispatching non-critical notifications, convert the current UTC time to the user's localized timezone.</li>
+<li>If current time falls within <code>quietHours</code>, delay message delivery by calculating seconds until 08:00 AM and enqueueing into a delayed/scheduled queue (e.g., RabbitMQ dead-letter exchange with TTL or Redis Sorted Set schedule).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What telemetry and metrics should be monitored on a notification service?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Ingestion Rate vs Delivery Rate</strong>: Graphing messages queued vs messages acknowledged by vendors.</li>
+<li><strong>Queue Lag / Backlog Depth</strong>: Monitored per channel and priority; triggers alerts if <code>sms-critical</code> lag > 100 messages.</li>
+<li><strong>Provider Latency & Error Rate</strong>: P95/P99 latency of Twilio, SendGrid, APNs, and FCM HTTP endpoints.</li>
+<li><strong>Delivery Receipt (DLR) Conversion</strong>: Percentage of messages marked "Delivered" by mobile carriers via incoming webhooks.</li>
+<li><strong>Bounce & Complaint Rates</strong>: Hard bounces and spam reports on email channels to maintain domain reputation (SPF/DKIM/DMARC).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #78 (Subsets), what is the difference in time and space complexity between Backtracking and Bit Manipulation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>Both algorithms have a time complexity of $O(N \times 2^N)$ because there are $2^N$ total subsets, and copying each subset of average length $N/2$ into the final result requires $O(N)$ work.</li>
+<li><strong>Backtracking</strong>:</li>
+<li>Recursion tree depth is $N$. Space complexity is $O(N)$ for the recursion stack and temporary subset list.</li>
+<li>Generates subsets in lexicographical prefix order.</li>
+<li><strong>Bit Manipulation</strong>:</li>
+<li>Loops from $0$ to $2^N - 1$. Iterative with $O(1)$ auxiliary memory (ignoring the output list).</li>
+<li>Elegant and avoids recursion overhead, but limited to $N \le 64$ due to integer bit width.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #90 (Subsets II), why does sorting the array and checking `if (i &gt; start &amp;&amp; nums[i] == nums[i - 1]) continue;` eliminate duplicate subsets?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>When generating subsets from an array with duplicates (e.g. <code>[1, 2, 2]</code>), duplicate subsets occur when the same value is selected at the same decision depth across different branches.</li>
+<li>Sorting guarantees all duplicate numbers are placed contiguously.</li>
+<li>In the loop <code>for (int i = start; i &lt; nums.Length; i++)</code>:</li>
+<li>When $i = \text{start}$, we are exploring the <em>first</em> available instance of this number at this recursion level.</li>
+<li>When $i > \text{start}$ and $\text{nums}[i] == \text{nums}[i - 1]$, we are considering a <em>sibling</em> branch at the exact same tree level that has the same value.</li>
+<li>Pruning sibling duplicates skips generating identical subtrees without needing an expensive <code>HashSet</code> of lists.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you handle mobile push notification token invalidation (Apple APNs / Google FCM)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Mobile push tokens expire when users uninstall the app, switch devices, or wipe data.</p>
+<ol>
+<li>When calling APNs/FCM, the vendor returns specific error codes: APNs <code>BadDeviceToken</code> (410 Gone) or FCM <code>UNREGISTERED</code> / <code>INVALID_ARGUMENT</code>.</li>
+<li>The notification worker intercepts these specific HTTP response codes.</li>
+<li>The worker asynchronously emits a <code>DeviceTokenInvalidatedEvent</code> to an internal queue.</li>
+<li>An account service updates the device registry database, marking the token inactive/deleted so subsequent notifications are not sent, saving bandwidth and preventing provider penalty rate limiting.</li>
+</ol>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day36.NotificationService/NotificationEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd36-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d36-src-code-0" class="language-csharp">namespace Day36.NotificationService;
+
+public enum NotificationChannel
+{
+    Email,
+    Sms,
+    Push,
+    InApp
+}
+
+public enum NotificationPriority
+{
+    High = 0,
+    Normal = 1,
+    Low = 2
+}
+
+public record NotificationMessage(
+    string MessageId,
+    string UserId,
+    NotificationChannel Channel,
+    NotificationPriority Priority,
+    string Recipient,
+    string Title,
+    string Body,
+    DateTime CreatedAtUtc,
+    string? IdempotencyKey = null
+);
+
+public record NotificationResult(
+    bool Success,
+    string MessageId,
+    string Channel,
+    string? ProviderName,
+    string? ErrorReason = null
+);
+
+public interface INotificationProvider
+{
+    NotificationChannel Channel { get; }
+    string Name { get; }
+    bool IsHealthy { get; set; }
+    Task&lt;bool&gt; SendAsync(NotificationMessage message);
+}
+
+public class MockNotificationProvider : INotificationProvider
+{
+    public NotificationChannel Channel { get; }
+    public string Name { get; }
+    public bool IsHealthy { get; set; } = true;
+    public List&lt;NotificationMessage&gt; DeliveredMessages { get; } = new();
+
+    public MockNotificationProvider(NotificationChannel channel, string name)
+    {
+        Channel = channel;
+        Name = name;
+    }
+
+    public Task&lt;bool&gt; SendAsync(NotificationMessage message)
+    {
+        if (!IsHealthy)
+        {
+            return Task.FromResult(false);
+        }
+        DeliveredMessages.Add(message);
+        return Task.FromResult(true);
+    }
+}
+
+public class UserNotificationPreferences
+{
+    public string UserId { get; set; } = string.Empty;
+    public HashSet&lt;NotificationChannel&gt; OptedOutChannels { get; } = new();
+}
+
+public class NotificationRateLimiter
+{
+    private readonly Dictionary&lt;string, List&lt;DateTime&gt;&gt; _userChannelTimestamps = new();
+    private readonly object _lock = new();
+
+    public bool Allow(string userId, NotificationChannel channel, int maxPerWindow, TimeSpan window)
+    {
+        lock (_lock)
+        {
+            string key = $&quot;{userId}:{channel}&quot;;
+            var now = DateTime.UtcNow;
+            if (!_userChannelTimestamps.TryGetValue(key, out var timestamps))
+            {
+                timestamps = new List&lt;DateTime&gt;();
+                _userChannelTimestamps[key] = timestamps;
+            }
+
+            // Purge expired entries
+            timestamps.RemoveAll(t =&gt; now - t &gt; window);
+
+            if (timestamps.Count &gt;= maxPerWindow)
+            {
+                return false;
+            }
+
+            timestamps.Add(now);
+            return true;
+        }
+    }
+}
+
+public class NotificationDispatcher
+{
+    private readonly List&lt;INotificationProvider&gt; _providers;
+    private readonly Dictionary&lt;string, UserNotificationPreferences&gt; _preferences = new();
+    private readonly NotificationRateLimiter _rateLimiter;
+    private readonly HashSet&lt;string&gt; _seenIdempotencyKeys = new();
+    private readonly PriorityQueue&lt;NotificationMessage, int&gt; _priorityQueue = new();
+    private readonly object _lock = new();
+
+    public NotificationDispatcher(IEnumerable&lt;INotificationProvider&gt; providers, NotificationRateLimiter? rateLimiter = null)
+    {
+        _providers = providers.ToList();
+        _rateLimiter = rateLimiter ?? new NotificationRateLimiter();
+    }
+
+    public void SetUserPreferences(string userId, IEnumerable&lt;NotificationChannel&gt; optOuts)
+    {
+        lock (_lock)
+        {
+            var pref = new UserNotificationPreferences { UserId = userId };
+            foreach (var ch in optOuts)
+            {
+                pref.OptedOutChannels.Add(ch);
+            }
+            _preferences[userId] = pref;
+        }
+    }
+
+    public void Enqueue(NotificationMessage message)
+    {
+        lock (_lock)
+        {
+            _priorityQueue.Enqueue(message, (int)message.Priority);
+        }
+    }
+
+    public int PendingQueueCount
+    {
+        get
+        {
+            lock (_lock) return _priorityQueue.Count;
+        }
+    }
+
+    public async Task&lt;NotificationResult&gt; DispatchNextAsync()
+    {
+        NotificationMessage message;
+        lock (_lock)
+        {
+            if (_priorityQueue.Count == 0)
+            {
+                return new NotificationResult(false, string.Empty, string.Empty, null, &quot;Queue is empty&quot;);
+            }
+            message = _priorityQueue.Dequeue();
+        }
+
+        return await ProcessMessageAsync(message);
+    }
+
+    public async Task&lt;NotificationResult&gt; ProcessMessageAsync(NotificationMessage message)
+    {
+        // 1. Idempotency Check
+        if (!string.IsNullOrEmpty(message.IdempotencyKey))
+        {
+            lock (_lock)
+            {
+                if (!_seenIdempotencyKeys.Add(message.IdempotencyKey))
+                {
+                    return new NotificationResult(true, message.MessageId, message.Channel.ToString(), null, &quot;Deduplicated idempotent request&quot;);
+                }
+            }
+        }
+
+        // 2. User Preferences (Opt-out)
+        lock (_lock)
+        {
+            if (_preferences.TryGetValue(message.UserId, out var pref) &amp;&amp; pref.OptedOutChannels.Contains(message.Channel))
+            {
+                return new NotificationResult(false, message.MessageId, message.Channel.ToString(), null, &quot;User opted out of this channel&quot;);
+            }
+        }
+
+        // 3. Rate Limiting (e.g. Max 5 SMS per 1 minute in tests)
+        if (message.Channel == NotificationChannel.Sms)
+        {
+            if (!_rateLimiter.Allow(message.UserId, message.Channel, maxPerWindow: 5, window: TimeSpan.FromMinutes(1)))
+            {
+                return new NotificationResult(false, message.MessageId, message.Channel.ToString(), null, &quot;Rate limit exceeded for channel&quot;);
+            }
+        }
+
+        // 4. Provider Selection &amp; Fallback
+        var eligibleProviders = _providers.Where(p =&gt; p.Channel == message.Channel).ToList();
+        if (eligibleProviders.Count == 0)
+        {
+            return new NotificationResult(false, message.MessageId, message.Channel.ToString(), null, &quot;No providers registered for channel&quot;);
+        }
+
+        foreach (var provider in eligibleProviders)
+        {
+            try
+            {
+                bool success = await provider.SendAsync(message);
+                if (success)
+                {
+                    return new NotificationResult(true, message.MessageId, message.Channel.ToString(), provider.Name);
+                }
+            }
+            catch
+            {
+                // Fall through to secondary provider
+            }
+        }
+
+        return new NotificationResult(false, message.MessageId, message.Channel.ToString(), null, &quot;All providers failed or unavailable&quot;);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day36.NotificationService/SubsetsSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd36-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d36-src-code-1" class="language-csharp">namespace Day36.NotificationService;
+
+public static class SubsetsSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #78: Subsets (Medium) via Backtracking.
+    /// Time Complexity: O(N * 2^N), Space Complexity: O(N) recursion stack.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; Subsets(int[] nums)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (nums == null) return result;
+
+        var current = new List&lt;int&gt;();
+        BacktrackSubsets(nums, 0, current, result);
+        return result;
+    }
+
+    private static void BacktrackSubsets(int[] nums, int start, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        result.Add(new List&lt;int&gt;(current));
+
+        for (int i = start; i &lt; nums.Length; i++)
+        {
+            current.Add(nums[i]);
+            BacktrackSubsets(nums, i + 1, current, result);
+            current.RemoveAt(current.Count - 1);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #78: Subsets (Medium) via Bit Manipulation.
+    /// Iterates through 2^N binary bitmasks.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; SubsetsBitmask(int[] nums)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (nums == null) return result;
+
+        int n = nums.Length;
+        int totalSubsets = 1 &lt;&lt; n; // 2^n
+
+        for (int mask = 0; mask &lt; totalSubsets; mask++)
+        {
+            var subset = new List&lt;int&gt;();
+            for (int i = 0; i &lt; n; i++)
+            {
+                if ((mask &amp; (1 &lt;&lt; i)) != 0)
+                {
+                    subset.Add(nums[i]);
+                }
+            }
+            result.Add(subset);
+        }
+
+        return result;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #90: Subsets II (Medium) - contains duplicates.
+    /// Sorts input and skips duplicate elements at the same tree depth.
+    /// Time Complexity: O(N * 2^N), Space Complexity: O(N).
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; SubsetsWithDup(int[] nums)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (nums == null) return result;
+
+        Array.Sort(nums);
+        var current = new List&lt;int&gt;();
+        BacktrackSubsetsWithDup(nums, 0, current, result);
+        return result;
+    }
+
+    private static void BacktrackSubsetsWithDup(int[] nums, int start, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        result.Add(new List&lt;int&gt;(current));
+
+        for (int i = start; i &lt; nums.Length; i++)
+        {
+            // Skip duplicate sibling branches
+            if (i &gt; start &amp;&amp; nums[i] == nums[i - 1])
+            {
+                continue;
+            }
+
+            current.Add(nums[i]);
+            BacktrackSubsetsWithDup(nums, i + 1, current, result);
+            current.RemoveAt(current.Count - 1);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day36.NotificationService.Tests/Day36Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd36-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d36-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day36.NotificationService.Tests;
+
+public class Day36Tests
+{
+    [Fact]
+    public async Task NotificationDispatcher_PriorityQueue_DispatchesHighBeforeLowPriority()
+    {
+        var emailProvider = new MockNotificationProvider(NotificationChannel.Email, &quot;SendGrid&quot;);
+        var dispatcher = new NotificationDispatcher([emailProvider]);
+
+        var lowMsg = new NotificationMessage(&quot;msg-low&quot;, &quot;u1&quot;, NotificationChannel.Email, NotificationPriority.Low, &quot;u1@test.com&quot;, &quot;Newsletter&quot;, &quot;body&quot;, DateTime.UtcNow);
+        var highMsg = new NotificationMessage(&quot;msg-high&quot;, &quot;u2&quot;, NotificationChannel.Email, NotificationPriority.High, &quot;u2@test.com&quot;, &quot;Security Alert&quot;, &quot;body&quot;, DateTime.UtcNow);
+        var normMsg = new NotificationMessage(&quot;msg-norm&quot;, &quot;u3&quot;, NotificationChannel.Email, NotificationPriority.Normal, &quot;u3@test.com&quot;, &quot;Invoice&quot;, &quot;body&quot;, DateTime.UtcNow);
+
+        dispatcher.Enqueue(lowMsg);
+        dispatcher.Enqueue(highMsg);
+        dispatcher.Enqueue(normMsg);
+
+        Assert.Equal(3, dispatcher.PendingQueueCount);
+
+        var first = await dispatcher.DispatchNextAsync();
+        var second = await dispatcher.DispatchNextAsync();
+        var third = await dispatcher.DispatchNextAsync();
+
+        Assert.Equal(&quot;msg-high&quot;, first.MessageId);
+        Assert.Equal(&quot;msg-norm&quot;, second.MessageId);
+        Assert.Equal(&quot;msg-low&quot;, third.MessageId);
+    }
+
+    [Fact]
+    public async Task NotificationDispatcher_ProviderFailover_SwitchesToSecondaryWhenPrimaryFails()
+    {
+        var primarySms = new MockNotificationProvider(NotificationChannel.Sms, &quot;Twilio&quot;) { IsHealthy = false };
+        var secondarySms = new MockNotificationProvider(NotificationChannel.Sms, &quot;AwsSns&quot;) { IsHealthy = true };
+        var dispatcher = new NotificationDispatcher([primarySms, secondarySms]);
+
+        var msg = new NotificationMessage(&quot;sms-100&quot;, &quot;u1&quot;, NotificationChannel.Sms, NotificationPriority.High, &quot;+15550001&quot;, &quot;OTP&quot;, &quot;123456&quot;, DateTime.UtcNow);
+
+        var result = await dispatcher.ProcessMessageAsync(msg);
+
+        Assert.True(result.Success);
+        Assert.Equal(&quot;AwsSns&quot;, result.ProviderName);
+        Assert.Empty(primarySms.DeliveredMessages);
+        Assert.Single(secondarySms.DeliveredMessages);
+    }
+
+    [Fact]
+    public async Task NotificationDispatcher_UserPreferences_BlocksOptedOutChannel()
+    {
+        var emailProvider = new MockNotificationProvider(NotificationChannel.Email, &quot;SendGrid&quot;);
+        var dispatcher = new NotificationDispatcher([emailProvider]);
+
+        dispatcher.SetUserPreferences(&quot;user-opt-out&quot;, [NotificationChannel.Email]);
+
+        var msg = new NotificationMessage(&quot;msg-opt&quot;, &quot;user-opt-out&quot;, NotificationChannel.Email, NotificationPriority.Normal, &quot;opt@test.com&quot;, &quot;Promo&quot;, &quot;50% off&quot;, DateTime.UtcNow);
+        var result = await dispatcher.ProcessMessageAsync(msg);
+
+        Assert.False(result.Success);
+        Assert.Contains(&quot;opted out&quot;, result.ErrorReason);
+        Assert.Empty(emailProvider.DeliveredMessages);
+    }
+
+    [Fact]
+    public async Task NotificationDispatcher_RateLimiter_RejectsExcessRequestsInWindow()
+    {
+        var smsProvider = new MockNotificationProvider(NotificationChannel.Sms, &quot;Twilio&quot;);
+        var dispatcher = new NotificationDispatcher([smsProvider]);
+
+        string userId = &quot;rate-limited-user&quot;;
+
+        // Max is 5 SMS per minute
+        for (int i = 0; i &lt; 5; i++)
+        {
+            var msg = new NotificationMessage($&quot;sms-{i}&quot;, userId, NotificationChannel.Sms, NotificationPriority.Normal, &quot;+15559999&quot;, &quot;Alert&quot;, &quot;text&quot;, DateTime.UtcNow);
+            var res = await dispatcher.ProcessMessageAsync(msg);
+            Assert.True(res.Success);
+        }
+
+        // 6th message should be throttled
+        var blockedMsg = new NotificationMessage(&quot;sms-overflow&quot;, userId, NotificationChannel.Sms, NotificationPriority.Normal, &quot;+15559999&quot;, &quot;Alert&quot;, &quot;text&quot;, DateTime.UtcNow);
+        var blockedRes = await dispatcher.ProcessMessageAsync(blockedMsg);
+
+        Assert.False(blockedRes.Success);
+        Assert.Contains(&quot;Rate limit exceeded&quot;, blockedRes.ErrorReason);
+    }
+
+    [Fact]
+    public async Task NotificationDispatcher_Idempotency_DeduplicatesDuplicateKey()
+    {
+        var pushProvider = new MockNotificationProvider(NotificationChannel.Push, &quot;FirebaseFCM&quot;);
+        var dispatcher = new NotificationDispatcher([pushProvider]);
+
+        var msg1 = new NotificationMessage(&quot;msg-1&quot;, &quot;u1&quot;, NotificationChannel.Push, NotificationPriority.High, &quot;dev-token-1&quot;, &quot;Title&quot;, &quot;Body&quot;, DateTime.UtcNow, IdempotencyKey: &quot;idem-key-99&quot;);
+        var msg2 = new NotificationMessage(&quot;msg-2&quot;, &quot;u1&quot;, NotificationChannel.Push, NotificationPriority.High, &quot;dev-token-1&quot;, &quot;Title&quot;, &quot;Body&quot;, DateTime.UtcNow, IdempotencyKey: &quot;idem-key-99&quot;);
+
+        var res1 = await dispatcher.ProcessMessageAsync(msg1);
+        var res2 = await dispatcher.ProcessMessageAsync(msg2);
+
+        Assert.True(res1.Success);
+        Assert.True(res2.Success);
+        Assert.Contains(&quot;Deduplicated&quot;, res2.ErrorReason);
+        Assert.Single(pushProvider.DeliveredMessages);
+    }
+
+    [Fact]
+    public void Subsets_UniqueElements_ReturnsAllPowerSetElements()
+    {
+        int[] nums = [1, 2, 3];
+        var subsets = SubsetsSolver.Subsets(nums);
+
+        // 2^3 = 8 subsets
+        Assert.Equal(8, subsets.Count);
+        Assert.Contains(subsets, s =&gt; s.Count == 0);
+        Assert.Contains(subsets, s =&gt; s.SequenceEqual([1, 2, 3]));
+        Assert.Contains(subsets, s =&gt; s.SequenceEqual([1]));
+        Assert.Contains(subsets, s =&gt; s.SequenceEqual([2, 3]));
+    }
+
+    [Fact]
+    public void Subsets_Bitmask_MatchesBacktrackingResult()
+    {
+        int[] nums = [4, 5, 6];
+        var bt = SubsetsSolver.Subsets(nums);
+        var bm = SubsetsSolver.SubsetsBitmask(nums);
+
+        Assert.Equal(bt.Count, bm.Count);
+        Assert.Equal(8, bm.Count);
+    }
+
+    [Fact]
+    public void Subsets_EmptyArray_ReturnsSingleEmptySubset()
+    {
+        int[] nums = [];
+        var subsets = SubsetsSolver.Subsets(nums);
+
+        Assert.Single(subsets);
+        Assert.Empty(subsets[0]);
+    }
+
+    [Fact]
+    public void SubsetsWithDup_ArrayWithDuplicates_GeneratesNoDuplicateSubsets()
+    {
+        int[] nums = [1, 2, 2];
+        var subsets = SubsetsSolver.SubsetsWithDup(nums);
+
+        // Subsets of [1,2,2]: [], [1], [1,2], [1,2,2], [2], [2,2] -&gt; Total 6
+        Assert.Equal(6, subsets.Count);
+
+        // Verify uniqueness
+        var stringified = subsets.Select(s =&gt; string.Join(&quot;,&quot;, s)).ToList();
+        Assert.Equal(stringified.Distinct().Count(), subsets.Count);
+    }
+
+    [Fact]
+    public void SubsetsWithDup_AllIdenticalElements_ReturnsCorrectSubsets()
+    {
+        int[] nums = [2, 2, 2, 2];
+        var subsets = SubsetsSolver.SubsetsWithDup(nums);
+
+        // Lengths 0, 1, 2, 3, 4 -&gt; Exactly 5 subsets
+        Assert.Equal(5, subsets.Count);
+        for (int len = 0; len &lt;= 4; len++)
+        {
+            Assert.Contains(subsets, s =&gt; s.Count == len &amp;&amp; s.All(x =&gt; x == 2));
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: Notification Service Architecture</h1>
+<h2>1. High-Scale Notification Pipeline Design</h2>
+<ul>
+<li><strong>Scale Requirements</strong>:</li>
+<li>10M daily active users $\times$ 10 notifications/day = 100M notifications/day.</li>
+<li>Average load: $\approx 1,160$ messages/sec; Peak load: $15,000$ messages/sec (e.g. Flash sales, Breaking news).</li>
+<li><strong>Decoupled Architecture</strong>:</li>
+<li>Ingress API: Validates payload, verifies idempotency key, pushes message to Kafka/RabbitMQ.</li>
+<li>Workers: Consume by channel and priority. For example, <code>sms-high-priority</code> topic has dedicated worker pools with strict SLAs (< 5s for OTPs), while <code>email-marketing-low</code> has rate-controlled worker pools to avoid blacklisting.</li>
+<li><strong>Circuit Breakers & Vendor Fallbacks</strong>:</li>
+<li>External vendors (Twilio, SendGrid, APNs, FCM) have fluctuating error rates and rate limits.</li>
+<li>Wrap provider calls in Polly Circuit Breakers. If Twilio error rate exceeds 15% in a 30s window, trip the breaker and divert traffic to AWS SNS or Infobip automatically.</li>
+</ul>
+<h2>2. Throttling & User Preferences</h2>
+<ul>
+<li><strong>Sliding-Window Rate Limiting</strong>:</li>
+<li>Redis Sorted Sets (<code>ZADD timestamp, ZREMRANGEBYSCORE 0 now - window, ZCARD</code>) allow sliding-window rate limiting per <code>(user_id, channel)</code>.</li>
+<li>Enforces quiet hours (e.g. 10 PM – 8 AM in recipient's local timezone) by deferring non-urgent messages until morning.</li>
+<li><strong>Preference Storage</strong>:</li>
+<li>Cassandra or DynamoDB with primary key <code>(user_id)</code> and a bitmask/JSON column of channel opt-outs (<code>sms: false, email: true, push: true</code>). Read-heavy cached in Redis.</li>
+</ul>
+<h2>3. LeetCode #78 & #90 (Subsets) Backtracking Mechanics</h2>
+<ul>
+<li>The recursion tree for subsets forms a state-space tree where each decision point represents including or excluding an element.</li>
+<li>For Subsets II (with duplicates):</li>
+<li>Sorting brings duplicate numbers adjacent: e.g. <code>[1, 2, 2]</code>.</li>
+<li>Sibling branches represent choices at the <strong>same recursion level</strong> (<code>i &gt; start</code>). If <code>nums[i] == nums[i - 1]</code>, choosing <code>nums[i]</code> would generate the identical subtree already explored by <code>nums[i - 1]</code>.</li>
+<li>Skipping <code>nums[i]</code> when <code>i &gt; start</code> prunes duplicate branches cleanly in $O(1)$ without allocating secondary sets.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 36: System Design: Notification Service</h1>
+<h2>Architectural Overview</h2>
+<p>A large-scale notification system must deliver billions of notifications across multiple delivery channels (Email, SMS, Mobile Push, In-App WebSockets) with strict latency guarantees, priority isolation, and abuse protections.</p>
+<p>This module implements a resilient notification dispatch engine in .NET 8 featuring:</p>
+<ul>
+<li><strong>Priority-Based Dispatch Queues</strong>: Separate prioritized scheduling (<code>High</code> for OTPs/Security alerts, <code>Normal</code> for transactional receipts, <code>Low</code> for marketing/digests). High-priority items always preempt low-priority items.</li>
+<li><strong>Provider Abstraction & Automated Failover</strong>: Interface <code>INotificationProvider</code> with multi-vendor redundancy (e.g., Primary Twilio -> Secondary AWS SNS fallback on circuit degradation).</li>
+<li><strong>Per-User Rate Limiting & Throttling</strong>: Sliding window rate limiter preventing user notification fatigue and provider API overage (e.g. max 5 SMS/min).</li>
+<li><strong>User Preference & Opt-Out Matrix</strong>: Fine-grained subscription settings honoring user preferences per channel.</li>
+<li><strong>Idempotent Deduplication</strong>: Cache-backed idempotency key verification preventing duplicate charges or duplicate SMS delivery during network retries.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Incoming Notification Request
+               │
+               ▼
+     ┌───────────────────┐
+     │ Idempotency Check │ ──(Duplicate)──&gt; Return Cached / Deduplicated
+     └─────────┬─────────┘
+               │ (New)
+               ▼
+     ┌───────────────────┐
+     │ User Preferences  │ ──(Opted Out)──&gt; Reject (Opted Out)
+     └─────────┬─────────┘
+               │ (Subscribed)
+               ▼
+     ┌───────────────────┐
+     │   Rate Limiter    │ ──(Exceeded)───&gt; Reject (Throttled)
+     └─────────┬─────────┘
+               │ (Under limit)
+               ▼
+     ┌───────────────────┐
+     │  Priority Queue   │
+     │ High &gt; Norm &gt; Low │
+     └─────────┬─────────┘
+               │
+      Dispatch to Provider
+               │
+       ┌───────┴───────┐
+       ▼               ▼
+[Primary Provider] ──(Fails)──&gt; [Secondary Fallback Provider]
+ (Twilio / FCM)                  (AWS SNS / APNS)</code></pre></div>
+<hr/>
+<h2>LeetCode #78 & #90: Subsets I & II (Medium)</h2>
+<ul>
+<li><strong>LeetCode #78 (Subsets)</strong>:</li>
+<li>Generate power set of size $2^N$ for unique elements.</li>
+<li>Implemented via Backtracking (DFS tree exploration) and Bit Manipulation ($2^N$ binary bitmasks).</li>
+<li><strong>LeetCode #90 (Subsets II)</strong>:</li>
+<li>Generate power set when array contains duplicate elements.</li>
+<li>Sorts input and skips duplicate sibling branches:</li>
+</ul>
+<p><code>if (i &gt; start &amp;&amp; nums[i] == nums[i - 1]) continue;</code></p>
+<ul>
+<li>Guarantees $100\%$ unique subset generation without post-processing HashSet allocations.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day36-SystemDesign-Notification-Service/tests/Day36.NotificationService.Tests/Day36.NotificationService.Tests.csproj</code></pre></div>
+<p>10 unit tests validate priority queue ordering, automated provider failover, user opt-out enforcement, sliding-window rate limiting, idempotency deduplication, and power set generation.</p>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do you design a notification system capable of handling 100 million notifications per day with peak bursts?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Asynchronous Ingestion API</strong>: A stateless, highly-scalable API gateway receives notification requests, writes to an in-memory Redis deduplication store, and enqueues tasks into partitioned message queues (Kafka or RabbitMQ).</li>
+<li><strong>Topic Partitioning by Channel & Priority</strong>: Separate message queues by delivery speed requirements (<code>sms-critical</code>, <code>push-critical</code>, <code>email-bulk</code>). Critical queues (OTPs, password resets) have dedicated auto-scaled worker pools with unshared provider capacity.</li>
+<li><strong>Worker Fleet</strong>: Workers consume messages, verify user preferences from a read-through Redis cache, evaluate rate limit token buckets, and call downstream external providers (Twilio, SendGrid, FCM, APNs) using connection pooling and HTTP keep-alive.</li>
+<li><strong>Dead-Letter Queues (DLQ)</strong>: Failed deliveries after exponential retries are deposited into a DLQ for operational triage and alert auditing.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How do you ensure high-priority notifications (OTPs) are delivered within 5 seconds even when millions of marketing notifications are queued?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Never mix operational priority levels in the same FIFO message queue.</p>
+<ul>
+<li>Use <strong>Priority-Isolated Queuing</strong>: Maintain physically or logically separate queues for <code>High</code> (OTP, 2FA, fraud alerts), <code>Normal</code> (order confirmations, delivery tracking), and <code>Low</code> (marketing newsletters, weekly digests).</li>
+<li>Dedicated worker capacity: Dedicate 70% of worker threads/pods strictly to the <code>High</code> priority queue. If the <code>Low</code> queue experiences a massive backlog (e.g., 5 million marketing emails), it only impacts the <code>Low</code> workers; the <code>High</code> queue remains virtually empty and processed in sub-second latency.</li>
+<li>Provider prioritization: Reserve separate sub-accounts or dedicated outbound IP pools with vendors (e.g. Twilio High-Throughput Short Codes) exclusively for transactional traffic to prevent marketing email reputation degradation or rate limits from throttling OTPs.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you implement rate limiting per user per channel (e.g. max 3 SMS per hour) at scale?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Use a <strong>Distributed Sliding Window</strong> in Redis using Sorted Sets (<code>ZSET</code>):</p>
+<ul>
+<li>Key: <code>ratelimit:sms:{userId}</code></li>
+<li>When an SMS request arrives at time $T$:</li>
+</ul>
+<ol>
+<li><code>ZREMRANGEBYSCORE key 0 (T - 3600)</code> (remove timestamps older than 1 hour).</li>
+<li><code>ZCARD key</code> (count remaining timestamps in the 1-hour window).</li>
+<li>If count $\ge 3$, reject with "Rate limit exceeded".</li>
+<li>Else, <code>ZADD key T T</code> and <code>EXPIRE key 3600</code>. Allow execution.</li>
+</ol>
+<ul>
+<li>Executed via an atomic Redis Lua script to prevent race conditions across parallel worker nodes.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How do you handle third-party notification provider outages (e.g., Twilio outage)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Provider Abstraction</strong>: Define a generic <code>INotificationProvider</code> interface so application logic is completely decoupled from provider SDKs.</li>
+<li><strong>Circuit Breakers (Polly in .NET)</strong>: Track failure rates and timeout percentages. If Twilio returns HTTP 5xx or times out on > 20% of calls over 30 seconds, trip the breaker to <code>Open</code> state.</li>
+<li><strong>Automated Secondary Failover</strong>: When the primary circuit opens or throws an exception, dynamically re-route traffic to secondary providers (e.g. AWS SNS, Sinch, Infobip).</li>
+<li><strong>Health Checking & Canary Probing</strong>: The circuit transitions to <code>Half-Open</code> after 60 seconds, sending test canary probes to verify primary recovery before switching traffic back.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you prevent duplicate notification delivery when clients retry failed requests?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Idempotency Keys</strong>: Require an <code>Idempotency-Key</code> (e.g., derived from <code>eventId</code> or <code>orderId + action</code>).</li>
+<li><strong>Atomic Lock / Cache</strong>: Before processing, the worker attempts an atomic <code>SET key:notification:{idempotencyKey} &quot;PROCESSING&quot; EX 300 NX</code> in Redis.</li>
+</ol>
+<ul>
+<li>If key already exists, return immediate cached success without re-sending.</li>
+</ul>
+<ol>
+<li><strong>Provider-Level Idempotency</strong>: Forward the idempotency key to downstream providers that support it (e.g. Stripe, SendGrid, FCM message IDs) so that even if the internal worker crashes mid-network transmission, the vendor will not dispatch two duplicate physical SMS/emails.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you store and enforce user notification preferences and &quot;Do Not Disturb&quot; (quiet hours)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>Store user preferences in a primary NoSQL database (DynamoDB/Cassandra) with high read availability, cached in Redis:</li>
+</ul>
+<div class="code-block-container"><pre class="language-json"><code class="language-json">  {
+    &quot;userId&quot;: &quot;usr_99&quot;,
+    &quot;optedOut&quot;: [&quot;marketing_email&quot;, &quot;promotional_sms&quot;],
+    &quot;quietHours&quot;: { &quot;start&quot;: &quot;22:00&quot;, &quot;end&quot;: &quot;08:00&quot;, &quot;timezone&quot;: &quot;America/New_York&quot; }
+  }</code></pre></div>
+<ul>
+<li>Before queuing or dispatching non-critical notifications, convert the current UTC time to the user's localized timezone.</li>
+<li>If current time falls within <code>quietHours</code>, delay message delivery by calculating seconds until 08:00 AM and enqueueing into a delayed/scheduled queue (e.g., RabbitMQ dead-letter exchange with TTL or Redis Sorted Set schedule).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What telemetry and metrics should be monitored on a notification service?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Ingestion Rate vs Delivery Rate</strong>: Graphing messages queued vs messages acknowledged by vendors.</li>
+<li><strong>Queue Lag / Backlog Depth</strong>: Monitored per channel and priority; triggers alerts if <code>sms-critical</code> lag > 100 messages.</li>
+<li><strong>Provider Latency & Error Rate</strong>: P95/P99 latency of Twilio, SendGrid, APNs, and FCM HTTP endpoints.</li>
+<li><strong>Delivery Receipt (DLR) Conversion</strong>: Percentage of messages marked "Delivered" by mobile carriers via incoming webhooks.</li>
+<li><strong>Bounce & Complaint Rates</strong>: Hard bounces and spam reports on email channels to maintain domain reputation (SPF/DKIM/DMARC).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">In LeetCode #78 (Subsets), what is the difference in time and space complexity between Backtracking and Bit Manipulation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>Both algorithms have a time complexity of $O(N \times 2^N)$ because there are $2^N$ total subsets, and copying each subset of average length $N/2$ into the final result requires $O(N)$ work.</li>
+<li><strong>Backtracking</strong>:</li>
+<li>Recursion tree depth is $N$. Space complexity is $O(N)$ for the recursion stack and temporary subset list.</li>
+<li>Generates subsets in lexicographical prefix order.</li>
+<li><strong>Bit Manipulation</strong>:</li>
+<li>Loops from $0$ to $2^N - 1$. Iterative with $O(1)$ auxiliary memory (ignoring the output list).</li>
+<li>Elegant and avoids recursion overhead, but limited to $N \le 64$ due to integer bit width.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #90 (Subsets II), why does sorting the array and checking `if (i &gt; start &amp;&amp; nums[i] == nums[i - 1]) continue;` eliminate duplicate subsets?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>When generating subsets from an array with duplicates (e.g. <code>[1, 2, 2]</code>), duplicate subsets occur when the same value is selected at the same decision depth across different branches.</li>
+<li>Sorting guarantees all duplicate numbers are placed contiguously.</li>
+<li>In the loop <code>for (int i = start; i &lt; nums.Length; i++)</code>:</li>
+<li>When $i = \text{start}$, we are exploring the <em>first</em> available instance of this number at this recursion level.</li>
+<li>When $i > \text{start}$ and $\text{nums}[i] == \text{nums}[i - 1]$, we are considering a <em>sibling</em> branch at the exact same tree level that has the same value.</li>
+<li>Pruning sibling duplicates skips generating identical subtrees without needing an expensive <code>HashSet</code> of lists.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you handle mobile push notification token invalidation (Apple APNs / Google FCM)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Mobile push tokens expire when users uninstall the app, switch devices, or wipe data.</p>
+<ol>
+<li>When calling APNs/FCM, the vendor returns specific error codes: APNs <code>BadDeviceToken</code> (410 Gone) or FCM <code>UNREGISTERED</code> / <code>INVALID_ARGUMENT</code>.</li>
+<li>The notification worker intercepts these specific HTTP response codes.</li>
+<li>The worker asynchronously emits a <code>DeviceTokenInvalidatedEvent</code> to an internal queue.</li>
+<li>An account service updates the device registry database, marking the token inactive/deleted so subsequent notifications are not sent, saving bandwidth and preventing provider penalty rate limiting.</li>
+</ol>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day36.NotificationService/NotificationEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd36-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d36-src-code-0" class="language-csharp">namespace Day36.NotificationService;
+
+public enum NotificationChannel
+{
+    Email,
+    Sms,
+    Push,
+    InApp
+}
+
+public enum NotificationPriority
+{
+    High = 0,
+    Normal = 1,
+    Low = 2
+}
+
+public record NotificationMessage(
+    string MessageId,
+    string UserId,
+    NotificationChannel Channel,
+    NotificationPriority Priority,
+    string Recipient,
+    string Title,
+    string Body,
+    DateTime CreatedAtUtc,
+    string? IdempotencyKey = null
+);
+
+public record NotificationResult(
+    bool Success,
+    string MessageId,
+    string Channel,
+    string? ProviderName,
+    string? ErrorReason = null
+);
+
+public interface INotificationProvider
+{
+    NotificationChannel Channel { get; }
+    string Name { get; }
+    bool IsHealthy { get; set; }
+    Task&lt;bool&gt; SendAsync(NotificationMessage message);
+}
+
+public class MockNotificationProvider : INotificationProvider
+{
+    public NotificationChannel Channel { get; }
+    public string Name { get; }
+    public bool IsHealthy { get; set; } = true;
+    public List&lt;NotificationMessage&gt; DeliveredMessages { get; } = new();
+
+    public MockNotificationProvider(NotificationChannel channel, string name)
+    {
+        Channel = channel;
+        Name = name;
+    }
+
+    public Task&lt;bool&gt; SendAsync(NotificationMessage message)
+    {
+        if (!IsHealthy)
+        {
+            return Task.FromResult(false);
+        }
+        DeliveredMessages.Add(message);
+        return Task.FromResult(true);
+    }
+}
+
+public class UserNotificationPreferences
+{
+    public string UserId { get; set; } = string.Empty;
+    public HashSet&lt;NotificationChannel&gt; OptedOutChannels { get; } = new();
+}
+
+public class NotificationRateLimiter
+{
+    private readonly Dictionary&lt;string, List&lt;DateTime&gt;&gt; _userChannelTimestamps = new();
+    private readonly object _lock = new();
+
+    public bool Allow(string userId, NotificationChannel channel, int maxPerWindow, TimeSpan window)
+    {
+        lock (_lock)
+        {
+            string key = $&quot;{userId}:{channel}&quot;;
+            var now = DateTime.UtcNow;
+            if (!_userChannelTimestamps.TryGetValue(key, out var timestamps))
+            {
+                timestamps = new List&lt;DateTime&gt;();
+                _userChannelTimestamps[key] = timestamps;
+            }
+
+            // Purge expired entries
+            timestamps.RemoveAll(t =&gt; now - t &gt; window);
+
+            if (timestamps.Count &gt;= maxPerWindow)
+            {
+                return false;
+            }
+
+            timestamps.Add(now);
+            return true;
+        }
+    }
+}
+
+public class NotificationDispatcher
+{
+    private readonly List&lt;INotificationProvider&gt; _providers;
+    private readonly Dictionary&lt;string, UserNotificationPreferences&gt; _preferences = new();
+    private readonly NotificationRateLimiter _rateLimiter;
+    private readonly HashSet&lt;string&gt; _seenIdempotencyKeys = new();
+    private readonly PriorityQueue&lt;NotificationMessage, int&gt; _priorityQueue = new();
+    private readonly object _lock = new();
+
+    public NotificationDispatcher(IEnumerable&lt;INotificationProvider&gt; providers, NotificationRateLimiter? rateLimiter = null)
+    {
+        _providers = providers.ToList();
+        _rateLimiter = rateLimiter ?? new NotificationRateLimiter();
+    }
+
+    public void SetUserPreferences(string userId, IEnumerable&lt;NotificationChannel&gt; optOuts)
+    {
+        lock (_lock)
+        {
+            var pref = new UserNotificationPreferences { UserId = userId };
+            foreach (var ch in optOuts)
+            {
+                pref.OptedOutChannels.Add(ch);
+            }
+            _preferences[userId] = pref;
+        }
+    }
+
+    public void Enqueue(NotificationMessage message)
+    {
+        lock (_lock)
+        {
+            _priorityQueue.Enqueue(message, (int)message.Priority);
+        }
+    }
+
+    public int PendingQueueCount
+    {
+        get
+        {
+            lock (_lock) return _priorityQueue.Count;
+        }
+    }
+
+    public async Task&lt;NotificationResult&gt; DispatchNextAsync()
+    {
+        NotificationMessage message;
+        lock (_lock)
+        {
+            if (_priorityQueue.Count == 0)
+            {
+                return new NotificationResult(false, string.Empty, string.Empty, null, &quot;Queue is empty&quot;);
+            }
+            message = _priorityQueue.Dequeue();
+        }
+
+        return await ProcessMessageAsync(message);
+    }
+
+    public async Task&lt;NotificationResult&gt; ProcessMessageAsync(NotificationMessage message)
+    {
+        // 1. Idempotency Check
+        if (!string.IsNullOrEmpty(message.IdempotencyKey))
+        {
+            lock (_lock)
+            {
+                if (!_seenIdempotencyKeys.Add(message.IdempotencyKey))
+                {
+                    return new NotificationResult(true, message.MessageId, message.Channel.ToString(), null, &quot;Deduplicated idempotent request&quot;);
+                }
+            }
+        }
+
+        // 2. User Preferences (Opt-out)
+        lock (_lock)
+        {
+            if (_preferences.TryGetValue(message.UserId, out var pref) &amp;&amp; pref.OptedOutChannels.Contains(message.Channel))
+            {
+                return new NotificationResult(false, message.MessageId, message.Channel.ToString(), null, &quot;User opted out of this channel&quot;);
+            }
+        }
+
+        // 3. Rate Limiting (e.g. Max 5 SMS per 1 minute in tests)
+        if (message.Channel == NotificationChannel.Sms)
+        {
+            if (!_rateLimiter.Allow(message.UserId, message.Channel, maxPerWindow: 5, window: TimeSpan.FromMinutes(1)))
+            {
+                return new NotificationResult(false, message.MessageId, message.Channel.ToString(), null, &quot;Rate limit exceeded for channel&quot;);
+            }
+        }
+
+        // 4. Provider Selection &amp; Fallback
+        var eligibleProviders = _providers.Where(p =&gt; p.Channel == message.Channel).ToList();
+        if (eligibleProviders.Count == 0)
+        {
+            return new NotificationResult(false, message.MessageId, message.Channel.ToString(), null, &quot;No providers registered for channel&quot;);
+        }
+
+        foreach (var provider in eligibleProviders)
+        {
+            try
+            {
+                bool success = await provider.SendAsync(message);
+                if (success)
+                {
+                    return new NotificationResult(true, message.MessageId, message.Channel.ToString(), provider.Name);
+                }
+            }
+            catch
+            {
+                // Fall through to secondary provider
+            }
+        }
+
+        return new NotificationResult(false, message.MessageId, message.Channel.ToString(), null, &quot;All providers failed or unavailable&quot;);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day36.NotificationService/SubsetsSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd36-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d36-src-code-1" class="language-csharp">namespace Day36.NotificationService;
+
+public static class SubsetsSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #78: Subsets (Medium) via Backtracking.
+    /// Time Complexity: O(N * 2^N), Space Complexity: O(N) recursion stack.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; Subsets(int[] nums)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (nums == null) return result;
+
+        var current = new List&lt;int&gt;();
+        BacktrackSubsets(nums, 0, current, result);
+        return result;
+    }
+
+    private static void BacktrackSubsets(int[] nums, int start, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        result.Add(new List&lt;int&gt;(current));
+
+        for (int i = start; i &lt; nums.Length; i++)
+        {
+            current.Add(nums[i]);
+            BacktrackSubsets(nums, i + 1, current, result);
+            current.RemoveAt(current.Count - 1);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #78: Subsets (Medium) via Bit Manipulation.
+    /// Iterates through 2^N binary bitmasks.
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; SubsetsBitmask(int[] nums)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (nums == null) return result;
+
+        int n = nums.Length;
+        int totalSubsets = 1 &lt;&lt; n; // 2^n
+
+        for (int mask = 0; mask &lt; totalSubsets; mask++)
+        {
+            var subset = new List&lt;int&gt;();
+            for (int i = 0; i &lt; n; i++)
+            {
+                if ((mask &amp; (1 &lt;&lt; i)) != 0)
+                {
+                    subset.Add(nums[i]);
+                }
+            }
+            result.Add(subset);
+        }
+
+        return result;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #90: Subsets II (Medium) - contains duplicates.
+    /// Sorts input and skips duplicate elements at the same tree depth.
+    /// Time Complexity: O(N * 2^N), Space Complexity: O(N).
+    /// &lt;/summary&gt;
+    public static IList&lt;IList&lt;int&gt;&gt; SubsetsWithDup(int[] nums)
+    {
+        var result = new List&lt;IList&lt;int&gt;&gt;();
+        if (nums == null) return result;
+
+        Array.Sort(nums);
+        var current = new List&lt;int&gt;();
+        BacktrackSubsetsWithDup(nums, 0, current, result);
+        return result;
+    }
+
+    private static void BacktrackSubsetsWithDup(int[] nums, int start, List&lt;int&gt; current, List&lt;IList&lt;int&gt;&gt; result)
+    {
+        result.Add(new List&lt;int&gt;(current));
+
+        for (int i = start; i &lt; nums.Length; i++)
+        {
+            // Skip duplicate sibling branches
+            if (i &gt; start &amp;&amp; nums[i] == nums[i - 1])
+            {
+                continue;
+            }
+
+            current.Add(nums[i]);
+            BacktrackSubsetsWithDup(nums, i + 1, current, result);
+            current.RemoveAt(current.Count - 1);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day36.NotificationService.Tests/Day36Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd36-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d36-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day36.NotificationService.Tests;
+
+public class Day36Tests
+{
+    [Fact]
+    public async Task NotificationDispatcher_PriorityQueue_DispatchesHighBeforeLowPriority()
+    {
+        var emailProvider = new MockNotificationProvider(NotificationChannel.Email, &quot;SendGrid&quot;);
+        var dispatcher = new NotificationDispatcher([emailProvider]);
+
+        var lowMsg = new NotificationMessage(&quot;msg-low&quot;, &quot;u1&quot;, NotificationChannel.Email, NotificationPriority.Low, &quot;u1@test.com&quot;, &quot;Newsletter&quot;, &quot;body&quot;, DateTime.UtcNow);
+        var highMsg = new NotificationMessage(&quot;msg-high&quot;, &quot;u2&quot;, NotificationChannel.Email, NotificationPriority.High, &quot;u2@test.com&quot;, &quot;Security Alert&quot;, &quot;body&quot;, DateTime.UtcNow);
+        var normMsg = new NotificationMessage(&quot;msg-norm&quot;, &quot;u3&quot;, NotificationChannel.Email, NotificationPriority.Normal, &quot;u3@test.com&quot;, &quot;Invoice&quot;, &quot;body&quot;, DateTime.UtcNow);
+
+        dispatcher.Enqueue(lowMsg);
+        dispatcher.Enqueue(highMsg);
+        dispatcher.Enqueue(normMsg);
+
+        Assert.Equal(3, dispatcher.PendingQueueCount);
+
+        var first = await dispatcher.DispatchNextAsync();
+        var second = await dispatcher.DispatchNextAsync();
+        var third = await dispatcher.DispatchNextAsync();
+
+        Assert.Equal(&quot;msg-high&quot;, first.MessageId);
+        Assert.Equal(&quot;msg-norm&quot;, second.MessageId);
+        Assert.Equal(&quot;msg-low&quot;, third.MessageId);
+    }
+
+    [Fact]
+    public async Task NotificationDispatcher_ProviderFailover_SwitchesToSecondaryWhenPrimaryFails()
+    {
+        var primarySms = new MockNotificationProvider(NotificationChannel.Sms, &quot;Twilio&quot;) { IsHealthy = false };
+        var secondarySms = new MockNotificationProvider(NotificationChannel.Sms, &quot;AwsSns&quot;) { IsHealthy = true };
+        var dispatcher = new NotificationDispatcher([primarySms, secondarySms]);
+
+        var msg = new NotificationMessage(&quot;sms-100&quot;, &quot;u1&quot;, NotificationChannel.Sms, NotificationPriority.High, &quot;+15550001&quot;, &quot;OTP&quot;, &quot;123456&quot;, DateTime.UtcNow);
+
+        var result = await dispatcher.ProcessMessageAsync(msg);
+
+        Assert.True(result.Success);
+        Assert.Equal(&quot;AwsSns&quot;, result.ProviderName);
+        Assert.Empty(primarySms.DeliveredMessages);
+        Assert.Single(secondarySms.DeliveredMessages);
+    }
+
+    [Fact]
+    public async Task NotificationDispatcher_UserPreferences_BlocksOptedOutChannel()
+    {
+        var emailProvider = new MockNotificationProvider(NotificationChannel.Email, &quot;SendGrid&quot;);
+        var dispatcher = new NotificationDispatcher([emailProvider]);
+
+        dispatcher.SetUserPreferences(&quot;user-opt-out&quot;, [NotificationChannel.Email]);
+
+        var msg = new NotificationMessage(&quot;msg-opt&quot;, &quot;user-opt-out&quot;, NotificationChannel.Email, NotificationPriority.Normal, &quot;opt@test.com&quot;, &quot;Promo&quot;, &quot;50% off&quot;, DateTime.UtcNow);
+        var result = await dispatcher.ProcessMessageAsync(msg);
+
+        Assert.False(result.Success);
+        Assert.Contains(&quot;opted out&quot;, result.ErrorReason);
+        Assert.Empty(emailProvider.DeliveredMessages);
+    }
+
+    [Fact]
+    public async Task NotificationDispatcher_RateLimiter_RejectsExcessRequestsInWindow()
+    {
+        var smsProvider = new MockNotificationProvider(NotificationChannel.Sms, &quot;Twilio&quot;);
+        var dispatcher = new NotificationDispatcher([smsProvider]);
+
+        string userId = &quot;rate-limited-user&quot;;
+
+        // Max is 5 SMS per minute
+        for (int i = 0; i &lt; 5; i++)
+        {
+            var msg = new NotificationMessage($&quot;sms-{i}&quot;, userId, NotificationChannel.Sms, NotificationPriority.Normal, &quot;+15559999&quot;, &quot;Alert&quot;, &quot;text&quot;, DateTime.UtcNow);
+            var res = await dispatcher.ProcessMessageAsync(msg);
+            Assert.True(res.Success);
+        }
+
+        // 6th message should be throttled
+        var blockedMsg = new NotificationMessage(&quot;sms-overflow&quot;, userId, NotificationChannel.Sms, NotificationPriority.Normal, &quot;+15559999&quot;, &quot;Alert&quot;, &quot;text&quot;, DateTime.UtcNow);
+        var blockedRes = await dispatcher.ProcessMessageAsync(blockedMsg);
+
+        Assert.False(blockedRes.Success);
+        Assert.Contains(&quot;Rate limit exceeded&quot;, blockedRes.ErrorReason);
+    }
+
+    [Fact]
+    public async Task NotificationDispatcher_Idempotency_DeduplicatesDuplicateKey()
+    {
+        var pushProvider = new MockNotificationProvider(NotificationChannel.Push, &quot;FirebaseFCM&quot;);
+        var dispatcher = new NotificationDispatcher([pushProvider]);
+
+        var msg1 = new NotificationMessage(&quot;msg-1&quot;, &quot;u1&quot;, NotificationChannel.Push, NotificationPriority.High, &quot;dev-token-1&quot;, &quot;Title&quot;, &quot;Body&quot;, DateTime.UtcNow, IdempotencyKey: &quot;idem-key-99&quot;);
+        var msg2 = new NotificationMessage(&quot;msg-2&quot;, &quot;u1&quot;, NotificationChannel.Push, NotificationPriority.High, &quot;dev-token-1&quot;, &quot;Title&quot;, &quot;Body&quot;, DateTime.UtcNow, IdempotencyKey: &quot;idem-key-99&quot;);
+
+        var res1 = await dispatcher.ProcessMessageAsync(msg1);
+        var res2 = await dispatcher.ProcessMessageAsync(msg2);
+
+        Assert.True(res1.Success);
+        Assert.True(res2.Success);
+        Assert.Contains(&quot;Deduplicated&quot;, res2.ErrorReason);
+        Assert.Single(pushProvider.DeliveredMessages);
+    }
+
+    [Fact]
+    public void Subsets_UniqueElements_ReturnsAllPowerSetElements()
+    {
+        int[] nums = [1, 2, 3];
+        var subsets = SubsetsSolver.Subsets(nums);
+
+        // 2^3 = 8 subsets
+        Assert.Equal(8, subsets.Count);
+        Assert.Contains(subsets, s =&gt; s.Count == 0);
+        Assert.Contains(subsets, s =&gt; s.SequenceEqual([1, 2, 3]));
+        Assert.Contains(subsets, s =&gt; s.SequenceEqual([1]));
+        Assert.Contains(subsets, s =&gt; s.SequenceEqual([2, 3]));
+    }
+
+    [Fact]
+    public void Subsets_Bitmask_MatchesBacktrackingResult()
+    {
+        int[] nums = [4, 5, 6];
+        var bt = SubsetsSolver.Subsets(nums);
+        var bm = SubsetsSolver.SubsetsBitmask(nums);
+
+        Assert.Equal(bt.Count, bm.Count);
+        Assert.Equal(8, bm.Count);
+    }
+
+    [Fact]
+    public void Subsets_EmptyArray_ReturnsSingleEmptySubset()
+    {
+        int[] nums = [];
+        var subsets = SubsetsSolver.Subsets(nums);
+
+        Assert.Single(subsets);
+        Assert.Empty(subsets[0]);
+    }
+
+    [Fact]
+    public void SubsetsWithDup_ArrayWithDuplicates_GeneratesNoDuplicateSubsets()
+    {
+        int[] nums = [1, 2, 2];
+        var subsets = SubsetsSolver.SubsetsWithDup(nums);
+
+        // Subsets of [1,2,2]: [], [1], [1,2], [1,2,2], [2], [2,2] -&gt; Total 6
+        Assert.Equal(6, subsets.Count);
+
+        // Verify uniqueness
+        var stringified = subsets.Select(s =&gt; string.Join(&quot;,&quot;, s)).ToList();
+        Assert.Equal(stringified.Distinct().Count(), subsets.Count);
+    }
+
+    [Fact]
+    public void SubsetsWithDup_AllIdenticalElements_ReturnsCorrectSubsets()
+    {
+        int[] nums = [2, 2, 2, 2];
+        var subsets = SubsetsSolver.SubsetsWithDup(nums);
+
+        // Lengths 0, 1, 2, 3, 4 -&gt; Exactly 5 subsets
+        Assert.Equal(5, subsets.Count);
+        for (int len = 0; len &lt;= 4; len++)
+        {
+            Assert.Contains(subsets, s =&gt; s.Count == len &amp;&amp; s.All(x =&gt; x == 2));
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 36 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

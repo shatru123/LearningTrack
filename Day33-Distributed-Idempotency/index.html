@@ -1,0 +1,2382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 33: Distributed Idempotency &amp; De-duplication | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 33</span>
+        <span class="badge badge-category">Distributed Systems</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day32-Saga-Orchestration-MassTransit/index.html" class="nav-btn">← Day 32</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+
+        </select>
+        <a href="../Day34-OpenTelemetry-DistributedTracing/index.html" class="nav-btn">Day 34 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 33: Distributed Idempotency &amp; De-duplication</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d33Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d33P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d33P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#155e75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d33P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d33Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 33: Distributed Idempotency &amp; Quickselect Selection</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d33P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">Idempotency Protocol</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Key &amp; Payload Hashing</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Idempotency-Key header (UUID)</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">SHA-256 fingerprint over request body</text>
+          <text x="50" y="179" fill="#f43f5e" font-size="9">Payload mismatch &#8594; 422 Unprocessable</text>
+          <text x="50" y="196" fill="#cbd5e1" font-size="9">Guarantees cryptographic integrity</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#fbbf24" font-size="11" font-weight="bold">State &amp; Response Replay</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Status: Processing | Completed | Failed</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">Completed: Replay cached 200/201 response</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">FromCache = true header flag</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">Zero duplicate business mutations</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d33P2)" stroke="#22d3ee" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#22d3ee" font-size="14" font-weight="bold">Lock Leases &amp; Fault Recovery</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">In-Flight Concurrency</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Concurrent duplicate arrives</text>
+          <text x="340" y="162" fill="#f43f5e" font-size="9">Status == Processing &amp;&amp; Lease active</text>
+          <text x="340" y="179" fill="#fbbf24" font-size="9">Returns HTTP 409 Conflict</text>
+          <text x="340" y="196" fill="#cbd5e1" font-size="9">Prevents concurrent double execution</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#22d3ee" font-size="11" font-weight="bold">Crash Recovery via Lease TTL</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Worker crashes while processing</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">LockedUntilUtc &lt; now (lease expired)</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">New worker safely re-acquires lock</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">No permanent deadlocks on server crashes</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d33P3)" stroke="#e879f9" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#e879f9" font-size="14" font-weight="bold">LC #215: Kth Largest Element</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Quickselect (Randomized Pivot)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">Hoare's Selection: target = N - k</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">Average Time: O(N) linear!</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Space: O(1) iterative in-place</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Random pivot avoids sorted worst case</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#e879f9" font-size="11" font-weight="bold">Min-Heap for Streaming Data</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">PriorityQueue&lt;int, int&gt; bounded to K</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Dequeue when count &gt; K</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Time: O(N log K), Space: O(K)</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Ideal for unbounded incoming streams</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: Distributed Idempotency & De-duplication</h1>
+<h2>1. Idempotency Key Semantics in Distributed REST & Messaging</h2>
+<p>In high-concurrency microservices, idempotency guarantees that making the same request multiple times has the exact same side effects on system state as making it once:</p>
+<p>$$f(f(x)) = f(x)$$</p>
+<h3>The IETF Idempotency-Key HTTP Header Specification</h3>
+<p>The IETF draft standard defines the <code>Idempotency-Key</code> header sent by HTTP clients. When processing:</p>
+<ol>
+<li><strong>Fingerprint Validation</strong>: Compute a cryptographic digest (SHA-256) of the HTTP method, request path, and body. If a request arrives with an existing key but a different digest, the server MUST return HTTP <code>422 Unprocessable Entity</code> or <code>400 Bad Request</code>.</li>
+<li><strong>Lock State</strong>: If the key is currently locked (processing) and the lock has not expired, return HTTP <code>409 Conflict</code> with a <code>Retry-After</code> header.</li>
+<li><strong>Completed State</strong>: If the key has completed, replay the exact response payload, headers, and status code (typically HTTP 200/201) along with an <code>Idempotent-Replay: true</code> header.</li>
+</ol>
+<h2>2. Distributed Storage & Lease Strategies</h2>
+<ul>
+<li><strong>Relational DB with Unique Constraints</strong>:</li>
+<li><code>INSERT INTO idempotency_keys (key, hash, status, locked_until) VALUES (...) ON CONFLICT DO NOTHING;</code></li>
+<li>Guarantees ACID atomicity across application clusters.</li>
+<li><strong>Redis with Redlock or SET NX PX</strong>:</li>
+<li><code>SET key:idempotency lock_token NX PX 30000</code></li>
+<li>High throughput (sub-millisecond), but requires fallback or write-through persistence to a permanent store for long-lived cached results.</li>
+<li><strong>Worker Crash Handling & Lease Expiration</strong>:</li>
+<li>Never hold a lock without a finite lease timeout (TTL). If node crashes mid-operation, the unreleased lock must expire after a configurable duration (e.g. 30–60s) allowing safe automated recovery.</li>
+</ul>
+<h2>3. LeetCode #215: Quickselect vs Min-Heap Analysis</h2>
+<ul>
+<li><strong>Quickselect</strong>:</li>
+<li>Partition array around a random pivot.</li>
+<li>If pivot index equals target index $N - k$, return value.</li>
+<li>If pivot index $< N - k$, recurse/iterate on the right subarray.</li>
+<li>If pivot index $> N - k$, recurse/iterate on the left subarray.</li>
+<li><strong>Recurrence</strong>: $T(N) = T(N/2) + O(N) = O(N)$ average time.</li>
+<li>Worst case: $O(N^2)$ if worst-case pivot selection occurs repeatedly, mitigated via randomized pivot.</li>
+<li><strong>Min-Heap</strong>:</li>
+<li>Uses <code>System.Collections.Generic.PriorityQueue&lt;int, int&gt;</code> in .NET.</li>
+<li>Push each element with value as priority. When size exceeds $k$, dequeue smallest element.</li>
+<li>The heap retains the $k$ largest elements seen so far; top of heap is the $k$-th largest.</li>
+<li>Time: $O(N \log K)$, Space: $O(K)$. Ideal for streaming data where total size $N$ is unknown or unbounded.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 33: Distributed Idempotency & De-duplication</h1>
+<h2>Architectural Overview</h2>
+<p>In distributed systems, network partitions, client retries, and message broker at-least-once delivery guarantees inevitably produce duplicate requests. Without strict idempotency controls, duplicate submissions result in double-billing, corrupted inventory reserves, or inconsistent ledger entries.</p>
+<p>This implementation demonstrates an enterprise-grade distributed idempotency pattern in .NET 8 / C# featuring:</p>
+<ol>
+<li><strong>Idempotency Key Protocol</strong>: Clients supply a unique idempotency key (e.g., UUID or deterministic hash) via HTTP header or message metadata.</li>
+<li><strong>Cryptographic Payload Verification</strong>: Computes a SHA-256 digest of the request payload to prevent payload tampering under an existing idempotency key. If payloads differ, an <code>IdempotencyPayloadMismatchException</code> (HTTP 422 Unprocessable Entity) is thrown.</li>
+<li><strong>Optimistic Locking & Lease Management</strong>: Prevents race conditions during concurrent in-flight requests by reserving a lock with a lease expiration (<code>LockedUntilUtc</code>). If a second request arrives while the first is processing, it receives an <code>IdempotencyConflictException</code> (HTTP 409 Conflict).</li>
+<li><strong>Crash Fault Recovery</strong>: If a worker node crashes mid-flight, subsequent requests after the lease window automatically reclaim the processing lock instead of deadlocking indefinitely.</li>
+<li><strong>Response Caching</strong>: Successful responses are stored alongside their HTTP status codes and returned immediately with <code>FromCache = true</code> for subsequent idempotent replays.</li>
+</ol>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">       Client Request (Key: &quot;tx-123&quot;, Body)
+                    │
+                    ▼
+     ┌─────────────────────────────┐
+     │ SHA-256 Hash of Request Body│
+     └──────────────┬──────────────┘
+                    │
+                    ▼
+          Query Idempotency Store
+                    │
+    ┌───────────────┴─────────────────┐
+    │                                 │
+[Record Exists]               [Record Not Found]
+    │                                 │
+    ├─ Hash != Payload Hash ──&gt; 422 Payload Mismatch
+    ├─ Status == Completed  ──&gt; Return Cached 200/201 (FromCache: true)
+    ├─ Status == Processing           │
+    │   ├─ Lease Valid   ──&gt; 409 Conflict (In Flight)
+    │   └─ Lease Expired ──&gt; Re-lease lock &amp; Re-execute
+    │                                 │
+    └─────────────────┬───────────────┘
+                      │
+            Atomic Insert Record (Status: Processing, Lease: 30s)
+                      │
+            Execute Business Logic
+                      │
+            Update Record (Status: Completed, Result Body)
+                      │
+            Return Response (FromCache: false)</code></pre></div>
+<hr/>
+<h2>LeetCode #215: Kth Largest Element in an Array (Medium)</h2>
+<p>Finding the $k$-th largest element in an unsorted array efficiently:</p>
+<ul>
+<li><strong>Quickselect (Hoare's Selection)</strong>: $O(N)$ average time complexity, $O(1)$ auxiliary space. Uses randomized pivot partitioning to prune half the search space iteratively. Target index is $N - k$.</li>
+<li><strong>Min-Heap (<code>PriorityQueue&lt;int, int&gt;</code>)</strong>: $O(N \log K)$ time complexity, $O(K)$ space complexity. Maintains a min-heap of size $k$; the root element is always the $k$-th largest element.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day33-Distributed-Idempotency/tests/Day33.DistributedIdempotency.Tests/Day33.DistributedIdempotency.Tests.csproj</code></pre></div>
+<p>All 10 unit tests validate payload hashing, lease expiry, concurrent conflicts, cached replays, and Quickselect vs Min-Heap algorithms.</p>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the semantic difference between safe, idempotent, and non-idempotent HTTP methods according to RFC 9110?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Safe Methods</strong> (<code>GET</code>, <code>HEAD</code>, <code>OPTIONS</code>, <code>TRACE</code>): Do not modify server resource state. A client can execute them without expectation of mutation or side effects.</li>
+<li><strong>Idempotent Methods</strong> (<code>PUT</code>, <code>DELETE</code>, <code>GET</code>, <code>HEAD</code>): Executing the operation once yields the exact same server resource state as executing it multiple times ($f(f(x)) = f(x)$). For example, <code>DELETE /orders/42</code> sets the status or deletes the record; subsequent calls yield resource not found or already deleted, but resource state remains deleted.</li>
+<li><strong>Non-Idempotent Methods</strong> (<code>POST</code>, <code>PATCH</code> in some contexts): Submitting repeated requests produces cumulative side effects (e.g. repeated <code>POST /payments</code> creates multiple charge records and bills the credit card multiple times). Applying distributed idempotency mechanisms converts non-idempotent operations into functionally idempotent operations.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How does an Idempotency Key architecture prevent double-charging in payment gateways like Stripe or Adyen?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>When an end-user submits a payment checkout:</p>
+<ol>
+<li>The frontend or client generates an unguessable UUIDv4 or client-derived transaction token as the <code>Idempotency-Key</code> HTTP header.</li>
+<li>The payment gateway intercepts the request and verifies the key in an atomic fast-path datastore (e.g. PostgreSQL or Redis with <code>SET NX EX</code>).</li>
+<li>If the key exists in <code>Processing</code> state and lock is unexpired, the gateway returns HTTP <code>409 Conflict</code> (or waits on a distributed promise/future), preventing concurrent race charges.</li>
+<li>If the key exists in <code>Completed</code> state, the stored receipt is returned without touching the card network rails.</li>
+<li>If the key is new, the gateway creates a <code>Processing</code> record, contacts Visa/Mastercard, records <code>Completed</code> with the transaction result, and returns HTTP 200/201.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why is request payload hashing (SHA-256) critical when using client-supplied idempotency keys?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A client bug or malicious actor might reuse an idempotency key across different semantic operations (e.g., re-using key <code>tx-001</code> originally used to purchase \$10 goods for a \$1,000 withdrawal). Without payload validation:</p>
+<ul>
+<li>The system would treat the \$1,000 request as a duplicate replay of the \$10 request, returning the old cached response and ignoring the new intent, or vice-versa.</li>
+</ul>
+<p>Computing a SHA-256 fingerprint over the method, URL path, and serialized request body allows the server to verify whether the incoming payload matches the original. If mismatched, the server rejects the request with HTTP <code>422 Unprocessable Entity</code> or <code>400 Bad Request</code> ("Idempotency key payload mismatch").</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How do you handle distributed worker crashes when processing an idempotent request under a lease lock?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>If a worker acquires a processing lock (<code>Status = &quot;Processing&quot;</code>) and dies due to an OOM crash or unhandled SIGKILL, the key could remain permanently stuck. To solve this:</p>
+<ol>
+<li><strong>Time-Bound Leases (TTL)</strong>: Processing records include a <code>LockedUntilUtc</code> timestamp (e.g. <code>DateTime.UtcNow.AddSeconds(30)</code>).</li>
+<li><strong>Heartbeating</strong>: For long operations, the worker periodically extends the lease.</li>
+<li><strong>Automated Recovery</strong>: When another request arrives and finds <code>Status == &quot;Processing&quot;</code> but <code>LockedUntilUtc &lt; DateTime.UtcNow</code>, it detects that the previous worker crashed. It atomically updates <code>LockedUntilUtc</code> to a new expiration and re-executes the operation safely.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you implement distributed idempotency in asynchronous message-driven architectures (e.g. RabbitMQ, Kafka)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Message brokers deliver messages with <em>at-least-once</em> semantics. To ensure idempotency:</p>
+<ol>
+<li><strong>Message Deduplication Table</strong>: The consumer inserts the incoming <code>MessageId</code> or domain deduplication key into a relational table within the same database transaction as the business state mutation.</li>
+<li><strong>Outbox / Inbox Pattern</strong>: Use the transactional Inbox pattern. If the unique constraint on <code>(ConsumerName, MessageId)</code> throws a unique constraint violation, the message is recognized as duplicate and acknowledged (<code>ack</code>) immediately without re-executing domain actions.</li>
+<li><strong>Natural Idempotency</strong>: Design message mutations to be commutative or state-based (<code>UPDATE account SET balance = 500 WHERE account_id = 1 AND version = 2</code>) rather than incremental delta-based (<code>UPDATE account SET balance = balance + 100</code>).</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What are the trade-offs between Redis and a Relational Database (PostgreSQL) for storing idempotency state?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Redis</strong>:</li>
+<li><em>Pros</em>: Extremely high throughput (sub-millisecond latency), built-in TTL eviction, <code>SETNX</code> atomic primitives.</li>
+<li><em>Cons</em>: Memory capacity limits, potential data loss during cluster failover (asynchronous replication), lack of distributed two-phase commit across Redis and domain database.</li>
+<li><strong>Relational Database (PostgreSQL)</strong>:</li>
+<li><em>Pros</em>: Full ACID compliance; the idempotency record can be inserted in the <strong>exact same database transaction</strong> as the entity updates, guaranteeing 100% consistency with zero dual-write vulnerabilities.</li>
+<li><em>Cons</em>: Higher storage overhead and latency; requires background cleanup jobs or table partitioning to purge expired records over time.</li>
+<li><em>Best Practice</em>: Use PostgreSQL for critical financial/ledger operations; use Redis for high-throughput, low-risk telemetry/notification rate-limiting.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">In Quickselect, why is randomized pivot selection superior to deterministic pivot selection (e.g., choosing `nums[0]`)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>If a deterministic pivot selection (like picking <code>nums[left]</code> or <code>nums[right]</code>) is used on an already sorted or reverse-sorted array, each partition step only eliminates a single element ($N - 1$ remaining).</p>
+<ul>
+<li>This degrades time complexity from the expected $O(N)$ to the worst-case $O(N^2)$, exceeding stack limits or timing out.</li>
+<li>By selecting a pivot uniformly at random from <code>[left, right]</code>, the probability of repeatedly choosing extremal elements becomes astronomically small, guaranteeing expected $O(N)$ runtime across all input distributions.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">Compare Quickselect and Min-Heap for finding the Kth largest element in terms of streaming data and memory constraints.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Quickselect</strong>:</li>
+<li>In-place algorithm ($O(1)$ space).</li>
+<li>Requires the entire dataset to reside in random-access memory (RAM).</li>
+<li>Mutates the original array in place. Cannot process streaming or unbounded data.</li>
+<li><strong>Min-Heap (<code>PriorityQueue&lt;TElement, TPriority&gt;</code>)</strong>:</li>
+<li>Operates on streaming/unbounded data where total count $N$ is unknown in advance.</li>
+<li>Maintains a sliding window of the top $k$ elements in $O(K)$ auxiliary memory.</li>
+<li>Time complexity is $O(N \log K)$. When $K \ll N$, this is practically linear and highly cache-efficient.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How should downstream API calls to third-party providers (e.g. Stripe, SendGrid) be coordinated within an idempotent workflow?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A dual-write problem exists: the internal DB transaction can commit, but the external API call might fail or time out, or vice versa.</p>
+<ol>
+<li>Generate a deterministic downstream idempotency key derived from the upstream key: <code>downstreamKey = Hash(upstreamKey + &quot;-stripe&quot;)</code>.</li>
+<li>Save the pending downstream intent before calling the third party.</li>
+<li>Pass <code>downstreamKey</code> in the external HTTP request header.</li>
+<li>If a network timeout occurs, retrying the operation with the same <code>downstreamKey</code> ensures the external provider does not duplicate the charge or email.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">What is the optimal retention and cleanup policy for an idempotency store?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Indefinite retention causes unbound table growth. The retention window should match the maximum client retry window:</p>
+<ul>
+<li>For user-facing web/mobile APIs, clients typically stop retrying after 24 to 72 hours.</li>
+<li>A sliding TTL of 24–48 hours is standard.</li>
+<li>Implementation: Use PostgreSQL partitioned tables (e.g., daily partitions dropped via <code>pg_partman</code> or cron <code>DROP TABLE</code>) or Redis key TTLs. Dropping partitions is an $O(1)$ catalog metadata operation with zero table bloat compared to costly <code>DELETE FROM WHERE created_at &lt; NOW() - INTERVAL &#x27;3 days&#x27;</code>.</li>
+</ul>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day33.DistributedIdempotency/IdempotencyEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd33-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d33-src-code-0" class="language-csharp">using System.Security.Cryptography;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
+
+namespace Day33.DistributedIdempotency;
+
+#region Exceptions &amp; Models
+
+public class IdempotencyConflictException : Exception
+{
+    public IdempotencyConflictException(string message) : base(message) { }
+}
+
+public class IdempotencyPayloadMismatchException : Exception
+{
+    public IdempotencyPayloadMismatchException(string message) : base(message) { }
+}
+
+public sealed record IdempotentResult(int StatusCode, string ResponseBody, bool FromCache = false);
+
+public sealed class IdempotencyRecord
+{
+    public string IdempotencyKey { get; set; } = string.Empty;
+    public string RequestPayloadHash { get; set; } = string.Empty;
+    public string Status { get; set; } = &quot;Processing&quot;; // Processing, Completed, Failed
+    public int? ResponseStatusCode { get; set; }
+    public string? ResponseBody { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime? LockedUntilUtc { get; set; }
+}
+
+#endregion
+
+#region DbContext
+
+public class IdempotencyDbContext : DbContext
+{
+    public DbSet&lt;IdempotencyRecord&gt; IdempotencyRecords =&gt; Set&lt;IdempotencyRecord&gt;();
+
+    public IdempotencyDbContext(DbContextOptions&lt;IdempotencyDbContext&gt; options) : base(options) { }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity&lt;IdempotencyRecord&gt;(b =&gt;
+        {
+            b.HasKey(x =&gt; x.IdempotencyKey);
+            b.Property(x =&gt; x.IdempotencyKey).IsRequired().HasMaxLength(128);
+            b.Property(x =&gt; x.RequestPayloadHash).IsRequired().HasMaxLength(64);
+            b.Property(x =&gt; x.Status).IsRequired().HasMaxLength(32);
+        });
+    }
+}
+
+#endregion
+
+#region Idempotency Manager
+
+public class IdempotencyManager
+{
+    private readonly IdempotencyDbContext _dbContext;
+
+    public IdempotencyManager(IdempotencyDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public static string ComputeSha256(string input)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input ?? string.Empty));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
+
+    /// &lt;summary&gt;
+    /// Executes an operation with full distributed idempotency semantics.
+    /// Handles in-flight concurrency, payload verification, and cached response returns.
+    /// &lt;/summary&gt;
+    public async Task&lt;IdempotentResult&gt; ExecuteAsync(
+        string idempotencyKey,
+        string requestPayload,
+        Func&lt;Task&lt;IdempotentResult&gt;&gt; operation,
+        TimeSpan? leaseDuration = null)
+    {
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            return await operation();
+        }
+
+        var lease = leaseDuration ?? TimeSpan.FromSeconds(30);
+        var payloadHash = ComputeSha256(requestPayload);
+        var now = DateTime.UtcNow;
+
+        var existing = await _dbContext.IdempotencyRecords
+            .FirstOrDefaultAsync(r =&gt; r.IdempotencyKey == idempotencyKey);
+
+        if (existing != null)
+        {
+            // 1. Verify payload integrity: same key cannot be used with different payload
+            if (existing.RequestPayloadHash != payloadHash)
+            {
+                throw new IdempotencyPayloadMismatchException(
+                    $&quot;Idempotency key &#x27;{idempotencyKey}&#x27; was already used with a different request payload.&quot;);
+            }
+
+            // 2. If already completed, return cached response
+            if (existing.Status == &quot;Completed&quot;)
+            {
+                return new IdempotentResult(
+                    existing.ResponseStatusCode ?? 200,
+                    existing.ResponseBody ?? string.Empty,
+                    FromCache: true
+                );
+            }
+
+            // 3. If currently processing and lease has NOT expired, return 409 Conflict
+            if (existing.Status == &quot;Processing&quot; &amp;&amp; existing.LockedUntilUtc &gt; now)
+            {
+                throw new IdempotencyConflictException(
+                    $&quot;A request with idempotency key &#x27;{idempotencyKey}&#x27; is currently in progress.&quot;);
+            }
+
+            // 4. Lease expired (prior worker crashed) -&gt; re-lease
+            existing.Status = &quot;Processing&quot;;
+            existing.LockedUntilUtc = now.Add(lease);
+            await _dbContext.SaveChangesAsync();
+        }
+        else
+        {
+            // Atomically reserve in-flight state
+            existing = new IdempotencyRecord
+            {
+                IdempotencyKey = idempotencyKey,
+                RequestPayloadHash = payloadHash,
+                Status = &quot;Processing&quot;,
+                CreatedAtUtc = now,
+                LockedUntilUtc = now.Add(lease)
+            };
+            _dbContext.IdempotencyRecords.Add(existing);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        // Execute target business operation
+        try
+        {
+            var result = await operation();
+
+            existing.Status = &quot;Completed&quot;;
+            existing.ResponseStatusCode = result.StatusCode;
+            existing.ResponseBody = result.ResponseBody;
+            existing.LockedUntilUtc = null;
+
+            await _dbContext.SaveChangesAsync();
+            return result with { FromCache = false };
+        }
+        catch (Exception)
+        {
+            existing.Status = &quot;Failed&quot;;
+            existing.LockedUntilUtc = null;
+            await _dbContext.SaveChangesAsync();
+            throw;
+        }
+    }
+}
+
+#endregion
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day33.DistributedIdempotency/KthLargestSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd33-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d33-src-code-1" class="language-csharp">namespace Day33.DistributedIdempotency;
+
+public static class KthLargestSolver
+{
+    private static readonly Random _random = new();
+
+    /// &lt;summary&gt;
+    /// LeetCode #215: Kth Largest Element in an Array (Medium).
+    /// Quickselect Algorithm (Hoare&#x27;s selection algorithm) with randomized pivot.
+    /// Average Time Complexity: O(N), Worst Case: O(N^2), Space Complexity: O(1) iterative.
+    /// &lt;/summary&gt;
+    public static int FindKthLargestQuickselect(int[] nums, int k)
+    {
+        if (nums == null || nums.Length == 0 || k &lt;= 0 || k &gt; nums.Length)
+            throw new ArgumentException(&quot;Invalid arguments for Quickselect&quot;);
+
+        // The Kth largest element is at index (nums.Length - k) in sorted ascending order
+        int targetIndex = nums.Length - k;
+        int left = 0;
+        int right = nums.Length - 1;
+
+        while (left &lt;= right)
+        {
+            int pivotIndex = Partition(nums, left, right);
+
+            if (pivotIndex == targetIndex)
+            {
+                return nums[pivotIndex];
+            }
+            else if (pivotIndex &lt; targetIndex)
+            {
+                left = pivotIndex + 1;
+            }
+            else
+            {
+                right = pivotIndex - 1;
+            }
+        }
+
+        return nums[targetIndex];
+    }
+
+    private static int Partition(int[] nums, int left, int right)
+    {
+        // Randomized pivot to avoid worst-case O(N^2) on sorted/reverse-sorted inputs
+        int randomIndex = _random.Next(left, right + 1);
+        Swap(nums, randomIndex, right);
+
+        int pivotValue = nums[right];
+        int storeIndex = left;
+
+        for (int i = left; i &lt; right; i++)
+        {
+            if (nums[i] &lt;= pivotValue)
+            {
+                Swap(nums, storeIndex, i);
+                storeIndex++;
+            }
+        }
+
+        Swap(nums, storeIndex, right);
+        return storeIndex;
+    }
+
+    private static void Swap(int[] nums, int i, int j)
+    {
+        int temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #215: Kth Largest Element using a Min-Heap (PriorityQueue in .NET 6+).
+    /// Time Complexity: O(N * log K), Space Complexity: O(K).
+    /// &lt;/summary&gt;
+    public static int FindKthLargestMinHeap(int[] nums, int k)
+    {
+        if (nums == null || nums.Length == 0 || k &lt;= 0 || k &gt; nums.Length)
+            throw new ArgumentException(&quot;Invalid arguments for Min-Heap&quot;);
+
+        var minHeap = new PriorityQueue&lt;int, int&gt;();
+
+        foreach (var num in nums)
+        {
+            minHeap.Enqueue(num, num);
+            if (minHeap.Count &gt; k)
+            {
+                minHeap.Dequeue();
+            }
+        }
+
+        return minHeap.Peek();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day33.DistributedIdempotency.Tests/Day33Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd33-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d33-tests-code-0" class="language-csharp">using Microsoft.EntityFrameworkCore;
+using Xunit;
+
+namespace Day33.DistributedIdempotency.Tests;
+
+public class Day33Tests
+{
+    private IdempotencyDbContext CreateDbContext()
+    {
+        var options = new DbContextOptionsBuilder&lt;IdempotencyDbContext&gt;()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        return new IdempotencyDbContext(options);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_FirstExecution_ExecutesAndStoresResult()
+    {
+        using var context = CreateDbContext();
+        var manager = new IdempotencyManager(context);
+        var key = &quot;order-tx-101&quot;;
+        var payload = &quot;{\&quot;orderId\&quot;: 101, \&quot;amount\&quot;: 250.00}&quot;;
+        int callCount = 0;
+
+        var result = await manager.ExecuteAsync(key, payload, async () =&gt;
+        {
+            callCount++;
+            await Task.Delay(10);
+            return new IdempotentResult(201, &quot;{\&quot;status\&quot;: \&quot;created\&quot;, \&quot;id\&quot;: 101}&quot;);
+        });
+
+        Assert.Equal(1, callCount);
+        Assert.False(result.FromCache);
+        Assert.Equal(201, result.StatusCode);
+        Assert.Contains(&quot;created&quot;, result.ResponseBody);
+
+        var record = await context.IdempotencyRecords.FindAsync(key);
+        Assert.NotNull(record);
+        Assert.Equal(&quot;Completed&quot;, record.Status);
+        Assert.Equal(201, record.ResponseStatusCode);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_DuplicateRequest_ReturnsCachedResult_WithoutReExecuting()
+    {
+        using var context = CreateDbContext();
+        var manager = new IdempotencyManager(context);
+        var key = &quot;order-tx-102&quot;;
+        var payload = &quot;{\&quot;orderId\&quot;: 102, \&quot;amount\&quot;: 99.99}&quot;;
+        int callCount = 0;
+
+        // First call
+        var firstResult = await manager.ExecuteAsync(key, payload, async () =&gt;
+        {
+            callCount++;
+            return new IdempotentResult(200, &quot;{\&quot;tx\&quot;: \&quot;ok\&quot;}&quot;);
+        });
+
+        // Second call with same key and payload
+        var secondResult = await manager.ExecuteAsync(key, payload, async () =&gt;
+        {
+            callCount++;
+            return new IdempotentResult(200, &quot;{\&quot;tx\&quot;: \&quot;should not run\&quot;}&quot;);
+        });
+
+        Assert.Equal(1, callCount);
+        Assert.False(firstResult.FromCache);
+        Assert.True(secondResult.FromCache);
+        Assert.Equal(&quot;{\&quot;tx\&quot;: \&quot;ok\&quot;}&quot;, secondResult.ResponseBody);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_PayloadMismatch_ThrowsIdempotencyPayloadMismatchException()
+    {
+        using var context = CreateDbContext();
+        var manager = new IdempotencyManager(context);
+        var key = &quot;order-tx-103&quot;;
+        var payload1 = &quot;{\&quot;orderId\&quot;: 103, \&quot;amount\&quot;: 100.00}&quot;;
+        var payload2 = &quot;{\&quot;orderId\&quot;: 103, \&quot;amount\&quot;: 500.00}&quot;;
+
+        await manager.ExecuteAsync(key, payload1, async () =&gt;
+        {
+            return new IdempotentResult(200, &quot;{\&quot;status\&quot;: \&quot;ok\&quot;}&quot;);
+        });
+
+        await Assert.ThrowsAsync&lt;IdempotencyPayloadMismatchException&gt;(async () =&gt;
+        {
+            await manager.ExecuteAsync(key, payload2, async () =&gt;
+            {
+                return new IdempotentResult(200, &quot;{\&quot;status\&quot;: \&quot;tampered\&quot;}&quot;);
+            });
+        });
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_InFlightConcurrency_ThrowsIdempotencyConflictException()
+    {
+        using var context = CreateDbContext();
+        var key = &quot;order-tx-104&quot;;
+        var payload = &quot;{\&quot;orderId\&quot;: 104}&quot;;
+
+        // Seed an in-flight record with active lease
+        context.IdempotencyRecords.Add(new IdempotencyRecord
+        {
+            IdempotencyKey = key,
+            RequestPayloadHash = IdempotencyManager.ComputeSha256(payload),
+            Status = &quot;Processing&quot;,
+            CreatedAtUtc = DateTime.UtcNow,
+            LockedUntilUtc = DateTime.UtcNow.AddMinutes(5)
+        });
+        await context.SaveChangesAsync();
+
+        var manager = new IdempotencyManager(context);
+
+        var ex = await Assert.ThrowsAsync&lt;IdempotencyConflictException&gt;(async () =&gt;
+        {
+            await manager.ExecuteAsync(key, payload, async () =&gt;
+            {
+                return new IdempotentResult(200, &quot;{}&quot;);
+            });
+        });
+
+        Assert.Contains(&quot;in progress&quot;, ex.Message);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_ExpiredLease_RecoversAndExecutes()
+    {
+        using var context = CreateDbContext();
+        var key = &quot;order-tx-105&quot;;
+        var payload = &quot;{\&quot;orderId\&quot;: 105}&quot;;
+
+        // Seed a crashed worker&#x27;s record whose lease expired 10 minutes ago
+        context.IdempotencyRecords.Add(new IdempotencyRecord
+        {
+            IdempotencyKey = key,
+            RequestPayloadHash = IdempotencyManager.ComputeSha256(payload),
+            Status = &quot;Processing&quot;,
+            CreatedAtUtc = DateTime.UtcNow.AddMinutes(-20),
+            LockedUntilUtc = DateTime.UtcNow.AddMinutes(-10)
+        });
+        await context.SaveChangesAsync();
+
+        var manager = new IdempotencyManager(context);
+        int executed = 0;
+
+        var result = await manager.ExecuteAsync(key, payload, async () =&gt;
+        {
+            executed++;
+            return new IdempotentResult(200, &quot;{\&quot;recovered\&quot;: true}&quot;);
+        });
+
+        Assert.Equal(1, executed);
+        Assert.False(result.FromCache);
+        Assert.Equal(&quot;{\&quot;recovered\&quot;: true}&quot;, result.ResponseBody);
+
+        var updatedRecord = await context.IdempotencyRecords.FindAsync(key);
+        Assert.NotNull(updatedRecord);
+        Assert.Equal(&quot;Completed&quot;, updatedRecord.Status);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_FailedOperation_MarksRecordFailedAndRethrows()
+    {
+        using var context = CreateDbContext();
+        var manager = new IdempotencyManager(context);
+        var key = &quot;order-tx-106&quot;;
+        var payload = &quot;{\&quot;orderId\&quot;: 106}&quot;;
+
+        await Assert.ThrowsAsync&lt;InvalidOperationException&gt;(async () =&gt;
+        {
+            await manager.ExecuteAsync(key, payload, async () =&gt;
+            {
+                throw new InvalidOperationException(&quot;Downstream payment service down&quot;);
+            });
+        });
+
+        var record = await context.IdempotencyRecords.FindAsync(key);
+        Assert.NotNull(record);
+        Assert.Equal(&quot;Failed&quot;, record.Status);
+        Assert.Null(record.LockedUntilUtc);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_EmptyIdempotencyKey_ExecutesDirectlyWithoutCache()
+    {
+        using var context = CreateDbContext();
+        var manager = new IdempotencyManager(context);
+        int count = 0;
+
+        var res1 = await manager.ExecuteAsync(&quot;&quot;, &quot;{}&quot;, async () =&gt;
+        {
+            count++;
+            return new IdempotentResult(200, &quot;non-idempotent-1&quot;);
+        });
+
+        var res2 = await manager.ExecuteAsync(null!, &quot;{}&quot;, async () =&gt;
+        {
+            count++;
+            return new IdempotentResult(200, &quot;non-idempotent-2&quot;);
+        });
+
+        Assert.Equal(2, count);
+        Assert.False(res1.FromCache);
+        Assert.False(res2.FromCache);
+        Assert.Empty(await context.IdempotencyRecords.ToListAsync());
+    }
+
+    [Fact]
+    public void KthLargest_Quickselect_StandardArray_ReturnsCorrectElement()
+    {
+        int[] nums = [3, 2, 1, 5, 6, 4];
+        int k = 2;
+
+        int result = KthLargestSolver.FindKthLargestQuickselect(nums, k);
+
+        Assert.Equal(5, result);
+    }
+
+    [Fact]
+    public void KthLargest_Quickselect_WithDuplicates_ReturnsCorrectElement()
+    {
+        int[] nums = [3, 2, 3, 1, 2, 4, 5, 5, 6];
+        int k = 4;
+
+        int result = KthLargestSolver.FindKthLargestQuickselect(nums, k);
+
+        Assert.Equal(4, result);
+    }
+
+    [Fact]
+    public void KthLargest_MinHeap_MatchesQuickselectResult_AcrossMultipleInputs()
+    {
+        var testCases = new (int[] nums, int k)[]
+        {
+            ([1], 1),
+            ([7, 10, 4, 3, 20, 15], 3),
+            ([99, 99, 99, 100, 100], 1),
+            ([99, 99, 99, 100, 100], 2),
+            ([99, 99, 99, 100, 100], 5),
+            ([-1, -5, -2, -8, 0], 2)
+        };
+
+        foreach (var (nums, k) in testCases)
+        {
+            int[] numsCopyForHeap = (int[])nums.Clone();
+            int[] numsCopyForSelect = (int[])nums.Clone();
+
+            int heapResult = KthLargestSolver.FindKthLargestMinHeap(numsCopyForHeap, k);
+            int selectResult = KthLargestSolver.FindKthLargestQuickselect(numsCopyForSelect, k);
+
+            Assert.Equal(heapResult, selectResult);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: Distributed Idempotency & De-duplication</h1>
+<h2>1. Idempotency Key Semantics in Distributed REST & Messaging</h2>
+<p>In high-concurrency microservices, idempotency guarantees that making the same request multiple times has the exact same side effects on system state as making it once:</p>
+<p>$$f(f(x)) = f(x)$$</p>
+<h3>The IETF Idempotency-Key HTTP Header Specification</h3>
+<p>The IETF draft standard defines the <code>Idempotency-Key</code> header sent by HTTP clients. When processing:</p>
+<ol>
+<li><strong>Fingerprint Validation</strong>: Compute a cryptographic digest (SHA-256) of the HTTP method, request path, and body. If a request arrives with an existing key but a different digest, the server MUST return HTTP <code>422 Unprocessable Entity</code> or <code>400 Bad Request</code>.</li>
+<li><strong>Lock State</strong>: If the key is currently locked (processing) and the lock has not expired, return HTTP <code>409 Conflict</code> with a <code>Retry-After</code> header.</li>
+<li><strong>Completed State</strong>: If the key has completed, replay the exact response payload, headers, and status code (typically HTTP 200/201) along with an <code>Idempotent-Replay: true</code> header.</li>
+</ol>
+<h2>2. Distributed Storage & Lease Strategies</h2>
+<ul>
+<li><strong>Relational DB with Unique Constraints</strong>:</li>
+<li><code>INSERT INTO idempotency_keys (key, hash, status, locked_until) VALUES (...) ON CONFLICT DO NOTHING;</code></li>
+<li>Guarantees ACID atomicity across application clusters.</li>
+<li><strong>Redis with Redlock or SET NX PX</strong>:</li>
+<li><code>SET key:idempotency lock_token NX PX 30000</code></li>
+<li>High throughput (sub-millisecond), but requires fallback or write-through persistence to a permanent store for long-lived cached results.</li>
+<li><strong>Worker Crash Handling & Lease Expiration</strong>:</li>
+<li>Never hold a lock without a finite lease timeout (TTL). If node crashes mid-operation, the unreleased lock must expire after a configurable duration (e.g. 30–60s) allowing safe automated recovery.</li>
+</ul>
+<h2>3. LeetCode #215: Quickselect vs Min-Heap Analysis</h2>
+<ul>
+<li><strong>Quickselect</strong>:</li>
+<li>Partition array around a random pivot.</li>
+<li>If pivot index equals target index $N - k$, return value.</li>
+<li>If pivot index $< N - k$, recurse/iterate on the right subarray.</li>
+<li>If pivot index $> N - k$, recurse/iterate on the left subarray.</li>
+<li><strong>Recurrence</strong>: $T(N) = T(N/2) + O(N) = O(N)$ average time.</li>
+<li>Worst case: $O(N^2)$ if worst-case pivot selection occurs repeatedly, mitigated via randomized pivot.</li>
+<li><strong>Min-Heap</strong>:</li>
+<li>Uses <code>System.Collections.Generic.PriorityQueue&lt;int, int&gt;</code> in .NET.</li>
+<li>Push each element with value as priority. When size exceeds $k$, dequeue smallest element.</li>
+<li>The heap retains the $k$ largest elements seen so far; top of heap is the $k$-th largest.</li>
+<li>Time: $O(N \log K)$, Space: $O(K)$. Ideal for streaming data where total size $N$ is unknown or unbounded.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 33: Distributed Idempotency & De-duplication</h1>
+<h2>Architectural Overview</h2>
+<p>In distributed systems, network partitions, client retries, and message broker at-least-once delivery guarantees inevitably produce duplicate requests. Without strict idempotency controls, duplicate submissions result in double-billing, corrupted inventory reserves, or inconsistent ledger entries.</p>
+<p>This implementation demonstrates an enterprise-grade distributed idempotency pattern in .NET 8 / C# featuring:</p>
+<ol>
+<li><strong>Idempotency Key Protocol</strong>: Clients supply a unique idempotency key (e.g., UUID or deterministic hash) via HTTP header or message metadata.</li>
+<li><strong>Cryptographic Payload Verification</strong>: Computes a SHA-256 digest of the request payload to prevent payload tampering under an existing idempotency key. If payloads differ, an <code>IdempotencyPayloadMismatchException</code> (HTTP 422 Unprocessable Entity) is thrown.</li>
+<li><strong>Optimistic Locking & Lease Management</strong>: Prevents race conditions during concurrent in-flight requests by reserving a lock with a lease expiration (<code>LockedUntilUtc</code>). If a second request arrives while the first is processing, it receives an <code>IdempotencyConflictException</code> (HTTP 409 Conflict).</li>
+<li><strong>Crash Fault Recovery</strong>: If a worker node crashes mid-flight, subsequent requests after the lease window automatically reclaim the processing lock instead of deadlocking indefinitely.</li>
+<li><strong>Response Caching</strong>: Successful responses are stored alongside their HTTP status codes and returned immediately with <code>FromCache = true</code> for subsequent idempotent replays.</li>
+</ol>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">       Client Request (Key: &quot;tx-123&quot;, Body)
+                    │
+                    ▼
+     ┌─────────────────────────────┐
+     │ SHA-256 Hash of Request Body│
+     └──────────────┬──────────────┘
+                    │
+                    ▼
+          Query Idempotency Store
+                    │
+    ┌───────────────┴─────────────────┐
+    │                                 │
+[Record Exists]               [Record Not Found]
+    │                                 │
+    ├─ Hash != Payload Hash ──&gt; 422 Payload Mismatch
+    ├─ Status == Completed  ──&gt; Return Cached 200/201 (FromCache: true)
+    ├─ Status == Processing           │
+    │   ├─ Lease Valid   ──&gt; 409 Conflict (In Flight)
+    │   └─ Lease Expired ──&gt; Re-lease lock &amp; Re-execute
+    │                                 │
+    └─────────────────┬───────────────┘
+                      │
+            Atomic Insert Record (Status: Processing, Lease: 30s)
+                      │
+            Execute Business Logic
+                      │
+            Update Record (Status: Completed, Result Body)
+                      │
+            Return Response (FromCache: false)</code></pre></div>
+<hr/>
+<h2>LeetCode #215: Kth Largest Element in an Array (Medium)</h2>
+<p>Finding the $k$-th largest element in an unsorted array efficiently:</p>
+<ul>
+<li><strong>Quickselect (Hoare's Selection)</strong>: $O(N)$ average time complexity, $O(1)$ auxiliary space. Uses randomized pivot partitioning to prune half the search space iteratively. Target index is $N - k$.</li>
+<li><strong>Min-Heap (<code>PriorityQueue&lt;int, int&gt;</code>)</strong>: $O(N \log K)$ time complexity, $O(K)$ space complexity. Maintains a min-heap of size $k$; the root element is always the $k$-th largest element.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day33-Distributed-Idempotency/tests/Day33.DistributedIdempotency.Tests/Day33.DistributedIdempotency.Tests.csproj</code></pre></div>
+<p>All 10 unit tests validate payload hashing, lease expiry, concurrent conflicts, cached replays, and Quickselect vs Min-Heap algorithms.</p>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the semantic difference between safe, idempotent, and non-idempotent HTTP methods according to RFC 9110?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Safe Methods</strong> (<code>GET</code>, <code>HEAD</code>, <code>OPTIONS</code>, <code>TRACE</code>): Do not modify server resource state. A client can execute them without expectation of mutation or side effects.</li>
+<li><strong>Idempotent Methods</strong> (<code>PUT</code>, <code>DELETE</code>, <code>GET</code>, <code>HEAD</code>): Executing the operation once yields the exact same server resource state as executing it multiple times ($f(f(x)) = f(x)$). For example, <code>DELETE /orders/42</code> sets the status or deletes the record; subsequent calls yield resource not found or already deleted, but resource state remains deleted.</li>
+<li><strong>Non-Idempotent Methods</strong> (<code>POST</code>, <code>PATCH</code> in some contexts): Submitting repeated requests produces cumulative side effects (e.g. repeated <code>POST /payments</code> creates multiple charge records and bills the credit card multiple times). Applying distributed idempotency mechanisms converts non-idempotent operations into functionally idempotent operations.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How does an Idempotency Key architecture prevent double-charging in payment gateways like Stripe or Adyen?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>When an end-user submits a payment checkout:</p>
+<ol>
+<li>The frontend or client generates an unguessable UUIDv4 or client-derived transaction token as the <code>Idempotency-Key</code> HTTP header.</li>
+<li>The payment gateway intercepts the request and verifies the key in an atomic fast-path datastore (e.g. PostgreSQL or Redis with <code>SET NX EX</code>).</li>
+<li>If the key exists in <code>Processing</code> state and lock is unexpired, the gateway returns HTTP <code>409 Conflict</code> (or waits on a distributed promise/future), preventing concurrent race charges.</li>
+<li>If the key exists in <code>Completed</code> state, the stored receipt is returned without touching the card network rails.</li>
+<li>If the key is new, the gateway creates a <code>Processing</code> record, contacts Visa/Mastercard, records <code>Completed</code> with the transaction result, and returns HTTP 200/201.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why is request payload hashing (SHA-256) critical when using client-supplied idempotency keys?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A client bug or malicious actor might reuse an idempotency key across different semantic operations (e.g., re-using key <code>tx-001</code> originally used to purchase \$10 goods for a \$1,000 withdrawal). Without payload validation:</p>
+<ul>
+<li>The system would treat the \$1,000 request as a duplicate replay of the \$10 request, returning the old cached response and ignoring the new intent, or vice-versa.</li>
+</ul>
+<p>Computing a SHA-256 fingerprint over the method, URL path, and serialized request body allows the server to verify whether the incoming payload matches the original. If mismatched, the server rejects the request with HTTP <code>422 Unprocessable Entity</code> or <code>400 Bad Request</code> ("Idempotency key payload mismatch").</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How do you handle distributed worker crashes when processing an idempotent request under a lease lock?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>If a worker acquires a processing lock (<code>Status = &quot;Processing&quot;</code>) and dies due to an OOM crash or unhandled SIGKILL, the key could remain permanently stuck. To solve this:</p>
+<ol>
+<li><strong>Time-Bound Leases (TTL)</strong>: Processing records include a <code>LockedUntilUtc</code> timestamp (e.g. <code>DateTime.UtcNow.AddSeconds(30)</code>).</li>
+<li><strong>Heartbeating</strong>: For long operations, the worker periodically extends the lease.</li>
+<li><strong>Automated Recovery</strong>: When another request arrives and finds <code>Status == &quot;Processing&quot;</code> but <code>LockedUntilUtc &lt; DateTime.UtcNow</code>, it detects that the previous worker crashed. It atomically updates <code>LockedUntilUtc</code> to a new expiration and re-executes the operation safely.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you implement distributed idempotency in asynchronous message-driven architectures (e.g. RabbitMQ, Kafka)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Message brokers deliver messages with <em>at-least-once</em> semantics. To ensure idempotency:</p>
+<ol>
+<li><strong>Message Deduplication Table</strong>: The consumer inserts the incoming <code>MessageId</code> or domain deduplication key into a relational table within the same database transaction as the business state mutation.</li>
+<li><strong>Outbox / Inbox Pattern</strong>: Use the transactional Inbox pattern. If the unique constraint on <code>(ConsumerName, MessageId)</code> throws a unique constraint violation, the message is recognized as duplicate and acknowledged (<code>ack</code>) immediately without re-executing domain actions.</li>
+<li><strong>Natural Idempotency</strong>: Design message mutations to be commutative or state-based (<code>UPDATE account SET balance = 500 WHERE account_id = 1 AND version = 2</code>) rather than incremental delta-based (<code>UPDATE account SET balance = balance + 100</code>).</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What are the trade-offs between Redis and a Relational Database (PostgreSQL) for storing idempotency state?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Redis</strong>:</li>
+<li><em>Pros</em>: Extremely high throughput (sub-millisecond latency), built-in TTL eviction, <code>SETNX</code> atomic primitives.</li>
+<li><em>Cons</em>: Memory capacity limits, potential data loss during cluster failover (asynchronous replication), lack of distributed two-phase commit across Redis and domain database.</li>
+<li><strong>Relational Database (PostgreSQL)</strong>:</li>
+<li><em>Pros</em>: Full ACID compliance; the idempotency record can be inserted in the <strong>exact same database transaction</strong> as the entity updates, guaranteeing 100% consistency with zero dual-write vulnerabilities.</li>
+<li><em>Cons</em>: Higher storage overhead and latency; requires background cleanup jobs or table partitioning to purge expired records over time.</li>
+<li><em>Best Practice</em>: Use PostgreSQL for critical financial/ledger operations; use Redis for high-throughput, low-risk telemetry/notification rate-limiting.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">In Quickselect, why is randomized pivot selection superior to deterministic pivot selection (e.g., choosing `nums[0]`)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>If a deterministic pivot selection (like picking <code>nums[left]</code> or <code>nums[right]</code>) is used on an already sorted or reverse-sorted array, each partition step only eliminates a single element ($N - 1$ remaining).</p>
+<ul>
+<li>This degrades time complexity from the expected $O(N)$ to the worst-case $O(N^2)$, exceeding stack limits or timing out.</li>
+<li>By selecting a pivot uniformly at random from <code>[left, right]</code>, the probability of repeatedly choosing extremal elements becomes astronomically small, guaranteeing expected $O(N)$ runtime across all input distributions.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">Compare Quickselect and Min-Heap for finding the Kth largest element in terms of streaming data and memory constraints.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Quickselect</strong>:</li>
+<li>In-place algorithm ($O(1)$ space).</li>
+<li>Requires the entire dataset to reside in random-access memory (RAM).</li>
+<li>Mutates the original array in place. Cannot process streaming or unbounded data.</li>
+<li><strong>Min-Heap (<code>PriorityQueue&lt;TElement, TPriority&gt;</code>)</strong>:</li>
+<li>Operates on streaming/unbounded data where total count $N$ is unknown in advance.</li>
+<li>Maintains a sliding window of the top $k$ elements in $O(K)$ auxiliary memory.</li>
+<li>Time complexity is $O(N \log K)$. When $K \ll N$, this is practically linear and highly cache-efficient.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How should downstream API calls to third-party providers (e.g. Stripe, SendGrid) be coordinated within an idempotent workflow?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A dual-write problem exists: the internal DB transaction can commit, but the external API call might fail or time out, or vice versa.</p>
+<ol>
+<li>Generate a deterministic downstream idempotency key derived from the upstream key: <code>downstreamKey = Hash(upstreamKey + &quot;-stripe&quot;)</code>.</li>
+<li>Save the pending downstream intent before calling the third party.</li>
+<li>Pass <code>downstreamKey</code> in the external HTTP request header.</li>
+<li>If a network timeout occurs, retrying the operation with the same <code>downstreamKey</code> ensures the external provider does not duplicate the charge or email.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">What is the optimal retention and cleanup policy for an idempotency store?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Indefinite retention causes unbound table growth. The retention window should match the maximum client retry window:</p>
+<ul>
+<li>For user-facing web/mobile APIs, clients typically stop retrying after 24 to 72 hours.</li>
+<li>A sliding TTL of 24–48 hours is standard.</li>
+<li>Implementation: Use PostgreSQL partitioned tables (e.g., daily partitions dropped via <code>pg_partman</code> or cron <code>DROP TABLE</code>) or Redis key TTLs. Dropping partitions is an $O(1)$ catalog metadata operation with zero table bloat compared to costly <code>DELETE FROM WHERE created_at &lt; NOW() - INTERVAL &#x27;3 days&#x27;</code>.</li>
+</ul>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day33.DistributedIdempotency/IdempotencyEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd33-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d33-src-code-0" class="language-csharp">using System.Security.Cryptography;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
+
+namespace Day33.DistributedIdempotency;
+
+#region Exceptions &amp; Models
+
+public class IdempotencyConflictException : Exception
+{
+    public IdempotencyConflictException(string message) : base(message) { }
+}
+
+public class IdempotencyPayloadMismatchException : Exception
+{
+    public IdempotencyPayloadMismatchException(string message) : base(message) { }
+}
+
+public sealed record IdempotentResult(int StatusCode, string ResponseBody, bool FromCache = false);
+
+public sealed class IdempotencyRecord
+{
+    public string IdempotencyKey { get; set; } = string.Empty;
+    public string RequestPayloadHash { get; set; } = string.Empty;
+    public string Status { get; set; } = &quot;Processing&quot;; // Processing, Completed, Failed
+    public int? ResponseStatusCode { get; set; }
+    public string? ResponseBody { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime? LockedUntilUtc { get; set; }
+}
+
+#endregion
+
+#region DbContext
+
+public class IdempotencyDbContext : DbContext
+{
+    public DbSet&lt;IdempotencyRecord&gt; IdempotencyRecords =&gt; Set&lt;IdempotencyRecord&gt;();
+
+    public IdempotencyDbContext(DbContextOptions&lt;IdempotencyDbContext&gt; options) : base(options) { }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity&lt;IdempotencyRecord&gt;(b =&gt;
+        {
+            b.HasKey(x =&gt; x.IdempotencyKey);
+            b.Property(x =&gt; x.IdempotencyKey).IsRequired().HasMaxLength(128);
+            b.Property(x =&gt; x.RequestPayloadHash).IsRequired().HasMaxLength(64);
+            b.Property(x =&gt; x.Status).IsRequired().HasMaxLength(32);
+        });
+    }
+}
+
+#endregion
+
+#region Idempotency Manager
+
+public class IdempotencyManager
+{
+    private readonly IdempotencyDbContext _dbContext;
+
+    public IdempotencyManager(IdempotencyDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public static string ComputeSha256(string input)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input ?? string.Empty));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
+
+    /// &lt;summary&gt;
+    /// Executes an operation with full distributed idempotency semantics.
+    /// Handles in-flight concurrency, payload verification, and cached response returns.
+    /// &lt;/summary&gt;
+    public async Task&lt;IdempotentResult&gt; ExecuteAsync(
+        string idempotencyKey,
+        string requestPayload,
+        Func&lt;Task&lt;IdempotentResult&gt;&gt; operation,
+        TimeSpan? leaseDuration = null)
+    {
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            return await operation();
+        }
+
+        var lease = leaseDuration ?? TimeSpan.FromSeconds(30);
+        var payloadHash = ComputeSha256(requestPayload);
+        var now = DateTime.UtcNow;
+
+        var existing = await _dbContext.IdempotencyRecords
+            .FirstOrDefaultAsync(r =&gt; r.IdempotencyKey == idempotencyKey);
+
+        if (existing != null)
+        {
+            // 1. Verify payload integrity: same key cannot be used with different payload
+            if (existing.RequestPayloadHash != payloadHash)
+            {
+                throw new IdempotencyPayloadMismatchException(
+                    $&quot;Idempotency key &#x27;{idempotencyKey}&#x27; was already used with a different request payload.&quot;);
+            }
+
+            // 2. If already completed, return cached response
+            if (existing.Status == &quot;Completed&quot;)
+            {
+                return new IdempotentResult(
+                    existing.ResponseStatusCode ?? 200,
+                    existing.ResponseBody ?? string.Empty,
+                    FromCache: true
+                );
+            }
+
+            // 3. If currently processing and lease has NOT expired, return 409 Conflict
+            if (existing.Status == &quot;Processing&quot; &amp;&amp; existing.LockedUntilUtc &gt; now)
+            {
+                throw new IdempotencyConflictException(
+                    $&quot;A request with idempotency key &#x27;{idempotencyKey}&#x27; is currently in progress.&quot;);
+            }
+
+            // 4. Lease expired (prior worker crashed) -&gt; re-lease
+            existing.Status = &quot;Processing&quot;;
+            existing.LockedUntilUtc = now.Add(lease);
+            await _dbContext.SaveChangesAsync();
+        }
+        else
+        {
+            // Atomically reserve in-flight state
+            existing = new IdempotencyRecord
+            {
+                IdempotencyKey = idempotencyKey,
+                RequestPayloadHash = payloadHash,
+                Status = &quot;Processing&quot;,
+                CreatedAtUtc = now,
+                LockedUntilUtc = now.Add(lease)
+            };
+            _dbContext.IdempotencyRecords.Add(existing);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        // Execute target business operation
+        try
+        {
+            var result = await operation();
+
+            existing.Status = &quot;Completed&quot;;
+            existing.ResponseStatusCode = result.StatusCode;
+            existing.ResponseBody = result.ResponseBody;
+            existing.LockedUntilUtc = null;
+
+            await _dbContext.SaveChangesAsync();
+            return result with { FromCache = false };
+        }
+        catch (Exception)
+        {
+            existing.Status = &quot;Failed&quot;;
+            existing.LockedUntilUtc = null;
+            await _dbContext.SaveChangesAsync();
+            throw;
+        }
+    }
+}
+
+#endregion
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day33.DistributedIdempotency/KthLargestSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd33-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d33-src-code-1" class="language-csharp">namespace Day33.DistributedIdempotency;
+
+public static class KthLargestSolver
+{
+    private static readonly Random _random = new();
+
+    /// &lt;summary&gt;
+    /// LeetCode #215: Kth Largest Element in an Array (Medium).
+    /// Quickselect Algorithm (Hoare&#x27;s selection algorithm) with randomized pivot.
+    /// Average Time Complexity: O(N), Worst Case: O(N^2), Space Complexity: O(1) iterative.
+    /// &lt;/summary&gt;
+    public static int FindKthLargestQuickselect(int[] nums, int k)
+    {
+        if (nums == null || nums.Length == 0 || k &lt;= 0 || k &gt; nums.Length)
+            throw new ArgumentException(&quot;Invalid arguments for Quickselect&quot;);
+
+        // The Kth largest element is at index (nums.Length - k) in sorted ascending order
+        int targetIndex = nums.Length - k;
+        int left = 0;
+        int right = nums.Length - 1;
+
+        while (left &lt;= right)
+        {
+            int pivotIndex = Partition(nums, left, right);
+
+            if (pivotIndex == targetIndex)
+            {
+                return nums[pivotIndex];
+            }
+            else if (pivotIndex &lt; targetIndex)
+            {
+                left = pivotIndex + 1;
+            }
+            else
+            {
+                right = pivotIndex - 1;
+            }
+        }
+
+        return nums[targetIndex];
+    }
+
+    private static int Partition(int[] nums, int left, int right)
+    {
+        // Randomized pivot to avoid worst-case O(N^2) on sorted/reverse-sorted inputs
+        int randomIndex = _random.Next(left, right + 1);
+        Swap(nums, randomIndex, right);
+
+        int pivotValue = nums[right];
+        int storeIndex = left;
+
+        for (int i = left; i &lt; right; i++)
+        {
+            if (nums[i] &lt;= pivotValue)
+            {
+                Swap(nums, storeIndex, i);
+                storeIndex++;
+            }
+        }
+
+        Swap(nums, storeIndex, right);
+        return storeIndex;
+    }
+
+    private static void Swap(int[] nums, int i, int j)
+    {
+        int temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+    }
+
+    /// &lt;summary&gt;
+    /// LeetCode #215: Kth Largest Element using a Min-Heap (PriorityQueue in .NET 6+).
+    /// Time Complexity: O(N * log K), Space Complexity: O(K).
+    /// &lt;/summary&gt;
+    public static int FindKthLargestMinHeap(int[] nums, int k)
+    {
+        if (nums == null || nums.Length == 0 || k &lt;= 0 || k &gt; nums.Length)
+            throw new ArgumentException(&quot;Invalid arguments for Min-Heap&quot;);
+
+        var minHeap = new PriorityQueue&lt;int, int&gt;();
+
+        foreach (var num in nums)
+        {
+            minHeap.Enqueue(num, num);
+            if (minHeap.Count &gt; k)
+            {
+                minHeap.Dequeue();
+            }
+        }
+
+        return minHeap.Peek();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day33.DistributedIdempotency.Tests/Day33Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd33-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d33-tests-code-0" class="language-csharp">using Microsoft.EntityFrameworkCore;
+using Xunit;
+
+namespace Day33.DistributedIdempotency.Tests;
+
+public class Day33Tests
+{
+    private IdempotencyDbContext CreateDbContext()
+    {
+        var options = new DbContextOptionsBuilder&lt;IdempotencyDbContext&gt;()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        return new IdempotencyDbContext(options);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_FirstExecution_ExecutesAndStoresResult()
+    {
+        using var context = CreateDbContext();
+        var manager = new IdempotencyManager(context);
+        var key = &quot;order-tx-101&quot;;
+        var payload = &quot;{\&quot;orderId\&quot;: 101, \&quot;amount\&quot;: 250.00}&quot;;
+        int callCount = 0;
+
+        var result = await manager.ExecuteAsync(key, payload, async () =&gt;
+        {
+            callCount++;
+            await Task.Delay(10);
+            return new IdempotentResult(201, &quot;{\&quot;status\&quot;: \&quot;created\&quot;, \&quot;id\&quot;: 101}&quot;);
+        });
+
+        Assert.Equal(1, callCount);
+        Assert.False(result.FromCache);
+        Assert.Equal(201, result.StatusCode);
+        Assert.Contains(&quot;created&quot;, result.ResponseBody);
+
+        var record = await context.IdempotencyRecords.FindAsync(key);
+        Assert.NotNull(record);
+        Assert.Equal(&quot;Completed&quot;, record.Status);
+        Assert.Equal(201, record.ResponseStatusCode);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_DuplicateRequest_ReturnsCachedResult_WithoutReExecuting()
+    {
+        using var context = CreateDbContext();
+        var manager = new IdempotencyManager(context);
+        var key = &quot;order-tx-102&quot;;
+        var payload = &quot;{\&quot;orderId\&quot;: 102, \&quot;amount\&quot;: 99.99}&quot;;
+        int callCount = 0;
+
+        // First call
+        var firstResult = await manager.ExecuteAsync(key, payload, async () =&gt;
+        {
+            callCount++;
+            return new IdempotentResult(200, &quot;{\&quot;tx\&quot;: \&quot;ok\&quot;}&quot;);
+        });
+
+        // Second call with same key and payload
+        var secondResult = await manager.ExecuteAsync(key, payload, async () =&gt;
+        {
+            callCount++;
+            return new IdempotentResult(200, &quot;{\&quot;tx\&quot;: \&quot;should not run\&quot;}&quot;);
+        });
+
+        Assert.Equal(1, callCount);
+        Assert.False(firstResult.FromCache);
+        Assert.True(secondResult.FromCache);
+        Assert.Equal(&quot;{\&quot;tx\&quot;: \&quot;ok\&quot;}&quot;, secondResult.ResponseBody);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_PayloadMismatch_ThrowsIdempotencyPayloadMismatchException()
+    {
+        using var context = CreateDbContext();
+        var manager = new IdempotencyManager(context);
+        var key = &quot;order-tx-103&quot;;
+        var payload1 = &quot;{\&quot;orderId\&quot;: 103, \&quot;amount\&quot;: 100.00}&quot;;
+        var payload2 = &quot;{\&quot;orderId\&quot;: 103, \&quot;amount\&quot;: 500.00}&quot;;
+
+        await manager.ExecuteAsync(key, payload1, async () =&gt;
+        {
+            return new IdempotentResult(200, &quot;{\&quot;status\&quot;: \&quot;ok\&quot;}&quot;);
+        });
+
+        await Assert.ThrowsAsync&lt;IdempotencyPayloadMismatchException&gt;(async () =&gt;
+        {
+            await manager.ExecuteAsync(key, payload2, async () =&gt;
+            {
+                return new IdempotentResult(200, &quot;{\&quot;status\&quot;: \&quot;tampered\&quot;}&quot;);
+            });
+        });
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_InFlightConcurrency_ThrowsIdempotencyConflictException()
+    {
+        using var context = CreateDbContext();
+        var key = &quot;order-tx-104&quot;;
+        var payload = &quot;{\&quot;orderId\&quot;: 104}&quot;;
+
+        // Seed an in-flight record with active lease
+        context.IdempotencyRecords.Add(new IdempotencyRecord
+        {
+            IdempotencyKey = key,
+            RequestPayloadHash = IdempotencyManager.ComputeSha256(payload),
+            Status = &quot;Processing&quot;,
+            CreatedAtUtc = DateTime.UtcNow,
+            LockedUntilUtc = DateTime.UtcNow.AddMinutes(5)
+        });
+        await context.SaveChangesAsync();
+
+        var manager = new IdempotencyManager(context);
+
+        var ex = await Assert.ThrowsAsync&lt;IdempotencyConflictException&gt;(async () =&gt;
+        {
+            await manager.ExecuteAsync(key, payload, async () =&gt;
+            {
+                return new IdempotentResult(200, &quot;{}&quot;);
+            });
+        });
+
+        Assert.Contains(&quot;in progress&quot;, ex.Message);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_ExpiredLease_RecoversAndExecutes()
+    {
+        using var context = CreateDbContext();
+        var key = &quot;order-tx-105&quot;;
+        var payload = &quot;{\&quot;orderId\&quot;: 105}&quot;;
+
+        // Seed a crashed worker&#x27;s record whose lease expired 10 minutes ago
+        context.IdempotencyRecords.Add(new IdempotencyRecord
+        {
+            IdempotencyKey = key,
+            RequestPayloadHash = IdempotencyManager.ComputeSha256(payload),
+            Status = &quot;Processing&quot;,
+            CreatedAtUtc = DateTime.UtcNow.AddMinutes(-20),
+            LockedUntilUtc = DateTime.UtcNow.AddMinutes(-10)
+        });
+        await context.SaveChangesAsync();
+
+        var manager = new IdempotencyManager(context);
+        int executed = 0;
+
+        var result = await manager.ExecuteAsync(key, payload, async () =&gt;
+        {
+            executed++;
+            return new IdempotentResult(200, &quot;{\&quot;recovered\&quot;: true}&quot;);
+        });
+
+        Assert.Equal(1, executed);
+        Assert.False(result.FromCache);
+        Assert.Equal(&quot;{\&quot;recovered\&quot;: true}&quot;, result.ResponseBody);
+
+        var updatedRecord = await context.IdempotencyRecords.FindAsync(key);
+        Assert.NotNull(updatedRecord);
+        Assert.Equal(&quot;Completed&quot;, updatedRecord.Status);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_FailedOperation_MarksRecordFailedAndRethrows()
+    {
+        using var context = CreateDbContext();
+        var manager = new IdempotencyManager(context);
+        var key = &quot;order-tx-106&quot;;
+        var payload = &quot;{\&quot;orderId\&quot;: 106}&quot;;
+
+        await Assert.ThrowsAsync&lt;InvalidOperationException&gt;(async () =&gt;
+        {
+            await manager.ExecuteAsync(key, payload, async () =&gt;
+            {
+                throw new InvalidOperationException(&quot;Downstream payment service down&quot;);
+            });
+        });
+
+        var record = await context.IdempotencyRecords.FindAsync(key);
+        Assert.NotNull(record);
+        Assert.Equal(&quot;Failed&quot;, record.Status);
+        Assert.Null(record.LockedUntilUtc);
+    }
+
+    [Fact]
+    public async Task IdempotencyManager_EmptyIdempotencyKey_ExecutesDirectlyWithoutCache()
+    {
+        using var context = CreateDbContext();
+        var manager = new IdempotencyManager(context);
+        int count = 0;
+
+        var res1 = await manager.ExecuteAsync(&quot;&quot;, &quot;{}&quot;, async () =&gt;
+        {
+            count++;
+            return new IdempotentResult(200, &quot;non-idempotent-1&quot;);
+        });
+
+        var res2 = await manager.ExecuteAsync(null!, &quot;{}&quot;, async () =&gt;
+        {
+            count++;
+            return new IdempotentResult(200, &quot;non-idempotent-2&quot;);
+        });
+
+        Assert.Equal(2, count);
+        Assert.False(res1.FromCache);
+        Assert.False(res2.FromCache);
+        Assert.Empty(await context.IdempotencyRecords.ToListAsync());
+    }
+
+    [Fact]
+    public void KthLargest_Quickselect_StandardArray_ReturnsCorrectElement()
+    {
+        int[] nums = [3, 2, 1, 5, 6, 4];
+        int k = 2;
+
+        int result = KthLargestSolver.FindKthLargestQuickselect(nums, k);
+
+        Assert.Equal(5, result);
+    }
+
+    [Fact]
+    public void KthLargest_Quickselect_WithDuplicates_ReturnsCorrectElement()
+    {
+        int[] nums = [3, 2, 3, 1, 2, 4, 5, 5, 6];
+        int k = 4;
+
+        int result = KthLargestSolver.FindKthLargestQuickselect(nums, k);
+
+        Assert.Equal(4, result);
+    }
+
+    [Fact]
+    public void KthLargest_MinHeap_MatchesQuickselectResult_AcrossMultipleInputs()
+    {
+        var testCases = new (int[] nums, int k)[]
+        {
+            ([1], 1),
+            ([7, 10, 4, 3, 20, 15], 3),
+            ([99, 99, 99, 100, 100], 1),
+            ([99, 99, 99, 100, 100], 2),
+            ([99, 99, 99, 100, 100], 5),
+            ([-1, -5, -2, -8, 0], 2)
+        };
+
+        foreach (var (nums, k) in testCases)
+        {
+            int[] numsCopyForHeap = (int[])nums.Clone();
+            int[] numsCopyForSelect = (int[])nums.Clone();
+
+            int heapResult = KthLargestSolver.FindKthLargestMinHeap(numsCopyForHeap, k);
+            int selectResult = KthLargestSolver.FindKthLargestQuickselect(numsCopyForSelect, k);
+
+            Assert.Equal(heapResult, selectResult);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 33 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

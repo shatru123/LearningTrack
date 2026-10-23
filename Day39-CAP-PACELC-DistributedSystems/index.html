@@ -1,0 +1,2228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 39: CAP Theorem &amp; PACELC in Practice | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 39</span>
+        <span class="badge badge-category">Distributed Consensus</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day38-SystemDesign-Video-Streaming/index.html" class="nav-btn">← Day 38</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+
+        </select>
+        <a href="../Day40-EventSourcing-CQRS/index.html" class="nav-btn">Day 40 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 39: CAP Theorem &amp; PACELC in Practice</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d39Bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#090d16"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+            <linearGradient id="d39P1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d39P2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#14532d"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+            <linearGradient id="d39P3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+          </defs>
+          <rect width="900" height="360" rx="12" fill="url(#d39Bg)"/>
+          <text x="30" y="38" fill="#f8fafc" font-size="18" font-weight="bold" font-family="sans-serif">Day 39: CAP &amp; PACELC Theorems &amp; 2D Word Search / Phone Backtracking</text>
+          
+          <rect x="25" y="60" width="275" height="280" rx="10" fill="url(#d39P1)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="45" y="88" fill="#38bdf8" font-size="14" font-weight="bold">CAP &amp; PACELC Theorems</text>
+          <rect x="40" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="125" fill="#38bdf8" font-size="11" font-weight="bold">CAP Under Partition (P)</text>
+          <text x="50" y="145" fill="#cbd5e1" font-size="9">Partitions are inevitable physical reality</text>
+          <text x="50" y="162" fill="#34d399" font-size="9">CP: Preserves consistency, drops writes</text>
+          <text x="50" y="179" fill="#fbbf24" font-size="9">AP: Preserves availability, accepts stale</text>
+          <text x="50" y="196" fill="#f43f5e" font-size="9">No real distributed system can choose CA</text>
+
+          <rect x="40" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="50" y="240" fill="#a855f7" font-size="11" font-weight="bold">PACELC Normal State (E)</text>
+          <text x="50" y="258" fill="#cbd5e1" font-size="9">Else: Latency (L) vs Consistency (C)</text>
+          <text x="50" y="274" fill="#34d399" font-size="9">PC/EC: Spanner, CockroachDB</text>
+          <text x="50" y="290" fill="#cbd5e1" font-size="9">PA/EL: Cassandra, DynamoDB, Couchbase</text>
+          <text x="50" y="306" fill="#94a3b8" font-size="9">PC/EL: MongoDB primary reads</text>
+
+          <rect x="315" y="60" width="275" height="280" rx="10" fill="url(#d39P2)" stroke="#4ade80" stroke-width="1.5"/>
+          <text x="335" y="88" fill="#4ade80" font-size="14" font-weight="bold">Tunable Quorums (N, W, R)</text>
+          <rect x="330" y="105" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Strong Consistency (R + W &gt; N)</text>
+          <text x="340" y="145" fill="#cbd5e1" font-size="9">Pigeonhole: Read &amp; write sets overlap</text>
+          <text x="340" y="162" fill="#34d399" font-size="9">N=3, W=2, R=2 &#8594; 2+2=4 &gt; 3 (Strong)</text>
+          <text x="340" y="179" fill="#cbd5e1" font-size="9">N=3, W=1, R=1 &#8594; Eventual consistency</text>
+          <text x="340" y="196" fill="#fbbf24" font-size="9">Guarantees linearizable client reads</text>
+
+          <rect x="330" y="220" width="245" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="340" y="240" fill="#4ade80" font-size="11" font-weight="bold">Read Repair &amp; LWW</text>
+          <text x="340" y="258" fill="#cbd5e1" font-size="9">Coordinator resolves version conflicts</text>
+          <text x="340" y="274" fill="#34d399" font-size="9">Latest version wins (LWW / Vector clock)</text>
+          <text x="340" y="290" fill="#cbd5e1" font-size="9">Asynchronously heals stale replica nodes</text>
+          <text x="340" y="306" fill="#94a3b8" font-size="9">Self-healing cluster data consistency</text>
+
+          <rect x="605" y="60" width="270" height="280" rx="10" fill="url(#d39P3)" stroke="#e879f9" stroke-width="1.5"/>
+          <text x="625" y="88" fill="#e879f9" font-size="14" font-weight="bold">LC #79 &amp; #17: DFS Backtracking</text>
+          <rect x="620" y="105" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="125" fill="#38bdf8" font-size="11" font-weight="bold">Word Search (2D Grid DFS)</text>
+          <text x="630" y="145" fill="#cbd5e1" font-size="9">In-place cell marking: board[r][c] = '#'</text>
+          <text x="630" y="162" fill="#34d399" font-size="9">O(1) auxiliary space (no hash set alloc)</text>
+          <text x="630" y="179" fill="#cbd5e1" font-size="9">Time: O(M * N * 3^L)</text>
+          <text x="630" y="196" fill="#fbbf24" font-size="9">Restores original char on backtrack</text>
+
+          <rect x="620" y="220" width="240" height="105" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="630" y="240" fill="#e879f9" font-size="11" font-weight="bold">Letter Combinations (Phone)</text>
+          <text x="630" y="258" fill="#cbd5e1" font-size="9">Keypad digit mapping: '2' &#8594; "abc"</text>
+          <text x="630" y="274" fill="#34d399" font-size="9">Cartesian product generation</text>
+          <text x="630" y="290" fill="#cbd5e1" font-size="9">Time: O(4^N * N), Space: O(N)</text>
+          <text x="630" y="306" fill="#94a3b8" font-size="9">Recursive backtracking formulation</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: CAP, PACELC & Distributed Consensus</h1>
+<h2>1. CAP Theorem Formalization (Gilbert & Lynch Proof)</h2>
+<ul>
+<li><strong>Consistency ($C$)</strong>: Linearizability. Every read receives the most recent write or an error. All nodes appear to see operations in a single global, atomic order.</li>
+<li><strong>Availability ($A$)</strong>: Every non-failing node returns a non-error response for every received request (no guarantees on data freshness).</li>
+<li><strong>Partition Tolerance ($P$)</strong>: The network can drop or delay an arbitrary number of messages between nodes.</li>
+<li><strong>Theorem</strong>: On an asynchronous network where partitions $P$ can occur, a distributed datastore CANNOT achieve both $C$ and $A$. You MUST choose whether to preserve consistency by rejecting requests (CP) or preserve availability by accepting potentially conflicting writes (AP).</li>
+</ul>
+<h2>2. PACELC Theorem (Daniel Abadi)</h2>
+<p>CAP only considers behavior when the system is actively partitioned ($P$). However, partitions are relatively rare in healthy datacenters. PACELC explains system behavior during normal (non-partitioned) states:</p>
+<ul>
+<li><strong>If Partition ($P$)</strong>:</li>
+<li>Choose between <strong>Availability</strong> ($A$) or <strong>Consistency</strong> ($C$).</li>
+<li><strong>Else ($E$)</strong>:</li>
+<li>Choose between <strong>Latency</strong> ($L$) or <strong>Consistency</strong> ($C$).</li>
+<li><strong>Categorization Matrix</strong>:</li>
+<li><strong>PC/EC</strong> (Google Spanner, CockroachDB): Prefers consistency during partitions; prefers multi-datacenter two-phase commit / Paxos during normal operation (paying higher latency for consistency).</li>
+<li><strong>PA/EL</strong> (Apache Cassandra, Amazon DynamoDB, Couchbase): Prefers availability during partitions; returns local replica reads immediately during normal operation (paying consistency for low latency).</li>
+<li><strong>PC/EL</strong> (MongoDB default primary read/write): Refuses writes if primary partitioned (PC), but does fast local primary replication (EL).</li>
+</ul>
+<h2>3. Tunable Consistency Math ($N, W, R$)</h2>
+<ul>
+<li>By the <strong>Pigeonhole Principle</strong>:</li>
+<li>Total nodes = $N$.</li>
+<li>Number of write nodes = $W$.</li>
+<li>Number of read nodes = $R$.</li>
+<li>If $W + R > N$, the set of nodes containing writes and the set of nodes consulted on reads MUST intersect by at least one node:</li>
+</ul>
+<p>$$\text{Intersection} = (W + R) - N \ge 1$$</p>
+<ul>
+<li>The intersecting node holds the latest version $V_{\max}$.</li>
+<li><strong>Read Repair vs Anti-Entropy</strong>:</li>
+<li><strong>Read Repair</strong>: Opportunistic sync during client reads. When a read quorum returns mismatched versions, the coordinator writes the newest version back to the stale nodes.</li>
+<li><strong>Anti-Entropy</strong>: Background process using Merkle trees to compare replica ranges and stream differences without client intervention.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 39: CAP Theorem & PACELC in Practice</h1>
+<h2>Architectural Overview</h2>
+<p>Distributed systems running on unreliable networks must navigate fundamental trade-offs between consistency, availability, latency, and fault tolerance.</p>
+<p>This module implements and proves distributed consensus and quorum models in .NET 8:</p>
+<ul>
+<li><strong>CAP Theorem (Brewer)</strong>:</li>
+<li>In the presence of a network Partition ($P$), a distributed system must choose between Consistency ($C$) or Availability ($A$).</li>
+<li><strong>PACELC Theorem (Abadi)</strong>:</li>
+<li>Extends CAP to normal operational states:</li>
+<li>If <strong>Partition</strong> ($P$): choose between <strong>Availability</strong> ($A$) and <strong>Consistency</strong> ($C$).</li>
+<li><strong>Else</strong> ($E$): choose between <strong>Latency</strong> ($L$) and <strong>Consistency</strong> ($C$).</li>
+<li>Examples: Spanner (PC/EC), Cassandra/DynamoDB (PA/EL), MongoDB (PC/EC or PA/EL depending on read concern).</li>
+<li><strong>Tunable Quorums ($N, W, R$)</strong>:</li>
+<li>$N$: Replication factor (e.g. 3 or 5 replicas).</li>
+<li>$W$: Write quorum (number of nodes that must acknowledge a write before success).</li>
+<li>$R$: Read quorum (number of nodes contacted during read).</li>
+<li><strong>Strong Consistency (Pigeonhole Principle)</strong>: When $R + W > N$, the read quorum and write quorum are mathematically guaranteed to overlap by at least one node, ensuring the client always observes the latest state.</li>
+<li><strong>Eventual Consistency</strong>: When $R + W \le N$, reads may return stale data.</li>
+<li><strong>Conflict Resolution & Read Repair</strong>: Resolves conflicting replica versions via Last-Write-Wins (LWW) and automatically repairs out-of-date replica nodes asynchronously.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                     Quorum Cluster (N=3, W=2, R=2)
+                                 │
+                     Write &quot;Alice&quot; (Version 1)
+                     Dispatched to all 3 nodes
+                                 │
+             ┌───────────────────┼───────────────────┐
+             ▼                   ▼                   ▼
+        [Node 1]            [Node 2]            [Node 3]
+       (Ack: v=1)          (Ack: v=1)        (Partitioned!)
+             │                   │
+             └─────────┬─────────┘
+                       ▼
+                 W=2 Achieved!
+                       │
+       Later: Read Request (R=2) Contacting Node 1 &amp; Node 3
+                       │
+             ┌─────────┴─────────┐
+             ▼                   ▼
+         [Node 1]            [Node 3]
+         (v=1: Alice)        (v=0: Stale)
+             │                   │
+             └─────────┬─────────┘
+                       │
+                       ├─ Conflict Resolution: v=1 wins (Alice)
+                       └─ Read Repair: Write v=1 to Node 3!</code></pre></div>
+<hr/>
+<h2>LeetCode #79 & #17: Word Search & Letter Combinations (Medium)</h2>
+<ul>
+<li><strong>LeetCode #79 (Word Search)</strong>:</li>
+<li>2D grid character matching via DFS backtracking.</li>
+<li>Replaces visited cells with <code>#</code> in-place to achieve $O(1)$ auxiliary allocation (avoiding $O(M \times N)$ boolean matrix).</li>
+<li><strong>LeetCode #17 (Letter Combinations of a Phone Number)</strong>:</li>
+<li>Generates Cartesian product of phone keypad letter mappings using recursive backtracking.</li>
+<li>Time Complexity: $O(4^N \times N)$.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day39-CAP-PACELC-DistributedSystems/tests/Day39.DistributedConsensus.Tests/Day39.DistributedConsensus.Tests.csproj</code></pre></div>
+<p>10 unit tests validate strict quorum overlaps ($R+W>N$), partition tolerance, read repair healing, PACELC classifications, 2D word search, and phone combinations.</p>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the formal difference between CAP Consistency and ACID Consistency?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>They describe completely different properties despite sharing the same word "Consistency":</p>
+<ul>
+<li><strong>CAP Consistency ($C$)</strong>: Means <strong>Linearizability</strong> / Single-copy consistency. It is a distributed systems property ensuring that once a write completes, all subsequent reads across any node in the cluster will observe that write or a later one.</li>
+<li><strong>ACID Consistency ($C$)</strong>: Means <strong>Application Invariant Preservation</strong>. It is a database transaction property ensuring state transitions obey all domain business rules, schema constraints, foreign keys, and unique indices (e.g. account balances cannot drop below zero).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why is &quot;CA&quot; (Consistent + Available without Partition Tolerance) an impossible architectural choice in distributed systems?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A network partition is not a design choice; it is an inevitable physical reality of distributed infrastructure (cables cut, switch failures, cross-datacenter fiber cuts, GC pauses causing heartbeat timeouts).</p>
+<ul>
+<li>If a partition occurs, nodes in partition group 1 cannot communicate with nodes in partition group 2.</li>
+<li>If a client issues a write to group 1:</li>
+<li>If group 1 accepts the write, group 2 becomes stale (sacrificing Consistency $C$).</li>
+<li>If group 1 rejects the write or blocks forever waiting for group 2, the system stops serving requests (sacrificing Availability $A$).</li>
+<li>Therefore, every real distributed system MUST be partition-tolerant ($P$). The only choice is between CP and AP.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Explain PACELC theorem and give real-world database examples for each quadrant.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>PACELC states: If <strong>Partition</strong> ($P$), trade off <strong>Availability</strong> ($A$) vs <strong>Consistency</strong> ($C$); <strong>Else</strong> (normal non-partitioned operation), trade off <strong>Latency</strong> ($L$) vs <strong>Consistency</strong> ($C$).</p>
+<ul>
+<li><strong>PC/EC</strong> (Google Spanner, CockroachDB): Prefers consistency during partitions (fails un-elected nodes); prefers strong consistency during normal operations (requires multi-region Paxos/Raft consensus before acknowledging writes, incurring network roundtrip latency).</li>
+<li><strong>PA/EL</strong> (Apache Cassandra, Amazon DynamoDB, Couchbase): Prefers availability during partitions (accepts writes on any node); prefers ultra-low latency during normal operation (writes to local node and replicates asynchronously, risking stale reads).</li>
+<li><strong>PC/EL</strong> (MongoDB with default settings): Master node rejects writes if isolated from replica majority (PC), but does fast local replication with eventual consistency for secondaries (EL).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Prove mathematically why $R + W &gt; N$ guarantees strong consistency (Linearizability) in quorum systems.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $N$ be the total number of replica nodes for a key.</p>
+<ul>
+<li>A write is acknowledged when written to a set of $W$ nodes: $S_w \subseteq \text{Nodes}, |S_w| = W$.</li>
+<li>A read contacts a set of $R$ nodes: $S_r \subseteq \text{Nodes}, |S_r| = R$.</li>
+<li>By the Pigeonhole Principle:</li>
+</ul>
+<p>$$|S_w \cap S_r| = |S_w| + |S_r| - |S_w \cup S_r| \ge W + R - N$$</p>
+<ul>
+<li>Since $W + R > N$, we have:</li>
+</ul>
+<p>$$|S_w \cap S_r| \ge 1$$</p>
+<ul>
+<li>This guarantees the read set and write set intersect by at least one common replica node. Because that common node has the latest write (tracked via version or timestamp), the read coordinator receives the latest version and returns it to the client.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is &quot;Read Repair&quot; and how does it maintain eventual consistency in leaderless distributed databases?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>In leaderless systems (Cassandra, Dynamo):</p>
+<ol>
+<li>A client initiates a read with quorum $R=2$ on a cluster with $N=3$.</li>
+<li>Node 1 returns <code>{value: &quot;Active&quot;, version: 5}</code>.</li>
+<li>Node 2 returns <code>{value: &quot;Pending&quot;, version: 4}</code>.</li>
+<li>The coordinator notices a version discrepancy. It returns version 5 ("Active") to the client.</li>
+<li>In the background (asynchronously), the coordinator sends an update to Node 2 with version 5.</li>
+</ol>
+<ul>
+<li>Over time, frequently read data is self-healing, reducing entropy without expensive full-cluster scans.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What are the risks of using Last-Write-Wins (LWW) conflict resolution, and what is the alternative?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Risks of LWW</strong>:</li>
+<li>Relies on physical wall-clock timestamps (NTP).</li>
+<li>Clock skew between servers can cause a write that occurred physically <em>earlier</em> to overwrite a write that occurred physically <em>later</em> if Server A's clock is running 50ms fast.</li>
+<li>Concurrent writes at the same millisecond silently drop one update, leading to data loss.</li>
+<li><strong>Alternatives</strong>:</li>
+<li><strong>Vector Clocks / Version Vectors</strong>: Track causal history per node (<code>[NodeA: 2, NodeB: 1]</code>). If vectors do not dominate, a true conflict is detected and surfaced to the application (or resolved via CRDTs).</li>
+<li><strong>Conflict-Free Replicated Data Types (CRDTs)</strong>: Mathematically structured data types (e.g. PN-Counters, Observed-Remove Sets) whose merge operations are associative, commutative, and idempotent ($A \cup B = B \cup A$).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">In LeetCode #79 (Word Search), why is in-place grid mutation (`board[r][c] = &#x27;#&#x27;`) superior to maintaining a `HashSet&lt;(int, int)&gt;` or `bool[][]`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>A <code>HashSet&lt;(int, int)&gt;</code> allocates heap memory for every visited cell, causes boxing, and incurs hash table lookup overhead on every step.</li>
+<li>A separate <code>bool[rows][cols]</code> matrix requires $O(M \times N)$ auxiliary memory allocation per test case or expensive zeroing resets.</li>
+<li>By mutating the character directly in <code>board[r][c] = &#x27;#&#x27;</code> and restoring it on backtrack (<code>board[r][c] = original</code>), the algorithm uses $O(1)$ auxiliary memory and stays completely cache-friendly within the L1 data cache.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the time complexity of Word Search on an $M \times N$ board for a word of length $L$?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>There are $M \times N$ possible starting positions on the board.</li>
+<li>From each cell, the DFS explores in 4 directions. However, since we cannot visit the cell we just came from, subsequent steps have at most 3 branches.</li>
+<li>For a word of length $L$, the maximum depth of the recursion tree is $L$.</li>
+<li>Total worst-case time complexity: $O(M \times N \times 3^L)$.</li>
+<li>Space complexity: $O(L)$ for the recursion stack depth.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #17 (Letter Combinations of a Phone Number), what is the maximum number of combinations generated for an input of length $N$?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>Digits 7 and 9 map to 4 letters each ('pqrs', 'wxyz'); digits 2, 3, 4, 5, 6, 8 map to 3 letters each.</li>
+<li>In the worst case where all $N$ digits are 7 or 9, the total number of combinations is $4^N$.</li>
+<li>Copying each combination of length $N$ into the output list takes $O(N)$ operations.</li>
+<li>Total time complexity: $O(4^N \times N)$.</li>
+<li>Space complexity: $O(N)$ auxiliary stack space.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does Google Spanner claim to achieve &quot;both Consistency and Availability&quot; despite the CAP theorem?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Spanner does not violate the CAP theorem; it is technically a <strong>CP</strong> system.</p>
+<ul>
+<li>If a network partition isolates a replica from the Paxos quorum, Spanner chooses Consistency over Availability for that partition.</li>
+<li>However, Google minimizes partitions to near zero through:</li>
+</ul>
+<ol>
+<li>Private multi-redundant global fiber optic backbone with automated rerouting.</li>
+<li><strong>TrueTime API</strong>: Uses synchronized atomic clocks and GPS receivers in every datacenter, guaranteeing clock uncertainty $\epsilon < 7\text{ms}$.</li>
+<li>By waiting out the small uncertainty window $2\epsilon$ before committing transactions, Spanner achieves external consistency (strict serializability) globally with five-nines (99.999%) availability in practice, appearing as "CA" to external users.</li>
+</ol>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day39.DistributedConsensus/QuorumStoreEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd39-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d39-src-code-0" class="language-csharp">namespace Day39.DistributedConsensus;
+
+public class QuorumUnavailableException : Exception
+{
+    public QuorumUnavailableException(string message) : base(message) { }
+}
+
+public record ReplicaValue&lt;T&gt;(T Value, long Version, long TimestampTicks);
+
+public class ReplicaNode&lt;T&gt;
+{
+    public string NodeId { get; }
+    public bool IsPartitioned { get; set; } = false;
+    private readonly Dictionary&lt;string, ReplicaValue&lt;T&gt;&gt; _store = new();
+    private readonly object _lock = new();
+
+    public ReplicaNode(string nodeId)
+    {
+        NodeId = nodeId;
+    }
+
+    public bool TryWrite(string key, T value, long version, long timestampTicks)
+    {
+        if (IsPartitioned) return false;
+
+        lock (_lock)
+        {
+            if (!_store.TryGetValue(key, out var current) || version &gt;= current.Version)
+            {
+                _store[key] = new ReplicaValue&lt;T&gt;(value, version, timestampTicks);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    public bool TryRead(string key, out ReplicaValue&lt;T&gt;? value)
+    {
+        value = null;
+        if (IsPartitioned) return false;
+
+        lock (_lock)
+        {
+            if (_store.TryGetValue(key, out var val))
+            {
+                value = val;
+                return true;
+            }
+            return true; // Read succeeded, value is null
+        }
+    }
+}
+
+public class QuorumCluster&lt;T&gt;
+{
+    public int N =&gt; Nodes.Count;
+    public int W { get; }
+    public int R { get; }
+    public IReadOnlyList&lt;ReplicaNode&lt;T&gt;&gt; Nodes { get; }
+    public bool IsStronglyConsistent =&gt; (R + W) &gt; N;
+
+    private long _globalVersion = 0;
+
+    public QuorumCluster(int nodeCount, int writeQuorum, int readQuorum)
+    {
+        if (writeQuorum &gt; nodeCount || readQuorum &gt; nodeCount)
+            throw new ArgumentException(&quot;Quorum cannot exceed total node count&quot;);
+
+        W = writeQuorum;
+        R = readQuorum;
+
+        var list = new List&lt;ReplicaNode&lt;T&gt;&gt;();
+        for (int i = 1; i &lt;= nodeCount; i++)
+        {
+            list.Add(new ReplicaNode&lt;T&gt;($&quot;node-{i}&quot;));
+        }
+        Nodes = list;
+    }
+
+    public async Task&lt;bool&gt; WriteAsync(string key, T value)
+    {
+        long version = Interlocked.Increment(ref _globalVersion);
+        long timestamp = DateTime.UtcNow.Ticks;
+
+        int acks = 0;
+        foreach (var node in Nodes)
+        {
+            if (node.TryWrite(key, value, version, timestamp))
+            {
+                acks++;
+            }
+        }
+
+        if (acks &lt; W)
+        {
+            throw new QuorumUnavailableException(
+                $&quot;Write quorum failed: Required {W} acks but received {acks} from {N} nodes.&quot;);
+        }
+
+        return await Task.FromResult(true);
+    }
+
+    public async Task&lt;T?&gt; ReadAsync(string key, bool triggerReadRepair = true)
+    {
+        var responses = new List&lt;(ReplicaNode&lt;T&gt; Node, ReplicaValue&lt;T&gt;? Value)&gt;();
+
+        foreach (var node in Nodes)
+        {
+            if (node.TryRead(key, out var val))
+            {
+                responses.Add((node, val));
+            }
+        }
+
+        if (responses.Count &lt; R)
+        {
+            throw new QuorumUnavailableException(
+                $&quot;Read quorum failed: Required {R} responses but received {responses.Count} from {N} nodes.&quot;);
+        }
+
+        // Filter valid non-null values
+        var validValues = responses
+            .Where(r =&gt; r.Value != null)
+            .Select(r =&gt; r.Value!)
+            .ToList();
+
+        if (validValues.Count == 0)
+        {
+            return default;
+        }
+
+        // Conflict resolution: highest version and latest timestamp (Last-Write-Wins)
+        var latest = validValues
+            .OrderByDescending(v =&gt; v.Version)
+            .ThenByDescending(v =&gt; v.TimestampTicks)
+            .First();
+
+        // Read Repair: asynchronously update any node that returned stale data
+        if (triggerReadRepair)
+        {
+            foreach (var (node, val) in responses)
+            {
+                if (val == null || val.Version &lt; latest.Version)
+                {
+                    node.TryWrite(key, latest.Value, latest.Version, latest.TimestampTicks);
+                }
+            }
+        }
+
+        return await Task.FromResult(latest.Value);
+    }
+}
+
+public static class PacelcClassifier
+{
+    public static string Classify(string systemName)
+    {
+        return systemName.ToLowerInvariant() switch
+        {
+            &quot;spanner&quot; or &quot;cockroachdb&quot; =&gt; &quot;PC/EC (Consistent on Partition, Consistent on Normal)&quot;,
+            &quot;cassandra&quot; or &quot;dynamodb&quot; =&gt; &quot;PA/EL (Available on Partition, Low Latency on Normal)&quot;,
+            &quot;mongodb&quot; =&gt; &quot;PC/EC (Primary Read/Write) or PA/EL (Secondary Read)&quot;,
+            _ =&gt; &quot;Configurable&quot;
+        };
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day39.DistributedConsensus/WordSearchAndPhoneSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd39-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d39-src-code-1" class="language-csharp">using System.Text;
+
+namespace Day39.DistributedConsensus;
+
+public static class WordSearchAndPhoneSolver
+{
+    #region LeetCode #79: Word Search
+
+    /// &lt;summary&gt;
+    /// LeetCode #79: Word Search (Medium).
+    /// DFS Backtracking on 2D character grid with in-place cell marking.
+    /// Time Complexity: O(M * N * 3^L) where L = word.Length. Space: O(L) recursion stack.
+    /// &lt;/summary&gt;
+    public static bool Exist(char[][] board, string word)
+    {
+        if (board == null || board.Length == 0 || string.IsNullOrEmpty(word))
+            return false;
+
+        int rows = board.Length;
+        int cols = board[0].Length;
+
+        for (int r = 0; r &lt; rows; r++)
+        {
+            for (int c = 0; c &lt; cols; c++)
+            {
+                if (board[r][c] == word[0] &amp;&amp; DfsWordSearch(board, word, r, c, 0))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool DfsWordSearch(char[][] board, string word, int r, int c, int index)
+    {
+        if (index == word.Length)
+        {
+            return true;
+        }
+
+        if (r &lt; 0 || r &gt;= board.Length || c &lt; 0 || c &gt;= board[0].Length || board[r][c] != word[index])
+        {
+            return false;
+        }
+
+        char original = board[r][c];
+        board[r][c] = &#x27;#&#x27;; // Mark cell as visited in-place
+
+        bool found = DfsWordSearch(board, word, r + 1, c, index + 1) ||
+                     DfsWordSearch(board, word, r - 1, c, index + 1) ||
+                     DfsWordSearch(board, word, r, c + 1, index + 1) ||
+                     DfsWordSearch(board, word, r, c - 1, index + 1);
+
+        board[r][c] = original; // Backtrack / unmark
+        return found;
+    }
+
+    #endregion
+
+    #region LeetCode #17: Letter Combinations of a Phone Number
+
+    private static readonly string[] DigitMap =
+    [
+        &quot;&quot;,     // 0
+        &quot;&quot;,     // 1
+        &quot;abc&quot;,  // 2
+        &quot;def&quot;,  // 3
+        &quot;ghi&quot;,  // 4
+        &quot;jkl&quot;,  // 5
+        &quot;mno&quot;,  // 6
+        &quot;pqrs&quot;, // 7
+        &quot;tuv&quot;,  // 8
+        &quot;wxyz&quot;  // 9
+    ];
+
+    /// &lt;summary&gt;
+    /// LeetCode #17: Letter Combinations of a Phone Number (Medium).
+    /// Time Complexity: O(4^N * N), Space Complexity: O(N) stack.
+    /// &lt;/summary&gt;
+    public static IList&lt;string&gt; LetterCombinations(string digits)
+    {
+        var result = new List&lt;string&gt;();
+        if (string.IsNullOrEmpty(digits)) return result;
+
+        var current = new StringBuilder();
+        BacktrackLetters(digits, 0, current, result);
+        return result;
+    }
+
+    private static void BacktrackLetters(string digits, int index, StringBuilder current, List&lt;string&gt; result)
+    {
+        if (index == digits.Length)
+        {
+            result.Add(current.ToString());
+            return;
+        }
+
+        int digit = digits[index] - &#x27;0&#x27;;
+        if (digit &lt; 2 || digit &gt; 9) return;
+
+        string letters = DigitMap[digit];
+        foreach (char ch in letters)
+        {
+            current.Append(ch);
+            BacktrackLetters(digits, index + 1, current, result);
+            current.Length--; // Backtrack
+        }
+    }
+
+    #endregion
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day39.DistributedConsensus.Tests/Day39Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd39-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d39-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day39.DistributedConsensus.Tests;
+
+public class Day39Tests
+{
+    [Fact]
+    public void QuorumCluster_StrongConsistency_WhenRPlusWGreaterThanN()
+    {
+        var strongCluster = new QuorumCluster&lt;string&gt;(nodeCount: 5, writeQuorum: 3, readQuorum: 3); // 3+3=6 &gt; 5
+        var weakCluster = new QuorumCluster&lt;string&gt;(nodeCount: 5, writeQuorum: 2, readQuorum: 2);   // 2+2=4 &lt;= 5
+
+        Assert.True(strongCluster.IsStronglyConsistent);
+        Assert.False(weakCluster.IsStronglyConsistent);
+    }
+
+    [Fact]
+    public async Task QuorumCluster_WriteAndReadQuorum_SucceedsUnderHealthyCluster()
+    {
+        var cluster = new QuorumCluster&lt;string&gt;(nodeCount: 3, writeQuorum: 2, readQuorum: 2);
+
+        await cluster.WriteAsync(&quot;user:101&quot;, &quot;Alice&quot;);
+        var readVal = await cluster.ReadAsync(&quot;user:101&quot;);
+
+        Assert.Equal(&quot;Alice&quot;, readVal);
+    }
+
+    [Fact]
+    public async Task QuorumCluster_WriteQuorum_ThrowsQuorumUnavailable_WhenPartitioned()
+    {
+        var cluster = new QuorumCluster&lt;string&gt;(nodeCount: 3, writeQuorum: 2, readQuorum: 2);
+
+        // Partition 2 of the 3 nodes
+        cluster.Nodes[0].IsPartitioned = true;
+        cluster.Nodes[1].IsPartitioned = true;
+
+        await Assert.ThrowsAsync&lt;QuorumUnavailableException&gt;(async () =&gt;
+        {
+            await cluster.WriteAsync(&quot;key&quot;, &quot;val&quot;);
+        });
+    }
+
+    [Fact]
+    public async Task QuorumCluster_ReadRepair_HealsStaleReplicaNode()
+    {
+        var cluster = new QuorumCluster&lt;string&gt;(nodeCount: 3, writeQuorum: 2, readQuorum: 2);
+
+        // Node 3 is partitioned during write
+        cluster.Nodes[2].IsPartitioned = true;
+        await cluster.WriteAsync(&quot;balance:99&quot;, &quot;500.00&quot;);
+
+        // Partition heals
+        cluster.Nodes[2].IsPartitioned = false;
+
+        // Node 2 is now temporarily offline, but Node 1 and Node 3 are online
+        cluster.Nodes[1].IsPartitioned = true;
+
+        // Reading triggers Read Repair from Node 1 (latest) to Node 3 (stale)
+        var readVal = await cluster.ReadAsync(&quot;balance:99&quot;, triggerReadRepair: true);
+        Assert.Equal(&quot;500.00&quot;, readVal);
+
+        // Verify Node 3 now has the healed value
+        cluster.Nodes[2].TryRead(&quot;balance:99&quot;, out var node3Val);
+        Assert.NotNull(node3Val);
+        Assert.Equal(&quot;500.00&quot;, node3Val.Value);
+    }
+
+    [Fact]
+    public void PacelcClassifier_ReturnsCorrectClassifications()
+    {
+        Assert.Contains(&quot;PC/EC&quot;, PacelcClassifier.Classify(&quot;Spanner&quot;));
+        Assert.Contains(&quot;PA/EL&quot;, PacelcClassifier.Classify(&quot;Cassandra&quot;));
+        Assert.Contains(&quot;PA/EL&quot;, PacelcClassifier.Classify(&quot;DynamoDB&quot;));
+    }
+
+    [Fact]
+    public void WordSearch_WordExists_ReturnsTrue()
+    {
+        char[][] board =
+        [
+            [&#x27;A&#x27;, &#x27;B&#x27;, &#x27;C&#x27;, &#x27;E&#x27;],
+            [&#x27;S&#x27;, &#x27;F&#x27;, &#x27;C&#x27;, &#x27;S&#x27;],
+            [&#x27;A&#x27;, &#x27;D&#x27;, &#x27;E&#x27;, &#x27;E&#x27;]
+        ];
+
+        Assert.True(WordSearchAndPhoneSolver.Exist(board, &quot;ABCCED&quot;));
+        Assert.True(WordSearchAndPhoneSolver.Exist(board, &quot;SEE&quot;));
+    }
+
+    [Fact]
+    public void WordSearch_WordDoesNotExist_ReturnsFalse()
+    {
+        char[][] board =
+        [
+            [&#x27;A&#x27;, &#x27;B&#x27;, &#x27;C&#x27;, &#x27;E&#x27;],
+            [&#x27;S&#x27;, &#x27;F&#x27;, &#x27;C&#x27;, &#x27;S&#x27;],
+            [&#x27;A&#x27;, &#x27;D&#x27;, &#x27;E&#x27;, &#x27;E&#x27;]
+        ];
+
+        Assert.False(WordSearchAndPhoneSolver.Exist(board, &quot;ABCB&quot;));
+    }
+
+    [Fact]
+    public void WordSearch_SameCellCannotBeReused_ReturnsFalse()
+    {
+        char[][] board =
+        [
+            [&#x27;A&#x27;, &#x27;B&#x27;],
+            [&#x27;C&#x27;, &#x27;D&#x27;]
+        ];
+
+        // &quot;ABA&quot; would require reusing cell &#x27;A&#x27;
+        Assert.False(WordSearchAndPhoneSolver.Exist(board, &quot;ABA&quot;));
+    }
+
+    [Fact]
+    public void LetterCombinations_StandardTwoDigits_ReturnsNineCombinations()
+    {
+        var result = WordSearchAndPhoneSolver.LetterCombinations(&quot;23&quot;);
+
+        // 3 * 3 = 9 combinations
+        Assert.Equal(9, result.Count);
+        Assert.Contains(&quot;ad&quot;, result);
+        Assert.Contains(&quot;ae&quot;, result);
+        Assert.Contains(&quot;af&quot;, result);
+        Assert.Contains(&quot;bd&quot;, result);
+        Assert.Contains(&quot;cd&quot;, result);
+        Assert.Contains(&quot;cf&quot;, result);
+    }
+
+    [Fact]
+    public void LetterCombinations_EmptyDigits_ReturnsEmptyList()
+    {
+        var result = WordSearchAndPhoneSolver.LetterCombinations(&quot;&quot;);
+        Assert.Empty(result);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: CAP, PACELC & Distributed Consensus</h1>
+<h2>1. CAP Theorem Formalization (Gilbert & Lynch Proof)</h2>
+<ul>
+<li><strong>Consistency ($C$)</strong>: Linearizability. Every read receives the most recent write or an error. All nodes appear to see operations in a single global, atomic order.</li>
+<li><strong>Availability ($A$)</strong>: Every non-failing node returns a non-error response for every received request (no guarantees on data freshness).</li>
+<li><strong>Partition Tolerance ($P$)</strong>: The network can drop or delay an arbitrary number of messages between nodes.</li>
+<li><strong>Theorem</strong>: On an asynchronous network where partitions $P$ can occur, a distributed datastore CANNOT achieve both $C$ and $A$. You MUST choose whether to preserve consistency by rejecting requests (CP) or preserve availability by accepting potentially conflicting writes (AP).</li>
+</ul>
+<h2>2. PACELC Theorem (Daniel Abadi)</h2>
+<p>CAP only considers behavior when the system is actively partitioned ($P$). However, partitions are relatively rare in healthy datacenters. PACELC explains system behavior during normal (non-partitioned) states:</p>
+<ul>
+<li><strong>If Partition ($P$)</strong>:</li>
+<li>Choose between <strong>Availability</strong> ($A$) or <strong>Consistency</strong> ($C$).</li>
+<li><strong>Else ($E$)</strong>:</li>
+<li>Choose between <strong>Latency</strong> ($L$) or <strong>Consistency</strong> ($C$).</li>
+<li><strong>Categorization Matrix</strong>:</li>
+<li><strong>PC/EC</strong> (Google Spanner, CockroachDB): Prefers consistency during partitions; prefers multi-datacenter two-phase commit / Paxos during normal operation (paying higher latency for consistency).</li>
+<li><strong>PA/EL</strong> (Apache Cassandra, Amazon DynamoDB, Couchbase): Prefers availability during partitions; returns local replica reads immediately during normal operation (paying consistency for low latency).</li>
+<li><strong>PC/EL</strong> (MongoDB default primary read/write): Refuses writes if primary partitioned (PC), but does fast local primary replication (EL).</li>
+</ul>
+<h2>3. Tunable Consistency Math ($N, W, R$)</h2>
+<ul>
+<li>By the <strong>Pigeonhole Principle</strong>:</li>
+<li>Total nodes = $N$.</li>
+<li>Number of write nodes = $W$.</li>
+<li>Number of read nodes = $R$.</li>
+<li>If $W + R > N$, the set of nodes containing writes and the set of nodes consulted on reads MUST intersect by at least one node:</li>
+</ul>
+<p>$$\text{Intersection} = (W + R) - N \ge 1$$</p>
+<ul>
+<li>The intersecting node holds the latest version $V_{\max}$.</li>
+<li><strong>Read Repair vs Anti-Entropy</strong>:</li>
+<li><strong>Read Repair</strong>: Opportunistic sync during client reads. When a read quorum returns mismatched versions, the coordinator writes the newest version back to the stale nodes.</li>
+<li><strong>Anti-Entropy</strong>: Background process using Merkle trees to compare replica ranges and stream differences without client intervention.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 39: CAP Theorem & PACELC in Practice</h1>
+<h2>Architectural Overview</h2>
+<p>Distributed systems running on unreliable networks must navigate fundamental trade-offs between consistency, availability, latency, and fault tolerance.</p>
+<p>This module implements and proves distributed consensus and quorum models in .NET 8:</p>
+<ul>
+<li><strong>CAP Theorem (Brewer)</strong>:</li>
+<li>In the presence of a network Partition ($P$), a distributed system must choose between Consistency ($C$) or Availability ($A$).</li>
+<li><strong>PACELC Theorem (Abadi)</strong>:</li>
+<li>Extends CAP to normal operational states:</li>
+<li>If <strong>Partition</strong> ($P$): choose between <strong>Availability</strong> ($A$) and <strong>Consistency</strong> ($C$).</li>
+<li><strong>Else</strong> ($E$): choose between <strong>Latency</strong> ($L$) and <strong>Consistency</strong> ($C$).</li>
+<li>Examples: Spanner (PC/EC), Cassandra/DynamoDB (PA/EL), MongoDB (PC/EC or PA/EL depending on read concern).</li>
+<li><strong>Tunable Quorums ($N, W, R$)</strong>:</li>
+<li>$N$: Replication factor (e.g. 3 or 5 replicas).</li>
+<li>$W$: Write quorum (number of nodes that must acknowledge a write before success).</li>
+<li>$R$: Read quorum (number of nodes contacted during read).</li>
+<li><strong>Strong Consistency (Pigeonhole Principle)</strong>: When $R + W > N$, the read quorum and write quorum are mathematically guaranteed to overlap by at least one node, ensuring the client always observes the latest state.</li>
+<li><strong>Eventual Consistency</strong>: When $R + W \le N$, reads may return stale data.</li>
+<li><strong>Conflict Resolution & Read Repair</strong>: Resolves conflicting replica versions via Last-Write-Wins (LWW) and automatically repairs out-of-date replica nodes asynchronously.</li>
+</ul>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">                     Quorum Cluster (N=3, W=2, R=2)
+                                 │
+                     Write &quot;Alice&quot; (Version 1)
+                     Dispatched to all 3 nodes
+                                 │
+             ┌───────────────────┼───────────────────┐
+             ▼                   ▼                   ▼
+        [Node 1]            [Node 2]            [Node 3]
+       (Ack: v=1)          (Ack: v=1)        (Partitioned!)
+             │                   │
+             └─────────┬─────────┘
+                       ▼
+                 W=2 Achieved!
+                       │
+       Later: Read Request (R=2) Contacting Node 1 &amp; Node 3
+                       │
+             ┌─────────┴─────────┐
+             ▼                   ▼
+         [Node 1]            [Node 3]
+         (v=1: Alice)        (v=0: Stale)
+             │                   │
+             └─────────┬─────────┘
+                       │
+                       ├─ Conflict Resolution: v=1 wins (Alice)
+                       └─ Read Repair: Write v=1 to Node 3!</code></pre></div>
+<hr/>
+<h2>LeetCode #79 & #17: Word Search & Letter Combinations (Medium)</h2>
+<ul>
+<li><strong>LeetCode #79 (Word Search)</strong>:</li>
+<li>2D grid character matching via DFS backtracking.</li>
+<li>Replaces visited cells with <code>#</code> in-place to achieve $O(1)$ auxiliary allocation (avoiding $O(M \times N)$ boolean matrix).</li>
+<li><strong>LeetCode #17 (Letter Combinations of a Phone Number)</strong>:</li>
+<li>Generates Cartesian product of phone keypad letter mappings using recursive backtracking.</li>
+<li>Time Complexity: $O(4^N \times N)$.</li>
+</ul>
+<hr/>
+<h2>Running Tests</h2>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test Day39-CAP-PACELC-DistributedSystems/tests/Day39.DistributedConsensus.Tests/Day39.DistributedConsensus.Tests.csproj</code></pre></div>
+<p>10 unit tests validate strict quorum overlaps ($R+W>N$), partition tolerance, read repair healing, PACELC classifications, 2D word search, and phone combinations.</p>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the formal difference between CAP Consistency and ACID Consistency?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>They describe completely different properties despite sharing the same word "Consistency":</p>
+<ul>
+<li><strong>CAP Consistency ($C$)</strong>: Means <strong>Linearizability</strong> / Single-copy consistency. It is a distributed systems property ensuring that once a write completes, all subsequent reads across any node in the cluster will observe that write or a later one.</li>
+<li><strong>ACID Consistency ($C$)</strong>: Means <strong>Application Invariant Preservation</strong>. It is a database transaction property ensuring state transitions obey all domain business rules, schema constraints, foreign keys, and unique indices (e.g. account balances cannot drop below zero).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why is &quot;CA&quot; (Consistent + Available without Partition Tolerance) an impossible architectural choice in distributed systems?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A network partition is not a design choice; it is an inevitable physical reality of distributed infrastructure (cables cut, switch failures, cross-datacenter fiber cuts, GC pauses causing heartbeat timeouts).</p>
+<ul>
+<li>If a partition occurs, nodes in partition group 1 cannot communicate with nodes in partition group 2.</li>
+<li>If a client issues a write to group 1:</li>
+<li>If group 1 accepts the write, group 2 becomes stale (sacrificing Consistency $C$).</li>
+<li>If group 1 rejects the write or blocks forever waiting for group 2, the system stops serving requests (sacrificing Availability $A$).</li>
+<li>Therefore, every real distributed system MUST be partition-tolerant ($P$). The only choice is between CP and AP.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Explain PACELC theorem and give real-world database examples for each quadrant.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>PACELC states: If <strong>Partition</strong> ($P$), trade off <strong>Availability</strong> ($A$) vs <strong>Consistency</strong> ($C$); <strong>Else</strong> (normal non-partitioned operation), trade off <strong>Latency</strong> ($L$) vs <strong>Consistency</strong> ($C$).</p>
+<ul>
+<li><strong>PC/EC</strong> (Google Spanner, CockroachDB): Prefers consistency during partitions (fails un-elected nodes); prefers strong consistency during normal operations (requires multi-region Paxos/Raft consensus before acknowledging writes, incurring network roundtrip latency).</li>
+<li><strong>PA/EL</strong> (Apache Cassandra, Amazon DynamoDB, Couchbase): Prefers availability during partitions (accepts writes on any node); prefers ultra-low latency during normal operation (writes to local node and replicates asynchronously, risking stale reads).</li>
+<li><strong>PC/EL</strong> (MongoDB with default settings): Master node rejects writes if isolated from replica majority (PC), but does fast local replication with eventual consistency for secondaries (EL).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Prove mathematically why $R + W &gt; N$ guarantees strong consistency (Linearizability) in quorum systems.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $N$ be the total number of replica nodes for a key.</p>
+<ul>
+<li>A write is acknowledged when written to a set of $W$ nodes: $S_w \subseteq \text{Nodes}, |S_w| = W$.</li>
+<li>A read contacts a set of $R$ nodes: $S_r \subseteq \text{Nodes}, |S_r| = R$.</li>
+<li>By the Pigeonhole Principle:</li>
+</ul>
+<p>$$|S_w \cap S_r| = |S_w| + |S_r| - |S_w \cup S_r| \ge W + R - N$$</p>
+<ul>
+<li>Since $W + R > N$, we have:</li>
+</ul>
+<p>$$|S_w \cap S_r| \ge 1$$</p>
+<ul>
+<li>This guarantees the read set and write set intersect by at least one common replica node. Because that common node has the latest write (tracked via version or timestamp), the read coordinator receives the latest version and returns it to the client.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is &quot;Read Repair&quot; and how does it maintain eventual consistency in leaderless distributed databases?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>In leaderless systems (Cassandra, Dynamo):</p>
+<ol>
+<li>A client initiates a read with quorum $R=2$ on a cluster with $N=3$.</li>
+<li>Node 1 returns <code>{value: &quot;Active&quot;, version: 5}</code>.</li>
+<li>Node 2 returns <code>{value: &quot;Pending&quot;, version: 4}</code>.</li>
+<li>The coordinator notices a version discrepancy. It returns version 5 ("Active") to the client.</li>
+<li>In the background (asynchronously), the coordinator sends an update to Node 2 with version 5.</li>
+</ol>
+<ul>
+<li>Over time, frequently read data is self-healing, reducing entropy without expensive full-cluster scans.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What are the risks of using Last-Write-Wins (LWW) conflict resolution, and what is the alternative?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Risks of LWW</strong>:</li>
+<li>Relies on physical wall-clock timestamps (NTP).</li>
+<li>Clock skew between servers can cause a write that occurred physically <em>earlier</em> to overwrite a write that occurred physically <em>later</em> if Server A's clock is running 50ms fast.</li>
+<li>Concurrent writes at the same millisecond silently drop one update, leading to data loss.</li>
+<li><strong>Alternatives</strong>:</li>
+<li><strong>Vector Clocks / Version Vectors</strong>: Track causal history per node (<code>[NodeA: 2, NodeB: 1]</code>). If vectors do not dominate, a true conflict is detected and surfaced to the application (or resolved via CRDTs).</li>
+<li><strong>Conflict-Free Replicated Data Types (CRDTs)</strong>: Mathematically structured data types (e.g. PN-Counters, Observed-Remove Sets) whose merge operations are associative, commutative, and idempotent ($A \cup B = B \cup A$).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">In LeetCode #79 (Word Search), why is in-place grid mutation (`board[r][c] = &#x27;#&#x27;`) superior to maintaining a `HashSet&lt;(int, int)&gt;` or `bool[][]`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>A <code>HashSet&lt;(int, int)&gt;</code> allocates heap memory for every visited cell, causes boxing, and incurs hash table lookup overhead on every step.</li>
+<li>A separate <code>bool[rows][cols]</code> matrix requires $O(M \times N)$ auxiliary memory allocation per test case or expensive zeroing resets.</li>
+<li>By mutating the character directly in <code>board[r][c] = &#x27;#&#x27;</code> and restoring it on backtrack (<code>board[r][c] = original</code>), the algorithm uses $O(1)$ auxiliary memory and stays completely cache-friendly within the L1 data cache.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the time complexity of Word Search on an $M \times N$ board for a word of length $L$?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>There are $M \times N$ possible starting positions on the board.</li>
+<li>From each cell, the DFS explores in 4 directions. However, since we cannot visit the cell we just came from, subsequent steps have at most 3 branches.</li>
+<li>For a word of length $L$, the maximum depth of the recursion tree is $L$.</li>
+<li>Total worst-case time complexity: $O(M \times N \times 3^L)$.</li>
+<li>Space complexity: $O(L)$ for the recursion stack depth.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">In LeetCode #17 (Letter Combinations of a Phone Number), what is the maximum number of combinations generated for an input of length $N$?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>Digits 7 and 9 map to 4 letters each ('pqrs', 'wxyz'); digits 2, 3, 4, 5, 6, 8 map to 3 letters each.</li>
+<li>In the worst case where all $N$ digits are 7 or 9, the total number of combinations is $4^N$.</li>
+<li>Copying each combination of length $N$ into the output list takes $O(N)$ operations.</li>
+<li>Total time complexity: $O(4^N \times N)$.</li>
+<li>Space complexity: $O(N)$ auxiliary stack space.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does Google Spanner claim to achieve &quot;both Consistency and Availability&quot; despite the CAP theorem?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Spanner does not violate the CAP theorem; it is technically a <strong>CP</strong> system.</p>
+<ul>
+<li>If a network partition isolates a replica from the Paxos quorum, Spanner chooses Consistency over Availability for that partition.</li>
+<li>However, Google minimizes partitions to near zero through:</li>
+</ul>
+<ol>
+<li>Private multi-redundant global fiber optic backbone with automated rerouting.</li>
+<li><strong>TrueTime API</strong>: Uses synchronized atomic clocks and GPS receivers in every datacenter, guaranteeing clock uncertainty $\epsilon < 7\text{ms}$.</li>
+<li>By waiting out the small uncertainty window $2\epsilon$ before committing transactions, Spanner achieves external consistency (strict serializability) globally with five-nines (99.999%) availability in practice, appearing as "CA" to external users.</li>
+</ol>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day39.DistributedConsensus/QuorumStoreEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd39-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d39-src-code-0" class="language-csharp">namespace Day39.DistributedConsensus;
+
+public class QuorumUnavailableException : Exception
+{
+    public QuorumUnavailableException(string message) : base(message) { }
+}
+
+public record ReplicaValue&lt;T&gt;(T Value, long Version, long TimestampTicks);
+
+public class ReplicaNode&lt;T&gt;
+{
+    public string NodeId { get; }
+    public bool IsPartitioned { get; set; } = false;
+    private readonly Dictionary&lt;string, ReplicaValue&lt;T&gt;&gt; _store = new();
+    private readonly object _lock = new();
+
+    public ReplicaNode(string nodeId)
+    {
+        NodeId = nodeId;
+    }
+
+    public bool TryWrite(string key, T value, long version, long timestampTicks)
+    {
+        if (IsPartitioned) return false;
+
+        lock (_lock)
+        {
+            if (!_store.TryGetValue(key, out var current) || version &gt;= current.Version)
+            {
+                _store[key] = new ReplicaValue&lt;T&gt;(value, version, timestampTicks);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    public bool TryRead(string key, out ReplicaValue&lt;T&gt;? value)
+    {
+        value = null;
+        if (IsPartitioned) return false;
+
+        lock (_lock)
+        {
+            if (_store.TryGetValue(key, out var val))
+            {
+                value = val;
+                return true;
+            }
+            return true; // Read succeeded, value is null
+        }
+    }
+}
+
+public class QuorumCluster&lt;T&gt;
+{
+    public int N =&gt; Nodes.Count;
+    public int W { get; }
+    public int R { get; }
+    public IReadOnlyList&lt;ReplicaNode&lt;T&gt;&gt; Nodes { get; }
+    public bool IsStronglyConsistent =&gt; (R + W) &gt; N;
+
+    private long _globalVersion = 0;
+
+    public QuorumCluster(int nodeCount, int writeQuorum, int readQuorum)
+    {
+        if (writeQuorum &gt; nodeCount || readQuorum &gt; nodeCount)
+            throw new ArgumentException(&quot;Quorum cannot exceed total node count&quot;);
+
+        W = writeQuorum;
+        R = readQuorum;
+
+        var list = new List&lt;ReplicaNode&lt;T&gt;&gt;();
+        for (int i = 1; i &lt;= nodeCount; i++)
+        {
+            list.Add(new ReplicaNode&lt;T&gt;($&quot;node-{i}&quot;));
+        }
+        Nodes = list;
+    }
+
+    public async Task&lt;bool&gt; WriteAsync(string key, T value)
+    {
+        long version = Interlocked.Increment(ref _globalVersion);
+        long timestamp = DateTime.UtcNow.Ticks;
+
+        int acks = 0;
+        foreach (var node in Nodes)
+        {
+            if (node.TryWrite(key, value, version, timestamp))
+            {
+                acks++;
+            }
+        }
+
+        if (acks &lt; W)
+        {
+            throw new QuorumUnavailableException(
+                $&quot;Write quorum failed: Required {W} acks but received {acks} from {N} nodes.&quot;);
+        }
+
+        return await Task.FromResult(true);
+    }
+
+    public async Task&lt;T?&gt; ReadAsync(string key, bool triggerReadRepair = true)
+    {
+        var responses = new List&lt;(ReplicaNode&lt;T&gt; Node, ReplicaValue&lt;T&gt;? Value)&gt;();
+
+        foreach (var node in Nodes)
+        {
+            if (node.TryRead(key, out var val))
+            {
+                responses.Add((node, val));
+            }
+        }
+
+        if (responses.Count &lt; R)
+        {
+            throw new QuorumUnavailableException(
+                $&quot;Read quorum failed: Required {R} responses but received {responses.Count} from {N} nodes.&quot;);
+        }
+
+        // Filter valid non-null values
+        var validValues = responses
+            .Where(r =&gt; r.Value != null)
+            .Select(r =&gt; r.Value!)
+            .ToList();
+
+        if (validValues.Count == 0)
+        {
+            return default;
+        }
+
+        // Conflict resolution: highest version and latest timestamp (Last-Write-Wins)
+        var latest = validValues
+            .OrderByDescending(v =&gt; v.Version)
+            .ThenByDescending(v =&gt; v.TimestampTicks)
+            .First();
+
+        // Read Repair: asynchronously update any node that returned stale data
+        if (triggerReadRepair)
+        {
+            foreach (var (node, val) in responses)
+            {
+                if (val == null || val.Version &lt; latest.Version)
+                {
+                    node.TryWrite(key, latest.Value, latest.Version, latest.TimestampTicks);
+                }
+            }
+        }
+
+        return await Task.FromResult(latest.Value);
+    }
+}
+
+public static class PacelcClassifier
+{
+    public static string Classify(string systemName)
+    {
+        return systemName.ToLowerInvariant() switch
+        {
+            &quot;spanner&quot; or &quot;cockroachdb&quot; =&gt; &quot;PC/EC (Consistent on Partition, Consistent on Normal)&quot;,
+            &quot;cassandra&quot; or &quot;dynamodb&quot; =&gt; &quot;PA/EL (Available on Partition, Low Latency on Normal)&quot;,
+            &quot;mongodb&quot; =&gt; &quot;PC/EC (Primary Read/Write) or PA/EL (Secondary Read)&quot;,
+            _ =&gt; &quot;Configurable&quot;
+        };
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day39.DistributedConsensus/WordSearchAndPhoneSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd39-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d39-src-code-1" class="language-csharp">using System.Text;
+
+namespace Day39.DistributedConsensus;
+
+public static class WordSearchAndPhoneSolver
+{
+    #region LeetCode #79: Word Search
+
+    /// &lt;summary&gt;
+    /// LeetCode #79: Word Search (Medium).
+    /// DFS Backtracking on 2D character grid with in-place cell marking.
+    /// Time Complexity: O(M * N * 3^L) where L = word.Length. Space: O(L) recursion stack.
+    /// &lt;/summary&gt;
+    public static bool Exist(char[][] board, string word)
+    {
+        if (board == null || board.Length == 0 || string.IsNullOrEmpty(word))
+            return false;
+
+        int rows = board.Length;
+        int cols = board[0].Length;
+
+        for (int r = 0; r &lt; rows; r++)
+        {
+            for (int c = 0; c &lt; cols; c++)
+            {
+                if (board[r][c] == word[0] &amp;&amp; DfsWordSearch(board, word, r, c, 0))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool DfsWordSearch(char[][] board, string word, int r, int c, int index)
+    {
+        if (index == word.Length)
+        {
+            return true;
+        }
+
+        if (r &lt; 0 || r &gt;= board.Length || c &lt; 0 || c &gt;= board[0].Length || board[r][c] != word[index])
+        {
+            return false;
+        }
+
+        char original = board[r][c];
+        board[r][c] = &#x27;#&#x27;; // Mark cell as visited in-place
+
+        bool found = DfsWordSearch(board, word, r + 1, c, index + 1) ||
+                     DfsWordSearch(board, word, r - 1, c, index + 1) ||
+                     DfsWordSearch(board, word, r, c + 1, index + 1) ||
+                     DfsWordSearch(board, word, r, c - 1, index + 1);
+
+        board[r][c] = original; // Backtrack / unmark
+        return found;
+    }
+
+    #endregion
+
+    #region LeetCode #17: Letter Combinations of a Phone Number
+
+    private static readonly string[] DigitMap =
+    [
+        &quot;&quot;,     // 0
+        &quot;&quot;,     // 1
+        &quot;abc&quot;,  // 2
+        &quot;def&quot;,  // 3
+        &quot;ghi&quot;,  // 4
+        &quot;jkl&quot;,  // 5
+        &quot;mno&quot;,  // 6
+        &quot;pqrs&quot;, // 7
+        &quot;tuv&quot;,  // 8
+        &quot;wxyz&quot;  // 9
+    ];
+
+    /// &lt;summary&gt;
+    /// LeetCode #17: Letter Combinations of a Phone Number (Medium).
+    /// Time Complexity: O(4^N * N), Space Complexity: O(N) stack.
+    /// &lt;/summary&gt;
+    public static IList&lt;string&gt; LetterCombinations(string digits)
+    {
+        var result = new List&lt;string&gt;();
+        if (string.IsNullOrEmpty(digits)) return result;
+
+        var current = new StringBuilder();
+        BacktrackLetters(digits, 0, current, result);
+        return result;
+    }
+
+    private static void BacktrackLetters(string digits, int index, StringBuilder current, List&lt;string&gt; result)
+    {
+        if (index == digits.Length)
+        {
+            result.Add(current.ToString());
+            return;
+        }
+
+        int digit = digits[index] - &#x27;0&#x27;;
+        if (digit &lt; 2 || digit &gt; 9) return;
+
+        string letters = DigitMap[digit];
+        foreach (char ch in letters)
+        {
+            current.Append(ch);
+            BacktrackLetters(digits, index + 1, current, result);
+            current.Length--; // Backtrack
+        }
+    }
+
+    #endregion
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day39.DistributedConsensus.Tests/Day39Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd39-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d39-tests-code-0" class="language-csharp">using Xunit;
+
+namespace Day39.DistributedConsensus.Tests;
+
+public class Day39Tests
+{
+    [Fact]
+    public void QuorumCluster_StrongConsistency_WhenRPlusWGreaterThanN()
+    {
+        var strongCluster = new QuorumCluster&lt;string&gt;(nodeCount: 5, writeQuorum: 3, readQuorum: 3); // 3+3=6 &gt; 5
+        var weakCluster = new QuorumCluster&lt;string&gt;(nodeCount: 5, writeQuorum: 2, readQuorum: 2);   // 2+2=4 &lt;= 5
+
+        Assert.True(strongCluster.IsStronglyConsistent);
+        Assert.False(weakCluster.IsStronglyConsistent);
+    }
+
+    [Fact]
+    public async Task QuorumCluster_WriteAndReadQuorum_SucceedsUnderHealthyCluster()
+    {
+        var cluster = new QuorumCluster&lt;string&gt;(nodeCount: 3, writeQuorum: 2, readQuorum: 2);
+
+        await cluster.WriteAsync(&quot;user:101&quot;, &quot;Alice&quot;);
+        var readVal = await cluster.ReadAsync(&quot;user:101&quot;);
+
+        Assert.Equal(&quot;Alice&quot;, readVal);
+    }
+
+    [Fact]
+    public async Task QuorumCluster_WriteQuorum_ThrowsQuorumUnavailable_WhenPartitioned()
+    {
+        var cluster = new QuorumCluster&lt;string&gt;(nodeCount: 3, writeQuorum: 2, readQuorum: 2);
+
+        // Partition 2 of the 3 nodes
+        cluster.Nodes[0].IsPartitioned = true;
+        cluster.Nodes[1].IsPartitioned = true;
+
+        await Assert.ThrowsAsync&lt;QuorumUnavailableException&gt;(async () =&gt;
+        {
+            await cluster.WriteAsync(&quot;key&quot;, &quot;val&quot;);
+        });
+    }
+
+    [Fact]
+    public async Task QuorumCluster_ReadRepair_HealsStaleReplicaNode()
+    {
+        var cluster = new QuorumCluster&lt;string&gt;(nodeCount: 3, writeQuorum: 2, readQuorum: 2);
+
+        // Node 3 is partitioned during write
+        cluster.Nodes[2].IsPartitioned = true;
+        await cluster.WriteAsync(&quot;balance:99&quot;, &quot;500.00&quot;);
+
+        // Partition heals
+        cluster.Nodes[2].IsPartitioned = false;
+
+        // Node 2 is now temporarily offline, but Node 1 and Node 3 are online
+        cluster.Nodes[1].IsPartitioned = true;
+
+        // Reading triggers Read Repair from Node 1 (latest) to Node 3 (stale)
+        var readVal = await cluster.ReadAsync(&quot;balance:99&quot;, triggerReadRepair: true);
+        Assert.Equal(&quot;500.00&quot;, readVal);
+
+        // Verify Node 3 now has the healed value
+        cluster.Nodes[2].TryRead(&quot;balance:99&quot;, out var node3Val);
+        Assert.NotNull(node3Val);
+        Assert.Equal(&quot;500.00&quot;, node3Val.Value);
+    }
+
+    [Fact]
+    public void PacelcClassifier_ReturnsCorrectClassifications()
+    {
+        Assert.Contains(&quot;PC/EC&quot;, PacelcClassifier.Classify(&quot;Spanner&quot;));
+        Assert.Contains(&quot;PA/EL&quot;, PacelcClassifier.Classify(&quot;Cassandra&quot;));
+        Assert.Contains(&quot;PA/EL&quot;, PacelcClassifier.Classify(&quot;DynamoDB&quot;));
+    }
+
+    [Fact]
+    public void WordSearch_WordExists_ReturnsTrue()
+    {
+        char[][] board =
+        [
+            [&#x27;A&#x27;, &#x27;B&#x27;, &#x27;C&#x27;, &#x27;E&#x27;],
+            [&#x27;S&#x27;, &#x27;F&#x27;, &#x27;C&#x27;, &#x27;S&#x27;],
+            [&#x27;A&#x27;, &#x27;D&#x27;, &#x27;E&#x27;, &#x27;E&#x27;]
+        ];
+
+        Assert.True(WordSearchAndPhoneSolver.Exist(board, &quot;ABCCED&quot;));
+        Assert.True(WordSearchAndPhoneSolver.Exist(board, &quot;SEE&quot;));
+    }
+
+    [Fact]
+    public void WordSearch_WordDoesNotExist_ReturnsFalse()
+    {
+        char[][] board =
+        [
+            [&#x27;A&#x27;, &#x27;B&#x27;, &#x27;C&#x27;, &#x27;E&#x27;],
+            [&#x27;S&#x27;, &#x27;F&#x27;, &#x27;C&#x27;, &#x27;S&#x27;],
+            [&#x27;A&#x27;, &#x27;D&#x27;, &#x27;E&#x27;, &#x27;E&#x27;]
+        ];
+
+        Assert.False(WordSearchAndPhoneSolver.Exist(board, &quot;ABCB&quot;));
+    }
+
+    [Fact]
+    public void WordSearch_SameCellCannotBeReused_ReturnsFalse()
+    {
+        char[][] board =
+        [
+            [&#x27;A&#x27;, &#x27;B&#x27;],
+            [&#x27;C&#x27;, &#x27;D&#x27;]
+        ];
+
+        // &quot;ABA&quot; would require reusing cell &#x27;A&#x27;
+        Assert.False(WordSearchAndPhoneSolver.Exist(board, &quot;ABA&quot;));
+    }
+
+    [Fact]
+    public void LetterCombinations_StandardTwoDigits_ReturnsNineCombinations()
+    {
+        var result = WordSearchAndPhoneSolver.LetterCombinations(&quot;23&quot;);
+
+        // 3 * 3 = 9 combinations
+        Assert.Equal(9, result.Count);
+        Assert.Contains(&quot;ad&quot;, result);
+        Assert.Contains(&quot;ae&quot;, result);
+        Assert.Contains(&quot;af&quot;, result);
+        Assert.Contains(&quot;bd&quot;, result);
+        Assert.Contains(&quot;cd&quot;, result);
+        Assert.Contains(&quot;cf&quot;, result);
+    }
+
+    [Fact]
+    public void LetterCombinations_EmptyDigits_ReturnsEmptyList()
+    {
+        var result = WordSearchAndPhoneSolver.LetterCombinations(&quot;&quot;);
+        Assert.Empty(result);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 39 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -283,4 +283,39 @@
   <Folder Name="/Day41-Docker-DotNet-Cgroups/tests/">
     <Project Path="Day41-Docker-DotNet-Cgroups/tests/Day41.DockerDotNet.Tests/Day41.DockerDotNet.Tests.csproj" />
   </Folder>
+  <Folder Name="/Day42-Docker-Compose-Microservices/" />
+  <Folder Name="/Day42-Docker-Compose-Microservices/src/">
+    <Project Path="Day42-Docker-Compose-Microservices/src/Day42.DockerCompose/Day42.DockerCompose.csproj" />
+  </Folder>
+  <Folder Name="/Day42-Docker-Compose-Microservices/tests/">
+    <Project Path="Day42-Docker-Compose-Microservices/tests/Day42.DockerCompose.Tests/Day42.DockerCompose.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day43-Kubernetes-Architecture-Pods-Deployments/" />
+  <Folder Name="/Day43-Kubernetes-Architecture-Pods-Deployments/src/">
+    <Project Path="Day43-Kubernetes-Architecture-Pods-Deployments/src/Day43.KubernetesArchitecture/Day43.KubernetesArchitecture.csproj" />
+  </Folder>
+  <Folder Name="/Day43-Kubernetes-Architecture-Pods-Deployments/tests/">
+    <Project Path="Day43-Kubernetes-Architecture-Pods-Deployments/tests/Day43.KubernetesArchitecture.Tests/Day43.KubernetesArchitecture.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day44-Kubernetes-ConfigMaps-Secrets-Ingress/" />
+  <Folder Name="/Day44-Kubernetes-ConfigMaps-Secrets-Ingress/src/">
+    <Project Path="Day44-Kubernetes-ConfigMaps-Secrets-Ingress/src/Day44.KubernetesConfigIngress/Day44.KubernetesConfigIngress.csproj" />
+  </Folder>
+  <Folder Name="/Day44-Kubernetes-ConfigMaps-Secrets-Ingress/tests/">
+    <Project Path="Day44-Kubernetes-ConfigMaps-Secrets-Ingress/tests/Day44.KubernetesConfigIngress.Tests/Day44.KubernetesConfigIngress.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day45-Kubernetes-Probes-HPA/" />
+  <Folder Name="/Day45-Kubernetes-Probes-HPA/src/">
+    <Project Path="Day45-Kubernetes-Probes-HPA/src/Day45.KubernetesProbesHPA/Day45.KubernetesProbesHPA.csproj" />
+  </Folder>
+  <Folder Name="/Day45-Kubernetes-Probes-HPA/tests/">
+    <Project Path="Day45-Kubernetes-Probes-HPA/tests/Day45.KubernetesProbesHPA.Tests/Day45.KubernetesProbesHPA.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Day46-CICD-GitHub-Actions-DotNet/" />
+  <Folder Name="/Day46-CICD-GitHub-Actions-DotNet/src/">
+    <Project Path="Day46-CICD-GitHub-Actions-DotNet/src/Day46.CiCdGitHubActions/Day46.CiCdGitHubActions.csproj" />
+  </Folder>
+  <Folder Name="/Day46-CICD-GitHub-Actions-DotNet/tests/">
+    <Project Path="Day46-CICD-GitHub-Actions-DotNet/tests/Day46.CiCdGitHubActions.Tests/Day46.CiCdGitHubActions.Tests.csproj" />
+  </Folder>
 </Solution>

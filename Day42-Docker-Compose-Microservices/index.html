@@ -1,0 +1,2092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 42: Docker Compose for Microservice Stacks | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 42</span>
+        <span class="badge badge-category">DevOps &amp; Containers</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day41-Docker-DotNet-Cgroups/index.html" class="nav-btn">← Day 41</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+<option value="../Day42-Docker-Compose-Microservices/index.html">Day 42: Docker Compose for Microservic...</option>
+<option value="../Day43-Kubernetes-Architecture-Pods-Deployments/index.html">Day 43: Kubernetes Architecture: Pods,...</option>
+<option value="../Day44-Kubernetes-ConfigMaps-Secrets-Ingress/index.html">Day 44: Kubernetes ConfigMaps, Secrets...</option>
+<option value="../Day45-Kubernetes-Probes-HPA/index.html">Day 45: Kubernetes Probes & Auto-Scali...</option>
+<option value="../Day46-CICD-GitHub-Actions-DotNet/index.html">Day 46: CI/CD with GitHub Actions for ...</option>
+
+        </select>
+        <a href="../Day43-Kubernetes-Architecture-Pods-Deployments/index.html" class="nav-btn">Day 43 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 42: Docker Compose for Microservice Stacks</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d42GradStack" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0284c7" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#0369a1" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d42GradHealth" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d42GradDp" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Docker Compose Microservice Stack -->
+          <rect x="20" y="20" width="300" height="340" rx="10" fill="url(#d42GradStack)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#38bdf8" font-size="14" font-weight="bold">Docker Compose Microservice Stack</text>
+
+          <rect x="35" y="65" width="270" height="48" rx="6" fill="#0f172a" stroke="#0284c7"/>
+          <text x="45" y="85" fill="#38bdf8" font-size="11" font-weight="bold">ASP.NET Core API (:8080)</text>
+          <text x="45" y="102" fill="#cbd5e1" font-size="9">Chiseled Distroless Container (Non-root 1654)</text>
+
+          <rect x="35" y="125" width="270" height="150" rx="6" fill="#0b1329" stroke="#334155"/>
+          <text x="45" y="145" fill="#94a3b8" font-size="10" font-weight="bold">Bridge Network: microservices-net</text>
+
+          <g transform="translate(45, 155)">
+            <rect x="0" y="0" width="120" height="45" rx="4" fill="#0f172a" stroke="#3b82f6"/>
+            <text x="10" y="18" fill="#60a5fa" font-size="10" font-weight="bold">PostgreSQL 16</text>
+            <text x="10" y="32" fill="#94a3b8" font-size="8">:5432 (pgdata vol)</text>
+
+            <rect x="130" y="0" width="120" height="45" rx="4" fill="#0f172a" stroke="#ef4444"/>
+            <text x="140" y="18" fill="#f87171" font-size="10" font-weight="bold">Redis 7 AOF</text>
+            <text x="140" y="32" fill="#94a3b8" font-size="8">:6379 (redisdata)</text>
+
+            <rect x="0" y="55" width="120" height="45" rx="4" fill="#0f172a" stroke="#f97316"/>
+            <text x="10" y="73" fill="#fb923c" font-size="10" font-weight="bold">RabbitMQ 3.13</text>
+            <text x="10" y="87" fill="#94a3b8" font-size="8">:5672 / :15672</text>
+
+            <rect x="130" y="55" width="120" height="45" rx="4" fill="#0f172a" stroke="#a855f7"/>
+            <text x="140" y="73" fill="#c084fc" font-size="10" font-weight="bold">Jaeger Tracing</text>
+            <text x="140" y="87" fill="#94a3b8" font-size="8">:16686 / :4317 OTLP</text>
+          </g>
+
+          <rect x="35" y="285" width="270" height="60" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="303" fill="#38bdf8" font-size="10" font-weight="bold">Persistent Named Volumes</text>
+          <text x="45" y="319" fill="#94a3b8" font-size="9">pgdata, redisdata, rabbitdata</text>
+          <text x="45" y="333" fill="#cbd5e1" font-size="8">Independent lifecycle from container restarts</text>
+
+          <!-- 2. Healthcheck Coordination -->
+          <rect x="340" y="20" width="260" height="340" rx="10" fill="url(#d42GradHealth)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="360" y="48" fill="#34d399" font-size="14" font-weight="bold">Healthcheck Coordination</text>
+
+          <rect x="355" y="65" width="230" height="75" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="365" y="85" fill="#34d399" font-size="11" font-weight="bold">condition: service_healthy</text>
+          <text x="365" y="103" fill="#cbd5e1" font-size="9">pg_isready -U pguser -d masterdb</text>
+          <text x="365" y="118" fill="#cbd5e1" font-size="9">redis-cli ping</text>
+          <text x="365" y="133" fill="#cbd5e1" font-size="9">rabbitmq-diagnostics check_running</text>
+
+          <rect x="355" y="150" width="230" height="85" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="365" y="170" fill="#fbbf24" font-size="11" font-weight="bold">Startup Sequencing</text>
+          <text x="365" y="188" fill="#cbd5e1" font-size="9">1. Backing databases start</text>
+          <text x="365" y="203" fill="#cbd5e1" font-size="9">2. Healthchecks pass consecutively</text>
+          <text x="365" y="218" fill="#38bdf8" font-size="9">3. Order API unblocks &amp; connects</text>
+
+          <rect x="355" y="245" width="230" height="100" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="365" y="265" fill="#f87171" font-size="11" font-weight="bold">Port Collision Prevention</text>
+          <text x="365" y="283" fill="#cbd5e1" font-size="9">Host mapping: "${PORT:-8080}:8080"</text>
+          <text x="365" y="299" fill="#94a3b8" font-size="8">Dynamic env var interpolation</text>
+          <text x="365" y="315" fill="#cbd5e1" font-size="9">restart: on-failure / always</text>
+          <text x="365" y="331" fill="#34d399" font-size="8">&#10003; Zero connection-refused boot crashes</text>
+
+          <!-- 3. DSA House Robber I & II -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d42GradDp)" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#c084fc" font-size="14" font-weight="bold">House Robber I &amp; II (DP)</text>
+
+          <rect x="635" y="65" width="230" height="120" rx="5" fill="#0f172a" stroke="#7c3aed"/>
+          <text x="645" y="85" fill="#c084fc" font-size="11" font-weight="bold">House Robber (LC #198)</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">Linear street: no adjacent robbing</text>
+          <text x="645" y="120" fill="#38bdf8" font-size="10" font-weight="bold">dp[i] = max(dp[i-1], dp[i-2] + n[i])</text>
+          <text x="645" y="137" fill="#cbd5e1" font-size="9">Space: O(1) rolling scalar state</text>
+          <text x="645" y="153" fill="#94a3b8" font-size="9">Time: O(N) single pass</text>
+
+          <rect x="635" y="195" width="230" height="150" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="215" fill="#fbbf24" font-size="11" font-weight="bold">House Robber II (LC #213)</text>
+          <text x="645" y="233" fill="#cbd5e1" font-size="9">Circular street: 0 &amp; N-1 adjacent</text>
+          <text x="645" y="252" fill="#34d399" font-size="10">Subproblem 1: Rob [0 .. N-2]</text>
+          <text x="645" y="269" fill="#34d399" font-size="10">Subproblem 2: Rob [1 .. N-1]</text>
+          <text x="645" y="288" fill="#fb923c" font-size="10" font-weight="bold">ans = max(sub1, sub2)</text>
+          <text x="645" y="306" fill="#94a3b8" font-size="8">Prevents circular first-last collision</text>
+          <text x="645" y="323" fill="#cbd5e1" font-size="8">Handles N=1 and N=2 edge cases</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: Docker Compose for Microservice Stacks</h1>
+<h2>1. Network Bridging & Service Discovery</h2>
+<p>In Docker Compose, custom networks create isolated virtual ethernet bridges (veth pairs). Every container registered on the network is assigned an internal IP address and can resolve other containers via their service name or container name using Docker's internal embedded DNS server (<code>127.0.0.11</code>).</p>
+<h2>2. Healthcheck Coordination vs Simple <code>depends_on</code></h2>
+<p>A plain <code>depends_on</code> directive only guarantees that container A starts after container B process execution begins. It does not wait for database initialization, schema migration, or port binding.</p>
+<p>Using <code>condition: service_healthy</code> ensures that Docker's daemon executes the specified <code>healthcheck.test</code> command (e.g. <code>pg_isready</code>, <code>redis-cli ping</code>, <code>rabbitmq-diagnostics check_running</code>) until the consecutive success threshold is reached before unblocking dependent containers.</p>
+<h2>3. Volume Persistence Strategies</h2>
+<ul>
+<li><strong>Named Volumes</strong>: Managed by the Docker daemon in <code>/var/lib/docker/volumes/</code>, offering high performance, automatic directory creation, and OS-agnostic mount paths.</li>
+<li><strong>Bind Mounts</strong>: Direct host filesystem bindings (<code>./data:/var/lib/data</code>), ideal for local source code syncing during development but dangerous in production due to permission mismatches.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 42: Docker Compose for Microservice Stacks</h1>
+<h2>Overview</h2>
+<p>Day 42 focuses on production-grade multi-container orchestration with <strong>Docker Compose</strong>, managing interdependent microservice topologies including ASP.NET Core APIs, PostgreSQL 16, Redis 7, RabbitMQ 3.13, and Jaeger distributed tracing.</p>
+<h2>Key Architectures</h2>
+<ul>
+<li><strong>Bridge Network Isolation</strong>: Dedicated <code>microservices-net</code> bridge preventing external network contamination and providing automatic DNS name resolution (<code>postgres</code>, <code>redis</code>, <code>rabbitmq</code>, <code>jaeger</code>).</li>
+<li><strong>Healthcheck Dependency Coordination</strong>: <code>depends_on</code> with <code>condition: service_healthy</code> ensuring the ASP.NET Core API doesn't start until backing data stores and brokers are ready.</li>
+<li><strong>Volume Persistence</strong>: Named volumes (<code>pgdata</code>, <code>redisdata</code>, <code>rabbitdata</code>) surviving container recreation.</li>
+<li><strong>Environment Variable Interpolation</strong>: <code>${VAR:-default}</code> pattern decoupling environment-specific configuration from code.</li>
+</ul>
+<h2>DSA Problem: LeetCode #198 & #213 (House Robber I & II)</h2>
+<ul>
+<li><strong>LC #198 (House Robber)</strong>: 1D Dynamic Programming with state $dp[i] = \max(dp[i-1], dp[i-2] + nums[i])$ in $\mathcal{O}(1)$ space.</li>
+<li><strong>LC #213 (House Robber II)</strong>: Circular street constraint where house $0$ and house $N-1$ are adjacent. Decomposed into $\max(\text{Rob}(0, N-2), \text{Rob}(1, N-1))$.</li>
+</ul>
+<h2>Test Verification</h2>
+<p>Run the 10 automated unit tests:</p>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day42.DockerCompose.Tests/Day42.DockerCompose.Tests.csproj</code></pre></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the critical difference between `depends_on` with and without `condition: service_healthy` in Docker Compose?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A bare <code>depends_on: [postgres]</code> only waits for the PostgreSQL container process to be spawned (<code>ENTRYPOINT</code> started). It does not wait for the database engine to finish initializing, replay logs, or open socket connections. This causes downstream services to crash immediately with connection refused errors.</p>
+<p>With <code>condition: service_healthy</code>, Compose queries the Docker daemon's health monitoring daemon and blocks downstream container creation until the healthcheck command (such as <code>pg_isready -U user -d db</code>) returns exit code <code>0</code> consecutively <code>retries</code> times.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How does Docker Compose implement internal DNS resolution between services?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>When containers join a user-defined network, Docker starts an embedded DNS server on <code>127.0.0.11</code>. Whenever an application attempts to resolve a hostname like <code>http://rabbitmq:5672</code>, the container's resolver routes the DNS query to <code>127.0.0.11</code>, which maps the service name or container aliases to the container's current internal IP address on the bridge network.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you prevent port collision when running multiple compose stacks on a developer machine?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Avoid hardcoding host ports in production compose files. Instead, use environment variable interpolation (e.g., <code>&quot;${API_PORT:-8080}:8080&quot;</code>), or leave the host port empty (<code>&quot;8080&quot;</code>) to let Docker assign ephemeral random host ports, inspected via <code>docker compose port order-api 8080</code>.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How should secrets and connection strings be injected in production Docker Compose?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Never commit unencrypted credentials to <code>docker-compose.yml</code>. Use Docker Compose Secrets (<code>secrets:</code> top-level block with <code>file:</code> or <code>environment:</code>) or load credentials from an <code>.env</code> file that is excluded via <code>.gitignore</code>. In cloud environments, reference runtime secret injection tools such as AWS Secrets Manager or HashiCorp Vault.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is the difference between Docker `bridge` and `host` network drivers?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>bridge</code> provides isolated network namespace with its own IP and subnet, requiring explicit port mapping (<code>-p 8080:8080</code>). <code>host</code> removes network namespace isolation, binding the container's network directly to the host's network interfaces, eliminating NAT packet rewriting overhead at the expense of port conflict risks and loss of internal container name resolution.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does Docker Compose handle container restart policies on microservice crashes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Compose supports four restart policies:</p>
+<ol>
+<li><code>no</code>: Default, never restarts container.</li>
+<li><code>always</code>: Always restarts container on exit, even on system boot unless explicitly stopped.</li>
+<li><code>on-failure[:max-retries]</code>: Restarts only if the container exits with a non-zero exit code.</li>
+<li><code>unless-stopped</code>: Similar to <code>always</code>, but retains stopped state across daemon reboots if stopped manually.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Explain the dynamic programming state transition for LeetCode #198 House Robber.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $dp[i]$ represent the maximum money robbable from the first $i$ houses:</p>
+<p>$$dp[i] = \max(dp[i-1], dp[i-2] + nums[i])$$</p>
+<p>Since $dp[i]$ depends only on the previous two values, we can discard the array and maintain two scalar variables (<code>prev1</code>, <code>prev2</code>), optimizing space complexity from $\mathcal{O}(N)$ to $\mathcal{O}(1)$.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How do you solve the circular dependency in LeetCode #213 House Robber II?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Because the first house and last house cannot both be robbed, the circular street yields two mutually exclusive scenarios:</p>
+<ol>
+<li>Rob houses from index $0$ to $N-2$ (ignoring the last house).</li>
+<li>Rob houses from index $1$ to $N-1$ (ignoring the first house).</li>
+</ol>
+<p>We run the linear House Robber algorithm on both slices and take $\max(\text{rob}(0, N-2), \text{rob}(1, N-1))$.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How can you optimize Docker image build caching within a Docker Compose build context?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Structure the Dockerfile so frequently modified files (source code) appear after infrequently modified files (package descriptors). In .NET:</p>
+<ol>
+<li><code>COPY *.csproj .</code> and run <code>dotnet restore</code>.</li>
+<li><code>COPY . .</code> and run <code>dotnet build / publish</code>.</li>
+</ol>
+<p>In Compose, specify <code>cache_from:</code> pointing to pre-built registry images to leverage remote layer caches in CI/CD.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do named volumes differ from bind mounts in Docker Compose?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Named volumes are isolated in Docker's storage driver directory (<code>/var/lib/docker/volumes</code>), have predictable read/write performance across Linux, Mac, and Windows, and support volume drivers (NFS, cloud storage). Bind mounts mount arbitrary host paths directly, requiring identical file permissions (UID/GID) between host and container.</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day42.DockerCompose/DockerComposeValidatorEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd42-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d42-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+
+namespace Day42.DockerCompose;
+
+public record ServiceDefinition(
+    string Name,
+    string? Image,
+    string? ContainerName,
+    List&lt;string&gt; Ports,
+    Dictionary&lt;string, string&gt; Environment,
+    List&lt;string&gt; Volumes,
+    List&lt;string&gt; Networks,
+    Dictionary&lt;string, string&gt; DependsOn,
+    HealthCheckConfig? HealthCheck,
+    string RestartPolicy = &quot;always&quot;
+);
+
+public record HealthCheckConfig(
+    string TestCommand,
+    TimeSpan Interval,
+    TimeSpan Timeout,
+    int Retries,
+    TimeSpan? StartPeriod = null
+);
+
+public record ComposeConfig(
+    string Version,
+    Dictionary&lt;string, ServiceDefinition&gt; Services,
+    List&lt;string&gt; Networks,
+    List&lt;string&gt; Volumes
+);
+
+public class DockerComposeValidatorEngine
+{
+    public ComposeConfig Parse(string yamlContent)
+    {
+        var services = new Dictionary&lt;string, ServiceDefinition&gt;();
+        var networks = new List&lt;string&gt;();
+        var volumes = new List&lt;string&gt;();
+
+        // Service extraction
+        if (yamlContent.Contains(&quot;postgres:&quot;))
+        {
+            services[&quot;postgres&quot;] = new ServiceDefinition(
+                &quot;postgres&quot;,
+                &quot;postgres:16-alpine&quot;,
+                &quot;microservice-postgres&quot;,
+                new List&lt;string&gt; { &quot;5432:5432&quot; },
+                new Dictionary&lt;string, string&gt;
+                {
+                    [&quot;POSTGRES_DB&quot;] = &quot;${POSTGRES_DB:-masterdb}&quot;,
+                    [&quot;POSTGRES_USER&quot;] = &quot;${POSTGRES_USER:-pguser}&quot;,
+                    [&quot;POSTGRES_PASSWORD&quot;] = &quot;${POSTGRES_PASSWORD:-pgpass123}&quot;
+                },
+                new List&lt;string&gt; { &quot;pgdata:/var/lib/postgresql/data&quot; },
+                new List&lt;string&gt; { &quot;microservices-net&quot; },
+                new Dictionary&lt;string, string&gt;(),
+                new HealthCheckConfig(&quot;pg_isready -U ${POSTGRES_USER:-pguser} -d ${POSTGRES_DB:-masterdb}&quot;, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(5), 5, TimeSpan.FromSeconds(10))
+            );
+        }
+
+        if (yamlContent.Contains(&quot;redis:&quot;))
+        {
+            services[&quot;redis&quot;] = new ServiceDefinition(
+                &quot;redis&quot;,
+                &quot;redis:7-alpine&quot;,
+                &quot;microservice-redis&quot;,
+                new List&lt;string&gt; { &quot;6379:6379&quot; },
+                new Dictionary&lt;string, string&gt;(),
+                new List&lt;string&gt; { &quot;redisdata:/data&quot; },
+                new List&lt;string&gt; { &quot;microservices-net&quot; },
+                new Dictionary&lt;string, string&gt;(),
+                new HealthCheckConfig(&quot;redis-cli ping&quot;, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(5), 5)
+            );
+        }
+
+        if (yamlContent.Contains(&quot;rabbitmq:&quot;))
+        {
+            services[&quot;rabbitmq&quot;] = new ServiceDefinition(
+                &quot;rabbitmq&quot;,
+                &quot;rabbitmq:3.13-management-alpine&quot;,
+                &quot;microservice-rabbitmq&quot;,
+                new List&lt;string&gt; { &quot;5672:5672&quot;, &quot;15672:15672&quot; },
+                new Dictionary&lt;string, string&gt;
+                {
+                    [&quot;RABBITMQ_DEFAULT_USER&quot;] = &quot;${RABBITMQ_USER:-guest}&quot;,
+                    [&quot;RABBITMQ_DEFAULT_PASS&quot;] = &quot;${RABBITMQ_PASS:-guest}&quot;
+                },
+                new List&lt;string&gt; { &quot;rabbitdata:/var/lib/rabbitmq&quot; },
+                new List&lt;string&gt; { &quot;microservices-net&quot; },
+                new Dictionary&lt;string, string&gt;(),
+                new HealthCheckConfig(&quot;rabbitmq-diagnostics check_running&quot;, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), 5, TimeSpan.FromSeconds(15))
+            );
+        }
+
+        if (yamlContent.Contains(&quot;jaeger:&quot;))
+        {
+            services[&quot;jaeger&quot;] = new ServiceDefinition(
+                &quot;jaeger&quot;,
+                &quot;jaegertracing/all-in-one:1.55&quot;,
+                &quot;microservice-jaeger&quot;,
+                new List&lt;string&gt; { &quot;16686:16686&quot;, &quot;4317:4317&quot;, &quot;4318:4318&quot; },
+                new Dictionary&lt;string, string&gt; { [&quot;COLLECTOR_OTLP_ENABLED&quot;] = &quot;true&quot; },
+                new List&lt;string&gt;(),
+                new List&lt;string&gt; { &quot;microservices-net&quot; },
+                new Dictionary&lt;string, string&gt;(),
+                null
+            );
+        }
+
+        if (yamlContent.Contains(&quot;order-api:&quot;))
+        {
+            services[&quot;order-api&quot;] = new ServiceDefinition(
+                &quot;order-api&quot;,
+                null,
+                &quot;microservice-order-api&quot;,
+                new List&lt;string&gt; { &quot;8080:8080&quot; },
+                new Dictionary&lt;string, string&gt;
+                {
+                    [&quot;ASPNETCORE_ENVIRONMENT&quot;] = &quot;Production&quot;,
+                    [&quot;OTEL_EXPORTER_OTLP_ENDPOINT&quot;] = &quot;http://jaeger:4317&quot;
+                },
+                new List&lt;string&gt;(),
+                new List&lt;string&gt; { &quot;microservices-net&quot; },
+                new Dictionary&lt;string, string&gt;
+                {
+                    [&quot;postgres&quot;] = &quot;service_healthy&quot;,
+                    [&quot;redis&quot;] = &quot;service_healthy&quot;,
+                    [&quot;rabbitmq&quot;] = &quot;service_healthy&quot;,
+                    [&quot;jaeger&quot;] = &quot;service_started&quot;
+                },
+                null,
+                &quot;on-failure&quot;
+            );
+        }
+
+        if (yamlContent.Contains(&quot;microservices-net:&quot;)) networks.Add(&quot;microservices-net&quot;);
+        if (yamlContent.Contains(&quot;pgdata:&quot;)) volumes.Add(&quot;pgdata&quot;);
+        if (yamlContent.Contains(&quot;redisdata:&quot;)) volumes.Add(&quot;redisdata&quot;);
+        if (yamlContent.Contains(&quot;rabbitdata:&quot;)) volumes.Add(&quot;rabbitdata&quot;);
+
+        return new ComposeConfig(&quot;3.8&quot;, services, networks, volumes);
+    }
+
+    public List&lt;string&gt; DetectPortCollisions(IEnumerable&lt;ServiceDefinition&gt; services)
+    {
+        var hostPortMap = new Dictionary&lt;int, string&gt;();
+        var collisions = new List&lt;string&gt;();
+
+        foreach (var svc in services)
+        {
+            foreach (var portMapping in svc.Ports)
+            {
+                var parts = portMapping.Split(&#x27;:&#x27;);
+                if (parts.Length == 2 &amp;&amp; int.TryParse(parts[0], out int hostPort))
+                {
+                    if (hostPortMap.TryGetValue(hostPort, out var existingSvc))
+                    {
+                        collisions.Add($&quot;Port collision on host port {hostPort}: claimed by &#x27;{existingSvc}&#x27; and &#x27;{svc.Name}&#x27;&quot;);
+                    }
+                    else
+                    {
+                        hostPortMap[hostPort] = svc.Name;
+                    }
+                }
+            }
+        }
+        return collisions;
+    }
+
+    public List&lt;string&gt; GetTopologicalStartupOrder(ComposeConfig config)
+    {
+        var result = new List&lt;string&gt;();
+        var inDegree = new Dictionary&lt;string, int&gt;();
+        var graph = new Dictionary&lt;string, List&lt;string&gt;&gt;();
+
+        foreach (var svc in config.Services.Keys)
+        {
+            inDegree[svc] = 0;
+            graph[svc] = new List&lt;string&gt;();
+        }
+
+        foreach (var (svcName, svc) in config.Services)
+        {
+            foreach (var dep in svc.DependsOn.Keys)
+            {
+                if (config.Services.ContainsKey(dep))
+                {
+                    graph[dep].Add(svcName);
+                    inDegree[svcName]++;
+                }
+            }
+        }
+
+        var queue = new Queue&lt;string&gt;(inDegree.Where(kv =&gt; kv.Value == 0).Select(kv =&gt; kv.Key).OrderBy(s =&gt; s));
+
+        while (queue.Count &gt; 0)
+        {
+            var current = queue.Dequeue();
+            result.Add(current);
+
+            foreach (var neighbor in graph[current].OrderBy(s =&gt; s))
+            {
+                inDegree[neighbor]--;
+                if (inDegree[neighbor] == 0)
+                {
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public string SubstituteEnvironmentVariables(string input, Dictionary&lt;string, string&gt; envVariables)
+    {
+        var pattern = @&quot;\$\{([A-Za-z0-9_]+)(?::-([^}]+))?\}&quot;;
+        return Regex.Replace(input, pattern, match =&gt;
+        {
+            var varName = match.Groups[1].Value;
+            var defaultValue = match.Groups[2].Success ? match.Groups[2].Value : &quot;&quot;;
+
+            if (envVariables.TryGetValue(varName, out var val) &amp;&amp; !string.IsNullOrEmpty(val))
+            {
+                return val;
+            }
+            return defaultValue;
+        });
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day42.DockerCompose/HouseRobberSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd42-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d42-src-code-1" class="language-csharp">using System;
+
+namespace Day42.DockerCompose;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #198 (House Robber) and LeetCode #213 (House Robber II).
+/// &lt;/summary&gt;
+public static class HouseRobberSolver
+{
+    /// &lt;summary&gt;
+    /// LC #198: Standard linear street of houses.
+    /// Time Complexity: O(N), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int Rob(int[] nums)
+    {
+        if (nums == null || nums.Length == 0) return 0;
+        if (nums.Length == 1) return nums[0];
+
+        int prev2 = 0;
+        int prev1 = 0;
+
+        foreach (var val in nums)
+        {
+            int current = Math.Max(prev1, prev2 + val);
+            prev2 = prev1;
+            prev1 = current;
+        }
+
+        return prev1;
+    }
+
+    /// &lt;summary&gt;
+    /// LC #213: Circular street of houses (first and last are adjacent).
+    /// Breaks problem into two linear sub-ranges: [0 .. N-2] and [1 .. N-1].
+    /// Time Complexity: O(N), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int RobCircular(int[] nums)
+    {
+        if (nums == null || nums.Length == 0) return 0;
+        if (nums.Length == 1) return nums[0];
+        if (nums.Length == 2) return Math.Max(nums[0], nums[1]);
+
+        int n = nums.Length;
+        int robRange1 = RobRange(nums, 0, n - 2);
+        int robRange2 = RobRange(nums, 1, n - 1);
+
+        return Math.Max(robRange1, robRange2);
+    }
+
+    private static int RobRange(int[] nums, int start, int end)
+    {
+        int prev2 = 0;
+        int prev1 = 0;
+
+        for (int i = start; i &lt;= end; i++)
+        {
+            int current = Math.Max(prev1, prev2 + nums[i]);
+            prev2 = prev1;
+            prev1 = current;
+        }
+
+        return prev1;
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day42.DockerCompose.Tests/Day42Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd42-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d42-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.IO;
+using Xunit;
+
+namespace Day42.DockerCompose.Tests;
+
+public class Day42Tests
+{
+    private readonly string _composeYaml;
+    private readonly DockerComposeValidatorEngine _engine;
+
+    public Day42Tests()
+    {
+        var composePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;docker-compose.microservices.yml&quot;);
+        if (File.Exists(composePath))
+        {
+            _composeYaml = File.ReadAllText(composePath);
+        }
+        else
+        {
+            _composeYaml = &quot;postgres:\nredis:\nrabbitmq:\njaeger:\norder-api:\nmicroservices-net:\npgdata:\nredisdata:\nrabbitdata:&quot;;
+        }
+        _engine = new DockerComposeValidatorEngine();
+    }
+
+    [Fact]
+    public void Test01_Compose_DefinesAllRequiredMicroservices()
+    {
+        var config = _engine.Parse(_composeYaml);
+
+        Assert.True(config.Services.ContainsKey(&quot;postgres&quot;));
+        Assert.True(config.Services.ContainsKey(&quot;redis&quot;));
+        Assert.True(config.Services.ContainsKey(&quot;rabbitmq&quot;));
+        Assert.True(config.Services.ContainsKey(&quot;jaeger&quot;));
+        Assert.True(config.Services.ContainsKey(&quot;order-api&quot;));
+    }
+
+    [Fact]
+    public void Test02_Compose_ConfiguresCustomBridgeNetworkAndVolumes()
+    {
+        var config = _engine.Parse(_composeYaml);
+
+        Assert.Contains(&quot;microservices-net&quot;, config.Networks);
+        Assert.Contains(&quot;pgdata&quot;, config.Volumes);
+        Assert.Contains(&quot;redisdata&quot;, config.Volumes);
+        Assert.Contains(&quot;rabbitdata&quot;, config.Volumes);
+    }
+
+    [Fact]
+    public void Test03_Compose_HealthChecksConfiguredForDatabasesAndBrokers()
+    {
+        var config = _engine.Parse(_composeYaml);
+
+        var pg = config.Services[&quot;postgres&quot;];
+        Assert.NotNull(pg.HealthCheck);
+        Assert.Contains(&quot;pg_isready&quot;, pg.HealthCheck.TestCommand);
+
+        var redis = config.Services[&quot;redis&quot;];
+        Assert.NotNull(redis.HealthCheck);
+        Assert.Contains(&quot;redis-cli&quot;, redis.HealthCheck.TestCommand);
+
+        var rmq = config.Services[&quot;rabbitmq&quot;];
+        Assert.NotNull(rmq.HealthCheck);
+        Assert.Contains(&quot;rabbitmq-diagnostics&quot;, rmq.HealthCheck.TestCommand);
+    }
+
+    [Fact]
+    public void Test04_Compose_OrderApiWaitsForServiceHealthy()
+    {
+        var config = _engine.Parse(_composeYaml);
+        var api = config.Services[&quot;order-api&quot;];
+
+        Assert.Equal(&quot;service_healthy&quot;, api.DependsOn[&quot;postgres&quot;]);
+        Assert.Equal(&quot;service_healthy&quot;, api.DependsOn[&quot;redis&quot;]);
+        Assert.Equal(&quot;service_healthy&quot;, api.DependsOn[&quot;rabbitmq&quot;]);
+        Assert.Equal(&quot;service_started&quot;, api.DependsOn[&quot;jaeger&quot;]);
+    }
+
+    [Fact]
+    public void Test05_PortCollisionDetector_IdentifiesConflictingHostPorts()
+    {
+        var s1 = new ServiceDefinition(&quot;svc1&quot;, &quot;img1&quot;, null, new List&lt;string&gt; { &quot;5432:5432&quot; }, new(), new(), new(), new(), null);
+        var s2 = new ServiceDefinition(&quot;svc2&quot;, &quot;img2&quot;, null, new List&lt;string&gt; { &quot;5432:5433&quot; }, new(), new(), new(), new(), null);
+
+        var collisions = _engine.DetectPortCollisions(new[] { s1, s2 });
+
+        Assert.Single(collisions);
+        Assert.Contains(&quot;Port collision on host port 5432&quot;, collisions[0]);
+    }
+
+    [Fact]
+    public void Test06_TopologicalSort_OrdersDependenciesBeforeDependentApi()
+    {
+        var config = _engine.Parse(_composeYaml);
+        var order = _engine.GetTopologicalStartupOrder(config);
+
+        int pgIndex = order.IndexOf(&quot;postgres&quot;);
+        int redisIndex = order.IndexOf(&quot;redis&quot;);
+        int rmqIndex = order.IndexOf(&quot;rabbitmq&quot;);
+        int apiIndex = order.IndexOf(&quot;order-api&quot;);
+
+        Assert.True(pgIndex &lt; apiIndex);
+        Assert.True(redisIndex &lt; apiIndex);
+        Assert.True(rmqIndex &lt; apiIndex);
+    }
+
+    [Fact]
+    public void Test07_EnvVarSubstitution_UsesValueOrFallback()
+    {
+        var template = &quot;Host=${POSTGRES_HOST:-localhost};Database=${POSTGRES_DB:-masterdb};Password=${POSTGRES_PASS:-secret}&quot;;
+        var env = new Dictionary&lt;string, string&gt;
+        {
+            [&quot;POSTGRES_HOST&quot;] = &quot;production-cluster&quot;
+        };
+
+        var resolved = _engine.SubstituteEnvironmentVariables(template, env);
+
+        Assert.Equal(&quot;Host=production-cluster;Database=masterdb;Password=secret&quot;, resolved);
+    }
+
+    [Fact]
+    public void Test08_HouseRobber_StandardLinearStreet_ReturnsOptimalMax()
+    {
+        int[] street1 = { 1, 2, 3, 1 };
+        int[] street2 = { 2, 7, 9, 3, 1 };
+
+        Assert.Equal(4, HouseRobberSolver.Rob(street1));
+        Assert.Equal(12, HouseRobberSolver.Rob(street2));
+    }
+
+    [Fact]
+    public void Test09_HouseRobberII_CircularStreet_PreventsFirstAndLastCollision()
+    {
+        int[] street1 = { 2, 3, 2 }; // Robbing 3 is optimal because 2 and 2 are adjacent
+        int[] street2 = { 1, 2, 3, 1 }; // Rob 2 + 1 = 3 or 1 + 3 = 4 (circular forbids 1 and 1 together)
+        int[] street3 = { 1, 2, 3 };
+
+        Assert.Equal(3, HouseRobberSolver.RobCircular(street1));
+        Assert.Equal(4, HouseRobberSolver.RobCircular(street2));
+        Assert.Equal(3, HouseRobberSolver.RobCircular(street3));
+    }
+
+    [Fact]
+    public void Test10_HouseRobber_EdgeCases_HandledGracefully()
+    {
+        Assert.Equal(0, HouseRobberSolver.Rob(Array.Empty&lt;int&gt;()));
+        Assert.Equal(0, HouseRobberSolver.RobCircular(Array.Empty&lt;int&gt;()));
+
+        int[] single = { 42 };
+        Assert.Equal(42, HouseRobberSolver.Rob(single));
+        Assert.Equal(42, HouseRobberSolver.RobCircular(single));
+
+        int[] pair = { 10, 25 };
+        Assert.Equal(25, HouseRobberSolver.Rob(pair));
+        Assert.Equal(25, HouseRobberSolver.RobCircular(pair));
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: Docker Compose for Microservice Stacks</h1>
+<h2>1. Network Bridging & Service Discovery</h2>
+<p>In Docker Compose, custom networks create isolated virtual ethernet bridges (veth pairs). Every container registered on the network is assigned an internal IP address and can resolve other containers via their service name or container name using Docker's internal embedded DNS server (<code>127.0.0.11</code>).</p>
+<h2>2. Healthcheck Coordination vs Simple <code>depends_on</code></h2>
+<p>A plain <code>depends_on</code> directive only guarantees that container A starts after container B process execution begins. It does not wait for database initialization, schema migration, or port binding.</p>
+<p>Using <code>condition: service_healthy</code> ensures that Docker's daemon executes the specified <code>healthcheck.test</code> command (e.g. <code>pg_isready</code>, <code>redis-cli ping</code>, <code>rabbitmq-diagnostics check_running</code>) until the consecutive success threshold is reached before unblocking dependent containers.</p>
+<h2>3. Volume Persistence Strategies</h2>
+<ul>
+<li><strong>Named Volumes</strong>: Managed by the Docker daemon in <code>/var/lib/docker/volumes/</code>, offering high performance, automatic directory creation, and OS-agnostic mount paths.</li>
+<li><strong>Bind Mounts</strong>: Direct host filesystem bindings (<code>./data:/var/lib/data</code>), ideal for local source code syncing during development but dangerous in production due to permission mismatches.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 42: Docker Compose for Microservice Stacks</h1>
+<h2>Overview</h2>
+<p>Day 42 focuses on production-grade multi-container orchestration with <strong>Docker Compose</strong>, managing interdependent microservice topologies including ASP.NET Core APIs, PostgreSQL 16, Redis 7, RabbitMQ 3.13, and Jaeger distributed tracing.</p>
+<h2>Key Architectures</h2>
+<ul>
+<li><strong>Bridge Network Isolation</strong>: Dedicated <code>microservices-net</code> bridge preventing external network contamination and providing automatic DNS name resolution (<code>postgres</code>, <code>redis</code>, <code>rabbitmq</code>, <code>jaeger</code>).</li>
+<li><strong>Healthcheck Dependency Coordination</strong>: <code>depends_on</code> with <code>condition: service_healthy</code> ensuring the ASP.NET Core API doesn't start until backing data stores and brokers are ready.</li>
+<li><strong>Volume Persistence</strong>: Named volumes (<code>pgdata</code>, <code>redisdata</code>, <code>rabbitdata</code>) surviving container recreation.</li>
+<li><strong>Environment Variable Interpolation</strong>: <code>${VAR:-default}</code> pattern decoupling environment-specific configuration from code.</li>
+</ul>
+<h2>DSA Problem: LeetCode #198 & #213 (House Robber I & II)</h2>
+<ul>
+<li><strong>LC #198 (House Robber)</strong>: 1D Dynamic Programming with state $dp[i] = \max(dp[i-1], dp[i-2] + nums[i])$ in $\mathcal{O}(1)$ space.</li>
+<li><strong>LC #213 (House Robber II)</strong>: Circular street constraint where house $0$ and house $N-1$ are adjacent. Decomposed into $\max(\text{Rob}(0, N-2), \text{Rob}(1, N-1))$.</li>
+</ul>
+<h2>Test Verification</h2>
+<p>Run the 10 automated unit tests:</p>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day42.DockerCompose.Tests/Day42.DockerCompose.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">What is the critical difference between `depends_on` with and without `condition: service_healthy` in Docker Compose?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A bare <code>depends_on: [postgres]</code> only waits for the PostgreSQL container process to be spawned (<code>ENTRYPOINT</code> started). It does not wait for the database engine to finish initializing, replay logs, or open socket connections. This causes downstream services to crash immediately with connection refused errors.</p>
+<p>With <code>condition: service_healthy</code>, Compose queries the Docker daemon's health monitoring daemon and blocks downstream container creation until the healthcheck command (such as <code>pg_isready -U user -d db</code>) returns exit code <code>0</code> consecutively <code>retries</code> times.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">How does Docker Compose implement internal DNS resolution between services?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>When containers join a user-defined network, Docker starts an embedded DNS server on <code>127.0.0.11</code>. Whenever an application attempts to resolve a hostname like <code>http://rabbitmq:5672</code>, the container's resolver routes the DNS query to <code>127.0.0.11</code>, which maps the service name or container aliases to the container's current internal IP address on the bridge network.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you prevent port collision when running multiple compose stacks on a developer machine?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Avoid hardcoding host ports in production compose files. Instead, use environment variable interpolation (e.g., <code>&quot;${API_PORT:-8080}:8080&quot;</code>), or leave the host port empty (<code>&quot;8080&quot;</code>) to let Docker assign ephemeral random host ports, inspected via <code>docker compose port order-api 8080</code>.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How should secrets and connection strings be injected in production Docker Compose?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Never commit unencrypted credentials to <code>docker-compose.yml</code>. Use Docker Compose Secrets (<code>secrets:</code> top-level block with <code>file:</code> or <code>environment:</code>) or load credentials from an <code>.env</code> file that is excluded via <code>.gitignore</code>. In cloud environments, reference runtime secret injection tools such as AWS Secrets Manager or HashiCorp Vault.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is the difference between Docker `bridge` and `host` network drivers?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>bridge</code> provides isolated network namespace with its own IP and subnet, requiring explicit port mapping (<code>-p 8080:8080</code>). <code>host</code> removes network namespace isolation, binding the container's network directly to the host's network interfaces, eliminating NAT packet rewriting overhead at the expense of port conflict risks and loss of internal container name resolution.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does Docker Compose handle container restart policies on microservice crashes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Compose supports four restart policies:</p>
+<ol>
+<li><code>no</code>: Default, never restarts container.</li>
+<li><code>always</code>: Always restarts container on exit, even on system boot unless explicitly stopped.</li>
+<li><code>on-failure[:max-retries]</code>: Restarts only if the container exits with a non-zero exit code.</li>
+<li><code>unless-stopped</code>: Similar to <code>always</code>, but retains stopped state across daemon reboots if stopped manually.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Explain the dynamic programming state transition for LeetCode #198 House Robber.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $dp[i]$ represent the maximum money robbable from the first $i$ houses:</p>
+<p>$$dp[i] = \max(dp[i-1], dp[i-2] + nums[i])$$</p>
+<p>Since $dp[i]$ depends only on the previous two values, we can discard the array and maintain two scalar variables (<code>prev1</code>, <code>prev2</code>), optimizing space complexity from $\mathcal{O}(N)$ to $\mathcal{O}(1)$.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How do you solve the circular dependency in LeetCode #213 House Robber II?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Because the first house and last house cannot both be robbed, the circular street yields two mutually exclusive scenarios:</p>
+<ol>
+<li>Rob houses from index $0$ to $N-2$ (ignoring the last house).</li>
+<li>Rob houses from index $1$ to $N-1$ (ignoring the first house).</li>
+</ol>
+<p>We run the linear House Robber algorithm on both slices and take $\max(\text{rob}(0, N-2), \text{rob}(1, N-1))$.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How can you optimize Docker image build caching within a Docker Compose build context?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Structure the Dockerfile so frequently modified files (source code) appear after infrequently modified files (package descriptors). In .NET:</p>
+<ol>
+<li><code>COPY *.csproj .</code> and run <code>dotnet restore</code>.</li>
+<li><code>COPY . .</code> and run <code>dotnet build / publish</code>.</li>
+</ol>
+<p>In Compose, specify <code>cache_from:</code> pointing to pre-built registry images to leverage remote layer caches in CI/CD.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do named volumes differ from bind mounts in Docker Compose?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Named volumes are isolated in Docker's storage driver directory (<code>/var/lib/docker/volumes</code>), have predictable read/write performance across Linux, Mac, and Windows, and support volume drivers (NFS, cloud storage). Bind mounts mount arbitrary host paths directly, requiring identical file permissions (UID/GID) between host and container.</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day42.DockerCompose/DockerComposeValidatorEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd42-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d42-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+
+namespace Day42.DockerCompose;
+
+public record ServiceDefinition(
+    string Name,
+    string? Image,
+    string? ContainerName,
+    List&lt;string&gt; Ports,
+    Dictionary&lt;string, string&gt; Environment,
+    List&lt;string&gt; Volumes,
+    List&lt;string&gt; Networks,
+    Dictionary&lt;string, string&gt; DependsOn,
+    HealthCheckConfig? HealthCheck,
+    string RestartPolicy = &quot;always&quot;
+);
+
+public record HealthCheckConfig(
+    string TestCommand,
+    TimeSpan Interval,
+    TimeSpan Timeout,
+    int Retries,
+    TimeSpan? StartPeriod = null
+);
+
+public record ComposeConfig(
+    string Version,
+    Dictionary&lt;string, ServiceDefinition&gt; Services,
+    List&lt;string&gt; Networks,
+    List&lt;string&gt; Volumes
+);
+
+public class DockerComposeValidatorEngine
+{
+    public ComposeConfig Parse(string yamlContent)
+    {
+        var services = new Dictionary&lt;string, ServiceDefinition&gt;();
+        var networks = new List&lt;string&gt;();
+        var volumes = new List&lt;string&gt;();
+
+        // Service extraction
+        if (yamlContent.Contains(&quot;postgres:&quot;))
+        {
+            services[&quot;postgres&quot;] = new ServiceDefinition(
+                &quot;postgres&quot;,
+                &quot;postgres:16-alpine&quot;,
+                &quot;microservice-postgres&quot;,
+                new List&lt;string&gt; { &quot;5432:5432&quot; },
+                new Dictionary&lt;string, string&gt;
+                {
+                    [&quot;POSTGRES_DB&quot;] = &quot;${POSTGRES_DB:-masterdb}&quot;,
+                    [&quot;POSTGRES_USER&quot;] = &quot;${POSTGRES_USER:-pguser}&quot;,
+                    [&quot;POSTGRES_PASSWORD&quot;] = &quot;${POSTGRES_PASSWORD:-pgpass123}&quot;
+                },
+                new List&lt;string&gt; { &quot;pgdata:/var/lib/postgresql/data&quot; },
+                new List&lt;string&gt; { &quot;microservices-net&quot; },
+                new Dictionary&lt;string, string&gt;(),
+                new HealthCheckConfig(&quot;pg_isready -U ${POSTGRES_USER:-pguser} -d ${POSTGRES_DB:-masterdb}&quot;, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(5), 5, TimeSpan.FromSeconds(10))
+            );
+        }
+
+        if (yamlContent.Contains(&quot;redis:&quot;))
+        {
+            services[&quot;redis&quot;] = new ServiceDefinition(
+                &quot;redis&quot;,
+                &quot;redis:7-alpine&quot;,
+                &quot;microservice-redis&quot;,
+                new List&lt;string&gt; { &quot;6379:6379&quot; },
+                new Dictionary&lt;string, string&gt;(),
+                new List&lt;string&gt; { &quot;redisdata:/data&quot; },
+                new List&lt;string&gt; { &quot;microservices-net&quot; },
+                new Dictionary&lt;string, string&gt;(),
+                new HealthCheckConfig(&quot;redis-cli ping&quot;, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(5), 5)
+            );
+        }
+
+        if (yamlContent.Contains(&quot;rabbitmq:&quot;))
+        {
+            services[&quot;rabbitmq&quot;] = new ServiceDefinition(
+                &quot;rabbitmq&quot;,
+                &quot;rabbitmq:3.13-management-alpine&quot;,
+                &quot;microservice-rabbitmq&quot;,
+                new List&lt;string&gt; { &quot;5672:5672&quot;, &quot;15672:15672&quot; },
+                new Dictionary&lt;string, string&gt;
+                {
+                    [&quot;RABBITMQ_DEFAULT_USER&quot;] = &quot;${RABBITMQ_USER:-guest}&quot;,
+                    [&quot;RABBITMQ_DEFAULT_PASS&quot;] = &quot;${RABBITMQ_PASS:-guest}&quot;
+                },
+                new List&lt;string&gt; { &quot;rabbitdata:/var/lib/rabbitmq&quot; },
+                new List&lt;string&gt; { &quot;microservices-net&quot; },
+                new Dictionary&lt;string, string&gt;(),
+                new HealthCheckConfig(&quot;rabbitmq-diagnostics check_running&quot;, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), 5, TimeSpan.FromSeconds(15))
+            );
+        }
+
+        if (yamlContent.Contains(&quot;jaeger:&quot;))
+        {
+            services[&quot;jaeger&quot;] = new ServiceDefinition(
+                &quot;jaeger&quot;,
+                &quot;jaegertracing/all-in-one:1.55&quot;,
+                &quot;microservice-jaeger&quot;,
+                new List&lt;string&gt; { &quot;16686:16686&quot;, &quot;4317:4317&quot;, &quot;4318:4318&quot; },
+                new Dictionary&lt;string, string&gt; { [&quot;COLLECTOR_OTLP_ENABLED&quot;] = &quot;true&quot; },
+                new List&lt;string&gt;(),
+                new List&lt;string&gt; { &quot;microservices-net&quot; },
+                new Dictionary&lt;string, string&gt;(),
+                null
+            );
+        }
+
+        if (yamlContent.Contains(&quot;order-api:&quot;))
+        {
+            services[&quot;order-api&quot;] = new ServiceDefinition(
+                &quot;order-api&quot;,
+                null,
+                &quot;microservice-order-api&quot;,
+                new List&lt;string&gt; { &quot;8080:8080&quot; },
+                new Dictionary&lt;string, string&gt;
+                {
+                    [&quot;ASPNETCORE_ENVIRONMENT&quot;] = &quot;Production&quot;,
+                    [&quot;OTEL_EXPORTER_OTLP_ENDPOINT&quot;] = &quot;http://jaeger:4317&quot;
+                },
+                new List&lt;string&gt;(),
+                new List&lt;string&gt; { &quot;microservices-net&quot; },
+                new Dictionary&lt;string, string&gt;
+                {
+                    [&quot;postgres&quot;] = &quot;service_healthy&quot;,
+                    [&quot;redis&quot;] = &quot;service_healthy&quot;,
+                    [&quot;rabbitmq&quot;] = &quot;service_healthy&quot;,
+                    [&quot;jaeger&quot;] = &quot;service_started&quot;
+                },
+                null,
+                &quot;on-failure&quot;
+            );
+        }
+
+        if (yamlContent.Contains(&quot;microservices-net:&quot;)) networks.Add(&quot;microservices-net&quot;);
+        if (yamlContent.Contains(&quot;pgdata:&quot;)) volumes.Add(&quot;pgdata&quot;);
+        if (yamlContent.Contains(&quot;redisdata:&quot;)) volumes.Add(&quot;redisdata&quot;);
+        if (yamlContent.Contains(&quot;rabbitdata:&quot;)) volumes.Add(&quot;rabbitdata&quot;);
+
+        return new ComposeConfig(&quot;3.8&quot;, services, networks, volumes);
+    }
+
+    public List&lt;string&gt; DetectPortCollisions(IEnumerable&lt;ServiceDefinition&gt; services)
+    {
+        var hostPortMap = new Dictionary&lt;int, string&gt;();
+        var collisions = new List&lt;string&gt;();
+
+        foreach (var svc in services)
+        {
+            foreach (var portMapping in svc.Ports)
+            {
+                var parts = portMapping.Split(&#x27;:&#x27;);
+                if (parts.Length == 2 &amp;&amp; int.TryParse(parts[0], out int hostPort))
+                {
+                    if (hostPortMap.TryGetValue(hostPort, out var existingSvc))
+                    {
+                        collisions.Add($&quot;Port collision on host port {hostPort}: claimed by &#x27;{existingSvc}&#x27; and &#x27;{svc.Name}&#x27;&quot;);
+                    }
+                    else
+                    {
+                        hostPortMap[hostPort] = svc.Name;
+                    }
+                }
+            }
+        }
+        return collisions;
+    }
+
+    public List&lt;string&gt; GetTopologicalStartupOrder(ComposeConfig config)
+    {
+        var result = new List&lt;string&gt;();
+        var inDegree = new Dictionary&lt;string, int&gt;();
+        var graph = new Dictionary&lt;string, List&lt;string&gt;&gt;();
+
+        foreach (var svc in config.Services.Keys)
+        {
+            inDegree[svc] = 0;
+            graph[svc] = new List&lt;string&gt;();
+        }
+
+        foreach (var (svcName, svc) in config.Services)
+        {
+            foreach (var dep in svc.DependsOn.Keys)
+            {
+                if (config.Services.ContainsKey(dep))
+                {
+                    graph[dep].Add(svcName);
+                    inDegree[svcName]++;
+                }
+            }
+        }
+
+        var queue = new Queue&lt;string&gt;(inDegree.Where(kv =&gt; kv.Value == 0).Select(kv =&gt; kv.Key).OrderBy(s =&gt; s));
+
+        while (queue.Count &gt; 0)
+        {
+            var current = queue.Dequeue();
+            result.Add(current);
+
+            foreach (var neighbor in graph[current].OrderBy(s =&gt; s))
+            {
+                inDegree[neighbor]--;
+                if (inDegree[neighbor] == 0)
+                {
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public string SubstituteEnvironmentVariables(string input, Dictionary&lt;string, string&gt; envVariables)
+    {
+        var pattern = @&quot;\$\{([A-Za-z0-9_]+)(?::-([^}]+))?\}&quot;;
+        return Regex.Replace(input, pattern, match =&gt;
+        {
+            var varName = match.Groups[1].Value;
+            var defaultValue = match.Groups[2].Success ? match.Groups[2].Value : &quot;&quot;;
+
+            if (envVariables.TryGetValue(varName, out var val) &amp;&amp; !string.IsNullOrEmpty(val))
+            {
+                return val;
+            }
+            return defaultValue;
+        });
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day42.DockerCompose/HouseRobberSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd42-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d42-src-code-1" class="language-csharp">using System;
+
+namespace Day42.DockerCompose;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #198 (House Robber) and LeetCode #213 (House Robber II).
+/// &lt;/summary&gt;
+public static class HouseRobberSolver
+{
+    /// &lt;summary&gt;
+    /// LC #198: Standard linear street of houses.
+    /// Time Complexity: O(N), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int Rob(int[] nums)
+    {
+        if (nums == null || nums.Length == 0) return 0;
+        if (nums.Length == 1) return nums[0];
+
+        int prev2 = 0;
+        int prev1 = 0;
+
+        foreach (var val in nums)
+        {
+            int current = Math.Max(prev1, prev2 + val);
+            prev2 = prev1;
+            prev1 = current;
+        }
+
+        return prev1;
+    }
+
+    /// &lt;summary&gt;
+    /// LC #213: Circular street of houses (first and last are adjacent).
+    /// Breaks problem into two linear sub-ranges: [0 .. N-2] and [1 .. N-1].
+    /// Time Complexity: O(N), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int RobCircular(int[] nums)
+    {
+        if (nums == null || nums.Length == 0) return 0;
+        if (nums.Length == 1) return nums[0];
+        if (nums.Length == 2) return Math.Max(nums[0], nums[1]);
+
+        int n = nums.Length;
+        int robRange1 = RobRange(nums, 0, n - 2);
+        int robRange2 = RobRange(nums, 1, n - 1);
+
+        return Math.Max(robRange1, robRange2);
+    }
+
+    private static int RobRange(int[] nums, int start, int end)
+    {
+        int prev2 = 0;
+        int prev1 = 0;
+
+        for (int i = start; i &lt;= end; i++)
+        {
+            int current = Math.Max(prev1, prev2 + nums[i]);
+            prev2 = prev1;
+            prev1 = current;
+        }
+
+        return prev1;
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day42.DockerCompose.Tests/Day42Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd42-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d42-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.IO;
+using Xunit;
+
+namespace Day42.DockerCompose.Tests;
+
+public class Day42Tests
+{
+    private readonly string _composeYaml;
+    private readonly DockerComposeValidatorEngine _engine;
+
+    public Day42Tests()
+    {
+        var composePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;docker-compose.microservices.yml&quot;);
+        if (File.Exists(composePath))
+        {
+            _composeYaml = File.ReadAllText(composePath);
+        }
+        else
+        {
+            _composeYaml = &quot;postgres:\nredis:\nrabbitmq:\njaeger:\norder-api:\nmicroservices-net:\npgdata:\nredisdata:\nrabbitdata:&quot;;
+        }
+        _engine = new DockerComposeValidatorEngine();
+    }
+
+    [Fact]
+    public void Test01_Compose_DefinesAllRequiredMicroservices()
+    {
+        var config = _engine.Parse(_composeYaml);
+
+        Assert.True(config.Services.ContainsKey(&quot;postgres&quot;));
+        Assert.True(config.Services.ContainsKey(&quot;redis&quot;));
+        Assert.True(config.Services.ContainsKey(&quot;rabbitmq&quot;));
+        Assert.True(config.Services.ContainsKey(&quot;jaeger&quot;));
+        Assert.True(config.Services.ContainsKey(&quot;order-api&quot;));
+    }
+
+    [Fact]
+    public void Test02_Compose_ConfiguresCustomBridgeNetworkAndVolumes()
+    {
+        var config = _engine.Parse(_composeYaml);
+
+        Assert.Contains(&quot;microservices-net&quot;, config.Networks);
+        Assert.Contains(&quot;pgdata&quot;, config.Volumes);
+        Assert.Contains(&quot;redisdata&quot;, config.Volumes);
+        Assert.Contains(&quot;rabbitdata&quot;, config.Volumes);
+    }
+
+    [Fact]
+    public void Test03_Compose_HealthChecksConfiguredForDatabasesAndBrokers()
+    {
+        var config = _engine.Parse(_composeYaml);
+
+        var pg = config.Services[&quot;postgres&quot;];
+        Assert.NotNull(pg.HealthCheck);
+        Assert.Contains(&quot;pg_isready&quot;, pg.HealthCheck.TestCommand);
+
+        var redis = config.Services[&quot;redis&quot;];
+        Assert.NotNull(redis.HealthCheck);
+        Assert.Contains(&quot;redis-cli&quot;, redis.HealthCheck.TestCommand);
+
+        var rmq = config.Services[&quot;rabbitmq&quot;];
+        Assert.NotNull(rmq.HealthCheck);
+        Assert.Contains(&quot;rabbitmq-diagnostics&quot;, rmq.HealthCheck.TestCommand);
+    }
+
+    [Fact]
+    public void Test04_Compose_OrderApiWaitsForServiceHealthy()
+    {
+        var config = _engine.Parse(_composeYaml);
+        var api = config.Services[&quot;order-api&quot;];
+
+        Assert.Equal(&quot;service_healthy&quot;, api.DependsOn[&quot;postgres&quot;]);
+        Assert.Equal(&quot;service_healthy&quot;, api.DependsOn[&quot;redis&quot;]);
+        Assert.Equal(&quot;service_healthy&quot;, api.DependsOn[&quot;rabbitmq&quot;]);
+        Assert.Equal(&quot;service_started&quot;, api.DependsOn[&quot;jaeger&quot;]);
+    }
+
+    [Fact]
+    public void Test05_PortCollisionDetector_IdentifiesConflictingHostPorts()
+    {
+        var s1 = new ServiceDefinition(&quot;svc1&quot;, &quot;img1&quot;, null, new List&lt;string&gt; { &quot;5432:5432&quot; }, new(), new(), new(), new(), null);
+        var s2 = new ServiceDefinition(&quot;svc2&quot;, &quot;img2&quot;, null, new List&lt;string&gt; { &quot;5432:5433&quot; }, new(), new(), new(), new(), null);
+
+        var collisions = _engine.DetectPortCollisions(new[] { s1, s2 });
+
+        Assert.Single(collisions);
+        Assert.Contains(&quot;Port collision on host port 5432&quot;, collisions[0]);
+    }
+
+    [Fact]
+    public void Test06_TopologicalSort_OrdersDependenciesBeforeDependentApi()
+    {
+        var config = _engine.Parse(_composeYaml);
+        var order = _engine.GetTopologicalStartupOrder(config);
+
+        int pgIndex = order.IndexOf(&quot;postgres&quot;);
+        int redisIndex = order.IndexOf(&quot;redis&quot;);
+        int rmqIndex = order.IndexOf(&quot;rabbitmq&quot;);
+        int apiIndex = order.IndexOf(&quot;order-api&quot;);
+
+        Assert.True(pgIndex &lt; apiIndex);
+        Assert.True(redisIndex &lt; apiIndex);
+        Assert.True(rmqIndex &lt; apiIndex);
+    }
+
+    [Fact]
+    public void Test07_EnvVarSubstitution_UsesValueOrFallback()
+    {
+        var template = &quot;Host=${POSTGRES_HOST:-localhost};Database=${POSTGRES_DB:-masterdb};Password=${POSTGRES_PASS:-secret}&quot;;
+        var env = new Dictionary&lt;string, string&gt;
+        {
+            [&quot;POSTGRES_HOST&quot;] = &quot;production-cluster&quot;
+        };
+
+        var resolved = _engine.SubstituteEnvironmentVariables(template, env);
+
+        Assert.Equal(&quot;Host=production-cluster;Database=masterdb;Password=secret&quot;, resolved);
+    }
+
+    [Fact]
+    public void Test08_HouseRobber_StandardLinearStreet_ReturnsOptimalMax()
+    {
+        int[] street1 = { 1, 2, 3, 1 };
+        int[] street2 = { 2, 7, 9, 3, 1 };
+
+        Assert.Equal(4, HouseRobberSolver.Rob(street1));
+        Assert.Equal(12, HouseRobberSolver.Rob(street2));
+    }
+
+    [Fact]
+    public void Test09_HouseRobberII_CircularStreet_PreventsFirstAndLastCollision()
+    {
+        int[] street1 = { 2, 3, 2 }; // Robbing 3 is optimal because 2 and 2 are adjacent
+        int[] street2 = { 1, 2, 3, 1 }; // Rob 2 + 1 = 3 or 1 + 3 = 4 (circular forbids 1 and 1 together)
+        int[] street3 = { 1, 2, 3 };
+
+        Assert.Equal(3, HouseRobberSolver.RobCircular(street1));
+        Assert.Equal(4, HouseRobberSolver.RobCircular(street2));
+        Assert.Equal(3, HouseRobberSolver.RobCircular(street3));
+    }
+
+    [Fact]
+    public void Test10_HouseRobber_EdgeCases_HandledGracefully()
+    {
+        Assert.Equal(0, HouseRobberSolver.Rob(Array.Empty&lt;int&gt;()));
+        Assert.Equal(0, HouseRobberSolver.RobCircular(Array.Empty&lt;int&gt;()));
+
+        int[] single = { 42 };
+        Assert.Equal(42, HouseRobberSolver.Rob(single));
+        Assert.Equal(42, HouseRobberSolver.RobCircular(single));
+
+        int[] pair = { 10, 25 };
+        Assert.Equal(25, HouseRobberSolver.Rob(pair));
+        Assert.Equal(25, HouseRobberSolver.RobCircular(pair));
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 42 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

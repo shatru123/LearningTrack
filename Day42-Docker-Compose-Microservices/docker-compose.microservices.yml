@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: microservice-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-masterdb}
+      POSTGRES_USER: ${POSTGRES_USER:-pguser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pgpass123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pguser} -d ${POSTGRES_DB:-masterdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: microservice-redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: microservice-rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitdata:/var/lib/rabbitmq
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.55
+    container_name: microservice-jaeger
+    restart: always
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - microservices-net
+
+  order-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: microservice-order-api
+    restart: on-failure
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: "Host=postgres;Database=${POSTGRES_DB:-masterdb};Username=${POSTGRES_USER:-pguser};Password=${POSTGRES_PASSWORD:-pgpass123}"
+      ConnectionStrings__Redis: "redis:6379"
+      ConnectionStrings__RabbitMq: "amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672/"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4317"
+    ports:
+      - "8080:8080"
+    networks:
+      - microservices-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+  rabbitdata:
+    driver: local
+
+networks:
+  microservices-net:
+    driver: bridge

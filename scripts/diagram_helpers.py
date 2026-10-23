@@ -2249,6 +2249,439 @@ def get_day_svg(day_num):
         </svg>
         """
 
+    if day_num == 42:
+        return """
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d42GradStack" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0284c7" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#0369a1" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d42GradHealth" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d42GradDp" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Docker Compose Microservice Stack -->
+          <rect x="20" y="20" width="300" height="340" rx="10" fill="url(#d42GradStack)" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#38bdf8" font-size="14" font-weight="bold">Docker Compose Microservice Stack</text>
+
+          <rect x="35" y="65" width="270" height="48" rx="6" fill="#0f172a" stroke="#0284c7"/>
+          <text x="45" y="85" fill="#38bdf8" font-size="11" font-weight="bold">ASP.NET Core API (:8080)</text>
+          <text x="45" y="102" fill="#cbd5e1" font-size="9">Chiseled Distroless Container (Non-root 1654)</text>
+
+          <rect x="35" y="125" width="270" height="150" rx="6" fill="#0b1329" stroke="#334155"/>
+          <text x="45" y="145" fill="#94a3b8" font-size="10" font-weight="bold">Bridge Network: microservices-net</text>
+
+          <g transform="translate(45, 155)">
+            <rect x="0" y="0" width="120" height="45" rx="4" fill="#0f172a" stroke="#3b82f6"/>
+            <text x="10" y="18" fill="#60a5fa" font-size="10" font-weight="bold">PostgreSQL 16</text>
+            <text x="10" y="32" fill="#94a3b8" font-size="8">:5432 (pgdata vol)</text>
+
+            <rect x="130" y="0" width="120" height="45" rx="4" fill="#0f172a" stroke="#ef4444"/>
+            <text x="140" y="18" fill="#f87171" font-size="10" font-weight="bold">Redis 7 AOF</text>
+            <text x="140" y="32" fill="#94a3b8" font-size="8">:6379 (redisdata)</text>
+
+            <rect x="0" y="55" width="120" height="45" rx="4" fill="#0f172a" stroke="#f97316"/>
+            <text x="10" y="73" fill="#fb923c" font-size="10" font-weight="bold">RabbitMQ 3.13</text>
+            <text x="10" y="87" fill="#94a3b8" font-size="8">:5672 / :15672</text>
+
+            <rect x="130" y="55" width="120" height="45" rx="4" fill="#0f172a" stroke="#a855f7"/>
+            <text x="140" y="73" fill="#c084fc" font-size="10" font-weight="bold">Jaeger Tracing</text>
+            <text x="140" y="87" fill="#94a3b8" font-size="8">:16686 / :4317 OTLP</text>
+          </g>
+
+          <rect x="35" y="285" width="270" height="60" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="303" fill="#38bdf8" font-size="10" font-weight="bold">Persistent Named Volumes</text>
+          <text x="45" y="319" fill="#94a3b8" font-size="9">pgdata, redisdata, rabbitdata</text>
+          <text x="45" y="333" fill="#cbd5e1" font-size="8">Independent lifecycle from container restarts</text>
+
+          <!-- 2. Healthcheck Coordination -->
+          <rect x="340" y="20" width="260" height="340" rx="10" fill="url(#d42GradHealth)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="360" y="48" fill="#34d399" font-size="14" font-weight="bold">Healthcheck Coordination</text>
+
+          <rect x="355" y="65" width="230" height="75" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="365" y="85" fill="#34d399" font-size="11" font-weight="bold">condition: service_healthy</text>
+          <text x="365" y="103" fill="#cbd5e1" font-size="9">pg_isready -U pguser -d masterdb</text>
+          <text x="365" y="118" fill="#cbd5e1" font-size="9">redis-cli ping</text>
+          <text x="365" y="133" fill="#cbd5e1" font-size="9">rabbitmq-diagnostics check_running</text>
+
+          <rect x="355" y="150" width="230" height="85" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="365" y="170" fill="#fbbf24" font-size="11" font-weight="bold">Startup Sequencing</text>
+          <text x="365" y="188" fill="#cbd5e1" font-size="9">1. Backing databases start</text>
+          <text x="365" y="203" fill="#cbd5e1" font-size="9">2. Healthchecks pass consecutively</text>
+          <text x="365" y="218" fill="#38bdf8" font-size="9">3. Order API unblocks &amp; connects</text>
+
+          <rect x="355" y="245" width="230" height="100" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="365" y="265" fill="#f87171" font-size="11" font-weight="bold">Port Collision Prevention</text>
+          <text x="365" y="283" fill="#cbd5e1" font-size="9">Host mapping: "${PORT:-8080}:8080"</text>
+          <text x="365" y="299" fill="#94a3b8" font-size="8">Dynamic env var interpolation</text>
+          <text x="365" y="315" fill="#cbd5e1" font-size="9">restart: on-failure / always</text>
+          <text x="365" y="331" fill="#34d399" font-size="8">&#10003; Zero connection-refused boot crashes</text>
+
+          <!-- 3. DSA House Robber I & II -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d42GradDp)" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#c084fc" font-size="14" font-weight="bold">House Robber I &amp; II (DP)</text>
+
+          <rect x="635" y="65" width="230" height="120" rx="5" fill="#0f172a" stroke="#7c3aed"/>
+          <text x="645" y="85" fill="#c084fc" font-size="11" font-weight="bold">House Robber (LC #198)</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">Linear street: no adjacent robbing</text>
+          <text x="645" y="120" fill="#38bdf8" font-size="10" font-weight="bold">dp[i] = max(dp[i-1], dp[i-2] + n[i])</text>
+          <text x="645" y="137" fill="#cbd5e1" font-size="9">Space: O(1) rolling scalar state</text>
+          <text x="645" y="153" fill="#94a3b8" font-size="9">Time: O(N) single pass</text>
+
+          <rect x="635" y="195" width="230" height="150" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="215" fill="#fbbf24" font-size="11" font-weight="bold">House Robber II (LC #213)</text>
+          <text x="645" y="233" fill="#cbd5e1" font-size="9">Circular street: 0 &amp; N-1 adjacent</text>
+          <text x="645" y="252" fill="#34d399" font-size="10">Subproblem 1: Rob [0 .. N-2]</text>
+          <text x="645" y="269" fill="#34d399" font-size="10">Subproblem 2: Rob [1 .. N-1]</text>
+          <text x="645" y="288" fill="#fb923c" font-size="10" font-weight="bold">ans = max(sub1, sub2)</text>
+          <text x="645" y="306" fill="#94a3b8" font-size="8">Prevents circular first-last collision</text>
+          <text x="645" y="323" fill="#cbd5e1" font-size="8">Handles N=1 and N=2 edge cases</text>
+        </svg>
+        """
+
+    if day_num == 43:
+        return """
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d43GradControl" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d43GradWorker" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#047857" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d43GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ec4899" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#be185d" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Kubernetes Control Plane -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d43GradControl)" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#60a5fa" font-size="14" font-weight="bold">Control Plane Architecture</text>
+
+          <rect x="35" y="65" width="250" height="45" rx="5" fill="#0f172a" stroke="#2563eb"/>
+          <text x="45" y="85" fill="#60a5fa" font-size="11" font-weight="bold">kube-apiserver</text>
+          <text x="45" y="100" fill="#94a3b8" font-size="9">Authentication, RBAC &amp; Admission</text>
+
+          <rect x="35" y="120" width="250" height="45" rx="5" fill="#0f172a" stroke="#1d4ed8"/>
+          <text x="45" y="140" fill="#93c5fd" font-size="11" font-weight="bold">etcd (Raft Consensus)</text>
+          <text x="45" y="155" fill="#94a3b8" font-size="9">Persistent desired state key-value store</text>
+
+          <rect x="35" y="175" width="250" height="45" rx="5" fill="#0f172a" stroke="#2563eb"/>
+          <text x="45" y="195" fill="#60a5fa" font-size="11" font-weight="bold">kube-scheduler</text>
+          <text x="45" y="210" fill="#94a3b8" font-size="9">Filter (capacity) &amp; Score (affinity)</text>
+
+          <rect x="35" y="230" width="250" height="45" rx="5" fill="#0f172a" stroke="#2563eb"/>
+          <text x="45" y="250" fill="#60a5fa" font-size="11" font-weight="bold">kube-controller-manager</text>
+          <text x="45" y="265" fill="#94a3b8" font-size="9">Deployment &amp; ReplicaSet reconciliation</text>
+
+          <rect x="35" y="285" width="250" height="60" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="305" fill="#34d399" font-size="10" font-weight="bold">RollingUpdate Strategy</text>
+          <text x="45" y="321" fill="#cbd5e1" font-size="9">maxSurge: 25%, maxUnavailable: 0</text>
+          <text x="45" y="335" fill="#94a3b8" font-size="8">Zero-downtime progressive deployment</text>
+
+          <!-- 2. Worker Node & Services -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d43GradWorker)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#34d399" font-size="14" font-weight="bold">Worker Nodes &amp; Services</text>
+
+          <rect x="335" y="65" width="250" height="65" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="345" y="85" fill="#34d399" font-size="11" font-weight="bold">kubelet &amp; containerd (CRI)</text>
+          <text x="345" y="102" fill="#cbd5e1" font-size="9">Reconciles Pod sandbox &amp; volumes</text>
+          <text x="345" y="117" fill="#94a3b8" font-size="9">Executes liveness/readiness probes</text>
+
+          <rect x="335" y="140" width="250" height="65" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="345" y="160" fill="#34d399" font-size="11" font-weight="bold">kube-proxy (IPVS / iptables)</text>
+          <text x="345" y="177" fill="#cbd5e1" font-size="9">Virtual ClusterIP VIP routing</text>
+          <text x="345" y="192" fill="#94a3b8" font-size="9">Load balances to ready Pod Endpoints</text>
+
+          <rect x="335" y="215" width="250" height="130" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="235" fill="#fbbf24" font-size="11" font-weight="bold">Service Types</text>
+          <text x="345" y="252" fill="#cbd5e1" font-size="9">&#8226; ClusterIP: Internal cluster communication</text>
+          <text x="345" y="268" fill="#cbd5e1" font-size="9">&#8226; NodePort: Static port (30000-32767)</text>
+          <text x="345" y="284" fill="#cbd5e1" font-size="9">&#8226; LoadBalancer: Cloud external IP</text>
+          <text x="345" y="302" fill="#f87171" font-size="9" font-weight="bold">Hardened Security Context:</text>
+          <text x="345" y="318" fill="#94a3b8" font-size="8">runAsNonRoot: true, readOnlyRootFilesystem</text>
+
+          <!-- 3. DSA Longest Palindromic Substring -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d43GradDsa)" stroke="#ec4899" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#f472b6" font-size="14" font-weight="bold">Longest Palindrome (LC #5)</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#db2777"/>
+          <text x="645" y="85" fill="#f472b6" font-size="11" font-weight="bold">Expand Around Center</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">2N - 1 possible centers</text>
+          <text x="645" y="120" fill="#38bdf8" font-size="10">Odd center: (i, i)</text>
+          <text x="645" y="137" fill="#38bdf8" font-size="10">Even center: (i, i+1)</text>
+          <text x="645" y="156" fill="#34d399" font-size="10" font-weight="bold">Time: O(N^2), Space: O(1)</text>
+          <text x="645" y="174" fill="#94a3b8" font-size="8">Optimal memory vs DP table</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">DP Table Formulation</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">dp[i, j] = true if s[i..j] is palindrome</text>
+          <text x="645" y="267" fill="#a78bfa" font-size="9">s[i] == s[j] &amp;&amp; dp[i+1, j-1]</text>
+          <text x="645" y="285" fill="#cbd5e1" font-size="9">Base 1: len=1 &#8594; true</text>
+          <text x="645" y="301" fill="#cbd5e1" font-size="9">Base 2: len=2 &#8594; s[i] == s[i+1]</text>
+          <text x="645" y="320" fill="#94a3b8" font-size="8">Space: O(N^2) memoization matrix</text>
+        </svg>
+        """
+
+    if day_num == 44:
+        return """
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d44GradConfig" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#0891b2" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d44GradIngress" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#d97706" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d44GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. ConfigMaps & Secrets -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d44GradConfig)" stroke="#06b6d4" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#22d3ee" font-size="14" font-weight="bold">ConfigMaps &amp; Secrets</text>
+
+          <rect x="35" y="65" width="250" height="60" rx="5" fill="#0f172a" stroke="#0891b2"/>
+          <text x="45" y="85" fill="#22d3ee" font-size="11" font-weight="bold">ConfigMap (Non-sensitive)</text>
+          <text x="45" y="102" fill="#cbd5e1" font-size="9">appsettings.json, log levels, toggles</text>
+          <text x="45" y="116" fill="#94a3b8" font-size="8">Inject via env var or volume mount</text>
+
+          <rect x="35" y="135" width="250" height="65" rx="5" fill="#0f172a" stroke="#0891b2"/>
+          <text x="45" y="155" fill="#f43f5e" font-size="11" font-weight="bold">Secret (Opaque / Sealed)</text>
+          <text x="45" y="172" fill="#cbd5e1" font-size="9">Base64 connection strings, JWT keys</text>
+          <text x="45" y="187" fill="#94a3b8" font-size="8">CSI Driver / Vault / SealedSecrets</text>
+
+          <rect x="35" y="210" width="250" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Atomic Symlink Swap (..data)</text>
+          <text x="45" y="248" fill="#cbd5e1" font-size="9">1. /etc/config/..data symlinked to dir</text>
+          <text x="45" y="265" fill="#cbd5e1" font-size="9">2. Kubelet updates timestamped folder</text>
+          <text x="45" y="282" fill="#34d399" font-size="9">3. Atomic rename() prevents partial reads</text>
+          <text x="45" y="300" fill="#38bdf8" font-size="9">.NET AddKeyPerFile hot-reloads</text>
+          <text x="45" y="318" fill="#94a3b8" font-size="8">Zero container restarts needed</text>
+
+          <!-- 2. Ingress Controller (NGINX) -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d44GradIngress)" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#fbbf24" font-size="14" font-weight="bold">Ingress Controller (Layer 7)</text>
+
+          <rect x="335" y="65" width="250" height="70" rx="5" fill="#0f172a" stroke="#d97706"/>
+          <text x="345" y="85" fill="#fbbf24" font-size="11" font-weight="bold">TLS Termination &amp; SNI</text>
+          <text x="345" y="103" fill="#cbd5e1" font-size="9">Cert secret: tls-production-cert</text>
+          <text x="345" y="118" fill="#94a3b8" font-size="8">Host: api.shatru-learning.internal</text>
+
+          <rect x="335" y="145" width="250" height="95" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="165" fill="#38bdf8" font-size="11" font-weight="bold">Path-Based Routing</text>
+          <text x="345" y="183" fill="#34d399" font-size="9">/orders &#8594; order-service:80</text>
+          <text x="345" y="198" fill="#34d399" font-size="9">/inventory &#8594; inventory-service:80</text>
+          <text x="345" y="215" fill="#f87171" font-size="9">rewrite-target: /$2 regex strip</text>
+
+          <rect x="335" y="250" width="250" height="95" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="270" fill="#c084fc" font-size="11" font-weight="bold">Reverse Proxy Forwarding</text>
+          <text x="345" y="288" fill="#cbd5e1" font-size="9">Direct pod VIP dispatch via Endpoints</text>
+          <text x="345" y="303" fill="#94a3b8" font-size="8">Bypasses kube-proxy double NAT hop</text>
+          <text x="345" y="320" fill="#34d399" font-size="9">&#10003; SSL redirect &amp; HSTS enforced</text>
+
+          <!-- 3. DSA LC #647 & #91 -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d44GradDsa)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">DSA: Substrings &amp; Decoding</text>
+
+          <rect x="635" y="65" width="230" height="120" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">Palindromic Substrings (#647)</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">Count all valid palindromic spans</text>
+          <text x="645" y="120" fill="#38bdf8" font-size="10">Center expansion outward</text>
+          <text x="645" y="138" fill="#cbd5e1" font-size="9">Time: O(N^2), Space: O(1)</text>
+          <text x="645" y="155" fill="#94a3b8" font-size="8">"aaa" &#8594; 6 substrings</text>
+
+          <rect x="635" y="195" width="230" height="150" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="215" fill="#fbbf24" font-size="11" font-weight="bold">Decode Ways (LC #91)</text>
+          <text x="645" y="233" fill="#cbd5e1" font-size="9">1-digit valid: 1 &lt;= d &lt;= 9 &#8594; dp[i-1]</text>
+          <text x="645" y="250" fill="#cbd5e1" font-size="9">2-digits valid: 10 &lt;= dd &lt;= 26 &#8594; dp[i-2]</text>
+          <text x="645" y="269" fill="#f87171" font-size="10" font-weight="bold">Zero handling: "0" &#8594; 0 ways</text>
+          <text x="645" y="287" fill="#34d399" font-size="9">Space: O(1) rolling variables</text>
+          <text x="645" y="303" fill="#cbd5e1" font-size="8">"226" &#8594; "BZ", "VF", "BBF" (3)</text>
+        </svg>
+        """
+
+    if day_num == 45:
+        return """
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d45GradProbe" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#047857" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d45GradHpa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d45GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f97316" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#ea580c" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Health Probes -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d45GradProbe)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#34d399" font-size="14" font-weight="bold">Kubernetes Probes Lifecycle</text>
+
+          <rect x="35" y="65" width="250" height="85" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="45" y="85" fill="#38bdf8" font-size="11" font-weight="bold">1. Startup Probe (/health/startup)</text>
+          <text x="45" y="102" fill="#cbd5e1" font-size="9">Protects slow boots / EF migrations</text>
+          <text x="45" y="117" fill="#cbd5e1" font-size="9">failureThreshold: 30, period: 10s</text>
+          <text x="45" y="132" fill="#94a3b8" font-size="8">Disables liveness &amp; readiness until passing</text>
+
+          <rect x="35" y="160" width="250" height="85" rx="5" fill="#0f172a" stroke="#ef4444"/>
+          <text x="45" y="180" fill="#f87171" font-size="11" font-weight="bold">2. Liveness Probe (/health/live)</text>
+          <text x="45" y="197" fill="#cbd5e1" font-size="9">Deadlock &amp; fatal crash detector</text>
+          <text x="45" y="212" fill="#f87171" font-size="9" font-weight="bold">Failure &#8594; Kubelet kills &amp; restarts pod</text>
+          <text x="45" y="227" fill="#94a3b8" font-size="8">NEVER check downstream databases here!</text>
+
+          <rect x="35" y="255" width="250" height="90" rx="5" fill="#0f172a" stroke="#34d399"/>
+          <text x="45" y="275" fill="#34d399" font-size="11" font-weight="bold">3. Readiness Probe (/health/ready)</text>
+          <text x="45" y="292" fill="#cbd5e1" font-size="9">Checks DB, Redis, RabbitMQ channels</text>
+          <text x="45" y="307" fill="#fbbf24" font-size="9" font-weight="bold">Failure &#8594; Evicts from Endpoints</text>
+          <text x="45" y="322" fill="#94a3b8" font-size="8">Traffic stops; container is NOT restarted</text>
+
+          <!-- 2. HPA Auto-Scaling -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d45GradHpa)" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#60a5fa" font-size="14" font-weight="bold">Horizontal Pod Autoscaler (HPA)</text>
+
+          <rect x="335" y="65" width="250" height="85" rx="5" fill="#0f172a" stroke="#2563eb"/>
+          <text x="345" y="85" fill="#60a5fa" font-size="11" font-weight="bold">HPA Formula</text>
+          <text x="345" y="105" fill="#38bdf8" font-size="10" font-weight="bold">desired = ceil(cur * (curMetric / target))</text>
+          <text x="345" y="122" fill="#cbd5e1" font-size="9">Target: 70% CPU, 1000 RPS / pod</text>
+          <text x="345" y="137" fill="#94a3b8" font-size="8">Clamped to [minReplicas, maxReplicas]</text>
+
+          <rect x="335" y="160" width="250" height="85" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="180" fill="#fbbf24" font-size="11" font-weight="bold">Flapping Defense</text>
+          <text x="345" y="198" fill="#cbd5e1" font-size="9">10% tolerance band: no scaling delta</text>
+          <text x="345" y="215" fill="#cbd5e1" font-size="9">Scale-down stabilization: 300s window</text>
+          <text x="345" y="230" fill="#94a3b8" font-size="8">Picks maximum recommendation in window</text>
+
+          <rect x="335" y="255" width="250" height="90" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="275" fill="#c084fc" font-size="11" font-weight="bold">Metrics Sources</text>
+          <text x="345" y="292" fill="#cbd5e1" font-size="9">Resource: cgroup CPU/Memory</text>
+          <text x="345" y="307" fill="#cbd5e1" font-size="9">Custom: Prometheus Adapter (RPS)</text>
+          <text x="345" y="322" fill="#34d399" font-size="8">&#10003; KEDA support for broker queue lag</text>
+
+          <!-- 3. DSA Coin Change & Max Product -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d45GradDsa)" stroke="#f97316" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#fb923c" font-size="14" font-weight="bold">DSA: DP Optimization</text>
+
+          <rect x="635" y="65" width="230" height="130" rx="5" fill="#0f172a" stroke="#ea580c"/>
+          <text x="645" y="85" fill="#fb923c" font-size="11" font-weight="bold">Coin Change (LC #322)</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">Fewest coins to make amount</text>
+          <text x="645" y="120" fill="#38bdf8" font-size="10">dp[a] = min(dp[a], 1 + dp[a-c])</text>
+          <text x="645" y="137" fill="#cbd5e1" font-size="9">Unbounded knapsack DP</text>
+          <text x="645" y="155" fill="#34d399" font-size="9">Time: O(A * C), Space: O(A)</text>
+          <text x="645" y="172" fill="#94a3b8" font-size="8">Returns -1 if impossible</text>
+
+          <rect x="635" y="205" width="230" height="140" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="225" fill="#fbbf24" font-size="11" font-weight="bold">Max Product Subarray (#152)</text>
+          <text x="645" y="243" fill="#cbd5e1" font-size="9">Negative numbers flip min &amp; max</text>
+          <text x="645" y="260" fill="#f87171" font-size="9">If n &lt; 0: swap(curMax, curMin)</text>
+          <text x="645" y="278" fill="#34d399" font-size="10" font-weight="bold">Time: O(N), Space: O(1)</text>
+          <text x="645" y="296" fill="#cbd5e1" font-size="8">[-2, 3, -4] &#8594; 24</text>
+          <text x="645" y="312" fill="#94a3b8" font-size="8">Optimal contiguous product</text>
+        </svg>
+        """
+
+    if day_num == 46:
+        return """
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d46GradPipeline" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6366f1" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d46GradSecurity" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ef4444" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#dc2626" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d46GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. CI/CD GitHub Actions Pipeline -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d46GradPipeline)" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#818cf8" font-size="14" font-weight="bold">GitHub Actions CI/CD DAG</text>
+
+          <rect x="35" y="65" width="250" height="50" rx="5" fill="#0f172a" stroke="#4f46e5"/>
+          <text x="45" y="85" fill="#818cf8" font-size="11" font-weight="bold">Job 1: Lint &amp; Format</text>
+          <text x="45" y="100" fill="#94a3b8" font-size="9">dotnet format --verify-no-changes</text>
+
+          <rect x="35" y="125" width="250" height="55" rx="5" fill="#0f172a" stroke="#4f46e5"/>
+          <text x="45" y="145" fill="#818cf8" font-size="11" font-weight="bold">Job 2: Build &amp; Test (needs: [1])</text>
+          <text x="45" y="160" fill="#94a3b8" font-size="9">dotnet test --collect:"Code Coverage"</text>
+
+          <rect x="35" y="190" width="250" height="55" rx="5" fill="#0f172a" stroke="#dc2626"/>
+          <text x="45" y="210" fill="#f87171" font-size="11" font-weight="bold">Job 3: Trivy CVE Scan (needs: [2])</text>
+          <text x="45" y="225" fill="#94a3b8" font-size="9">Fails on Critical/High unfixed CVEs</text>
+
+          <rect x="35" y="255" width="250" height="90" rx="5" fill="#0f172a" stroke="#34d399"/>
+          <text x="45" y="275" fill="#34d399" font-size="11" font-weight="bold">Job 4: Push to GHCR (needs: [3])</text>
+          <text x="45" y="292" fill="#cbd5e1" font-size="9">Docker Buildx (linux/amd64, arm64)</text>
+          <text x="45" y="307" fill="#38bdf8" font-size="9">ghcr.io image tagging &amp; OIDC token</text>
+          <text x="45" y="322" fill="#94a3b8" font-size="8">cache-from: type=gha (fast caching)</text>
+
+          <!-- 2. Security & SemVer Automation -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d46GradSecurity)" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#f87171" font-size="14" font-weight="bold">Security Gate &amp; SemVer</text>
+
+          <rect x="335" y="65" width="250" height="85" rx="5" fill="#0f172a" stroke="#dc2626"/>
+          <text x="345" y="85" fill="#f87171" font-size="11" font-weight="bold">Trivy Security Gate Criteria</text>
+          <text x="345" y="103" fill="#cbd5e1" font-size="9">CVSS &gt;= 7.0 &amp;&amp; HasFixedVersion &#8594; FAIL</text>
+          <text x="345" y="120" fill="#cbd5e1" font-size="9">Scans OS packages &amp; NuGet dependencies</text>
+          <text x="345" y="135" fill="#94a3b8" font-size="8">Uploads SARIF to GitHub Security tab</text>
+
+          <rect x="335" y="160" width="250" height="95" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="180" fill="#fbbf24" font-size="11" font-weight="bold">Conventional Commits SemVer</text>
+          <text x="345" y="198" fill="#f87171" font-size="9">feat!: / BREAKING CHANGE &#8594; Major (+1.0.0)</text>
+          <text x="345" y="215" fill="#60a5fa" font-size="9">feat: &#8594; Minor (x.+1.0)</text>
+          <text x="345" y="232" fill="#34d399" font-size="9">fix: / perf: &#8594; Patch (x.y.+1)</text>
+
+          <rect x="335" y="265" width="250" height="80" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="285" fill="#38bdf8" font-size="11" font-weight="bold">Secret Redaction</text>
+          <text x="345" y="303" fill="#cbd5e1" font-size="9">OIDC keyless cloud auth (no static keys)</text>
+          <text x="345" y="320" fill="#34d399" font-size="9">&#10003; Runner masks tokens (***) in console logs</text>
+
+          <!-- 3. DSA Word Break -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d46GradDsa)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">Word Break (LC #139)</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">1D Dynamic Programming</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">dp[i]: true if s[0..i-1] segmentable</text>
+          <text x="645" y="122" fill="#38bdf8" font-size="10">dp[i] = dp[j] &amp;&amp; s[j..i] in Dict</text>
+          <text x="645" y="140" fill="#cbd5e1" font-size="9">Base: dp[0] = true (empty string)</text>
+          <text x="645" y="158" fill="#fbbf24" font-size="9">Pruned by max word length L</text>
+          <text x="645" y="175" fill="#34d399" font-size="9" font-weight="bold">Time: O(N * L), Space: O(N + Words)</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Segmentation Walkthrough</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">"leetcode" with ["leet", "code"]</text>
+          <text x="645" y="266" fill="#34d399" font-size="9">&#8226; dp[4] = true ("leet")</text>
+          <text x="645" y="284" fill="#34d399" font-size="9">&#8226; dp[8] = dp[4] &amp;&amp; "code" &#8594; true</text>
+          <text x="645" y="303" fill="#f87171" font-size="9">"catsandog" &#8594; false (unmatchable)</text>
+          <text x="645" y="320" fill="#94a3b8" font-size="8">Early inner-loop break on first match</text>
+        </svg>
+        """
+
     return ""
 
 def format_interview_qa(interview_md):

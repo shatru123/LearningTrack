@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 46: CI/CD with GitHub Actions for .NET | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 46</span>
+        <span class="badge badge-category">CI/CD &amp; DevOps</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day45-Kubernetes-Probes-HPA/index.html" class="nav-btn">← Day 45</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+<option value="../Day42-Docker-Compose-Microservices/index.html">Day 42: Docker Compose for Microservic...</option>
+<option value="../Day43-Kubernetes-Architecture-Pods-Deployments/index.html">Day 43: Kubernetes Architecture: Pods,...</option>
+<option value="../Day44-Kubernetes-ConfigMaps-Secrets-Ingress/index.html">Day 44: Kubernetes ConfigMaps, Secrets...</option>
+<option value="../Day45-Kubernetes-Probes-HPA/index.html">Day 45: Kubernetes Probes & Auto-Scali...</option>
+<option value="../Day46-CICD-GitHub-Actions-DotNet/index.html">Day 46: CI/CD with GitHub Actions for ...</option>
+
+        </select>
+        <span class="nav-btn" style="opacity:0.4; cursor:default;">Next Day →</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 46: CI/CD with GitHub Actions for .NET</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d46GradPipeline" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6366f1" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d46GradSecurity" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ef4444" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#dc2626" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d46GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. CI/CD GitHub Actions Pipeline -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d46GradPipeline)" stroke="#6366f1" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#818cf8" font-size="14" font-weight="bold">GitHub Actions CI/CD DAG</text>
+
+          <rect x="35" y="65" width="250" height="50" rx="5" fill="#0f172a" stroke="#4f46e5"/>
+          <text x="45" y="85" fill="#818cf8" font-size="11" font-weight="bold">Job 1: Lint &amp; Format</text>
+          <text x="45" y="100" fill="#94a3b8" font-size="9">dotnet format --verify-no-changes</text>
+
+          <rect x="35" y="125" width="250" height="55" rx="5" fill="#0f172a" stroke="#4f46e5"/>
+          <text x="45" y="145" fill="#818cf8" font-size="11" font-weight="bold">Job 2: Build &amp; Test (needs: [1])</text>
+          <text x="45" y="160" fill="#94a3b8" font-size="9">dotnet test --collect:"Code Coverage"</text>
+
+          <rect x="35" y="190" width="250" height="55" rx="5" fill="#0f172a" stroke="#dc2626"/>
+          <text x="45" y="210" fill="#f87171" font-size="11" font-weight="bold">Job 3: Trivy CVE Scan (needs: [2])</text>
+          <text x="45" y="225" fill="#94a3b8" font-size="9">Fails on Critical/High unfixed CVEs</text>
+
+          <rect x="35" y="255" width="250" height="90" rx="5" fill="#0f172a" stroke="#34d399"/>
+          <text x="45" y="275" fill="#34d399" font-size="11" font-weight="bold">Job 4: Push to GHCR (needs: [3])</text>
+          <text x="45" y="292" fill="#cbd5e1" font-size="9">Docker Buildx (linux/amd64, arm64)</text>
+          <text x="45" y="307" fill="#38bdf8" font-size="9">ghcr.io image tagging &amp; OIDC token</text>
+          <text x="45" y="322" fill="#94a3b8" font-size="8">cache-from: type=gha (fast caching)</text>
+
+          <!-- 2. Security & SemVer Automation -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d46GradSecurity)" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#f87171" font-size="14" font-weight="bold">Security Gate &amp; SemVer</text>
+
+          <rect x="335" y="65" width="250" height="85" rx="5" fill="#0f172a" stroke="#dc2626"/>
+          <text x="345" y="85" fill="#f87171" font-size="11" font-weight="bold">Trivy Security Gate Criteria</text>
+          <text x="345" y="103" fill="#cbd5e1" font-size="9">CVSS &gt;= 7.0 &amp;&amp; HasFixedVersion &#8594; FAIL</text>
+          <text x="345" y="120" fill="#cbd5e1" font-size="9">Scans OS packages &amp; NuGet dependencies</text>
+          <text x="345" y="135" fill="#94a3b8" font-size="8">Uploads SARIF to GitHub Security tab</text>
+
+          <rect x="335" y="160" width="250" height="95" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="180" fill="#fbbf24" font-size="11" font-weight="bold">Conventional Commits SemVer</text>
+          <text x="345" y="198" fill="#f87171" font-size="9">feat!: / BREAKING CHANGE &#8594; Major (+1.0.0)</text>
+          <text x="345" y="215" fill="#60a5fa" font-size="9">feat: &#8594; Minor (x.+1.0)</text>
+          <text x="345" y="232" fill="#34d399" font-size="9">fix: / perf: &#8594; Patch (x.y.+1)</text>
+
+          <rect x="335" y="265" width="250" height="80" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="285" fill="#38bdf8" font-size="11" font-weight="bold">Secret Redaction</text>
+          <text x="345" y="303" fill="#cbd5e1" font-size="9">OIDC keyless cloud auth (no static keys)</text>
+          <text x="345" y="320" fill="#34d399" font-size="9">&#10003; Runner masks tokens (***) in console logs</text>
+
+          <!-- 3. DSA Word Break -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d46GradDsa)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">Word Break (LC #139)</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">1D Dynamic Programming</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">dp[i]: true if s[0..i-1] segmentable</text>
+          <text x="645" y="122" fill="#38bdf8" font-size="10">dp[i] = dp[j] &amp;&amp; s[j..i] in Dict</text>
+          <text x="645" y="140" fill="#cbd5e1" font-size="9">Base: dp[0] = true (empty string)</text>
+          <text x="645" y="158" fill="#fbbf24" font-size="9">Pruned by max word length L</text>
+          <text x="645" y="175" fill="#34d399" font-size="9" font-weight="bold">Time: O(N * L), Space: O(N + Words)</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Segmentation Walkthrough</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">"leetcode" with ["leet", "code"]</text>
+          <text x="645" y="266" fill="#34d399" font-size="9">&#8226; dp[4] = true ("leet")</text>
+          <text x="645" y="284" fill="#34d399" font-size="9">&#8226; dp[8] = dp[4] &amp;&amp; "code" &#8594; true</text>
+          <text x="645" y="303" fill="#f87171" font-size="9">"catsandog" &#8594; false (unmatchable)</text>
+          <text x="645" y="320" fill="#94a3b8" font-size="8">Early inner-loop break on first match</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: Enterprise CI/CD with GitHub Actions</h1>
+<h2>1. Fast Feedback with GitHub Actions Caching</h2>
+<p>In .NET pipelines, restore and build times are dominated by downloading NuGet packages.</p>
+<ul>
+<li>Using <code>actions/cache@v4</code> on <code>~/.nuget/packages</code> keyed by <code>**/packages.lock.json</code> drops restore times from 45s to 2s.</li>
+<li>Using Docker Buildx <code>type=gha</code> caches container image layers across workflow runs directly in GitHub's internal cache storage.</li>
+</ul>
+<h2>2. Supply Chain Security & Container Signing</h2>
+<p>Modern cloud-native security requires:</p>
+<ol>
+<li><strong>Software Bill of Materials (SBOM)</strong> generated via Syft in SPDX or CycloneDX format.</li>
+<li><strong>Container Signing via Cosign / Sigstore</strong>: Keyless signing binding the container image digest to the GitHub Actions OIDC workflow token.</li>
+<li><strong>Static Analysis & SAST</strong>: Trivy filesystem and image scanning gating pull requests before deployment.</li>
+</ol>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 46: CI/CD with GitHub Actions for .NET</h1>
+<h2>Overview</h2>
+<p>Day 46 focuses on building enterprise-grade <strong>Continuous Integration and Continuous Deployment (CI/CD)</strong> pipelines for .NET applications using <strong>GitHub Actions</strong>, automated <strong>Trivy security scanning</strong>, and <strong>GitHub Container Registry (GHCR)</strong> image publishing.</p>
+<h2>Production Pipeline Architecture</h2>
+<ul>
+<li><strong>Lint & Format</strong>: Enforces Roslyn code analyzers and format consistency via <code>dotnet format --verify-no-changes</code>.</li>
+<li><strong>Test with Code Coverage</strong>: Executes test suites and collects code coverage using XPlat coverage collectors.</li>
+<li><strong>Trivy Security Gate</strong>: Scans container layers and NuGet dependencies, failing the pipeline if High/Critical vulnerabilities (CVSS $\ge 7.0$) are present with available fixes.</li>
+<li><strong>Multi-Arch Docker Buildx</strong>: Builds and pushes multi-architecture images (<code>linux/amd64</code>, <code>linux/arm64</code>) with GitHub Actions cache backends (<code>type=gha</code>).</li>
+<li><strong>Semantic Versioning</strong>: Automatically computes SemVer releases (<code>vMajor.Minor.Patch</code>) based on Conventional Commits.</li>
+</ul>
+<h2>DSA Problem: LeetCode #139 (Word Break)</h2>
+<ul>
+<li>1D Dynamic Programming with boolean array $dp[i]$ indicating if substring $s[0 \dots i-1]$ can be partitioned into dictionary words.</li>
+<li>Max word length pruning optimizing inner loop to $\mathcal{O}(N \cdot L)$ time.</li>
+</ul>
+<h2>Test Verification</h2>
+<p>Run the 10 automated unit tests:</p>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day46.CiCdGitHubActions.Tests/Day46.CiCdGitHubActions.Tests.csproj</code></pre></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do you structure a high-performance CI/CD pipeline in GitHub Actions to achieve sub-3-minute build and test cycles?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Parallel Independent Jobs</strong>: Separate linting, testing, and security scanning into independent parallel jobs rather than sequential steps.</li>
+<li><strong>Aggressive Cache Invalidation</strong>: Cache <code>~/.nuget/packages</code> using <code>actions/cache@v4</code> with key <code>${{ runner.os }}-nuget-${{ hashFiles(&#x27;**/*.csproj&#x27;, &#x27;**/Directory.Packages.props&#x27;) }}</code>.</li>
+<li><strong>No-Restore and No-Build Flags</strong>: Pass <code>--no-restore</code> to <code>dotnet build</code> and <code>--no-build</code> to <code>dotnet test</code>.</li>
+<li><strong>Docker Layer Caching</strong>: Utilize <code>docker/build-push-action</code> with <code>cache-from: type=gha</code> and <code>cache-to: type=gha,mode=max</code>.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the purpose of Trivy vulnerability scanning, and how should security thresholds be enforced in CI?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Trivy scans container OS packages (Alpine, Debian, Ubuntu) and application dependencies (NuGet, npm) against CVE databases.</p>
+<p>In CI:</p>
+<ul>
+<li>Set <code>ignore-unfixed: true</code> to avoid blocking builds on vulnerabilities that vendors haven't patched yet.</li>
+<li>Set <code>severity: CRITICAL,HIGH</code> and <code>exit-code: 1</code> to fail pull requests only when severe, exploitable CVEs exist.</li>
+<li>Upload scan results in SARIF format (<code>upload-sarif</code>) to display inline vulnerability alerts in GitHub's Security tab.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do GitHub Actions OIDC (OpenID Connect) tokens eliminate static cloud credentials?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Traditional CI pipelines stored long-lived static AWS Access Keys or Azure Service Principal secrets in GitHub repository secrets, which risked credential leakage.</p>
+<p>With GitHub Actions OIDC:</p>
+<ol>
+<li>The GitHub workflow requests a temporary short-lived JWT token signed by GitHub's OIDC Provider.</li>
+<li>The cloud provider (AWS/Azure/GCP) validates the JWT signature and claims (<code>sub: repo:owner/repo:ref:refs/heads/main</code>).</li>
+<li>The cloud provider assumes a scoped IAM role and returns temporary STS credentials valid for only 1 hour. No permanent secrets are ever stored in GitHub.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Explain the dynamic programming recurrence for LeetCode #139 Word Break.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $dp[i]$ be a boolean indicating whether prefix $s[0 \dots i-1]$ can be segmented into words from <code>wordDict</code>.</p>
+<ul>
+<li>Base case: $dp[0] = true$ (empty string).</li>
+<li>For $i$ from 1 to $N$:</li>
+</ul>
+<p>For $j$ from $i-1$ down to $\max(0, i - L)$ (where $L$ is the max length of any word in the dictionary):</p>
+<p>If $dp[j] == true$ and $s[j \dots i-1] \in \text{wordSet}$:</p>
+<p>$$dp[i] = true; \quad \text{break}$$</p>
+<ul>
+<li>Result: $dp[N]$.</li>
+</ul>
+<p>Optimizing the inner loop with maximum word length $L$ brings the time complexity down from $\mathcal{O}(N^2)$ to $\mathcal{O}(N \cdot L)$.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do Conventional Commits automate Semantic Versioning in CI/CD?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Conventional Commits define a structured commit syntax:</p>
+<ul>
+<li><code>fix:</code> -> increments <strong>PATCH</strong> version ($1.0.0 \to 1.0.1$) for backwards-compatible bug fixes.</li>
+<li><code>feat:</code> -> increments <strong>MINOR</strong> version ($1.0.0 \to 1.1.0$) for new backwards-compatible features.</li>
+<li><code>feat!:</code>, <code>fix!:</code>, or <code>BREAKING CHANGE:</code> footer -> increments <strong>MAJOR</strong> version ($1.0.0 \to 2.0.0$) for breaking changes.</li>
+</ul>
+<p>Tools like Semantic-Release or GitVersion analyze the commit log between Git tags and automatically tag the repository and publish packages with the exact SemVer version.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you prevent secret leakage in GitHub Actions console logs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>Any value retrieved from GitHub Secrets (<code>${{ secrets.MY_SECRET }}</code>) is automatically masked by the GitHub runner (<code>***</code>).</li>
+<li>Never format secrets into filenames, URLs, or base64-encoded strings without registering the encoded variant with <code>echo &quot;::add-mask::$ENCODED_SECRET&quot;</code>.</li>
+<li>Audit pipeline steps to ensure <code>set -x</code> (shell command tracing) is disabled when handling credential variables.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What are the risks of using `pull_request_target` vs `pull_request` triggers in GitHub Actions?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><code>pull_request</code>: Runs in the context of the fork/PR branch without access to repository secrets or write permissions. Safe for open-source repositories.</li>
+<li><code>pull_request_target</code>: Runs in the context of the target base branch with access to repository secrets. If a malicious PR author modifies a script executed by the workflow, they can exfiltrate repository secrets (PwnRequest vulnerability). Never check out and execute code from the PR head inside a <code>pull_request_target</code> workflow.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the difference between multi-platform Docker builds with QEMU vs native builders?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>QEMU Emulation</strong>: Uses software CPU instruction emulation (<code>binfmt_misc</code>) to build ARM64 images on AMD64 runners. Flexible and requires no extra hardware, but CPU-intensive tasks (like compiling .NET code) can be 5–10x slower.</li>
+<li><strong>Native Cross-Compilation</strong>: Uses .NET SDK's built-in cross-compilation (<code>dotnet publish -r linux-arm64</code>) running natively on AMD64 hardware, achieving full native compilation speed while generating ARM64 binaries.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How do you implement automated rollbacks in a GitHub Actions continuous deployment pipeline?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>After executing <code>kubectl rollout restart</code> or updating the container image tag in Kubernetes, execute:</li>
+</ol>
+<p><code>kubectl rollout status deployment/order-api --timeout=120s</code>.</p>
+<ol>
+<li>If the rollout status times out or fails health probes, the step fails.</li>
+<li>In a follow-up step with <code>if: failure()</code>, execute:</li>
+</ol>
+<p><code>kubectl rollout undo deployment/order-api</code> to instantly restore the previous known-good ReplicaSet.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does GitHub Container Registry (GHCR) package visibility and permissions integrate with GitHub Actions?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Workflows access GHCR without external tokens by utilizing the built-in <code>${{ secrets.GITHUB_TOKEN }}</code>. Under <code>permissions:</code>, the job declares <code>packages: write</code> and <code>contents: read</code>. Images pushed to <code>ghcr.io/owner/repo</code> automatically inherit the repository's access controls (private or public).</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day46.CiCdGitHubActions/CiCdPipelineEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd46-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d46-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day46.CiCdGitHubActions;
+
+public record VulnerabilityFinding(
+    string PackageId,
+    string InstalledVersion,
+    string Severity, // &quot;LOW&quot;, &quot;MEDIUM&quot;, &quot;HIGH&quot;, &quot;CRITICAL&quot;
+    double CvssScore,
+    bool HasFixedVersion
+);
+
+public record SemVer(int Major, int Minor, int Patch)
+{
+    public override string ToString() =&gt; $&quot;v{Major}.{Minor}.{Patch}&quot;;
+}
+
+public class CiCdPipelineEngine
+{
+    public bool ValidateJobDependencies(Dictionary&lt;string, List&lt;string&gt;&gt; jobDependencies)
+    {
+        // Cycle detection in job DAG
+        var visited = new HashSet&lt;string&gt;();
+        var recursionStack = new HashSet&lt;string&gt;();
+
+        foreach (var job in jobDependencies.Keys)
+        {
+            if (HasCycle(job, jobDependencies, visited, recursionStack))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private bool HasCycle(string current, Dictionary&lt;string, List&lt;string&gt;&gt; graph, HashSet&lt;string&gt; visited, HashSet&lt;string&gt; stack)
+    {
+        if (stack.Contains(current)) return true;
+        if (visited.Contains(current)) return false;
+
+        visited.Add(current);
+        stack.Add(current);
+
+        if (graph.TryGetValue(current, out var dependencies))
+        {
+            foreach (var dep in dependencies)
+            {
+                if (HasCycle(dep, graph, visited, stack)) return true;
+            }
+        }
+
+        stack.Remove(current);
+        return false;
+    }
+
+    public (bool Passed, List&lt;string&gt; Violations) EvaluateTrivySecurityGate(
+        IEnumerable&lt;VulnerabilityFinding&gt; findings,
+        double maxAllowedCvss = 7.0
+    )
+    {
+        var violations = new List&lt;string&gt;();
+
+        foreach (var v in findings)
+        {
+            if (v.CvssScore &gt;= maxAllowedCvss &amp;&amp; v.HasFixedVersion)
+            {
+                violations.Add($&quot;Security Gate Failed: {v.PackageId} ({v.InstalledVersion}) has {v.Severity} vulnerability with CVSS {v.CvssScore:F1}&quot;);
+            }
+        }
+
+        return (violations.Count == 0, violations);
+    }
+
+    public SemVer ComputeNextVersion(SemVer currentVersion, IEnumerable&lt;string&gt; commitMessages)
+    {
+        bool hasBreakingChange = false;
+        bool hasFeature = false;
+        bool hasFix = false;
+
+        foreach (var msg in commitMessages)
+        {
+            var trimmed = msg.Trim();
+            if (trimmed.Contains(&quot;BREAKING CHANGE:&quot;) || trimmed.StartsWith(&quot;feat!:&quot;) || trimmed.StartsWith(&quot;fix!:&quot;))
+            {
+                hasBreakingChange = true;
+            }
+            else if (trimmed.StartsWith(&quot;feat:&quot;) || trimmed.StartsWith(&quot;feat(&quot;))
+            {
+                hasFeature = true;
+            }
+            else if (trimmed.StartsWith(&quot;fix:&quot;) || trimmed.StartsWith(&quot;perf:&quot;) || trimmed.StartsWith(&quot;refactor:&quot;))
+            {
+                hasFix = true;
+            }
+        }
+
+        if (hasBreakingChange)
+        {
+            return new SemVer(currentVersion.Major + 1, 0, 0);
+        }
+        if (hasFeature)
+        {
+            return new SemVer(currentVersion.Major, currentVersion.Minor + 1, 0);
+        }
+        if (hasFix)
+        {
+            return new SemVer(currentVersion.Major, currentVersion.Minor, currentVersion.Patch + 1);
+        }
+
+        return currentVersion;
+    }
+
+    public string MaskSecret(string logOutput, string secretValue)
+    {
+        if (string.IsNullOrEmpty(secretValue)) return logOutput;
+        return logOutput.Replace(secretValue, &quot;***&quot;);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day46.CiCdGitHubActions/WordBreakSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd46-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d46-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day46.CiCdGitHubActions;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #139: Word Break.
+/// 1D Dynamic Programming with Dictionary HashSet Lookup.
+/// Time Complexity: O(N^2), Space Complexity: O(N + Words).
+/// &lt;/summary&gt;
+public static class WordBreakSolver
+{
+    public static bool WordBreak(string? s, IList&lt;string&gt;? wordDict)
+    {
+        if (string.IsNullOrEmpty(s) || wordDict == null || wordDict.Count == 0)
+        {
+            return false;
+        }
+
+        var wordSet = new HashSet&lt;string&gt;(wordDict);
+        int n = s.Length;
+
+        // dp[i] represents if s[0 .. i-1] can be segmented into words from wordDict
+        bool[] dp = new bool[n + 1];
+        dp[0] = true; // empty string is always valid base case
+
+        int maxWordLen = 0;
+        foreach (var w in wordDict)
+        {
+            maxWordLen = Math.Max(maxWordLen, w.Length);
+        }
+
+        for (int i = 1; i &lt;= n; i++)
+        {
+            // Prune inner loop: word length cannot exceed maxWordLen
+            for (int j = i - 1; j &gt;= Math.Max(0, i - maxWordLen); j--)
+            {
+                if (dp[j])
+                {
+                    string sub = s.Substring(j, i - j);
+                    if (wordSet.Contains(sub))
+                    {
+                        dp[i] = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return dp[n];
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day46.CiCdGitHubActions.Tests/Day46Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd46-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d46-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.IO;
+using Xunit;
+
+namespace Day46.CiCdGitHubActions.Tests;
+
+public class Day46Tests
+{
+    private readonly CiCdPipelineEngine _engine;
+
+    public Day46Tests()
+    {
+        _engine = new CiCdPipelineEngine();
+    }
+
+    [Fact]
+    public void Test01_PipelineDAG_ValidatesAcyclicJobDependencies()
+    {
+        var validGraph = new Dictionary&lt;string, List&lt;string&gt;&gt;
+        {
+            [&quot;lint&quot;] = new(),
+            [&quot;test&quot;] = new() { &quot;lint&quot; },
+            [&quot;security-scan&quot;] = new() { &quot;test&quot; },
+            [&quot;publish&quot;] = new() { &quot;security-scan&quot; }
+        };
+
+        Assert.True(_engine.ValidateJobDependencies(validGraph));
+    }
+
+    [Fact]
+    public void Test02_PipelineDAG_DetectsCircularJobDependencies()
+    {
+        var cyclicGraph = new Dictionary&lt;string, List&lt;string&gt;&gt;
+        {
+            [&quot;jobA&quot;] = new() { &quot;jobB&quot; },
+            [&quot;jobB&quot;] = new() { &quot;jobC&quot; },
+            [&quot;jobC&quot;] = new() { &quot;jobA&quot; } // Circular dependency
+        };
+
+        Assert.False(_engine.ValidateJobDependencies(cyclicGraph));
+    }
+
+    [Fact]
+    public void Test03_TrivySecurityGate_FailsOnCriticalFixedVulnerabilities()
+    {
+        var findings = new List&lt;VulnerabilityFinding&gt;
+        {
+            new(&quot;System.Text.Json&quot;, &quot;8.0.0&quot;, &quot;CRITICAL&quot;, 8.8, true),
+            new(&quot;Microsoft.Data.SqlClient&quot;, &quot;5.1.0&quot;, &quot;LOW&quot;, 3.2, false)
+        };
+
+        var (passed, violations) = _engine.EvaluateTrivySecurityGate(findings, maxAllowedCvss: 7.0);
+
+        Assert.False(passed);
+        Assert.Single(violations);
+        Assert.Contains(&quot;System.Text.Json&quot;, violations[0]);
+    }
+
+    [Fact]
+    public void Test04_TrivySecurityGate_PassesWhenNoCriticalVulnerabilitiesExist()
+    {
+        var findings = new List&lt;VulnerabilityFinding&gt;
+        {
+            new(&quot;Serilog&quot;, &quot;3.1.0&quot;, &quot;LOW&quot;, 2.5, false),
+            new(&quot;Newtonsoft.Json&quot;, &quot;13.0.3&quot;, &quot;MEDIUM&quot;, 5.3, false)
+        };
+
+        var (passed, violations) = _engine.EvaluateTrivySecurityGate(findings, maxAllowedCvss: 7.0);
+
+        Assert.True(passed);
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void Test05_SemVer_CalculatesMajorBumpOnBreakingChange()
+    {
+        var current = new SemVer(1, 4, 2);
+        var commits = new[] { &quot;fix: minor typo&quot;, &quot;feat!: overhaul order api schema&quot; };
+
+        var next = _engine.ComputeNextVersion(current, commits);
+
+        Assert.Equal(&quot;v2.0.0&quot;, next.ToString());
+    }
+
+    [Fact]
+    public void Test06_SemVer_CalculatesMinorBumpOnFeature()
+    {
+        var current = new SemVer(1, 4, 2);
+        var commits = new[] { &quot;feat: add payment refund webhook&quot;, &quot;fix: adjust timeout&quot; };
+
+        var next = _engine.ComputeNextVersion(current, commits);
+
+        Assert.Equal(&quot;v1.5.0&quot;, next.ToString());
+    }
+
+    [Fact]
+    public void Test07_SemVer_CalculatesPatchBumpOnBugfix()
+    {
+        var current = new SemVer(1, 4, 2);
+        var commits = new[] { &quot;fix: prevent null pointer exception on missing header&quot; };
+
+        var next = _engine.ComputeNextVersion(current, commits);
+
+        Assert.Equal(&quot;v1.4.3&quot;, next.ToString());
+    }
+
+    [Fact]
+    public void Test08_SecretMasking_RedactsSensitiveTokensFromLogs()
+    {
+        string rawLog = &quot;Executing curl with token: ghp_9876543210abcdef to api endpoint&quot;;
+        string masked = _engine.MaskSecret(rawLog, &quot;ghp_9876543210abcdef&quot;);
+
+        Assert.DoesNotContain(&quot;ghp_9876543210abcdef&quot;, masked);
+        Assert.Contains(&quot;***&quot;, masked);
+    }
+
+    [Fact]
+    public void Test09_WordBreak_ValidWordSegmentations()
+    {
+        Assert.True(WordBreakSolver.WordBreak(&quot;leetcode&quot;, new[] { &quot;leet&quot;, &quot;code&quot; }));
+        Assert.True(WordBreakSolver.WordBreak(&quot;applepenapple&quot;, new[] { &quot;apple&quot;, &quot;pen&quot; }));
+        Assert.True(WordBreakSolver.WordBreak(&quot;cars&quot;, new[] { &quot;car&quot;, &quot;ca&quot;, &quot;rs&quot; }));
+    }
+
+    [Fact]
+    public void Test10_WordBreak_InvalidSegmentationsAndEdgeCases()
+    {
+        Assert.False(WordBreakSolver.WordBreak(&quot;catsandog&quot;, new[] { &quot;cats&quot;, &quot;dog&quot;, &quot;sand&quot;, &quot;and&quot;, &quot;cat&quot; }));
+        Assert.False(WordBreakSolver.WordBreak(&quot;&quot;, new[] { &quot;test&quot; }));
+        Assert.False(WordBreakSolver.WordBreak(&quot;test&quot;, Array.Empty&lt;string&gt;()));
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: Enterprise CI/CD with GitHub Actions</h1>
+<h2>1. Fast Feedback with GitHub Actions Caching</h2>
+<p>In .NET pipelines, restore and build times are dominated by downloading NuGet packages.</p>
+<ul>
+<li>Using <code>actions/cache@v4</code> on <code>~/.nuget/packages</code> keyed by <code>**/packages.lock.json</code> drops restore times from 45s to 2s.</li>
+<li>Using Docker Buildx <code>type=gha</code> caches container image layers across workflow runs directly in GitHub's internal cache storage.</li>
+</ul>
+<h2>2. Supply Chain Security & Container Signing</h2>
+<p>Modern cloud-native security requires:</p>
+<ol>
+<li><strong>Software Bill of Materials (SBOM)</strong> generated via Syft in SPDX or CycloneDX format.</li>
+<li><strong>Container Signing via Cosign / Sigstore</strong>: Keyless signing binding the container image digest to the GitHub Actions OIDC workflow token.</li>
+<li><strong>Static Analysis & SAST</strong>: Trivy filesystem and image scanning gating pull requests before deployment.</li>
+</ol>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 46: CI/CD with GitHub Actions for .NET</h1>
+<h2>Overview</h2>
+<p>Day 46 focuses on building enterprise-grade <strong>Continuous Integration and Continuous Deployment (CI/CD)</strong> pipelines for .NET applications using <strong>GitHub Actions</strong>, automated <strong>Trivy security scanning</strong>, and <strong>GitHub Container Registry (GHCR)</strong> image publishing.</p>
+<h2>Production Pipeline Architecture</h2>
+<ul>
+<li><strong>Lint & Format</strong>: Enforces Roslyn code analyzers and format consistency via <code>dotnet format --verify-no-changes</code>.</li>
+<li><strong>Test with Code Coverage</strong>: Executes test suites and collects code coverage using XPlat coverage collectors.</li>
+<li><strong>Trivy Security Gate</strong>: Scans container layers and NuGet dependencies, failing the pipeline if High/Critical vulnerabilities (CVSS $\ge 7.0$) are present with available fixes.</li>
+<li><strong>Multi-Arch Docker Buildx</strong>: Builds and pushes multi-architecture images (<code>linux/amd64</code>, <code>linux/arm64</code>) with GitHub Actions cache backends (<code>type=gha</code>).</li>
+<li><strong>Semantic Versioning</strong>: Automatically computes SemVer releases (<code>vMajor.Minor.Patch</code>) based on Conventional Commits.</li>
+</ul>
+<h2>DSA Problem: LeetCode #139 (Word Break)</h2>
+<ul>
+<li>1D Dynamic Programming with boolean array $dp[i]$ indicating if substring $s[0 \dots i-1]$ can be partitioned into dictionary words.</li>
+<li>Max word length pruning optimizing inner loop to $\mathcal{O}(N \cdot L)$ time.</li>
+</ul>
+<h2>Test Verification</h2>
+<p>Run the 10 automated unit tests:</p>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day46.CiCdGitHubActions.Tests/Day46.CiCdGitHubActions.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do you structure a high-performance CI/CD pipeline in GitHub Actions to achieve sub-3-minute build and test cycles?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Parallel Independent Jobs</strong>: Separate linting, testing, and security scanning into independent parallel jobs rather than sequential steps.</li>
+<li><strong>Aggressive Cache Invalidation</strong>: Cache <code>~/.nuget/packages</code> using <code>actions/cache@v4</code> with key <code>${{ runner.os }}-nuget-${{ hashFiles(&#x27;**/*.csproj&#x27;, &#x27;**/Directory.Packages.props&#x27;) }}</code>.</li>
+<li><strong>No-Restore and No-Build Flags</strong>: Pass <code>--no-restore</code> to <code>dotnet build</code> and <code>--no-build</code> to <code>dotnet test</code>.</li>
+<li><strong>Docker Layer Caching</strong>: Utilize <code>docker/build-push-action</code> with <code>cache-from: type=gha</code> and <code>cache-to: type=gha,mode=max</code>.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the purpose of Trivy vulnerability scanning, and how should security thresholds be enforced in CI?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Trivy scans container OS packages (Alpine, Debian, Ubuntu) and application dependencies (NuGet, npm) against CVE databases.</p>
+<p>In CI:</p>
+<ul>
+<li>Set <code>ignore-unfixed: true</code> to avoid blocking builds on vulnerabilities that vendors haven't patched yet.</li>
+<li>Set <code>severity: CRITICAL,HIGH</code> and <code>exit-code: 1</code> to fail pull requests only when severe, exploitable CVEs exist.</li>
+<li>Upload scan results in SARIF format (<code>upload-sarif</code>) to display inline vulnerability alerts in GitHub's Security tab.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do GitHub Actions OIDC (OpenID Connect) tokens eliminate static cloud credentials?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Traditional CI pipelines stored long-lived static AWS Access Keys or Azure Service Principal secrets in GitHub repository secrets, which risked credential leakage.</p>
+<p>With GitHub Actions OIDC:</p>
+<ol>
+<li>The GitHub workflow requests a temporary short-lived JWT token signed by GitHub's OIDC Provider.</li>
+<li>The cloud provider (AWS/Azure/GCP) validates the JWT signature and claims (<code>sub: repo:owner/repo:ref:refs/heads/main</code>).</li>
+<li>The cloud provider assumes a scoped IAM role and returns temporary STS credentials valid for only 1 hour. No permanent secrets are ever stored in GitHub.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Explain the dynamic programming recurrence for LeetCode #139 Word Break.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $dp[i]$ be a boolean indicating whether prefix $s[0 \dots i-1]$ can be segmented into words from <code>wordDict</code>.</p>
+<ul>
+<li>Base case: $dp[0] = true$ (empty string).</li>
+<li>For $i$ from 1 to $N$:</li>
+</ul>
+<p>For $j$ from $i-1$ down to $\max(0, i - L)$ (where $L$ is the max length of any word in the dictionary):</p>
+<p>If $dp[j] == true$ and $s[j \dots i-1] \in \text{wordSet}$:</p>
+<p>$$dp[i] = true; \quad \text{break}$$</p>
+<ul>
+<li>Result: $dp[N]$.</li>
+</ul>
+<p>Optimizing the inner loop with maximum word length $L$ brings the time complexity down from $\mathcal{O}(N^2)$ to $\mathcal{O}(N \cdot L)$.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do Conventional Commits automate Semantic Versioning in CI/CD?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Conventional Commits define a structured commit syntax:</p>
+<ul>
+<li><code>fix:</code> -> increments <strong>PATCH</strong> version ($1.0.0 \to 1.0.1$) for backwards-compatible bug fixes.</li>
+<li><code>feat:</code> -> increments <strong>MINOR</strong> version ($1.0.0 \to 1.1.0$) for new backwards-compatible features.</li>
+<li><code>feat!:</code>, <code>fix!:</code>, or <code>BREAKING CHANGE:</code> footer -> increments <strong>MAJOR</strong> version ($1.0.0 \to 2.0.0$) for breaking changes.</li>
+</ul>
+<p>Tools like Semantic-Release or GitVersion analyze the commit log between Git tags and automatically tag the repository and publish packages with the exact SemVer version.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you prevent secret leakage in GitHub Actions console logs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>Any value retrieved from GitHub Secrets (<code>${{ secrets.MY_SECRET }}</code>) is automatically masked by the GitHub runner (<code>***</code>).</li>
+<li>Never format secrets into filenames, URLs, or base64-encoded strings without registering the encoded variant with <code>echo &quot;::add-mask::$ENCODED_SECRET&quot;</code>.</li>
+<li>Audit pipeline steps to ensure <code>set -x</code> (shell command tracing) is disabled when handling credential variables.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What are the risks of using `pull_request_target` vs `pull_request` triggers in GitHub Actions?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><code>pull_request</code>: Runs in the context of the fork/PR branch without access to repository secrets or write permissions. Safe for open-source repositories.</li>
+<li><code>pull_request_target</code>: Runs in the context of the target base branch with access to repository secrets. If a malicious PR author modifies a script executed by the workflow, they can exfiltrate repository secrets (PwnRequest vulnerability). Never check out and execute code from the PR head inside a <code>pull_request_target</code> workflow.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the difference between multi-platform Docker builds with QEMU vs native builders?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>QEMU Emulation</strong>: Uses software CPU instruction emulation (<code>binfmt_misc</code>) to build ARM64 images on AMD64 runners. Flexible and requires no extra hardware, but CPU-intensive tasks (like compiling .NET code) can be 5–10x slower.</li>
+<li><strong>Native Cross-Compilation</strong>: Uses .NET SDK's built-in cross-compilation (<code>dotnet publish -r linux-arm64</code>) running natively on AMD64 hardware, achieving full native compilation speed while generating ARM64 binaries.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How do you implement automated rollbacks in a GitHub Actions continuous deployment pipeline?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>After executing <code>kubectl rollout restart</code> or updating the container image tag in Kubernetes, execute:</li>
+</ol>
+<p><code>kubectl rollout status deployment/order-api --timeout=120s</code>.</p>
+<ol>
+<li>If the rollout status times out or fails health probes, the step fails.</li>
+<li>In a follow-up step with <code>if: failure()</code>, execute:</li>
+</ol>
+<p><code>kubectl rollout undo deployment/order-api</code> to instantly restore the previous known-good ReplicaSet.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does GitHub Container Registry (GHCR) package visibility and permissions integrate with GitHub Actions?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Workflows access GHCR without external tokens by utilizing the built-in <code>${{ secrets.GITHUB_TOKEN }}</code>. Under <code>permissions:</code>, the job declares <code>packages: write</code> and <code>contents: read</code>. Images pushed to <code>ghcr.io/owner/repo</code> automatically inherit the repository's access controls (private or public).</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day46.CiCdGitHubActions/CiCdPipelineEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd46-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d46-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day46.CiCdGitHubActions;
+
+public record VulnerabilityFinding(
+    string PackageId,
+    string InstalledVersion,
+    string Severity, // &quot;LOW&quot;, &quot;MEDIUM&quot;, &quot;HIGH&quot;, &quot;CRITICAL&quot;
+    double CvssScore,
+    bool HasFixedVersion
+);
+
+public record SemVer(int Major, int Minor, int Patch)
+{
+    public override string ToString() =&gt; $&quot;v{Major}.{Minor}.{Patch}&quot;;
+}
+
+public class CiCdPipelineEngine
+{
+    public bool ValidateJobDependencies(Dictionary&lt;string, List&lt;string&gt;&gt; jobDependencies)
+    {
+        // Cycle detection in job DAG
+        var visited = new HashSet&lt;string&gt;();
+        var recursionStack = new HashSet&lt;string&gt;();
+
+        foreach (var job in jobDependencies.Keys)
+        {
+            if (HasCycle(job, jobDependencies, visited, recursionStack))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private bool HasCycle(string current, Dictionary&lt;string, List&lt;string&gt;&gt; graph, HashSet&lt;string&gt; visited, HashSet&lt;string&gt; stack)
+    {
+        if (stack.Contains(current)) return true;
+        if (visited.Contains(current)) return false;
+
+        visited.Add(current);
+        stack.Add(current);
+
+        if (graph.TryGetValue(current, out var dependencies))
+        {
+            foreach (var dep in dependencies)
+            {
+                if (HasCycle(dep, graph, visited, stack)) return true;
+            }
+        }
+
+        stack.Remove(current);
+        return false;
+    }
+
+    public (bool Passed, List&lt;string&gt; Violations) EvaluateTrivySecurityGate(
+        IEnumerable&lt;VulnerabilityFinding&gt; findings,
+        double maxAllowedCvss = 7.0
+    )
+    {
+        var violations = new List&lt;string&gt;();
+
+        foreach (var v in findings)
+        {
+            if (v.CvssScore &gt;= maxAllowedCvss &amp;&amp; v.HasFixedVersion)
+            {
+                violations.Add($&quot;Security Gate Failed: {v.PackageId} ({v.InstalledVersion}) has {v.Severity} vulnerability with CVSS {v.CvssScore:F1}&quot;);
+            }
+        }
+
+        return (violations.Count == 0, violations);
+    }
+
+    public SemVer ComputeNextVersion(SemVer currentVersion, IEnumerable&lt;string&gt; commitMessages)
+    {
+        bool hasBreakingChange = false;
+        bool hasFeature = false;
+        bool hasFix = false;
+
+        foreach (var msg in commitMessages)
+        {
+            var trimmed = msg.Trim();
+            if (trimmed.Contains(&quot;BREAKING CHANGE:&quot;) || trimmed.StartsWith(&quot;feat!:&quot;) || trimmed.StartsWith(&quot;fix!:&quot;))
+            {
+                hasBreakingChange = true;
+            }
+            else if (trimmed.StartsWith(&quot;feat:&quot;) || trimmed.StartsWith(&quot;feat(&quot;))
+            {
+                hasFeature = true;
+            }
+            else if (trimmed.StartsWith(&quot;fix:&quot;) || trimmed.StartsWith(&quot;perf:&quot;) || trimmed.StartsWith(&quot;refactor:&quot;))
+            {
+                hasFix = true;
+            }
+        }
+
+        if (hasBreakingChange)
+        {
+            return new SemVer(currentVersion.Major + 1, 0, 0);
+        }
+        if (hasFeature)
+        {
+            return new SemVer(currentVersion.Major, currentVersion.Minor + 1, 0);
+        }
+        if (hasFix)
+        {
+            return new SemVer(currentVersion.Major, currentVersion.Minor, currentVersion.Patch + 1);
+        }
+
+        return currentVersion;
+    }
+
+    public string MaskSecret(string logOutput, string secretValue)
+    {
+        if (string.IsNullOrEmpty(secretValue)) return logOutput;
+        return logOutput.Replace(secretValue, &quot;***&quot;);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day46.CiCdGitHubActions/WordBreakSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd46-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d46-src-code-1" class="language-csharp">using System;
+using System.Collections.Generic;
+
+namespace Day46.CiCdGitHubActions;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #139: Word Break.
+/// 1D Dynamic Programming with Dictionary HashSet Lookup.
+/// Time Complexity: O(N^2), Space Complexity: O(N + Words).
+/// &lt;/summary&gt;
+public static class WordBreakSolver
+{
+    public static bool WordBreak(string? s, IList&lt;string&gt;? wordDict)
+    {
+        if (string.IsNullOrEmpty(s) || wordDict == null || wordDict.Count == 0)
+        {
+            return false;
+        }
+
+        var wordSet = new HashSet&lt;string&gt;(wordDict);
+        int n = s.Length;
+
+        // dp[i] represents if s[0 .. i-1] can be segmented into words from wordDict
+        bool[] dp = new bool[n + 1];
+        dp[0] = true; // empty string is always valid base case
+
+        int maxWordLen = 0;
+        foreach (var w in wordDict)
+        {
+            maxWordLen = Math.Max(maxWordLen, w.Length);
+        }
+
+        for (int i = 1; i &lt;= n; i++)
+        {
+            // Prune inner loop: word length cannot exceed maxWordLen
+            for (int j = i - 1; j &gt;= Math.Max(0, i - maxWordLen); j--)
+            {
+                if (dp[j])
+                {
+                    string sub = s.Substring(j, i - j);
+                    if (wordSet.Contains(sub))
+                    {
+                        dp[i] = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return dp[n];
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day46.CiCdGitHubActions.Tests/Day46Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd46-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d46-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.IO;
+using Xunit;
+
+namespace Day46.CiCdGitHubActions.Tests;
+
+public class Day46Tests
+{
+    private readonly CiCdPipelineEngine _engine;
+
+    public Day46Tests()
+    {
+        _engine = new CiCdPipelineEngine();
+    }
+
+    [Fact]
+    public void Test01_PipelineDAG_ValidatesAcyclicJobDependencies()
+    {
+        var validGraph = new Dictionary&lt;string, List&lt;string&gt;&gt;
+        {
+            [&quot;lint&quot;] = new(),
+            [&quot;test&quot;] = new() { &quot;lint&quot; },
+            [&quot;security-scan&quot;] = new() { &quot;test&quot; },
+            [&quot;publish&quot;] = new() { &quot;security-scan&quot; }
+        };
+
+        Assert.True(_engine.ValidateJobDependencies(validGraph));
+    }
+
+    [Fact]
+    public void Test02_PipelineDAG_DetectsCircularJobDependencies()
+    {
+        var cyclicGraph = new Dictionary&lt;string, List&lt;string&gt;&gt;
+        {
+            [&quot;jobA&quot;] = new() { &quot;jobB&quot; },
+            [&quot;jobB&quot;] = new() { &quot;jobC&quot; },
+            [&quot;jobC&quot;] = new() { &quot;jobA&quot; } // Circular dependency
+        };
+
+        Assert.False(_engine.ValidateJobDependencies(cyclicGraph));
+    }
+
+    [Fact]
+    public void Test03_TrivySecurityGate_FailsOnCriticalFixedVulnerabilities()
+    {
+        var findings = new List&lt;VulnerabilityFinding&gt;
+        {
+            new(&quot;System.Text.Json&quot;, &quot;8.0.0&quot;, &quot;CRITICAL&quot;, 8.8, true),
+            new(&quot;Microsoft.Data.SqlClient&quot;, &quot;5.1.0&quot;, &quot;LOW&quot;, 3.2, false)
+        };
+
+        var (passed, violations) = _engine.EvaluateTrivySecurityGate(findings, maxAllowedCvss: 7.0);
+
+        Assert.False(passed);
+        Assert.Single(violations);
+        Assert.Contains(&quot;System.Text.Json&quot;, violations[0]);
+    }
+
+    [Fact]
+    public void Test04_TrivySecurityGate_PassesWhenNoCriticalVulnerabilitiesExist()
+    {
+        var findings = new List&lt;VulnerabilityFinding&gt;
+        {
+            new(&quot;Serilog&quot;, &quot;3.1.0&quot;, &quot;LOW&quot;, 2.5, false),
+            new(&quot;Newtonsoft.Json&quot;, &quot;13.0.3&quot;, &quot;MEDIUM&quot;, 5.3, false)
+        };
+
+        var (passed, violations) = _engine.EvaluateTrivySecurityGate(findings, maxAllowedCvss: 7.0);
+
+        Assert.True(passed);
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void Test05_SemVer_CalculatesMajorBumpOnBreakingChange()
+    {
+        var current = new SemVer(1, 4, 2);
+        var commits = new[] { &quot;fix: minor typo&quot;, &quot;feat!: overhaul order api schema&quot; };
+
+        var next = _engine.ComputeNextVersion(current, commits);
+
+        Assert.Equal(&quot;v2.0.0&quot;, next.ToString());
+    }
+
+    [Fact]
+    public void Test06_SemVer_CalculatesMinorBumpOnFeature()
+    {
+        var current = new SemVer(1, 4, 2);
+        var commits = new[] { &quot;feat: add payment refund webhook&quot;, &quot;fix: adjust timeout&quot; };
+
+        var next = _engine.ComputeNextVersion(current, commits);
+
+        Assert.Equal(&quot;v1.5.0&quot;, next.ToString());
+    }
+
+    [Fact]
+    public void Test07_SemVer_CalculatesPatchBumpOnBugfix()
+    {
+        var current = new SemVer(1, 4, 2);
+        var commits = new[] { &quot;fix: prevent null pointer exception on missing header&quot; };
+
+        var next = _engine.ComputeNextVersion(current, commits);
+
+        Assert.Equal(&quot;v1.4.3&quot;, next.ToString());
+    }
+
+    [Fact]
+    public void Test08_SecretMasking_RedactsSensitiveTokensFromLogs()
+    {
+        string rawLog = &quot;Executing curl with token: ghp_9876543210abcdef to api endpoint&quot;;
+        string masked = _engine.MaskSecret(rawLog, &quot;ghp_9876543210abcdef&quot;);
+
+        Assert.DoesNotContain(&quot;ghp_9876543210abcdef&quot;, masked);
+        Assert.Contains(&quot;***&quot;, masked);
+    }
+
+    [Fact]
+    public void Test09_WordBreak_ValidWordSegmentations()
+    {
+        Assert.True(WordBreakSolver.WordBreak(&quot;leetcode&quot;, new[] { &quot;leet&quot;, &quot;code&quot; }));
+        Assert.True(WordBreakSolver.WordBreak(&quot;applepenapple&quot;, new[] { &quot;apple&quot;, &quot;pen&quot; }));
+        Assert.True(WordBreakSolver.WordBreak(&quot;cars&quot;, new[] { &quot;car&quot;, &quot;ca&quot;, &quot;rs&quot; }));
+    }
+
+    [Fact]
+    public void Test10_WordBreak_InvalidSegmentationsAndEdgeCases()
+    {
+        Assert.False(WordBreakSolver.WordBreak(&quot;catsandog&quot;, new[] { &quot;cats&quot;, &quot;dog&quot;, &quot;sand&quot;, &quot;and&quot;, &quot;cat&quot; }));
+        Assert.False(WordBreakSolver.WordBreak(&quot;&quot;, new[] { &quot;test&quot; }));
+        Assert.False(WordBreakSolver.WordBreak(&quot;test&quot;, Array.Empty&lt;string&gt;()));
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 46 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

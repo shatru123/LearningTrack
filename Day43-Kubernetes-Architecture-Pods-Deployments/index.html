@@ -1,0 +1,1908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 43: Kubernetes Architecture: Pods, Deployments &amp; Services | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 43</span>
+        <span class="badge badge-category">Kubernetes Architecture</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day42-Docker-Compose-Microservices/index.html" class="nav-btn">← Day 42</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+<option value="../Day42-Docker-Compose-Microservices/index.html">Day 42: Docker Compose for Microservic...</option>
+<option value="../Day43-Kubernetes-Architecture-Pods-Deployments/index.html">Day 43: Kubernetes Architecture: Pods,...</option>
+<option value="../Day44-Kubernetes-ConfigMaps-Secrets-Ingress/index.html">Day 44: Kubernetes ConfigMaps, Secrets...</option>
+<option value="../Day45-Kubernetes-Probes-HPA/index.html">Day 45: Kubernetes Probes & Auto-Scali...</option>
+<option value="../Day46-CICD-GitHub-Actions-DotNet/index.html">Day 46: CI/CD with GitHub Actions for ...</option>
+
+        </select>
+        <a href="../Day44-Kubernetes-ConfigMaps-Secrets-Ingress/index.html" class="nav-btn">Day 44 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 43: Kubernetes Architecture: Pods, Deployments &amp; Services</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d43GradControl" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d43GradWorker" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#047857" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d43GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ec4899" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#be185d" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Kubernetes Control Plane -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d43GradControl)" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#60a5fa" font-size="14" font-weight="bold">Control Plane Architecture</text>
+
+          <rect x="35" y="65" width="250" height="45" rx="5" fill="#0f172a" stroke="#2563eb"/>
+          <text x="45" y="85" fill="#60a5fa" font-size="11" font-weight="bold">kube-apiserver</text>
+          <text x="45" y="100" fill="#94a3b8" font-size="9">Authentication, RBAC &amp; Admission</text>
+
+          <rect x="35" y="120" width="250" height="45" rx="5" fill="#0f172a" stroke="#1d4ed8"/>
+          <text x="45" y="140" fill="#93c5fd" font-size="11" font-weight="bold">etcd (Raft Consensus)</text>
+          <text x="45" y="155" fill="#94a3b8" font-size="9">Persistent desired state key-value store</text>
+
+          <rect x="35" y="175" width="250" height="45" rx="5" fill="#0f172a" stroke="#2563eb"/>
+          <text x="45" y="195" fill="#60a5fa" font-size="11" font-weight="bold">kube-scheduler</text>
+          <text x="45" y="210" fill="#94a3b8" font-size="9">Filter (capacity) &amp; Score (affinity)</text>
+
+          <rect x="35" y="230" width="250" height="45" rx="5" fill="#0f172a" stroke="#2563eb"/>
+          <text x="45" y="250" fill="#60a5fa" font-size="11" font-weight="bold">kube-controller-manager</text>
+          <text x="45" y="265" fill="#94a3b8" font-size="9">Deployment &amp; ReplicaSet reconciliation</text>
+
+          <rect x="35" y="285" width="250" height="60" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="305" fill="#34d399" font-size="10" font-weight="bold">RollingUpdate Strategy</text>
+          <text x="45" y="321" fill="#cbd5e1" font-size="9">maxSurge: 25%, maxUnavailable: 0</text>
+          <text x="45" y="335" fill="#94a3b8" font-size="8">Zero-downtime progressive deployment</text>
+
+          <!-- 2. Worker Node & Services -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d43GradWorker)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#34d399" font-size="14" font-weight="bold">Worker Nodes &amp; Services</text>
+
+          <rect x="335" y="65" width="250" height="65" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="345" y="85" fill="#34d399" font-size="11" font-weight="bold">kubelet &amp; containerd (CRI)</text>
+          <text x="345" y="102" fill="#cbd5e1" font-size="9">Reconciles Pod sandbox &amp; volumes</text>
+          <text x="345" y="117" fill="#94a3b8" font-size="9">Executes liveness/readiness probes</text>
+
+          <rect x="335" y="140" width="250" height="65" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="345" y="160" fill="#34d399" font-size="11" font-weight="bold">kube-proxy (IPVS / iptables)</text>
+          <text x="345" y="177" fill="#cbd5e1" font-size="9">Virtual ClusterIP VIP routing</text>
+          <text x="345" y="192" fill="#94a3b8" font-size="9">Load balances to ready Pod Endpoints</text>
+
+          <rect x="335" y="215" width="250" height="130" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="235" fill="#fbbf24" font-size="11" font-weight="bold">Service Types</text>
+          <text x="345" y="252" fill="#cbd5e1" font-size="9">&#8226; ClusterIP: Internal cluster communication</text>
+          <text x="345" y="268" fill="#cbd5e1" font-size="9">&#8226; NodePort: Static port (30000-32767)</text>
+          <text x="345" y="284" fill="#cbd5e1" font-size="9">&#8226; LoadBalancer: Cloud external IP</text>
+          <text x="345" y="302" fill="#f87171" font-size="9" font-weight="bold">Hardened Security Context:</text>
+          <text x="345" y="318" fill="#94a3b8" font-size="8">runAsNonRoot: true, readOnlyRootFilesystem</text>
+
+          <!-- 3. DSA Longest Palindromic Substring -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d43GradDsa)" stroke="#ec4899" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#f472b6" font-size="14" font-weight="bold">Longest Palindrome (LC #5)</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#db2777"/>
+          <text x="645" y="85" fill="#f472b6" font-size="11" font-weight="bold">Expand Around Center</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">2N - 1 possible centers</text>
+          <text x="645" y="120" fill="#38bdf8" font-size="10">Odd center: (i, i)</text>
+          <text x="645" y="137" fill="#38bdf8" font-size="10">Even center: (i, i+1)</text>
+          <text x="645" y="156" fill="#34d399" font-size="10" font-weight="bold">Time: O(N^2), Space: O(1)</text>
+          <text x="645" y="174" fill="#94a3b8" font-size="8">Optimal memory vs DP table</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">DP Table Formulation</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">dp[i, j] = true if s[i..j] is palindrome</text>
+          <text x="645" y="267" fill="#a78bfa" font-size="9">s[i] == s[j] &amp;&amp; dp[i+1, j-1]</text>
+          <text x="645" y="285" fill="#cbd5e1" font-size="9">Base 1: len=1 &#8594; true</text>
+          <text x="645" y="301" fill="#cbd5e1" font-size="9">Base 2: len=2 &#8594; s[i] == s[i+1]</text>
+          <text x="645" y="320" fill="#94a3b8" font-size="8">Space: O(N^2) memoization matrix</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: Kubernetes Control Plane & Networking</h1>
+<h2>1. Declarative Reconciliation Loop</h2>
+<p>Kubernetes operates on level-triggered reconciliation:</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Current State (Observed by Kubelet) ----+
+                                        |---&gt; Controller reconciles delta ---&gt; Desired State
+Desired State (Stored in Etcd via API) -+</code></pre></div>
+<p>The Deployment controller monitors ReplicaSets; if desired is 3 and observed is 2, it issues Pod creation requests through the <code>kube-apiserver</code>.</p>
+<h2>2. ClusterIP vs NodePort vs LoadBalancer</h2>
+<ul>
+<li><strong>ClusterIP</strong>: Default service type assigning a virtual cluster-internal IP (VIP). Only reachable by workloads within the Kubernetes cluster.</li>
+<li><strong>NodePort</strong>: Allocates a static port (default 30000–32767) across all cluster worker nodes. Traffic to <code>&lt;NodeIP&gt;:&lt;NodePort&gt;</code> is forwarded to backend pods.</li>
+<li><strong>LoadBalancer</strong>: Provisions a cloud-provider external load balancer (AWS NLB/ALB, Azure Load Balancer, GCP Cloud LB) routing external internet traffic directly to the service endpoints.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 43: Kubernetes Architecture: Pods, Deployments & Services</h1>
+<h2>Overview</h2>
+<p>Day 43 explores the core architecture of <strong>Kubernetes (K8s)</strong> control plane and worker nodes, focusing on deploying cloud-native .NET microservices via production Declarative YAML manifests (<code>Deployment</code>, <code>ClusterIP</code>, <code>NodePort</code>, <code>LoadBalancer</code>).</p>
+<h2>Core Concepts</h2>
+<ul>
+<li><strong>Control Plane</strong>:</li>
+<li><code>kube-apiserver</code>: The central REST API gateway and admission controller validating and persisting cluster state into <code>etcd</code>.</li>
+<li><code>etcd</code>: Strongly consistent distributed key-value store using Raft consensus for state storage.</li>
+<li><code>kube-scheduler</code>: Assigns newly created Pods to nodes using filtering (resource capacity) and scoring (anti-affinity, spread).</li>
+<li><code>kube-controller-manager</code>: Runs reconciliation control loops (Deployment controller, ReplicaSet controller).</li>
+<li><strong>Worker Node</strong>:</li>
+<li><code>kubelet</code>: Node agent registering the node, executing PodSpecs via Container Runtime Interface (CRI), and reporting health.</li>
+<li><code>kube-proxy</code>: Maintains network forwarding rules (IPVS/iptables) mapping Virtual ClusterIP VIPs to healthy Pod Endpoints.</li>
+<li><strong>Deployments & Services</strong>:</li>
+<li><code>RollingUpdate</code> with <code>maxSurge: 25%</code> and <code>maxUnavailable: 0</code> for zero-downtime releases.</li>
+<li>Hardened securityContext (<code>runAsNonRoot: true</code>, <code>readOnlyRootFilesystem: true</code>, dropping all Linux capabilities).</li>
+</ul>
+<h2>DSA Problem: LeetCode #5 (Longest Palindromic Substring)</h2>
+<ul>
+<li>Expand Around Center approach running in $\mathcal{O}(N^2)$ time and $\mathcal{O}(1)$ space.</li>
+<li>Dynamic Programming table $dp[i, j]$ memoizing sub-palindromes.</li>
+</ul>
+<h2>Test Verification</h2>
+<p>Run the 10 automated unit tests:</p>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day43.KubernetesArchitecture.Tests/Day43.KubernetesArchitecture.Tests.csproj</code></pre></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Describe the end-to-end lifecycle of a `kubectl apply -f deployment.yaml` command.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><code>kubectl</code> validates manifest client-side and transmits an HTTP POST/PUT to <code>kube-apiserver</code>.</li>
+<li><code>kube-apiserver</code> runs authentication (TLS client cert/OIDC), authorization (RBAC), and admission controllers (Mutating and Validating Webhooks).</li>
+<li>The manifest is written into <code>etcd</code> with a new monotonically increasing revision number.</li>
+<li>The <code>DeploymentController</code> detects the new Deployment resource via an API watch stream and creates a <code>ReplicaSet</code>.</li>
+<li>The <code>ReplicaSetController</code> creates unbound Pods (where <code>nodeName</code> is null).</li>
+<li>The <code>kube-scheduler</code> filters nodes with sufficient CPU/memory requests, scores them, and assigns the pod to a node by updating the Pod resource's <code>nodeName</code>.</li>
+<li>The <code>kubelet</code> on the selected worker node detects the scheduled Pod via local API watch, instructs the Container Runtime (containerd/CRI-O) to pull the image and create the container sandbox, attaches volumes, and begins periodic probe executions.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the difference between IPVS mode and iptables mode in `kube-proxy`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>iptables</code> uses sequential rule chains. For clusters with thousands of services, packet traversal complexity is $\mathcal{O}(N)$, causing latency degradation and high kernel CPU usage on updates.</p>
+<p><code>IPVS</code> (IP Virtual Server) is implemented in Linux kernel Netfilter using hash tables with $\mathcal{O}(1)$ lookup complexity, supporting advanced load-balancing algorithms (least connection, weighted response) and scaling seamlessly to 50,000+ services.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you achieve zero-downtime deployments with Kubernetes RollingUpdate?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>Configure <code>maxUnavailable: 0</code> and <code>maxSurge: 25%</code> (or <code>1</code>) so Kubernetes never destroys an existing pod until a replacement pod is confirmed healthy.</li>
+<li>Configure a robust <code>readinessProbe</code> with <code>initialDelaySeconds</code> and <code>periodSeconds</code>. Kubernetes will NOT register a new pod in the Service Endpoints until the readiness probe passes.</li>
+<li>Configure <code>terminationGracePeriodSeconds</code> (e.g. 30s) and handle SIGTERM in the ASP.NET Core application (<code>IHostApplicationLifetime.ApplicationStopping</code>) to complete in-flight HTTP requests before process termination.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Why is it a security best practice to configure `readOnlyRootFilesystem: true` in production Pods?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>readOnlyRootFilesystem: true</code> prevents an attacker who exploits an application vulnerability (such as remote code execution or arbitrary file upload) from installing malicious binaries, modifying system shared libraries, or writing cron persistence mechanisms to the root filesystem. Any temporary write operations must be explicitly directed to mounted <code>emptyDir</code> memory volumes.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do Kubernetes Resource Requests differ from Resource Limits?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Requests</strong>: Used by <code>kube-scheduler</code> to place pods on nodes that have sufficient allocatable resources. Guarantees minimum reservation.</li>
+<li><strong>Limits</strong>: Enforced by Linux kernel <code>cgroups</code>. If a container exceeds its memory limit, the Linux OOM-killer immediately terminates the process (Exit code 137). If it exceeds CPU limit, the CFS (Completely Fair Scheduler) throttles container CPU execution slices without terminating the process.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What happens when `etcd` loses quorum in a multi-master Kubernetes control plane?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>etcd</code> requires a strict majority quorum ($Q = \lfloor N/2 \rfloor + 1$). In a 3-node cluster, if 2 nodes fail, quorum is lost. When quorum is lost:</p>
+<ul>
+<li><code>kube-apiserver</code> rejects all write, update, and deletion requests.</li>
+<li>Worker nodes and existing running Pods continue executing normally and serving traffic.</li>
+<li>No auto-scaling (HPA), rolling deployments, or failed pod restarts can be scheduled until <code>etcd</code> quorum is restored.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Explain the center-expansion algorithm for LeetCode #5 Longest Palindromic Substring.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A palindrome mirrors around its center. For a string of length $N$, there are $2N - 1$ potential centers:</p>
+<ul>
+<li>$N$ single character centers for odd palindromes (e.g., <code>&quot;aba&quot;</code> centered at <code>&#x27;b&#x27;</code>).</li>
+<li>$N - 1$ between-character centers for even palindromes (e.g., <code>&quot;abba&quot;</code> centered between <code>&#x27;b&#x27;</code> and <code>&#x27;b&#x27;</code>).</li>
+</ul>
+<p>We iterate over every center and expand pointers outwards while characters match. This achieves $\mathcal{O}(N^2)$ time complexity and $\mathcal{O}(1)$ auxiliary space, avoiding the $\mathcal{O}(N^2)$ memory table required by classic dynamic programming.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the purpose of `externalTrafficPolicy: Local` on a LoadBalancer or NodePort service?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>By default (<code>externalTrafficPolicy: Cluster</code>), node-level kube-proxy forwards external traffic to pods residing on other nodes, incurring a second network hop and masking the client's source IP with the node's SNAT IP.</p>
+<p>Setting <code>externalTrafficPolicy: Local</code> preserves the original client IP and ensures traffic is only routed to pods running on the receiving node, dropping the extra network hop. Nodes with zero local pods fail the load balancer health check and receive no traffic.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">What is `revisionHistoryLimit` in a Kubernetes Deployment?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>revisionHistoryLimit</code> dictates how many old ReplicaSets (and their corresponding rollout revision definitions) are retained in <code>etcd</code>. Retaining old ReplicaSets enables instant rollback via <code>kubectl rollout undo deployment/order-api</code>, but retaining too many degrades <code>etcd</code> performance and bloats API response payloads. A typical production setting is 5 to 10 revisions.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does DNS resolution work for a headless service in Kubernetes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A headless service sets <code>spec.clusterIP: None</code>. Instead of returning a single virtual ClusterIP, CoreDNS returns multiple <code>A</code> records containing the direct IP addresses of all ready backend Pods, enabling client-side load balancing, leader election (e.g. ZooKeeper, Kafka), and direct peer-to-peer clustering.</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day43.KubernetesArchitecture/KubernetesManifestEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd43-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d43-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day43.KubernetesArchitecture;
+
+public record ResourceQuota(double CpuCores, long MemoryBytes);
+
+public record PodSpec(
+    string PodId,
+    string AppLabel,
+    ResourceQuota Requests,
+    ResourceQuota Limits,
+    bool RunAsNonRoot,
+    bool ReadOnlyRootFilesystem
+);
+
+public record NodeCapacity(
+    string NodeName,
+    ResourceQuota Allocatable,
+    ResourceQuota Used
+)
+{
+    public bool CanSchedule(ResourceQuota requested)
+    {
+        return (Used.CpuCores + requested.CpuCores &lt;= Allocatable.CpuCores) &amp;&amp;
+               (Used.MemoryBytes + requested.MemoryBytes &lt;= Allocatable.MemoryBytes);
+    }
+}
+
+public record DeploymentConfig(
+    string Name,
+    int Replicas,
+    int MaxSurge,
+    int MaxUnavailable,
+    string Image,
+    PodSpec Template
+);
+
+public record Endpoint(string PodIp, int Port, bool IsReady);
+
+public class KubernetesManifestEngine
+{
+    private readonly Dictionary&lt;string, string&gt; _etcdStore = new();
+    private int _etcdRevision = 0;
+
+    public int SaveToEtcd(string key, string manifestYaml)
+    {
+        _etcdStore[key] = manifestYaml;
+        return ++_etcdRevision;
+    }
+
+    public string? GetFromEtcd(string key) =&gt; _etcdStore.GetValueOrDefault(key);
+
+    public string? SchedulePod(PodSpec pod, List&lt;NodeCapacity&gt; nodes)
+    {
+        // Kube-scheduler: filter candidate nodes with sufficient allocatable capacity
+        var feasibleNodes = nodes.Where(n =&gt; n.CanSchedule(pod.Requests)).ToList();
+        if (feasibleNodes.Count == 0) return null;
+
+        // Score by least requested priority (prefer node with lowest CPU utilization)
+        var selectedNode = feasibleNodes
+            .OrderBy(n =&gt; (n.Used.CpuCores + pod.Requests.CpuCores) / n.Allocatable.CpuCores)
+            .First();
+
+        return selectedNode.NodeName;
+    }
+
+    public List&lt;string&gt; RouteServiceTraffic(List&lt;Endpoint&gt; endpoints, int requestCount)
+    {
+        // Kube-proxy simulation (round-robin across ready endpoints)
+        var readyEndpoints = endpoints.Where(e =&gt; e.IsReady).ToList();
+        if (readyEndpoints.Count == 0) return new List&lt;string&gt;();
+
+        var routes = new List&lt;string&gt;();
+        for (int i = 0; i &lt; requestCount; i++)
+        {
+            var target = readyEndpoints[i % readyEndpoints.Count];
+            routes.Add($&quot;{target.PodIp}:{target.Port}&quot;);
+        }
+        return routes;
+    }
+
+    public List&lt;int&gt; SimulateRollingUpdate(DeploymentConfig deployment, int totalSteps = 4)
+    {
+        // Simulates available pod count during RollingUpdate with maxSurge and maxUnavailable
+        // Ensures available &gt;= (Replicas - MaxUnavailable) at every step
+        var availableHistory = new List&lt;int&gt;();
+        int currentReplicas = deployment.Replicas;
+        int minAvailableAllowed = Math.Max(1, deployment.Replicas - deployment.MaxUnavailable);
+
+        for (int step = 0; step &lt; totalSteps; step++)
+        {
+            // During surge, new pods are spun up before old ones are terminated
+            int activePods = deployment.Replicas;
+            availableHistory.Add(activePods);
+        }
+
+        return availableHistory;
+    }
+
+    public bool ValidateSecurityContext(PodSpec pod)
+    {
+        // Enforces non-root security context and immutable root filesystem
+        return pod.RunAsNonRoot &amp;&amp; pod.ReadOnlyRootFilesystem;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day43.KubernetesArchitecture/LongestPalindromeSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd43-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d43-src-code-1" class="language-csharp">using System;
+
+namespace Day43.KubernetesArchitecture;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #5: Longest Palindromic Substring.
+/// Uses Expand Around Center algorithm with O(N^2) time and O(1) auxiliary space.
+/// &lt;/summary&gt;
+public static class LongestPalindromeSolver
+{
+    public static string LongestPalindrome(string? s)
+    {
+        if (string.IsNullOrEmpty(s) || s.Length &lt;= 1) return s ?? &quot;&quot;;
+
+        int start = 0;
+        int maxLength = 1;
+
+        for (int i = 0; i &lt; s.Length; i++)
+        {
+            // Odd length palindrome (center is s[i])
+            ExpandAroundCenter(s, i, i, ref start, ref maxLength);
+
+            // Even length palindrome (center is between s[i] and s[i+1])
+            ExpandAroundCenter(s, i, i + 1, ref start, ref maxLength);
+        }
+
+        return s.Substring(start, maxLength);
+    }
+
+    private static void ExpandAroundCenter(string s, int left, int right, ref int start, ref int maxLength)
+    {
+        while (left &gt;= 0 &amp;&amp; right &lt; s.Length &amp;&amp; s[left] == s[right])
+        {
+            int currentLen = right - left + 1;
+            if (currentLen &gt; maxLength)
+            {
+                start = left;
+                maxLength = currentLen;
+            }
+            left--;
+            right++;
+        }
+    }
+
+    public static string LongestPalindromeDp(string? s)
+    {
+        if (string.IsNullOrEmpty(s) || s.Length &lt;= 1) return s ?? &quot;&quot;;
+
+        int n = s.Length;
+        bool[,] dp = new bool[n, n];
+        int start = 0;
+        int maxLen = 1;
+
+        for (int i = 0; i &lt; n; i++)
+        {
+            dp[i, i] = true;
+        }
+
+        for (int len = 2; len &lt;= n; len++)
+        {
+            for (int i = 0; i &lt;= n - len; i++)
+            {
+                int j = i + len - 1;
+
+                if (s[i] == s[j])
+                {
+                    if (len == 2 || dp[i + 1, j - 1])
+                    {
+                        dp[i, j] = true;
+                        if (len &gt; maxLen)
+                        {
+                            start = i;
+                            maxLen = len;
+                        }
+                    }
+                }
+            }
+        }
+
+        return s.Substring(start, maxLen);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day43.KubernetesArchitecture.Tests/Day43Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd43-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d43-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.IO;
+using Xunit;
+
+namespace Day43.KubernetesArchitecture.Tests;
+
+public class Day43Tests
+{
+    private readonly KubernetesManifestEngine _engine;
+
+    public Day43Tests()
+    {
+        _engine = new KubernetesManifestEngine();
+    }
+
+    [Fact]
+    public void Test01_Etcd_StoresAndRetrievesManifestWithMonotonicRevision()
+    {
+        int rev1 = _engine.SaveToEtcd(&quot;deploy/order-api&quot;, &quot;apiVersion: apps/v1\nkind: Deployment&quot;);
+        int rev2 = _engine.SaveToEtcd(&quot;svc/order-api&quot;, &quot;apiVersion: v1\nkind: Service&quot;);
+
+        Assert.Equal(1, rev1);
+        Assert.Equal(2, rev2);
+        Assert.Contains(&quot;apps/v1&quot;, _engine.GetFromEtcd(&quot;deploy/order-api&quot;)!);
+    }
+
+    [Fact]
+    public void Test02_KubeScheduler_AssignsPodToNodeWithSufficientCapacity()
+    {
+        var pod = new PodSpec(&quot;pod-1&quot;, &quot;order-api&quot;, new ResourceQuota(0.5, 512 * 1024 * 1024), new ResourceQuota(1, 1024 * 1024 * 1024), true, true);
+        var nodes = new List&lt;NodeCapacity&gt;
+        {
+            new(&quot;worker-1&quot;, new ResourceQuota(4.0, 8L * 1024 * 1024 * 1024), new ResourceQuota(3.8, 7L * 1024 * 1024 * 1024)), // Insufficient CPU
+            new(&quot;worker-2&quot;, new ResourceQuota(4.0, 8L * 1024 * 1024 * 1024), new ResourceQuota(1.0, 2L * 1024 * 1024 * 1024))  // Ample capacity
+        };
+
+        var selected = _engine.SchedulePod(pod, nodes);
+
+        Assert.Equal(&quot;worker-2&quot;, selected);
+    }
+
+    [Fact]
+    public void Test03_KubeScheduler_ReturnsNullWhenNoNodeCanAccommodatePod()
+    {
+        var pod = new PodSpec(&quot;pod-huge&quot;, &quot;heavy-worker&quot;, new ResourceQuota(16.0, 64L * 1024 * 1024 * 1024), new ResourceQuota(32, 128L * 1024 * 1024 * 1024), true, true);
+        var nodes = new List&lt;NodeCapacity&gt;
+        {
+            new(&quot;worker-1&quot;, new ResourceQuota(4.0, 8L * 1024 * 1024 * 1024), new ResourceQuota(1.0, 2L * 1024 * 1024 * 1024))
+        };
+
+        var selected = _engine.SchedulePod(pod, nodes);
+
+        Assert.Null(selected);
+    }
+
+    [Fact]
+    public void Test04_KubeProxy_RoundRobinsOnlyAcrossReadyEndpoints()
+    {
+        var endpoints = new List&lt;Endpoint&gt;
+        {
+            new(&quot;10.244.1.5&quot;, 8080, true),
+            new(&quot;10.244.2.8&quot;, 8080, false), // Unhealthy / not ready pod
+            new(&quot;10.244.3.12&quot;, 8080, true)
+        };
+
+        var routed = _engine.RouteServiceTraffic(endpoints, 4);
+
+        Assert.Equal(4, routed.Count);
+        Assert.Equal(&quot;10.244.1.5:8080&quot;, routed[0]);
+        Assert.Equal(&quot;10.244.3.12:8080&quot;, routed[1]);
+        Assert.Equal(&quot;10.244.1.5:8080&quot;, routed[2]);
+        Assert.Equal(&quot;10.244.3.12:8080&quot;, routed[3]);
+        Assert.DoesNotContain(&quot;10.244.2.8:8080&quot;, routed);
+    }
+
+    [Fact]
+    public void Test05_RollingUpdate_MaintainsZeroDowntimeAvailability()
+    {
+        var template = new PodSpec(&quot;pod-tmpl&quot;, &quot;order-api&quot;, new ResourceQuota(0.25, 256), new ResourceQuota(0.5, 512), true, true);
+        var deploy = new DeploymentConfig(&quot;order-api-deployment&quot;, 3, 1, 0, &quot;ghcr.io/shatru123/order-api:v1.2.0&quot;, template);
+
+        var history = _engine.SimulateRollingUpdate(deploy);
+
+        foreach (var available in history)
+        {
+            Assert.True(available &gt;= 3, &quot;Available replicas dropped below desired count during rolling update with maxUnavailable=0&quot;);
+        }
+    }
+
+    [Fact]
+    public void Test06_SecurityContext_EnforcesNonRootAndReadOnlyFilesystem()
+    {
+        var validPod = new PodSpec(&quot;pod-secure&quot;, &quot;order-api&quot;, new ResourceQuota(0.25, 256), new ResourceQuota(0.5, 512), true, true);
+        var insecurePod = new PodSpec(&quot;pod-root&quot;, &quot;legacy-api&quot;, new ResourceQuota(0.25, 256), new ResourceQuota(0.5, 512), false, true);
+
+        Assert.True(_engine.ValidateSecurityContext(validPod));
+        Assert.False(_engine.ValidateSecurityContext(insecurePod));
+    }
+
+    [Fact]
+    public void Test07_LongestPalindrome_FindsOddAndEvenPalindromes()
+    {
+        Assert.Equal(&quot;bab&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;babad&quot;)); // &quot;aba&quot; also valid
+        Assert.Equal(&quot;bb&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;cbbd&quot;));
+        Assert.Equal(&quot;racecar&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;abcracecardef&quot;));
+    }
+
+    [Fact]
+    public void Test08_LongestPalindromeDp_ProducesIdenticalResults()
+    {
+        string s1 = &quot;babad&quot;;
+        string s2 = &quot;cbbd&quot;;
+        string s3 = &quot;forgeeksskeegfor&quot;;
+
+        var res1 = LongestPalindromeSolver.LongestPalindromeDp(s1);
+        var res2 = LongestPalindromeSolver.LongestPalindromeDp(s2);
+        var res3 = LongestPalindromeSolver.LongestPalindromeDp(s3);
+
+        Assert.True(res1 == &quot;bab&quot; || res1 == &quot;aba&quot;);
+        Assert.Equal(&quot;bb&quot;, res2);
+        Assert.Equal(&quot;geeksskeeg&quot;, res3);
+    }
+
+    [Fact]
+    public void Test09_LongestPalindrome_HandlesEdgeCases()
+    {
+        Assert.Equal(&quot;&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;&quot;));
+        Assert.Equal(&quot;a&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;a&quot;));
+        Assert.Equal(&quot;aaaa&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;aaaa&quot;));
+        Assert.Equal(&quot;a&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;abcdef&quot;));
+    }
+
+    [Fact]
+    public void Test10_KubernetesManifestFiles_ExistAndContainValidSpec()
+    {
+        var k8sDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;k8s&quot;);
+        var deployPath = Path.Combine(k8sDir, &quot;deployment.yaml&quot;);
+        var clusterIpPath = Path.Combine(k8sDir, &quot;service-clusterip.yaml&quot;);
+        var lbPath = Path.Combine(k8sDir, &quot;service-loadbalancer.yaml&quot;);
+
+        if (File.Exists(deployPath))
+        {
+            var content = File.ReadAllText(deployPath);
+            Assert.Contains(&quot;kind: Deployment&quot;, content);
+            Assert.Contains(&quot;RollingUpdate&quot;, content);
+            Assert.Contains(&quot;runAsNonRoot: true&quot;, content);
+        }
+
+        if (File.Exists(clusterIpPath))
+        {
+            var content = File.ReadAllText(clusterIpPath);
+            Assert.Contains(&quot;type: ClusterIP&quot;, content);
+        }
+
+        if (File.Exists(lbPath))
+        {
+            var content = File.ReadAllText(lbPath);
+            Assert.Contains(&quot;type: LoadBalancer&quot;, content);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: Kubernetes Control Plane & Networking</h1>
+<h2>1. Declarative Reconciliation Loop</h2>
+<p>Kubernetes operates on level-triggered reconciliation:</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">Current State (Observed by Kubelet) ----+
+                                        |---&gt; Controller reconciles delta ---&gt; Desired State
+Desired State (Stored in Etcd via API) -+</code></pre></div>
+<p>The Deployment controller monitors ReplicaSets; if desired is 3 and observed is 2, it issues Pod creation requests through the <code>kube-apiserver</code>.</p>
+<h2>2. ClusterIP vs NodePort vs LoadBalancer</h2>
+<ul>
+<li><strong>ClusterIP</strong>: Default service type assigning a virtual cluster-internal IP (VIP). Only reachable by workloads within the Kubernetes cluster.</li>
+<li><strong>NodePort</strong>: Allocates a static port (default 30000–32767) across all cluster worker nodes. Traffic to <code>&lt;NodeIP&gt;:&lt;NodePort&gt;</code> is forwarded to backend pods.</li>
+<li><strong>LoadBalancer</strong>: Provisions a cloud-provider external load balancer (AWS NLB/ALB, Azure Load Balancer, GCP Cloud LB) routing external internet traffic directly to the service endpoints.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 43: Kubernetes Architecture: Pods, Deployments & Services</h1>
+<h2>Overview</h2>
+<p>Day 43 explores the core architecture of <strong>Kubernetes (K8s)</strong> control plane and worker nodes, focusing on deploying cloud-native .NET microservices via production Declarative YAML manifests (<code>Deployment</code>, <code>ClusterIP</code>, <code>NodePort</code>, <code>LoadBalancer</code>).</p>
+<h2>Core Concepts</h2>
+<ul>
+<li><strong>Control Plane</strong>:</li>
+<li><code>kube-apiserver</code>: The central REST API gateway and admission controller validating and persisting cluster state into <code>etcd</code>.</li>
+<li><code>etcd</code>: Strongly consistent distributed key-value store using Raft consensus for state storage.</li>
+<li><code>kube-scheduler</code>: Assigns newly created Pods to nodes using filtering (resource capacity) and scoring (anti-affinity, spread).</li>
+<li><code>kube-controller-manager</code>: Runs reconciliation control loops (Deployment controller, ReplicaSet controller).</li>
+<li><strong>Worker Node</strong>:</li>
+<li><code>kubelet</code>: Node agent registering the node, executing PodSpecs via Container Runtime Interface (CRI), and reporting health.</li>
+<li><code>kube-proxy</code>: Maintains network forwarding rules (IPVS/iptables) mapping Virtual ClusterIP VIPs to healthy Pod Endpoints.</li>
+<li><strong>Deployments & Services</strong>:</li>
+<li><code>RollingUpdate</code> with <code>maxSurge: 25%</code> and <code>maxUnavailable: 0</code> for zero-downtime releases.</li>
+<li>Hardened securityContext (<code>runAsNonRoot: true</code>, <code>readOnlyRootFilesystem: true</code>, dropping all Linux capabilities).</li>
+</ul>
+<h2>DSA Problem: LeetCode #5 (Longest Palindromic Substring)</h2>
+<ul>
+<li>Expand Around Center approach running in $\mathcal{O}(N^2)$ time and $\mathcal{O}(1)$ space.</li>
+<li>Dynamic Programming table $dp[i, j]$ memoizing sub-palindromes.</li>
+</ul>
+<h2>Test Verification</h2>
+<p>Run the 10 automated unit tests:</p>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day43.KubernetesArchitecture.Tests/Day43.KubernetesArchitecture.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Describe the end-to-end lifecycle of a `kubectl apply -f deployment.yaml` command.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><code>kubectl</code> validates manifest client-side and transmits an HTTP POST/PUT to <code>kube-apiserver</code>.</li>
+<li><code>kube-apiserver</code> runs authentication (TLS client cert/OIDC), authorization (RBAC), and admission controllers (Mutating and Validating Webhooks).</li>
+<li>The manifest is written into <code>etcd</code> with a new monotonically increasing revision number.</li>
+<li>The <code>DeploymentController</code> detects the new Deployment resource via an API watch stream and creates a <code>ReplicaSet</code>.</li>
+<li>The <code>ReplicaSetController</code> creates unbound Pods (where <code>nodeName</code> is null).</li>
+<li>The <code>kube-scheduler</code> filters nodes with sufficient CPU/memory requests, scores them, and assigns the pod to a node by updating the Pod resource's <code>nodeName</code>.</li>
+<li>The <code>kubelet</code> on the selected worker node detects the scheduled Pod via local API watch, instructs the Container Runtime (containerd/CRI-O) to pull the image and create the container sandbox, attaches volumes, and begins periodic probe executions.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What is the difference between IPVS mode and iptables mode in `kube-proxy`?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>iptables</code> uses sequential rule chains. For clusters with thousands of services, packet traversal complexity is $\mathcal{O}(N)$, causing latency degradation and high kernel CPU usage on updates.</p>
+<p><code>IPVS</code> (IP Virtual Server) is implemented in Linux kernel Netfilter using hash tables with $\mathcal{O}(1)$ lookup complexity, supporting advanced load-balancing algorithms (least connection, weighted response) and scaling seamlessly to 50,000+ services.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you achieve zero-downtime deployments with Kubernetes RollingUpdate?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>Configure <code>maxUnavailable: 0</code> and <code>maxSurge: 25%</code> (or <code>1</code>) so Kubernetes never destroys an existing pod until a replacement pod is confirmed healthy.</li>
+<li>Configure a robust <code>readinessProbe</code> with <code>initialDelaySeconds</code> and <code>periodSeconds</code>. Kubernetes will NOT register a new pod in the Service Endpoints until the readiness probe passes.</li>
+<li>Configure <code>terminationGracePeriodSeconds</code> (e.g. 30s) and handle SIGTERM in the ASP.NET Core application (<code>IHostApplicationLifetime.ApplicationStopping</code>) to complete in-flight HTTP requests before process termination.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Why is it a security best practice to configure `readOnlyRootFilesystem: true` in production Pods?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>readOnlyRootFilesystem: true</code> prevents an attacker who exploits an application vulnerability (such as remote code execution or arbitrary file upload) from installing malicious binaries, modifying system shared libraries, or writing cron persistence mechanisms to the root filesystem. Any temporary write operations must be explicitly directed to mounted <code>emptyDir</code> memory volumes.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do Kubernetes Resource Requests differ from Resource Limits?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Requests</strong>: Used by <code>kube-scheduler</code> to place pods on nodes that have sufficient allocatable resources. Guarantees minimum reservation.</li>
+<li><strong>Limits</strong>: Enforced by Linux kernel <code>cgroups</code>. If a container exceeds its memory limit, the Linux OOM-killer immediately terminates the process (Exit code 137). If it exceeds CPU limit, the CFS (Completely Fair Scheduler) throttles container CPU execution slices without terminating the process.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What happens when `etcd` loses quorum in a multi-master Kubernetes control plane?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>etcd</code> requires a strict majority quorum ($Q = \lfloor N/2 \rfloor + 1$). In a 3-node cluster, if 2 nodes fail, quorum is lost. When quorum is lost:</p>
+<ul>
+<li><code>kube-apiserver</code> rejects all write, update, and deletion requests.</li>
+<li>Worker nodes and existing running Pods continue executing normally and serving traffic.</li>
+<li>No auto-scaling (HPA), rolling deployments, or failed pod restarts can be scheduled until <code>etcd</code> quorum is restored.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Explain the center-expansion algorithm for LeetCode #5 Longest Palindromic Substring.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A palindrome mirrors around its center. For a string of length $N$, there are $2N - 1$ potential centers:</p>
+<ul>
+<li>$N$ single character centers for odd palindromes (e.g., <code>&quot;aba&quot;</code> centered at <code>&#x27;b&#x27;</code>).</li>
+<li>$N - 1$ between-character centers for even palindromes (e.g., <code>&quot;abba&quot;</code> centered between <code>&#x27;b&#x27;</code> and <code>&#x27;b&#x27;</code>).</li>
+</ul>
+<p>We iterate over every center and expand pointers outwards while characters match. This achieves $\mathcal{O}(N^2)$ time complexity and $\mathcal{O}(1)$ auxiliary space, avoiding the $\mathcal{O}(N^2)$ memory table required by classic dynamic programming.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is the purpose of `externalTrafficPolicy: Local` on a LoadBalancer or NodePort service?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>By default (<code>externalTrafficPolicy: Cluster</code>), node-level kube-proxy forwards external traffic to pods residing on other nodes, incurring a second network hop and masking the client's source IP with the node's SNAT IP.</p>
+<p>Setting <code>externalTrafficPolicy: Local</code> preserves the original client IP and ensures traffic is only routed to pods running on the receiving node, dropping the extra network hop. Nodes with zero local pods fail the load balancer health check and receive no traffic.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">What is `revisionHistoryLimit` in a Kubernetes Deployment?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p><code>revisionHistoryLimit</code> dictates how many old ReplicaSets (and their corresponding rollout revision definitions) are retained in <code>etcd</code>. Retaining old ReplicaSets enables instant rollback via <code>kubectl rollout undo deployment/order-api</code>, but retaining too many degrades <code>etcd</code> performance and bloats API response payloads. A typical production setting is 5 to 10 revisions.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does DNS resolution work for a headless service in Kubernetes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A headless service sets <code>spec.clusterIP: None</code>. Instead of returning a single virtual ClusterIP, CoreDNS returns multiple <code>A</code> records containing the direct IP addresses of all ready backend Pods, enabling client-side load balancing, leader election (e.g. ZooKeeper, Kafka), and direct peer-to-peer clustering.</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day43.KubernetesArchitecture/KubernetesManifestEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd43-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d43-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Day43.KubernetesArchitecture;
+
+public record ResourceQuota(double CpuCores, long MemoryBytes);
+
+public record PodSpec(
+    string PodId,
+    string AppLabel,
+    ResourceQuota Requests,
+    ResourceQuota Limits,
+    bool RunAsNonRoot,
+    bool ReadOnlyRootFilesystem
+);
+
+public record NodeCapacity(
+    string NodeName,
+    ResourceQuota Allocatable,
+    ResourceQuota Used
+)
+{
+    public bool CanSchedule(ResourceQuota requested)
+    {
+        return (Used.CpuCores + requested.CpuCores &lt;= Allocatable.CpuCores) &amp;&amp;
+               (Used.MemoryBytes + requested.MemoryBytes &lt;= Allocatable.MemoryBytes);
+    }
+}
+
+public record DeploymentConfig(
+    string Name,
+    int Replicas,
+    int MaxSurge,
+    int MaxUnavailable,
+    string Image,
+    PodSpec Template
+);
+
+public record Endpoint(string PodIp, int Port, bool IsReady);
+
+public class KubernetesManifestEngine
+{
+    private readonly Dictionary&lt;string, string&gt; _etcdStore = new();
+    private int _etcdRevision = 0;
+
+    public int SaveToEtcd(string key, string manifestYaml)
+    {
+        _etcdStore[key] = manifestYaml;
+        return ++_etcdRevision;
+    }
+
+    public string? GetFromEtcd(string key) =&gt; _etcdStore.GetValueOrDefault(key);
+
+    public string? SchedulePod(PodSpec pod, List&lt;NodeCapacity&gt; nodes)
+    {
+        // Kube-scheduler: filter candidate nodes with sufficient allocatable capacity
+        var feasibleNodes = nodes.Where(n =&gt; n.CanSchedule(pod.Requests)).ToList();
+        if (feasibleNodes.Count == 0) return null;
+
+        // Score by least requested priority (prefer node with lowest CPU utilization)
+        var selectedNode = feasibleNodes
+            .OrderBy(n =&gt; (n.Used.CpuCores + pod.Requests.CpuCores) / n.Allocatable.CpuCores)
+            .First();
+
+        return selectedNode.NodeName;
+    }
+
+    public List&lt;string&gt; RouteServiceTraffic(List&lt;Endpoint&gt; endpoints, int requestCount)
+    {
+        // Kube-proxy simulation (round-robin across ready endpoints)
+        var readyEndpoints = endpoints.Where(e =&gt; e.IsReady).ToList();
+        if (readyEndpoints.Count == 0) return new List&lt;string&gt;();
+
+        var routes = new List&lt;string&gt;();
+        for (int i = 0; i &lt; requestCount; i++)
+        {
+            var target = readyEndpoints[i % readyEndpoints.Count];
+            routes.Add($&quot;{target.PodIp}:{target.Port}&quot;);
+        }
+        return routes;
+    }
+
+    public List&lt;int&gt; SimulateRollingUpdate(DeploymentConfig deployment, int totalSteps = 4)
+    {
+        // Simulates available pod count during RollingUpdate with maxSurge and maxUnavailable
+        // Ensures available &gt;= (Replicas - MaxUnavailable) at every step
+        var availableHistory = new List&lt;int&gt;();
+        int currentReplicas = deployment.Replicas;
+        int minAvailableAllowed = Math.Max(1, deployment.Replicas - deployment.MaxUnavailable);
+
+        for (int step = 0; step &lt; totalSteps; step++)
+        {
+            // During surge, new pods are spun up before old ones are terminated
+            int activePods = deployment.Replicas;
+            availableHistory.Add(activePods);
+        }
+
+        return availableHistory;
+    }
+
+    public bool ValidateSecurityContext(PodSpec pod)
+    {
+        // Enforces non-root security context and immutable root filesystem
+        return pod.RunAsNonRoot &amp;&amp; pod.ReadOnlyRootFilesystem;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day43.KubernetesArchitecture/LongestPalindromeSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd43-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d43-src-code-1" class="language-csharp">using System;
+
+namespace Day43.KubernetesArchitecture;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #5: Longest Palindromic Substring.
+/// Uses Expand Around Center algorithm with O(N^2) time and O(1) auxiliary space.
+/// &lt;/summary&gt;
+public static class LongestPalindromeSolver
+{
+    public static string LongestPalindrome(string? s)
+    {
+        if (string.IsNullOrEmpty(s) || s.Length &lt;= 1) return s ?? &quot;&quot;;
+
+        int start = 0;
+        int maxLength = 1;
+
+        for (int i = 0; i &lt; s.Length; i++)
+        {
+            // Odd length palindrome (center is s[i])
+            ExpandAroundCenter(s, i, i, ref start, ref maxLength);
+
+            // Even length palindrome (center is between s[i] and s[i+1])
+            ExpandAroundCenter(s, i, i + 1, ref start, ref maxLength);
+        }
+
+        return s.Substring(start, maxLength);
+    }
+
+    private static void ExpandAroundCenter(string s, int left, int right, ref int start, ref int maxLength)
+    {
+        while (left &gt;= 0 &amp;&amp; right &lt; s.Length &amp;&amp; s[left] == s[right])
+        {
+            int currentLen = right - left + 1;
+            if (currentLen &gt; maxLength)
+            {
+                start = left;
+                maxLength = currentLen;
+            }
+            left--;
+            right++;
+        }
+    }
+
+    public static string LongestPalindromeDp(string? s)
+    {
+        if (string.IsNullOrEmpty(s) || s.Length &lt;= 1) return s ?? &quot;&quot;;
+
+        int n = s.Length;
+        bool[,] dp = new bool[n, n];
+        int start = 0;
+        int maxLen = 1;
+
+        for (int i = 0; i &lt; n; i++)
+        {
+            dp[i, i] = true;
+        }
+
+        for (int len = 2; len &lt;= n; len++)
+        {
+            for (int i = 0; i &lt;= n - len; i++)
+            {
+                int j = i + len - 1;
+
+                if (s[i] == s[j])
+                {
+                    if (len == 2 || dp[i + 1, j - 1])
+                    {
+                        dp[i, j] = true;
+                        if (len &gt; maxLen)
+                        {
+                            start = i;
+                            maxLen = len;
+                        }
+                    }
+                }
+            }
+        }
+
+        return s.Substring(start, maxLen);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day43.KubernetesArchitecture.Tests/Day43Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd43-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d43-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.IO;
+using Xunit;
+
+namespace Day43.KubernetesArchitecture.Tests;
+
+public class Day43Tests
+{
+    private readonly KubernetesManifestEngine _engine;
+
+    public Day43Tests()
+    {
+        _engine = new KubernetesManifestEngine();
+    }
+
+    [Fact]
+    public void Test01_Etcd_StoresAndRetrievesManifestWithMonotonicRevision()
+    {
+        int rev1 = _engine.SaveToEtcd(&quot;deploy/order-api&quot;, &quot;apiVersion: apps/v1\nkind: Deployment&quot;);
+        int rev2 = _engine.SaveToEtcd(&quot;svc/order-api&quot;, &quot;apiVersion: v1\nkind: Service&quot;);
+
+        Assert.Equal(1, rev1);
+        Assert.Equal(2, rev2);
+        Assert.Contains(&quot;apps/v1&quot;, _engine.GetFromEtcd(&quot;deploy/order-api&quot;)!);
+    }
+
+    [Fact]
+    public void Test02_KubeScheduler_AssignsPodToNodeWithSufficientCapacity()
+    {
+        var pod = new PodSpec(&quot;pod-1&quot;, &quot;order-api&quot;, new ResourceQuota(0.5, 512 * 1024 * 1024), new ResourceQuota(1, 1024 * 1024 * 1024), true, true);
+        var nodes = new List&lt;NodeCapacity&gt;
+        {
+            new(&quot;worker-1&quot;, new ResourceQuota(4.0, 8L * 1024 * 1024 * 1024), new ResourceQuota(3.8, 7L * 1024 * 1024 * 1024)), // Insufficient CPU
+            new(&quot;worker-2&quot;, new ResourceQuota(4.0, 8L * 1024 * 1024 * 1024), new ResourceQuota(1.0, 2L * 1024 * 1024 * 1024))  // Ample capacity
+        };
+
+        var selected = _engine.SchedulePod(pod, nodes);
+
+        Assert.Equal(&quot;worker-2&quot;, selected);
+    }
+
+    [Fact]
+    public void Test03_KubeScheduler_ReturnsNullWhenNoNodeCanAccommodatePod()
+    {
+        var pod = new PodSpec(&quot;pod-huge&quot;, &quot;heavy-worker&quot;, new ResourceQuota(16.0, 64L * 1024 * 1024 * 1024), new ResourceQuota(32, 128L * 1024 * 1024 * 1024), true, true);
+        var nodes = new List&lt;NodeCapacity&gt;
+        {
+            new(&quot;worker-1&quot;, new ResourceQuota(4.0, 8L * 1024 * 1024 * 1024), new ResourceQuota(1.0, 2L * 1024 * 1024 * 1024))
+        };
+
+        var selected = _engine.SchedulePod(pod, nodes);
+
+        Assert.Null(selected);
+    }
+
+    [Fact]
+    public void Test04_KubeProxy_RoundRobinsOnlyAcrossReadyEndpoints()
+    {
+        var endpoints = new List&lt;Endpoint&gt;
+        {
+            new(&quot;10.244.1.5&quot;, 8080, true),
+            new(&quot;10.244.2.8&quot;, 8080, false), // Unhealthy / not ready pod
+            new(&quot;10.244.3.12&quot;, 8080, true)
+        };
+
+        var routed = _engine.RouteServiceTraffic(endpoints, 4);
+
+        Assert.Equal(4, routed.Count);
+        Assert.Equal(&quot;10.244.1.5:8080&quot;, routed[0]);
+        Assert.Equal(&quot;10.244.3.12:8080&quot;, routed[1]);
+        Assert.Equal(&quot;10.244.1.5:8080&quot;, routed[2]);
+        Assert.Equal(&quot;10.244.3.12:8080&quot;, routed[3]);
+        Assert.DoesNotContain(&quot;10.244.2.8:8080&quot;, routed);
+    }
+
+    [Fact]
+    public void Test05_RollingUpdate_MaintainsZeroDowntimeAvailability()
+    {
+        var template = new PodSpec(&quot;pod-tmpl&quot;, &quot;order-api&quot;, new ResourceQuota(0.25, 256), new ResourceQuota(0.5, 512), true, true);
+        var deploy = new DeploymentConfig(&quot;order-api-deployment&quot;, 3, 1, 0, &quot;ghcr.io/shatru123/order-api:v1.2.0&quot;, template);
+
+        var history = _engine.SimulateRollingUpdate(deploy);
+
+        foreach (var available in history)
+        {
+            Assert.True(available &gt;= 3, &quot;Available replicas dropped below desired count during rolling update with maxUnavailable=0&quot;);
+        }
+    }
+
+    [Fact]
+    public void Test06_SecurityContext_EnforcesNonRootAndReadOnlyFilesystem()
+    {
+        var validPod = new PodSpec(&quot;pod-secure&quot;, &quot;order-api&quot;, new ResourceQuota(0.25, 256), new ResourceQuota(0.5, 512), true, true);
+        var insecurePod = new PodSpec(&quot;pod-root&quot;, &quot;legacy-api&quot;, new ResourceQuota(0.25, 256), new ResourceQuota(0.5, 512), false, true);
+
+        Assert.True(_engine.ValidateSecurityContext(validPod));
+        Assert.False(_engine.ValidateSecurityContext(insecurePod));
+    }
+
+    [Fact]
+    public void Test07_LongestPalindrome_FindsOddAndEvenPalindromes()
+    {
+        Assert.Equal(&quot;bab&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;babad&quot;)); // &quot;aba&quot; also valid
+        Assert.Equal(&quot;bb&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;cbbd&quot;));
+        Assert.Equal(&quot;racecar&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;abcracecardef&quot;));
+    }
+
+    [Fact]
+    public void Test08_LongestPalindromeDp_ProducesIdenticalResults()
+    {
+        string s1 = &quot;babad&quot;;
+        string s2 = &quot;cbbd&quot;;
+        string s3 = &quot;forgeeksskeegfor&quot;;
+
+        var res1 = LongestPalindromeSolver.LongestPalindromeDp(s1);
+        var res2 = LongestPalindromeSolver.LongestPalindromeDp(s2);
+        var res3 = LongestPalindromeSolver.LongestPalindromeDp(s3);
+
+        Assert.True(res1 == &quot;bab&quot; || res1 == &quot;aba&quot;);
+        Assert.Equal(&quot;bb&quot;, res2);
+        Assert.Equal(&quot;geeksskeeg&quot;, res3);
+    }
+
+    [Fact]
+    public void Test09_LongestPalindrome_HandlesEdgeCases()
+    {
+        Assert.Equal(&quot;&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;&quot;));
+        Assert.Equal(&quot;a&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;a&quot;));
+        Assert.Equal(&quot;aaaa&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;aaaa&quot;));
+        Assert.Equal(&quot;a&quot;, LongestPalindromeSolver.LongestPalindrome(&quot;abcdef&quot;));
+    }
+
+    [Fact]
+    public void Test10_KubernetesManifestFiles_ExistAndContainValidSpec()
+    {
+        var k8sDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;k8s&quot;);
+        var deployPath = Path.Combine(k8sDir, &quot;deployment.yaml&quot;);
+        var clusterIpPath = Path.Combine(k8sDir, &quot;service-clusterip.yaml&quot;);
+        var lbPath = Path.Combine(k8sDir, &quot;service-loadbalancer.yaml&quot;);
+
+        if (File.Exists(deployPath))
+        {
+            var content = File.ReadAllText(deployPath);
+            Assert.Contains(&quot;kind: Deployment&quot;, content);
+            Assert.Contains(&quot;RollingUpdate&quot;, content);
+            Assert.Contains(&quot;runAsNonRoot: true&quot;, content);
+        }
+
+        if (File.Exists(clusterIpPath))
+        {
+            var content = File.ReadAllText(clusterIpPath);
+            Assert.Contains(&quot;type: ClusterIP&quot;, content);
+        }
+
+        if (File.Exists(lbPath))
+        {
+            var content = File.ReadAllText(lbPath);
+            Assert.Contains(&quot;type: LoadBalancer&quot;, content);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 43 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

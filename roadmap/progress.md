@@ -55,7 +55,12 @@
 | Day 39 | CAP Theorem & PACELC in Practice (LC #79 & #17) | ✅ Completed |
 | Day 40 | Event Sourcing & CQRS Foundations (LC #131) | ✅ Completed |
 | Day 41 | Docker Deep Dive for .NET Services (LC #70 & #746) | ✅ Completed |
+| Day 42 | Docker Compose for Microservice Stacks (LC #198 & #213) | ✅ Completed |
+| Day 43 | Kubernetes Architecture: Pods, Deployments & Services (LC #5) | ✅ Completed |
+| Day 44 | Kubernetes ConfigMaps, Secrets & Ingress (LC #647 & #91) | ✅ Completed |
+| Day 45 | Kubernetes Probes & Auto-Scaling (HPA) (LC #322 & #152) | ✅ Completed |
+| Day 46 | CI/CD with GitHub Actions for .NET (LC #139) | ✅ Completed |
 
 ## Next
 
-Day 42 — Kubernetes for .NET Developers: Deployments, Services, Ingress & Secrets.
+Day 47 — Infrastructure as Code (Terraform) for Azure / AWS Cloud Resources.

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-api-config
+  namespace: production
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  Logging__LogLevel__Default: "Information"
+  Features__EnableOrderStreaming: "true"
+  Features__MaxOrderBatchSize: "500"

@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 44: Kubernetes ConfigMaps, Secrets &amp; Ingress | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 44</span>
+        <span class="badge badge-category">Kubernetes Configuration</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day43-Kubernetes-Architecture-Pods-Deployments/index.html" class="nav-btn">← Day 43</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+<option value="../Day42-Docker-Compose-Microservices/index.html">Day 42: Docker Compose for Microservic...</option>
+<option value="../Day43-Kubernetes-Architecture-Pods-Deployments/index.html">Day 43: Kubernetes Architecture: Pods,...</option>
+<option value="../Day44-Kubernetes-ConfigMaps-Secrets-Ingress/index.html">Day 44: Kubernetes ConfigMaps, Secrets...</option>
+<option value="../Day45-Kubernetes-Probes-HPA/index.html">Day 45: Kubernetes Probes & Auto-Scali...</option>
+<option value="../Day46-CICD-GitHub-Actions-DotNet/index.html">Day 46: CI/CD with GitHub Actions for ...</option>
+
+        </select>
+        <a href="../Day45-Kubernetes-Probes-HPA/index.html" class="nav-btn">Day 45 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 44: Kubernetes ConfigMaps, Secrets &amp; Ingress</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d44GradConfig" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#0891b2" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d44GradIngress" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#d97706" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d44GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. ConfigMaps & Secrets -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d44GradConfig)" stroke="#06b6d4" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#22d3ee" font-size="14" font-weight="bold">ConfigMaps &amp; Secrets</text>
+
+          <rect x="35" y="65" width="250" height="60" rx="5" fill="#0f172a" stroke="#0891b2"/>
+          <text x="45" y="85" fill="#22d3ee" font-size="11" font-weight="bold">ConfigMap (Non-sensitive)</text>
+          <text x="45" y="102" fill="#cbd5e1" font-size="9">appsettings.json, log levels, toggles</text>
+          <text x="45" y="116" fill="#94a3b8" font-size="8">Inject via env var or volume mount</text>
+
+          <rect x="35" y="135" width="250" height="65" rx="5" fill="#0f172a" stroke="#0891b2"/>
+          <text x="45" y="155" fill="#f43f5e" font-size="11" font-weight="bold">Secret (Opaque / Sealed)</text>
+          <text x="45" y="172" fill="#cbd5e1" font-size="9">Base64 connection strings, JWT keys</text>
+          <text x="45" y="187" fill="#94a3b8" font-size="8">CSI Driver / Vault / SealedSecrets</text>
+
+          <rect x="35" y="210" width="250" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Atomic Symlink Swap (..data)</text>
+          <text x="45" y="248" fill="#cbd5e1" font-size="9">1. /etc/config/..data symlinked to dir</text>
+          <text x="45" y="265" fill="#cbd5e1" font-size="9">2. Kubelet updates timestamped folder</text>
+          <text x="45" y="282" fill="#34d399" font-size="9">3. Atomic rename() prevents partial reads</text>
+          <text x="45" y="300" fill="#38bdf8" font-size="9">.NET AddKeyPerFile hot-reloads</text>
+          <text x="45" y="318" fill="#94a3b8" font-size="8">Zero container restarts needed</text>
+
+          <!-- 2. Ingress Controller (NGINX) -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d44GradIngress)" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#fbbf24" font-size="14" font-weight="bold">Ingress Controller (Layer 7)</text>
+
+          <rect x="335" y="65" width="250" height="70" rx="5" fill="#0f172a" stroke="#d97706"/>
+          <text x="345" y="85" fill="#fbbf24" font-size="11" font-weight="bold">TLS Termination &amp; SNI</text>
+          <text x="345" y="103" fill="#cbd5e1" font-size="9">Cert secret: tls-production-cert</text>
+          <text x="345" y="118" fill="#94a3b8" font-size="8">Host: api.shatru-learning.internal</text>
+
+          <rect x="335" y="145" width="250" height="95" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="165" fill="#38bdf8" font-size="11" font-weight="bold">Path-Based Routing</text>
+          <text x="345" y="183" fill="#34d399" font-size="9">/orders &#8594; order-service:80</text>
+          <text x="345" y="198" fill="#34d399" font-size="9">/inventory &#8594; inventory-service:80</text>
+          <text x="345" y="215" fill="#f87171" font-size="9">rewrite-target: /$2 regex strip</text>
+
+          <rect x="335" y="250" width="250" height="95" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="270" fill="#c084fc" font-size="11" font-weight="bold">Reverse Proxy Forwarding</text>
+          <text x="345" y="288" fill="#cbd5e1" font-size="9">Direct pod VIP dispatch via Endpoints</text>
+          <text x="345" y="303" fill="#94a3b8" font-size="8">Bypasses kube-proxy double NAT hop</text>
+          <text x="345" y="320" fill="#34d399" font-size="9">&#10003; SSL redirect &amp; HSTS enforced</text>
+
+          <!-- 3. DSA LC #647 & #91 -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d44GradDsa)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">DSA: Substrings &amp; Decoding</text>
+
+          <rect x="635" y="65" width="230" height="120" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">Palindromic Substrings (#647)</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">Count all valid palindromic spans</text>
+          <text x="645" y="120" fill="#38bdf8" font-size="10">Center expansion outward</text>
+          <text x="645" y="138" fill="#cbd5e1" font-size="9">Time: O(N^2), Space: O(1)</text>
+          <text x="645" y="155" fill="#94a3b8" font-size="8">"aaa" &#8594; 6 substrings</text>
+
+          <rect x="635" y="195" width="230" height="150" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="215" fill="#fbbf24" font-size="11" font-weight="bold">Decode Ways (LC #91)</text>
+          <text x="645" y="233" fill="#cbd5e1" font-size="9">1-digit valid: 1 &lt;= d &lt;= 9 &#8594; dp[i-1]</text>
+          <text x="645" y="250" fill="#cbd5e1" font-size="9">2-digits valid: 10 &lt;= dd &lt;= 26 &#8594; dp[i-2]</text>
+          <text x="645" y="269" fill="#f87171" font-size="10" font-weight="bold">Zero handling: "0" &#8594; 0 ways</text>
+          <text x="645" y="287" fill="#34d399" font-size="9">Space: O(1) rolling variables</text>
+          <text x="645" y="303" fill="#cbd5e1" font-size="8">"226" &#8594; "BZ", "VF", "BBF" (3)</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Deep Dive Notes: ConfigMaps, Secrets & Ingress Controllers</h1>
+<h2>1. Atomic Symlink Volume Swapping</h2>
+<p>When a ConfigMap is mounted as a volume in a Pod:</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">/etc/config/appsettings.json -&gt; /etc/config/..data/appsettings.json
+/etc/config/..data -&gt; /etc/config/..2026_10_23_14_00_00.123456789 (symlink)</code></pre></div>
+<p>When <code>kubectl apply</code> updates the ConfigMap, the kubelet creates a new timestamped directory and updates the <code>..data</code> symlink atomically using the <code>rename()</code> system call. This prevents race conditions where an application reads half-written config files.</p>
+<h2>2. Ingress Controller Architecture</h2>
+<p>Ingress resources are merely metadata declarations. The <strong>Ingress Controller</strong> is an application (running an NGINX, Envoy, or Traefik pod) watching the <code>kube-apiserver</code> for Ingress events. Upon changes, it dynamically regenerates the reverse proxy configuration (<code>nginx.conf</code>) and issues a reload without dropping active TCP connections.</p>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 44: Kubernetes ConfigMaps, Secrets & Ingress</h1>
+<h2>Overview</h2>
+<p>Day 44 covers decoupled application configuration and external routing architecture in Kubernetes using <strong>ConfigMaps</strong>, <strong>Secrets</strong>, and <strong>Ingress Controllers</strong> (NGINX / Traefik).</p>
+<h2>Architecture Highlights</h2>
+<ul>
+<li><strong>ConfigMaps</strong>: Inject non-sensitive environment variables, JSON configs, and feature toggles into Pods without rebuilding container images.</li>
+<li><strong>Secrets</strong>: Base64 encoded (or SealedSecrets / Vault CSI) sensitive database connection strings, JWT signing keys, and TLS certificates.</li>
+<li><strong>Hot-Reloading with <code>..data</code> Symlink</strong>: Kubernetes mounts ConfigMaps/Secrets as volume files using atomic directory symlink swapping, enabling .NET <code>IOptionsSnapshot&lt;T&gt;</code> reloading without container restarts.</li>
+<li><strong>Ingress Controller (NGINX)</strong>: Layer 7 HTTP/HTTPS reverse proxy handling TLS termination, virtual host dispatching, and path-based routing (<code>/orders</code> -> <code>order-service:80</code>, <code>/inventory</code> -> <code>inventory-service:80</code>).</li>
+</ul>
+<h2>DSA Problems</h2>
+<ul>
+<li><strong>LeetCode #647 (Palindromic Substrings)</strong>: Center expansion counting odd and even palindromes in $\mathcal{O}(N^2)$ time and $\mathcal{O}(1)$ space.</li>
+<li><strong>LeetCode #91 (Decode Ways)</strong>: 1D Dynamic Programming tracking single-digit ($1-9$) and two-digit ($10-26$) transitions with zero validation in $\mathcal{O}(N)$ time and $\mathcal{O}(1)$ space.</li>
+</ul>
+<h2>Test Verification</h2>
+<p>Run the 10 automated unit tests:</p>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day44.KubernetesConfigIngress.Tests/Day44.KubernetesConfigIngress.Tests.csproj</code></pre></div>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do ConfigMaps mounted as environment variables differ from ConfigMaps mounted as volume files?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Environment Variables</strong>: Injected at container startup. If the ConfigMap is modified in Kubernetes, the container's environment variables do <strong>not</strong> update until the Pod is restarted (<code>kubectl rollout restart</code>).</li>
+<li><strong>Volume Mounts</strong>: Mounted into the filesystem via atomic symlink swap (<code>..data</code>). Kubelet synchronizes changes automatically (typically within 60–90 seconds). Applications using file watchers (such as .NET <code>reloadOnChange: true</code> in <code>ConfigurationBuilder</code>) can hot-reload changes without container restarts.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why are standard Kubernetes Secrets not secure by default, and how should they be protected in production?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Standard Kubernetes Secrets are merely Base64-encoded strings stored in plaintext within <code>etcd</code>. Anyone with read RBAC permissions or access to <code>etcd</code> disk backups can view them.</p>
+<p>In production:</p>
+<ol>
+<li>Enable <code>etcd</code> Encryption at Rest via <code>KMS</code> (AWS KMS, Azure Key Vault, HashiCorp Vault).</li>
+<li>Use <strong>HashiCorp Vault Secrets Store CSI Driver</strong> or <strong>External Secrets Operator</strong> to synchronize secrets directly into Pod memory without persisting plaintext in <code>etcd</code>.</li>
+<li>Use <strong>Bitnami Sealed Secrets</strong> to safely commit asymmetrically encrypted secrets to Git.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How does NGINX Ingress handle TLS termination and certificate management?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>The TLS certificate and private key are stored in a Kubernetes Secret of type <code>kubernetes.io/tls</code> with <code>tls.crt</code> and <code>tls.key</code>.</li>
+<li>The Ingress resource references this secret in <code>spec.tls[*].secretName</code>.</li>
+<li>The Ingress Controller loads the certificate, terminates the incoming client TLS handshake, decrypts HTTP requests, and forwards plaintext HTTP traffic (or re-encrypted internal mTLS) to backend ClusterIP pods.</li>
+<li>Tools like <code>cert-manager</code> automate ACME (Let's Encrypt) challenge solving and certificate renewal.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Explain the dynamic programming state transition for LeetCode #91 Decode Ways.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $dp[i]$ be the number of ways to decode string prefix of length $i$:</p>
+<ul>
+<li><strong>Single digit</strong> ($1 \le s[i-1] \le 9$): $dp[i] += dp[i-1]$.</li>
+<li><strong>Two digits</strong> ($10 \le s[i-2..i-1] \le 26$): $dp[i] += dp[i-2]$.</li>
+<li><strong>Edge cases</strong>: If $s[0] == '0'$, return 0 immediately. If an invalid two-digit sequence occurs (e.g. <code>&quot;30&quot;</code> or <code>&quot;00&quot;</code>), no transitions apply and result becomes 0.</li>
+</ul>
+<p>Space complexity is optimized to $\mathcal{O}(1)$ by retaining only <code>prev1</code> ($dp[i-1]$) and <code>prev2</code> ($dp[i-2]$).</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is the purpose of the `nginx.ingress.kubernetes.io/rewrite-target` annotation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Microservices frequently expect routes at root (<code>/checkout</code>), while the external API Gateway or Ingress exposes them namespaced under a prefix (<code>/orders/checkout</code>).</p>
+<p>The <code>rewrite-target: /$2</code> annotation together with path regex <code>/orders(/|$)(.*)</code> strips the <code>/orders</code> prefix before proxying the request to the backend service.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you configure ASP.NET Core to read mounted Kubernetes ConfigMaps and Secrets?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Use <code>AddKeyPerFile</code>:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">builder.Configuration
+    .AddKeyPerFile(directoryPath: &quot;/etc/config&quot;, optional: true, reloadOnChange: true)
+    .AddKeyPerFile(directoryPath: &quot;/etc/secrets&quot;, optional: true, reloadOnChange: false);</code></pre></div>
+<p>Each file inside the directory becomes a configuration key whose value is the file's content.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is the difference between Ingress and Gateway API in modern Kubernetes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Ingress</strong>: Mature Layer 7 routing specification (<code>networking.k8s.io/v1</code>), but limited in advanced routing (canary releases, header-based routing, weighted splitting) which required vendor-specific annotations.</li>
+<li><strong>Gateway API</strong>: The modern successor (<code>gateway.networking.k8s.io</code>), providing role-oriented interfaces (<code>GatewayClass</code>, <code>Gateway</code>, <code>HTTPRoute</code>) with first-class support for multi-tenancy, cross-namespace routing, canary traffic splitting, and Layer 4/7 protocols.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What happens if an Ingress resource specifies a host that does not match the client request&#x27;s HTTP Host header or SNI?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>The Ingress Controller either routes the request to the <code>default-backend</code> (which typically returns HTTP <code>404 Not Found</code>) or rejects the connection if strict host routing is configured.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How can you protect sensitive configuration values from appearing in container crash dumps or logs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>Mount secrets as files in memory (<code>tmpfs</code> volume) instead of environment variables, since environment variables are printed by <code>/proc/[pid]/environ</code> and logging tools.</li>
+<li>Configure structured logging redaction in .NET using Microsoft's <code>Microsoft.Extensions.Compliance.Redaction</code> to mask PII and credentials.</li>
+<li>Configure <code>automountServiceAccountToken: false</code> on Pods that do not require Kubernetes API access.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does LeetCode #647 Palindromic Substrings differ from LeetCode #5 Longest Palindromic Substring?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>While LC #5 seeks the maximum length palindrome, LC #647 counts every valid palindromic substring across the entire string. Both can be solved in $\mathcal{O}(N^2)$ time using the center-expansion technique, where every step outward in expansion increments the global palindrome counter by 1.</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day44.KubernetesConfigIngress/KubernetesConfigAndIngressEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd44-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d44-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace Day44.KubernetesConfigIngress;
+
+public record IngressRoute(
+    string Host,
+    string PathPrefix,
+    string TargetService,
+    int TargetPort,
+    bool RewriteEnabled
+);
+
+public class KubernetesConfigAndIngressEngine
+{
+    private readonly Dictionary&lt;string, string&gt; _configurationStore = new();
+    private readonly List&lt;IngressRoute&gt; _routes = new();
+    private bool _tlsTerminated = false;
+
+    public void LoadConfigMap(Dictionary&lt;string, string&gt; data)
+    {
+        foreach (var (k, v) in data)
+        {
+            _configurationStore[k] = v;
+        }
+    }
+
+    public void LoadSecret(Dictionary&lt;string, string&gt; base64Data)
+    {
+        foreach (var (k, base64Val) in base64Data)
+        {
+            var decodedBytes = Convert.FromBase64String(base64Val);
+            _configurationStore[k] = Encoding.UTF8.GetString(decodedBytes);
+        }
+    }
+
+    public string? GetConfigValue(string key) =&gt; _configurationStore.GetValueOrDefault(key);
+
+    public void RegisterIngressRoute(IngressRoute route)
+    {
+        _routes.Add(route);
+    }
+
+    public (bool Matched, string? TargetService, string? ForwardedPath) RouteRequest(string host, string requestPath, bool isHttps)
+    {
+        foreach (var r in _routes)
+        {
+            if (string.Equals(r.Host, host, StringComparison.OrdinalIgnoreCase))
+            {
+                if (requestPath.StartsWith(r.PathPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    string forwarded = requestPath;
+                    if (r.RewriteEnabled)
+                    {
+                        forwarded = requestPath.Substring(r.PathPrefix.Length);
+                        if (!forwarded.StartsWith(&quot;/&quot;)) forwarded = &quot;/&quot; + forwarded;
+                    }
+                    return (true, $&quot;{r.TargetService}:{r.TargetPort}&quot;, forwarded);
+                }
+            }
+        }
+        return (false, null, null);
+    }
+
+    public bool SimulateHotReload(string symlinkDataDir, Dictionary&lt;string, string&gt; updatedData)
+    {
+        // Simulates Kubelet updating the ..data symlink atomic swap
+        if (!symlinkDataDir.EndsWith(&quot;..data&quot;)) return false;
+
+        foreach (var (k, v) in updatedData)
+        {
+            _configurationStore[k] = v;
+        }
+        return true;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day44.KubernetesConfigIngress/PalindromicSubstringsAndDecodeWaysSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd44-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d44-src-code-1" class="language-csharp">using System;
+
+namespace Day44.KubernetesConfigIngress;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #647 (Palindromic Substrings) and LeetCode #91 (Decode Ways).
+/// &lt;/summary&gt;
+public static class PalindromicSubstringsAndDecodeWaysSolver
+{
+    /// &lt;summary&gt;
+    /// LC #647: Count total palindromic substrings.
+    /// Time Complexity: O(N^2), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int CountSubstrings(string? s)
+    {
+        if (string.IsNullOrEmpty(s)) return 0;
+
+        int totalCount = 0;
+        for (int i = 0; i &lt; s.Length; i++)
+        {
+            // Odd length palindromes centered at i
+            totalCount += ExpandAndCount(s, i, i);
+
+            // Even length palindromes centered between i and i+1
+            totalCount += ExpandAndCount(s, i, i + 1);
+        }
+
+        return totalCount;
+    }
+
+    private static int ExpandAndCount(string s, int left, int right)
+    {
+        int count = 0;
+        while (left &gt;= 0 &amp;&amp; right &lt; s.Length &amp;&amp; s[left] == s[right])
+        {
+            count++;
+            left--;
+            right++;
+        }
+        return count;
+    }
+
+    /// &lt;summary&gt;
+    /// LC #91: Decode Ways (&#x27;1&#x27;-&#x27;26&#x27; mapping).
+    /// Time Complexity: O(N), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int NumDecodings(string? s)
+    {
+        if (string.IsNullOrEmpty(s) || s[0] == &#x27;0&#x27;) return 0;
+
+        int n = s.Length;
+        int prev2 = 1; // dp[i-2]
+        int prev1 = 1; // dp[i-1]
+
+        for (int i = 1; i &lt; n; i++)
+        {
+            int current = 0;
+            int singleDigit = s[i] - &#x27;0&#x27;;
+            int twoDigits = (s[i - 1] - &#x27;0&#x27;) * 10 + singleDigit;
+
+            // Single digit valid transition
+            if (singleDigit &gt;= 1 &amp;&amp; singleDigit &lt;= 9)
+            {
+                current += prev1;
+            }
+
+            // Two digits valid transition
+            if (twoDigits &gt;= 10 &amp;&amp; twoDigits &lt;= 26)
+            {
+                current += prev2;
+            }
+
+            prev2 = prev1;
+            prev1 = current;
+        }
+
+        return prev1;
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day44.KubernetesConfigIngress.Tests/Day44Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd44-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d44-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.IO;
+using Xunit;
+
+namespace Day44.KubernetesConfigIngress.Tests;
+
+public class Day44Tests
+{
+    private readonly KubernetesConfigAndIngressEngine _engine;
+
+    public Day44Tests()
+    {
+        _engine = new KubernetesConfigAndIngressEngine();
+    }
+
+    [Fact]
+    public void Test01_ConfigMap_LoadsApplicationSettings()
+    {
+        var configData = new Dictionary&lt;string, string&gt;
+        {
+            [&quot;Logging:LogLevel:Default&quot;] = &quot;Information&quot;,
+            [&quot;Features:EnableOrderStreaming&quot;] = &quot;true&quot;,
+            [&quot;Features:MaxOrderBatchSize&quot;] = &quot;500&quot;
+        };
+
+        _engine.LoadConfigMap(configData);
+
+        Assert.Equal(&quot;Information&quot;, _engine.GetConfigValue(&quot;Logging:LogLevel:Default&quot;));
+        Assert.Equal(&quot;true&quot;, _engine.GetConfigValue(&quot;Features:EnableOrderStreaming&quot;));
+        Assert.Equal(&quot;500&quot;, _engine.GetConfigValue(&quot;Features:MaxOrderBatchSize&quot;));
+    }
+
+    [Fact]
+    public void Test02_Secret_DecodesBase64CredentialsCorrectly()
+    {
+        // &quot;Host=postgres;Database=orders&quot; in base64 is &quot;SG9zdD1wb3N0Z3JlcztEYXRhYmFzZT1vcmRlcnM=&quot;
+        var secrets = new Dictionary&lt;string, string&gt;
+        {
+            [&quot;DatabaseConnection&quot;] = &quot;SG9zdD1wb3N0Z3JlcztEYXRhYmFzZT1vcmRlcnM=&quot;,
+            [&quot;JwtKey&quot;] = &quot;c3VwZXJzZWNyZXRqd3RrZXkyMDI2&quot; // &quot;supersecretjwtkey2026&quot;
+        };
+
+        _engine.LoadSecret(secrets);
+
+        Assert.Equal(&quot;Host=postgres;Database=orders&quot;, _engine.GetConfigValue(&quot;DatabaseConnection&quot;));
+        Assert.Equal(&quot;supersecretjwtkey2026&quot;, _engine.GetConfigValue(&quot;JwtKey&quot;));
+    }
+
+    [Fact]
+    public void Test03_Ingress_RoutesPathToTargetService()
+    {
+        _engine.RegisterIngressRoute(new IngressRoute(&quot;api.company.com&quot;, &quot;/orders&quot;, &quot;order-service&quot;, 80, true));
+        _engine.RegisterIngressRoute(new IngressRoute(&quot;api.company.com&quot;, &quot;/inventory&quot;, &quot;inventory-service&quot;, 80, true));
+
+        var (matched1, target1, path1) = _engine.RouteRequest(&quot;api.company.com&quot;, &quot;/orders/v1/checkout&quot;, true);
+        var (matched2, target2, path2) = _engine.RouteRequest(&quot;api.company.com&quot;, &quot;/inventory/items/sku-100&quot;, true);
+
+        Assert.True(matched1);
+        Assert.Equal(&quot;order-service:80&quot;, target1);
+        Assert.Equal(&quot;/v1/checkout&quot;, path1);
+
+        Assert.True(matched2);
+        Assert.Equal(&quot;inventory-service:80&quot;, target2);
+        Assert.Equal(&quot;/items/sku-100&quot;, path2);
+    }
+
+    [Fact]
+    public void Test04_Ingress_RejectsUnmatchedHostOrPath()
+    {
+        _engine.RegisterIngressRoute(new IngressRoute(&quot;api.company.com&quot;, &quot;/orders&quot;, &quot;order-service&quot;, 80, false));
+
+        var (matchedHost, _, _) = _engine.RouteRequest(&quot;rogue.attacker.com&quot;, &quot;/orders&quot;, true);
+        var (matchedPath, _, _) = _engine.RouteRequest(&quot;api.company.com&quot;, &quot;/unknown-route&quot;, true);
+
+        Assert.False(matchedHost);
+        Assert.False(matchedPath);
+    }
+
+    [Fact]
+    public void Test05_HotReload_UpdatesConfigStoreOnAtomicSymlinkSwap()
+    {
+        var initial = new Dictionary&lt;string, string&gt; { [&quot;LogLevel&quot;] = &quot;Information&quot; };
+        _engine.LoadConfigMap(initial);
+
+        var updated = new Dictionary&lt;string, string&gt; { [&quot;LogLevel&quot;] = &quot;Debug&quot; };
+        bool swapped = _engine.SimulateHotReload(&quot;/etc/config/..data&quot;, updated);
+
+        Assert.True(swapped);
+        Assert.Equal(&quot;Debug&quot;, _engine.GetConfigValue(&quot;LogLevel&quot;));
+    }
+
+    [Fact]
+    public void Test06_CountPalindromicSubstrings_CalculatesTotalCount()
+    {
+        Assert.Equal(3, PalindromicSubstringsAndDecodeWaysSolver.CountSubstrings(&quot;abc&quot;)); // &quot;a&quot;, &quot;b&quot;, &quot;c&quot;
+        Assert.Equal(6, PalindromicSubstringsAndDecodeWaysSolver.CountSubstrings(&quot;aaa&quot;)); // &quot;a&quot;, &quot;a&quot;, &quot;a&quot;, &quot;aa&quot;, &quot;aa&quot;, &quot;aaa&quot;
+        Assert.Equal(0, PalindromicSubstringsAndDecodeWaysSolver.CountSubstrings(&quot;&quot;));
+    }
+
+    [Fact]
+    public void Test07_DecodeWays_StandardAndValidSequences()
+    {
+        Assert.Equal(2, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;12&quot;)); // &quot;AB&quot; (1, 2) or &quot;L&quot; (12)
+        Assert.Equal(3, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;226&quot;)); // &quot;BZ&quot;, &quot;VF&quot;, &quot;BBF&quot;
+        Assert.Equal(1, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;10&quot;)); // &quot;J&quot; (10)
+    }
+
+    [Fact]
+    public void Test08_DecodeWays_InvalidLeadingZeroesAndUnreachableCodes()
+    {
+        Assert.Equal(0, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;0&quot;));
+        Assert.Equal(0, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;06&quot;));
+        Assert.Equal(0, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;30&quot;)); // 30 is invalid because &#x27;Z&#x27; is 26
+    }
+
+    [Fact]
+    public void Test09_DecodeWays_ConsecutiveValidTransitions()
+    {
+        Assert.Equal(1, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;27&quot;)); // only &quot;BG&quot; (2, 7) because 27 &gt; 26
+        Assert.Equal(2, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;26&quot;)); // &quot;BF&quot; or &quot;Z&quot;
+    }
+
+    [Fact]
+    public void Test10_ManifestFiles_ValidateK8sConfigurations()
+    {
+        var k8sDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;k8s&quot;);
+        var cmPath = Path.Combine(k8sDir, &quot;configmap.yaml&quot;);
+        var secPath = Path.Combine(k8sDir, &quot;secret.yaml&quot;);
+        var ingPath = Path.Combine(k8sDir, &quot;ingress.yaml&quot;);
+
+        if (File.Exists(cmPath))
+        {
+            var cm = File.ReadAllText(cmPath);
+            Assert.Contains(&quot;kind: ConfigMap&quot;, cm);
+            Assert.Contains(&quot;Features__EnableOrderStreaming&quot;, cm);
+        }
+
+        if (File.Exists(secPath))
+        {
+            var sec = File.ReadAllText(secPath);
+            Assert.Contains(&quot;kind: Secret&quot;, sec);
+            Assert.Contains(&quot;type: Opaque&quot;, sec);
+        }
+
+        if (File.Exists(ingPath))
+        {
+            var ing = File.ReadAllText(ingPath);
+            Assert.Contains(&quot;kind: Ingress&quot;, ing);
+            Assert.Contains(&quot;nginx.ingress.kubernetes.io/rewrite-target&quot;, ing);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Deep Dive Notes: ConfigMaps, Secrets & Ingress Controllers</h1>
+<h2>1. Atomic Symlink Volume Swapping</h2>
+<p>When a ConfigMap is mounted as a volume in a Pod:</p>
+<div class="code-block-container"><pre class="language-text"><code class="language-text">/etc/config/appsettings.json -&gt; /etc/config/..data/appsettings.json
+/etc/config/..data -&gt; /etc/config/..2026_10_23_14_00_00.123456789 (symlink)</code></pre></div>
+<p>When <code>kubectl apply</code> updates the ConfigMap, the kubelet creates a new timestamped directory and updates the <code>..data</code> symlink atomically using the <code>rename()</code> system call. This prevents race conditions where an application reads half-written config files.</p>
+<h2>2. Ingress Controller Architecture</h2>
+<p>Ingress resources are merely metadata declarations. The <strong>Ingress Controller</strong> is an application (running an NGINX, Envoy, or Traefik pod) watching the <code>kube-apiserver</code> for Ingress events. Upon changes, it dynamically regenerates the reverse proxy configuration (<code>nginx.conf</code>) and issues a reload without dropping active TCP connections.</p>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 44: Kubernetes ConfigMaps, Secrets & Ingress</h1>
+<h2>Overview</h2>
+<p>Day 44 covers decoupled application configuration and external routing architecture in Kubernetes using <strong>ConfigMaps</strong>, <strong>Secrets</strong>, and <strong>Ingress Controllers</strong> (NGINX / Traefik).</p>
+<h2>Architecture Highlights</h2>
+<ul>
+<li><strong>ConfigMaps</strong>: Inject non-sensitive environment variables, JSON configs, and feature toggles into Pods without rebuilding container images.</li>
+<li><strong>Secrets</strong>: Base64 encoded (or SealedSecrets / Vault CSI) sensitive database connection strings, JWT signing keys, and TLS certificates.</li>
+<li><strong>Hot-Reloading with <code>..data</code> Symlink</strong>: Kubernetes mounts ConfigMaps/Secrets as volume files using atomic directory symlink swapping, enabling .NET <code>IOptionsSnapshot&lt;T&gt;</code> reloading without container restarts.</li>
+<li><strong>Ingress Controller (NGINX)</strong>: Layer 7 HTTP/HTTPS reverse proxy handling TLS termination, virtual host dispatching, and path-based routing (<code>/orders</code> -> <code>order-service:80</code>, <code>/inventory</code> -> <code>inventory-service:80</code>).</li>
+</ul>
+<h2>DSA Problems</h2>
+<ul>
+<li><strong>LeetCode #647 (Palindromic Substrings)</strong>: Center expansion counting odd and even palindromes in $\mathcal{O}(N^2)$ time and $\mathcal{O}(1)$ space.</li>
+<li><strong>LeetCode #91 (Decode Ways)</strong>: 1D Dynamic Programming tracking single-digit ($1-9$) and two-digit ($10-26$) transitions with zero validation in $\mathcal{O}(N)$ time and $\mathcal{O}(1)$ space.</li>
+</ul>
+<h2>Test Verification</h2>
+<p>Run the 10 automated unit tests:</p>
+<div class="code-block-container"><pre class="language-bash"><code class="language-bash">dotnet test tests/Day44.KubernetesConfigIngress.Tests/Day44.KubernetesConfigIngress.Tests.csproj</code></pre></div>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do ConfigMaps mounted as environment variables differ from ConfigMaps mounted as volume files?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Environment Variables</strong>: Injected at container startup. If the ConfigMap is modified in Kubernetes, the container's environment variables do <strong>not</strong> update until the Pod is restarted (<code>kubectl rollout restart</code>).</li>
+<li><strong>Volume Mounts</strong>: Mounted into the filesystem via atomic symlink swap (<code>..data</code>). Kubelet synchronizes changes automatically (typically within 60–90 seconds). Applications using file watchers (such as .NET <code>reloadOnChange: true</code> in <code>ConfigurationBuilder</code>) can hot-reload changes without container restarts.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Why are standard Kubernetes Secrets not secure by default, and how should they be protected in production?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Standard Kubernetes Secrets are merely Base64-encoded strings stored in plaintext within <code>etcd</code>. Anyone with read RBAC permissions or access to <code>etcd</code> disk backups can view them.</p>
+<p>In production:</p>
+<ol>
+<li>Enable <code>etcd</code> Encryption at Rest via <code>KMS</code> (AWS KMS, Azure Key Vault, HashiCorp Vault).</li>
+<li>Use <strong>HashiCorp Vault Secrets Store CSI Driver</strong> or <strong>External Secrets Operator</strong> to synchronize secrets directly into Pod memory without persisting plaintext in <code>etcd</code>.</li>
+<li>Use <strong>Bitnami Sealed Secrets</strong> to safely commit asymmetrically encrypted secrets to Git.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How does NGINX Ingress handle TLS termination and certificate management?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>The TLS certificate and private key are stored in a Kubernetes Secret of type <code>kubernetes.io/tls</code> with <code>tls.crt</code> and <code>tls.key</code>.</li>
+<li>The Ingress resource references this secret in <code>spec.tls[*].secretName</code>.</li>
+<li>The Ingress Controller loads the certificate, terminates the incoming client TLS handshake, decrypts HTTP requests, and forwards plaintext HTTP traffic (or re-encrypted internal mTLS) to backend ClusterIP pods.</li>
+<li>Tools like <code>cert-manager</code> automate ACME (Let's Encrypt) challenge solving and certificate renewal.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Explain the dynamic programming state transition for LeetCode #91 Decode Ways.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $dp[i]$ be the number of ways to decode string prefix of length $i$:</p>
+<ul>
+<li><strong>Single digit</strong> ($1 \le s[i-1] \le 9$): $dp[i] += dp[i-1]$.</li>
+<li><strong>Two digits</strong> ($10 \le s[i-2..i-1] \le 26$): $dp[i] += dp[i-2]$.</li>
+<li><strong>Edge cases</strong>: If $s[0] == '0'$, return 0 immediately. If an invalid two-digit sequence occurs (e.g. <code>&quot;30&quot;</code> or <code>&quot;00&quot;</code>), no transitions apply and result becomes 0.</li>
+</ul>
+<p>Space complexity is optimized to $\mathcal{O}(1)$ by retaining only <code>prev1</code> ($dp[i-1]$) and <code>prev2</code> ($dp[i-2]$).</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What is the purpose of the `nginx.ingress.kubernetes.io/rewrite-target` annotation?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Microservices frequently expect routes at root (<code>/checkout</code>), while the external API Gateway or Ingress exposes them namespaced under a prefix (<code>/orders/checkout</code>).</p>
+<p>The <code>rewrite-target: /$2</code> annotation together with path regex <code>/orders(/|$)(.*)</code> strips the <code>/orders</code> prefix before proxying the request to the backend service.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you configure ASP.NET Core to read mounted Kubernetes ConfigMaps and Secrets?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Use <code>AddKeyPerFile</code>:</p>
+<div class="code-block-container"><pre class="language-csharp"><code class="language-csharp">builder.Configuration
+    .AddKeyPerFile(directoryPath: &quot;/etc/config&quot;, optional: true, reloadOnChange: true)
+    .AddKeyPerFile(directoryPath: &quot;/etc/secrets&quot;, optional: true, reloadOnChange: false);</code></pre></div>
+<p>Each file inside the directory becomes a configuration key whose value is the file's content.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">What is the difference between Ingress and Gateway API in modern Kubernetes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Ingress</strong>: Mature Layer 7 routing specification (<code>networking.k8s.io/v1</code>), but limited in advanced routing (canary releases, header-based routing, weighted splitting) which required vendor-specific annotations.</li>
+<li><strong>Gateway API</strong>: The modern successor (<code>gateway.networking.k8s.io</code>), providing role-oriented interfaces (<code>GatewayClass</code>, <code>Gateway</code>, <code>HTTPRoute</code>) with first-class support for multi-tenancy, cross-namespace routing, canary traffic splitting, and Layer 4/7 protocols.</li>
+</ul>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What happens if an Ingress resource specifies a host that does not match the client request&#x27;s HTTP Host header or SNI?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>The Ingress Controller either routes the request to the <code>default-backend</code> (which typically returns HTTP <code>404 Not Found</code>) or rejects the connection if strict host routing is configured.</p>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">How can you protect sensitive configuration values from appearing in container crash dumps or logs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>Mount secrets as files in memory (<code>tmpfs</code> volume) instead of environment variables, since environment variables are printed by <code>/proc/[pid]/environ</code> and logging tools.</li>
+<li>Configure structured logging redaction in .NET using Microsoft's <code>Microsoft.Extensions.Compliance.Redaction</code> to mask PII and credentials.</li>
+<li>Configure <code>automountServiceAccountToken: false</code> on Pods that do not require Kubernetes API access.</li>
+</ol>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How does LeetCode #647 Palindromic Substrings differ from LeetCode #5 Longest Palindromic Substring?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>While LC #5 seeks the maximum length palindrome, LC #647 counts every valid palindromic substring across the entire string. Both can be solved in $\mathcal{O}(N^2)$ time using the center-expansion technique, where every step outward in expansion increments the global palindrome counter by 1.</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day44.KubernetesConfigIngress/KubernetesConfigAndIngressEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd44-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d44-src-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace Day44.KubernetesConfigIngress;
+
+public record IngressRoute(
+    string Host,
+    string PathPrefix,
+    string TargetService,
+    int TargetPort,
+    bool RewriteEnabled
+);
+
+public class KubernetesConfigAndIngressEngine
+{
+    private readonly Dictionary&lt;string, string&gt; _configurationStore = new();
+    private readonly List&lt;IngressRoute&gt; _routes = new();
+    private bool _tlsTerminated = false;
+
+    public void LoadConfigMap(Dictionary&lt;string, string&gt; data)
+    {
+        foreach (var (k, v) in data)
+        {
+            _configurationStore[k] = v;
+        }
+    }
+
+    public void LoadSecret(Dictionary&lt;string, string&gt; base64Data)
+    {
+        foreach (var (k, base64Val) in base64Data)
+        {
+            var decodedBytes = Convert.FromBase64String(base64Val);
+            _configurationStore[k] = Encoding.UTF8.GetString(decodedBytes);
+        }
+    }
+
+    public string? GetConfigValue(string key) =&gt; _configurationStore.GetValueOrDefault(key);
+
+    public void RegisterIngressRoute(IngressRoute route)
+    {
+        _routes.Add(route);
+    }
+
+    public (bool Matched, string? TargetService, string? ForwardedPath) RouteRequest(string host, string requestPath, bool isHttps)
+    {
+        foreach (var r in _routes)
+        {
+            if (string.Equals(r.Host, host, StringComparison.OrdinalIgnoreCase))
+            {
+                if (requestPath.StartsWith(r.PathPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    string forwarded = requestPath;
+                    if (r.RewriteEnabled)
+                    {
+                        forwarded = requestPath.Substring(r.PathPrefix.Length);
+                        if (!forwarded.StartsWith(&quot;/&quot;)) forwarded = &quot;/&quot; + forwarded;
+                    }
+                    return (true, $&quot;{r.TargetService}:{r.TargetPort}&quot;, forwarded);
+                }
+            }
+        }
+        return (false, null, null);
+    }
+
+    public bool SimulateHotReload(string symlinkDataDir, Dictionary&lt;string, string&gt; updatedData)
+    {
+        // Simulates Kubelet updating the ..data symlink atomic swap
+        if (!symlinkDataDir.EndsWith(&quot;..data&quot;)) return false;
+
+        foreach (var (k, v) in updatedData)
+        {
+            _configurationStore[k] = v;
+        }
+        return true;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day44.KubernetesConfigIngress/PalindromicSubstringsAndDecodeWaysSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd44-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d44-src-code-1" class="language-csharp">using System;
+
+namespace Day44.KubernetesConfigIngress;
+
+/// &lt;summary&gt;
+/// Solves LeetCode #647 (Palindromic Substrings) and LeetCode #91 (Decode Ways).
+/// &lt;/summary&gt;
+public static class PalindromicSubstringsAndDecodeWaysSolver
+{
+    /// &lt;summary&gt;
+    /// LC #647: Count total palindromic substrings.
+    /// Time Complexity: O(N^2), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int CountSubstrings(string? s)
+    {
+        if (string.IsNullOrEmpty(s)) return 0;
+
+        int totalCount = 0;
+        for (int i = 0; i &lt; s.Length; i++)
+        {
+            // Odd length palindromes centered at i
+            totalCount += ExpandAndCount(s, i, i);
+
+            // Even length palindromes centered between i and i+1
+            totalCount += ExpandAndCount(s, i, i + 1);
+        }
+
+        return totalCount;
+    }
+
+    private static int ExpandAndCount(string s, int left, int right)
+    {
+        int count = 0;
+        while (left &gt;= 0 &amp;&amp; right &lt; s.Length &amp;&amp; s[left] == s[right])
+        {
+            count++;
+            left--;
+            right++;
+        }
+        return count;
+    }
+
+    /// &lt;summary&gt;
+    /// LC #91: Decode Ways (&#x27;1&#x27;-&#x27;26&#x27; mapping).
+    /// Time Complexity: O(N), Space Complexity: O(1).
+    /// &lt;/summary&gt;
+    public static int NumDecodings(string? s)
+    {
+        if (string.IsNullOrEmpty(s) || s[0] == &#x27;0&#x27;) return 0;
+
+        int n = s.Length;
+        int prev2 = 1; // dp[i-2]
+        int prev1 = 1; // dp[i-1]
+
+        for (int i = 1; i &lt; n; i++)
+        {
+            int current = 0;
+            int singleDigit = s[i] - &#x27;0&#x27;;
+            int twoDigits = (s[i - 1] - &#x27;0&#x27;) * 10 + singleDigit;
+
+            // Single digit valid transition
+            if (singleDigit &gt;= 1 &amp;&amp; singleDigit &lt;= 9)
+            {
+                current += prev1;
+            }
+
+            // Two digits valid transition
+            if (twoDigits &gt;= 10 &amp;&amp; twoDigits &lt;= 26)
+            {
+                current += prev2;
+            }
+
+            prev2 = prev1;
+            prev1 = current;
+        }
+
+        return prev1;
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day44.KubernetesConfigIngress.Tests/Day44Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd44-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d44-tests-code-0" class="language-csharp">using System;
+using System.Collections.Generic;
+using System.IO;
+using Xunit;
+
+namespace Day44.KubernetesConfigIngress.Tests;
+
+public class Day44Tests
+{
+    private readonly KubernetesConfigAndIngressEngine _engine;
+
+    public Day44Tests()
+    {
+        _engine = new KubernetesConfigAndIngressEngine();
+    }
+
+    [Fact]
+    public void Test01_ConfigMap_LoadsApplicationSettings()
+    {
+        var configData = new Dictionary&lt;string, string&gt;
+        {
+            [&quot;Logging:LogLevel:Default&quot;] = &quot;Information&quot;,
+            [&quot;Features:EnableOrderStreaming&quot;] = &quot;true&quot;,
+            [&quot;Features:MaxOrderBatchSize&quot;] = &quot;500&quot;
+        };
+
+        _engine.LoadConfigMap(configData);
+
+        Assert.Equal(&quot;Information&quot;, _engine.GetConfigValue(&quot;Logging:LogLevel:Default&quot;));
+        Assert.Equal(&quot;true&quot;, _engine.GetConfigValue(&quot;Features:EnableOrderStreaming&quot;));
+        Assert.Equal(&quot;500&quot;, _engine.GetConfigValue(&quot;Features:MaxOrderBatchSize&quot;));
+    }
+
+    [Fact]
+    public void Test02_Secret_DecodesBase64CredentialsCorrectly()
+    {
+        // &quot;Host=postgres;Database=orders&quot; in base64 is &quot;SG9zdD1wb3N0Z3JlcztEYXRhYmFzZT1vcmRlcnM=&quot;
+        var secrets = new Dictionary&lt;string, string&gt;
+        {
+            [&quot;DatabaseConnection&quot;] = &quot;SG9zdD1wb3N0Z3JlcztEYXRhYmFzZT1vcmRlcnM=&quot;,
+            [&quot;JwtKey&quot;] = &quot;c3VwZXJzZWNyZXRqd3RrZXkyMDI2&quot; // &quot;supersecretjwtkey2026&quot;
+        };
+
+        _engine.LoadSecret(secrets);
+
+        Assert.Equal(&quot;Host=postgres;Database=orders&quot;, _engine.GetConfigValue(&quot;DatabaseConnection&quot;));
+        Assert.Equal(&quot;supersecretjwtkey2026&quot;, _engine.GetConfigValue(&quot;JwtKey&quot;));
+    }
+
+    [Fact]
+    public void Test03_Ingress_RoutesPathToTargetService()
+    {
+        _engine.RegisterIngressRoute(new IngressRoute(&quot;api.company.com&quot;, &quot;/orders&quot;, &quot;order-service&quot;, 80, true));
+        _engine.RegisterIngressRoute(new IngressRoute(&quot;api.company.com&quot;, &quot;/inventory&quot;, &quot;inventory-service&quot;, 80, true));
+
+        var (matched1, target1, path1) = _engine.RouteRequest(&quot;api.company.com&quot;, &quot;/orders/v1/checkout&quot;, true);
+        var (matched2, target2, path2) = _engine.RouteRequest(&quot;api.company.com&quot;, &quot;/inventory/items/sku-100&quot;, true);
+
+        Assert.True(matched1);
+        Assert.Equal(&quot;order-service:80&quot;, target1);
+        Assert.Equal(&quot;/v1/checkout&quot;, path1);
+
+        Assert.True(matched2);
+        Assert.Equal(&quot;inventory-service:80&quot;, target2);
+        Assert.Equal(&quot;/items/sku-100&quot;, path2);
+    }
+
+    [Fact]
+    public void Test04_Ingress_RejectsUnmatchedHostOrPath()
+    {
+        _engine.RegisterIngressRoute(new IngressRoute(&quot;api.company.com&quot;, &quot;/orders&quot;, &quot;order-service&quot;, 80, false));
+
+        var (matchedHost, _, _) = _engine.RouteRequest(&quot;rogue.attacker.com&quot;, &quot;/orders&quot;, true);
+        var (matchedPath, _, _) = _engine.RouteRequest(&quot;api.company.com&quot;, &quot;/unknown-route&quot;, true);
+
+        Assert.False(matchedHost);
+        Assert.False(matchedPath);
+    }
+
+    [Fact]
+    public void Test05_HotReload_UpdatesConfigStoreOnAtomicSymlinkSwap()
+    {
+        var initial = new Dictionary&lt;string, string&gt; { [&quot;LogLevel&quot;] = &quot;Information&quot; };
+        _engine.LoadConfigMap(initial);
+
+        var updated = new Dictionary&lt;string, string&gt; { [&quot;LogLevel&quot;] = &quot;Debug&quot; };
+        bool swapped = _engine.SimulateHotReload(&quot;/etc/config/..data&quot;, updated);
+
+        Assert.True(swapped);
+        Assert.Equal(&quot;Debug&quot;, _engine.GetConfigValue(&quot;LogLevel&quot;));
+    }
+
+    [Fact]
+    public void Test06_CountPalindromicSubstrings_CalculatesTotalCount()
+    {
+        Assert.Equal(3, PalindromicSubstringsAndDecodeWaysSolver.CountSubstrings(&quot;abc&quot;)); // &quot;a&quot;, &quot;b&quot;, &quot;c&quot;
+        Assert.Equal(6, PalindromicSubstringsAndDecodeWaysSolver.CountSubstrings(&quot;aaa&quot;)); // &quot;a&quot;, &quot;a&quot;, &quot;a&quot;, &quot;aa&quot;, &quot;aa&quot;, &quot;aaa&quot;
+        Assert.Equal(0, PalindromicSubstringsAndDecodeWaysSolver.CountSubstrings(&quot;&quot;));
+    }
+
+    [Fact]
+    public void Test07_DecodeWays_StandardAndValidSequences()
+    {
+        Assert.Equal(2, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;12&quot;)); // &quot;AB&quot; (1, 2) or &quot;L&quot; (12)
+        Assert.Equal(3, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;226&quot;)); // &quot;BZ&quot;, &quot;VF&quot;, &quot;BBF&quot;
+        Assert.Equal(1, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;10&quot;)); // &quot;J&quot; (10)
+    }
+
+    [Fact]
+    public void Test08_DecodeWays_InvalidLeadingZeroesAndUnreachableCodes()
+    {
+        Assert.Equal(0, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;0&quot;));
+        Assert.Equal(0, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;06&quot;));
+        Assert.Equal(0, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;30&quot;)); // 30 is invalid because &#x27;Z&#x27; is 26
+    }
+
+    [Fact]
+    public void Test09_DecodeWays_ConsecutiveValidTransitions()
+    {
+        Assert.Equal(1, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;27&quot;)); // only &quot;BG&quot; (2, 7) because 27 &gt; 26
+        Assert.Equal(2, PalindromicSubstringsAndDecodeWaysSolver.NumDecodings(&quot;26&quot;)); // &quot;BF&quot; or &quot;Z&quot;
+    }
+
+    [Fact]
+    public void Test10_ManifestFiles_ValidateK8sConfigurations()
+    {
+        var k8sDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;..&quot;, &quot;k8s&quot;);
+        var cmPath = Path.Combine(k8sDir, &quot;configmap.yaml&quot;);
+        var secPath = Path.Combine(k8sDir, &quot;secret.yaml&quot;);
+        var ingPath = Path.Combine(k8sDir, &quot;ingress.yaml&quot;);
+
+        if (File.Exists(cmPath))
+        {
+            var cm = File.ReadAllText(cmPath);
+            Assert.Contains(&quot;kind: ConfigMap&quot;, cm);
+            Assert.Contains(&quot;Features__EnableOrderStreaming&quot;, cm);
+        }
+
+        if (File.Exists(secPath))
+        {
+            var sec = File.ReadAllText(secPath);
+            Assert.Contains(&quot;kind: Secret&quot;, sec);
+            Assert.Contains(&quot;type: Opaque&quot;, sec);
+        }
+
+        if (File.Exists(ingPath))
+        {
+            var ing = File.ReadAllText(ingPath);
+            Assert.Contains(&quot;kind: Ingress&quot;, ing);
+            Assert.Contains(&quot;nginx.ingress.kubernetes.io/rewrite-target&quot;, ing);
+        }
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 44 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

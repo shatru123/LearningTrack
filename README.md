@@ -1,8 +1,8 @@
 # 100-Day .NET + AI Engineering Track
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
-[![Status](https://img.shields.io/badge/Roadmap-Days%201--41%20Completed-brightgreen.svg)](#completed-curriculum-days-141)
-[![Tests](https://img.shields.io/badge/Tests-445%20Passed-brightgreen.svg)](#running-builds-and-tests)
+[![Status](https://img.shields.io/badge/Roadmap-Days%201--46%20Completed-brightgreen.svg)](#completed-curriculum-days-146)
+[![Tests](https://img.shields.io/badge/Tests-495%20Passed-brightgreen.svg)](#running-builds-and-tests)
 
 Practical engineering implementations, performance benchmarks, systems architecture labs, and Data Structures & Algorithms (DSA) exercises across the 100-Day .NET + AI Engineering journey.
 
@@ -17,7 +17,7 @@ Practical engineering implementations, performance benchmarks, systems architect
 
 ## Status
 
-**Days 1–41: Completed** (Phase 1 [Days 1–25] concluded; Phase 2 [Days 26–41] in progress)
+**Days 1–46: Completed** (Phase 1 [Days 1–25] concluded; Phase 2 [Days 26–46] in progress)
 
 Detailed status table: [roadmap/progress.md](roadmap/progress.md)  
 Roadmap overview: [roadmap/100-day-roadmap.md](roadmap/100-day-roadmap.md)
@@ -80,6 +80,11 @@ Each day includes complete practical implementations, xUnit test suites, compreh
 | **Day 39** | CAP Theorem & PACELC in Practice | CAP proof (Gilbert & Lynch), PACELC matrix, tunable quorum simulator ($R+W>N$), read repair, Last-Write-Wins (LWW) conflict resolution, DSA (LeetCode #79 Word Search & #17 Letter Combinations) | [Day39-CAP-PACELC-DistributedSystems](Day39-CAP-PACELC-DistributedSystems/) • [README](Day39-CAP-PACELC-DistributedSystems/README.md) • [Notes](Day39-CAP-PACELC-DistributedSystems/notes.md) • [Interview Qs](Day39-CAP-PACELC-DistributedSystems/interview-questions.md) |
 | **Day 40** | Event Sourcing & CQRS Foundations | Append-only Event Store, Aggregate Root (`BankAccountAggregate`), `ExpectedVersion` optimistic concurrency, snapshotting, materialized CQRS read views, DSA (LeetCode #131 Palindrome Partitioning) | [Day40-EventSourcing-CQRS](Day40-EventSourcing-CQRS/) • [README](Day40-EventSourcing-CQRS/README.md) • [Notes](Day40-EventSourcing-CQRS/notes.md) • [Interview Qs](Day40-EventSourcing-CQRS/interview-questions.md) |
 | **Day 41** | Docker Deep Dive for .NET Services | Multi-stage Dockerfile, layer caching optimization, Ubuntu Chiseled non-root (`USER app`), cgroups v1/v2 memory limit tuning, `DOTNET_GCHeapHardLimitPercent=75`, DSA (LeetCode #70 & #746 Climbing Stairs) | [Day41-Docker-DotNet-Cgroups](Day41-Docker-DotNet-Cgroups/) • [README](Day41-Docker-DotNet-Cgroups/README.md) • [Notes](Day41-Docker-DotNet-Cgroups/notes.md) • [Interview Qs](Day41-Docker-DotNet-Cgroups/interview-questions.md) |
+| **Day 42** | Docker Compose for Microservice Stacks | Multi-container Compose topology (API + Postgres + Redis + RabbitMQ + Jaeger), bridge network, healthcheck dependencies (`service_healthy`), named volumes, DSA (LeetCode #198 & #213 House Robber I & II) | [Day42-Docker-Compose-Microservices](Day42-Docker-Compose-Microservices/) • [README](Day42-Docker-Compose-Microservices/README.md) • [Notes](Day42-Docker-Compose-Microservices/notes.md) • [Interview Qs](Day42-Docker-Compose-Microservices/interview-questions.md) |
+| **Day 43** | Kubernetes Architecture: Pods, Deployments & Services | Control plane architecture (apiserver, etcd, scheduler, kubelet, kube-proxy), RollingUpdate zero-downtime, hardened securityContext, Service routing (ClusterIP/LoadBalancer), DSA (LeetCode #5 Longest Palindromic Substring) | [Day43-Kubernetes-Architecture-Pods-Deployments](Day43-Kubernetes-Architecture-Pods-Deployments/) • [README](Day43-Kubernetes-Architecture-Pods-Deployments/README.md) • [Notes](Day43-Kubernetes-Architecture-Pods-Deployments/notes.md) • [Interview Qs](Day43-Kubernetes-Architecture-Pods-Deployments/interview-questions.md) |
+| **Day 44** | Kubernetes ConfigMaps, Secrets & Ingress | ConfigMap & Secret decoupling, atomic `..data` symlink volume hot-reloading (`AddKeyPerFile`), NGINX Ingress controller TLS termination & path routing, DSA (LeetCode #647 Palindromic Substrings & #91 Decode Ways) | [Day44-Kubernetes-ConfigMaps-Secrets-Ingress](Day44-Kubernetes-ConfigMaps-Secrets-Ingress/) • [README](Day44-Kubernetes-ConfigMaps-Secrets-Ingress/README.md) • [Notes](Day44-Kubernetes-ConfigMaps-Secrets-Ingress/notes.md) • [Interview Qs](Day44-Kubernetes-ConfigMaps-Secrets-Ingress/interview-questions.md) |
+| **Day 45** | Kubernetes Probes & Auto-Scaling (HPA) | Startup (`/health/startup`), Liveness (`/health/live`), and Readiness (`/health/ready`) probes lifecycle, HPA control loop math, 10% tolerance band & 300s scale-down stabilization, DSA (LeetCode #322 Coin Change & #152 Max Product Subarray) | [Day45-Kubernetes-Probes-HPA](Day45-Kubernetes-Probes-HPA/) • [README](Day45-Kubernetes-Probes-HPA/README.md) • [Notes](Day45-Kubernetes-Probes-HPA/notes.md) • [Interview Qs](Day45-Kubernetes-Probes-HPA/interview-questions.md) |
+| **Day 46** | CI/CD with GitHub Actions for .NET | Production GitHub Actions CI/CD DAG, Roslyn linting, code coverage, Trivy vulnerability CVE security gate, multi-arch Docker Buildx to GHCR, Conventional Commits SemVer, DSA (LeetCode #139 Word Break) | [Day46-CICD-GitHub-Actions-DotNet](Day46-CICD-GitHub-Actions-DotNet/) • [README](Day46-CICD-GitHub-Actions-DotNet/README.md) • [Notes](Day46-CICD-GitHub-Actions-DotNet/notes.md) • [Interview Qs](Day46-CICD-GitHub-Actions-DotNet/interview-questions.md) |
 
 ---
 
@@ -93,7 +98,7 @@ dotnet build
 dotnet test LearningTrack.sln
 ```
 
-All 445 automated unit and integration tests validate the implementations across Days 1–41.
+All 495 automated unit and integration tests validate the implementations across Days 1–46.
 
 
 

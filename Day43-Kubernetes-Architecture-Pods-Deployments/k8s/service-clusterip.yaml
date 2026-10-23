@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-api-internal
+  namespace: production
+  labels:
+    app: order-api
+spec:
+  type: ClusterIP
+  selector:
+    app: order-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP

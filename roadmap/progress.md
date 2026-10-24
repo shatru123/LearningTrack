@@ -59,6 +59,7 @@
 | Day 43 | Kubernetes Architecture: Pods, Deployments & Services (LC #5) | ✅ Completed |
 | Day 44 | Kubernetes ConfigMaps, Secrets & Ingress (LC #647 & #91) | ✅ Completed |
 | Day 45 | Kubernetes Probes & Auto-Scaling (HPA) (LC #322 & #152) | ✅ Completed |
+| Day 46 | CI/CD with GitHub Actions for .NET (LC #139) | ✅ Completed |
 | Day 47 | Infrastructure as Code with Terraform (LC #300) | ✅ Completed |
 | Day 48 | Cloud Architecture Patterns: AWS/Azure (LC #416) | ✅ Completed |
 | Day 49 | System Design: Distributed Job Scheduler (LC #42 Hard) | ✅ Completed |

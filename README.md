@@ -3,6 +3,7 @@
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
 [![Status](https://img.shields.io/badge/Roadmap-Days%201--51%20Completed-brightgreen.svg)](#completed-curriculum-days-151)
 [![Tests](https://img.shields.io/badge/Tests-545%20Passed-brightgreen.svg)](#running-builds-and-tests)
+[![Live Knowledge Hub](https://img.shields.io/badge/Live_Preview-Interactive_Knowledge_Hub-blue.svg)](https://htmlpreview.github.io/?https://raw.githubusercontent.com/shatru123/LearningTrack/main/index.html)
 
 Practical engineering implementations, performance benchmarks, systems architecture labs, and Data Structures & Algorithms (DSA) exercises across the 100-Day .NET + AI Engineering journey.
 
@@ -28,12 +29,12 @@ Roadmap overview: [roadmap/100-day-roadmap.md](roadmap/100-day-roadmap.md)
 
 Read complete daily guides, deep architectural notes, interview questions, and copy C# code snippets directly from your phone or browser:
 
-- **Instant Live Preview**: [Open Knowledge Hub via HTMLPreview](https://htmlpreview.github.io/?https://github.com/shatru123/LearningTrack/blob/main/index.html)
+- **Live Knowledge Hub (HTMLPreview)**: [https://htmlpreview.github.io/?https://raw.githubusercontent.com/shatru123/LearningTrack/main/index.html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/shatru123/LearningTrack/main/index.html)
 - **GitHub Pages Portal** *(once enabled)*: [https://shatru123.github.io/LearningTrack/](https://shatru123.github.io/LearningTrack/)
 
 ---
 
-## Completed Curriculum (Days 1–41)
+## Completed Curriculum (Days 1–51)
 
 Each day includes complete practical implementations, xUnit test suites, comprehensive engineering notes, and practical scenarios.
 

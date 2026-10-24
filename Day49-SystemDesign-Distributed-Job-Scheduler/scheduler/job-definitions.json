@@ -1,0 +1,31 @@
+{
+  "schedulerName": "EnterpriseDistributedScheduler",
+  "heartbeatIntervalSeconds": 5,
+  "leaderLeaseDurationSeconds": 15,
+  "jobs": [
+    {
+      "jobId": "nightly-settlement-job",
+      "jobType": "RecurringCron",
+      "cronExpression": "0 2 * * *",
+      "maxRetries": 3,
+      "misfirePolicy": "FireNow",
+      "timeoutSeconds": 3600
+    },
+    {
+      "jobId": "order-payment-reconciliation",
+      "jobType": "RecurringCron",
+      "cronExpression": "*/15 * * * *",
+      "maxRetries": 5,
+      "misfirePolicy": "RescheduleNext",
+      "timeoutSeconds": 300
+    },
+    {
+      "jobId": "email-digest-batch",
+      "jobType": "DelayedOneOff",
+      "delayMinutes": 30,
+      "maxRetries": 2,
+      "misfirePolicy": "FireNow",
+      "timeoutSeconds": 600
+    }
+  ]
+}

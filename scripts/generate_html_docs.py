@@ -51,6 +51,11 @@ DAYS_INFO = [
     {"num": 44, "dir": "Day44-Kubernetes-ConfigMaps-Secrets-Ingress", "title": "Kubernetes ConfigMaps, Secrets & Ingress", "category": "Kubernetes Configuration"},
     {"num": 45, "dir": "Day45-Kubernetes-Probes-HPA", "title": "Kubernetes Probes & Auto-Scaling (HPA)", "category": "Kubernetes Reliability"},
     {"num": 46, "dir": "Day46-CICD-GitHub-Actions-DotNet", "title": "CI/CD with GitHub Actions for .NET", "category": "CI/CD & DevOps"},
+    {"num": 47, "dir": "Day47-Terraform-IaC-Cloud", "title": "Infrastructure as Code with Terraform", "category": "Terraform & Cloud"},
+    {"num": 48, "dir": "Day48-Cloud-Architecture-Patterns", "title": "Cloud Architecture Patterns (AWS/Azure)", "category": "Cloud Architecture"},
+    {"num": 49, "dir": "Day49-SystemDesign-Distributed-Job-Scheduler", "title": "System Design: Distributed Job Scheduler", "category": "System Design & DSA"},
+    {"num": 50, "dir": "Day50-Phase2-Distributed-Architecture-Benchmark", "title": "Phase 2 Review & Distributed Architecture Benchmark", "category": "Milestone Review"},
+    {"num": 51, "dir": "Day51-AI-LLM-Architecture-Foundations", "title": "AI & LLM Architecture Foundations", "category": "AI/LLM & DSA"},
 ]
 
 from diagram_helpers import get_day_svg
@@ -818,12 +823,12 @@ INDEX_HUB_TEMPLATE = """<!DOCTYPE html>
   <div class="container">
     <header>
       <h1>100-Day .NET + AI Engineering Track</h1>
-      <p class="lead">Interactive Knowledge Hub containing all 46 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
+      <p class="lead">Interactive Knowledge Hub containing all 51 daily architectural guides, deep notes, senior interview questions &amp; answers, C# implementations, unit tests, and 3D architectural diagrams.</p>
       <div class="stats-bar">
-        <div class="stat-pill">Completed: <span>46 / 100 Days</span></div>
-        <div class="stat-pill">Deep Notes: <span>46 Architectural Guides</span></div>
-        <div class="stat-pill">Interview Q&amp;A: <span>460 Senior Scenarios &amp; Answers</span></div>
-        <div class="stat-pill">Test Suite: <span>495 / 495 Passed (100%)</span></div>
+        <div class="stat-pill">Completed: <span>51 / 100 Days</span></div>
+        <div class="stat-pill">Deep Notes: <span>51 Architectural Guides</span></div>
+        <div class="stat-pill">Interview Q&amp;A: <span>510 Senior Scenarios &amp; Answers</span></div>
+        <div class="stat-pill">Test Suite: <span>545 / 545 Passed (100%)</span></div>
         <div class="stat-pill">Platform: <span>.NET 8 / C# 12</span></div>
       </div>
     </header>

@@ -1,0 +1,14 @@
+{
+  "routingPolicy": "GeoproximityWithFailover",
+  "primaryRegion": "eastus",
+  "secondaryRegion": "westus2",
+  "healthCheckIntervalSeconds": 10,
+  "consecutiveFailureThreshold": 3,
+  "rtoTargetMinutes": 5,
+  "rpoTargetSeconds": 15,
+  "dnsTtlSeconds": 30,
+  "circuitBreaker": {
+    "errorRateThresholdPercent": 25.0,
+    "recoveryTimeSeconds": 60
+  }
+}

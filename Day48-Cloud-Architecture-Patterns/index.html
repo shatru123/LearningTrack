@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 48: Cloud Architecture Patterns (AWS/Azure) | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 48</span>
+        <span class="badge badge-category">Cloud Architecture</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day47-Terraform-IaC-Cloud/index.html" class="nav-btn">← Day 47</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+<option value="../Day42-Docker-Compose-Microservices/index.html">Day 42: Docker Compose for Microservic...</option>
+<option value="../Day43-Kubernetes-Architecture-Pods-Deployments/index.html">Day 43: Kubernetes Architecture: Pods,...</option>
+<option value="../Day44-Kubernetes-ConfigMaps-Secrets-Ingress/index.html">Day 44: Kubernetes ConfigMaps, Secrets...</option>
+<option value="../Day45-Kubernetes-Probes-HPA/index.html">Day 45: Kubernetes Probes & Auto-Scali...</option>
+<option value="../Day46-CICD-GitHub-Actions-DotNet/index.html">Day 46: CI/CD with GitHub Actions for ...</option>
+<option value="../Day47-Terraform-IaC-Cloud/index.html">Day 47: Infrastructure as Code with Te...</option>
+<option value="../Day48-Cloud-Architecture-Patterns/index.html">Day 48: Cloud Architecture Patterns (A...</option>
+<option value="../Day49-SystemDesign-Distributed-Job-Scheduler/index.html">Day 49: System Design: Distributed Job...</option>
+<option value="../Day50-Phase2-Distributed-Architecture-Benchmark/index.html">Day 50: Phase 2 Review & Distributed A...</option>
+<option value="../Day51-AI-LLM-Architecture-Foundations/index.html">Day 51: AI & LLM Architecture Foundati...</option>
+
+        </select>
+        <a href="../Day49-SystemDesign-Distributed-Job-Scheduler/index.html" class="nav-btn">Day 49 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 48: Cloud Architecture Patterns (AWS/Azure)</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d48GradRegion" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d48GradCost" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#d97706" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d48GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Multi-Region Failover -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d48GradRegion)" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#60a5fa" font-size="14" font-weight="bold">Multi-Region Cloud DR</text>
+
+          <rect x="35" y="65" width="250" height="60" rx="5" fill="#0f172a" stroke="#2563eb"/>
+          <text x="45" y="85" fill="#60a5fa" font-size="11" font-weight="bold">Anycast DNS / Azure Front Door</text>
+          <text x="45" y="100" fill="#cbd5e1" font-size="9">Health Probes: 10s interval, threshold 3</text>
+          <text x="45" y="113" fill="#94a3b8" font-size="8">Circuit breaker trip on 25% error rate</text>
+
+          <rect x="35" y="135" width="250" height="70" rx="5" fill="#0f172a" stroke="#10b981"/>
+          <text x="45" y="155" fill="#34d399" font-size="11" font-weight="bold">Primary: eastus (Active)</text>
+          <text x="45" y="172" fill="#cbd5e1" font-size="9">PostgreSQL Primary (RW) + Compute</text>
+          <text x="45" y="188" fill="#38bdf8" font-size="9">Async replication stream &#8594; Secondary</text>
+
+          <rect x="35" y="215" width="250" height="70" rx="5" fill="#0f172a" stroke="#f59e0b"/>
+          <text x="45" y="235" fill="#fbbf24" font-size="11" font-weight="bold">Secondary: westus2 (Warm Standby)</text>
+          <text x="45" y="252" fill="#cbd5e1" font-size="9">Read Replica (RO) + Scaled down compute</text>
+          <text x="45" y="268" fill="#94a3b8" font-size="8">Promoted to RW on primary failure</text>
+
+          <rect x="35" y="295" width="250" height="50" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="315" fill="#cbd5e1" font-size="9">RTO: 5 mins | RPO: replication lag (~10s)</text>
+          <text x="45" y="330" fill="#34d399" font-size="8">&#10003; Bound staleness check prevents stale reads</text>
+
+          <!-- 2. Cost Optimization & Lifecycle -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d48GradCost)" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#fbbf24" font-size="14" font-weight="bold">FinOps &amp; Storage Lifecycle</text>
+
+          <rect x="335" y="65" width="250" height="95" rx="5" fill="#0f172a" stroke="#d97706"/>
+          <text x="345" y="85" fill="#fbbf24" font-size="11" font-weight="bold">Storage Tier Transitions</text>
+          <text x="345" y="103" fill="#cbd5e1" font-size="9">Hot: $0.018/GB (&lt;30 days)</text>
+          <text x="345" y="120" fill="#38bdf8" font-size="9">Cool: $0.010/GB (30-90 days)</text>
+          <text x="345" y="137" fill="#60a5fa" font-size="9">Cold: $0.0045/GB | Archive: $0.00099/GB</text>
+          <text x="345" y="152" fill="#34d399" font-size="8">94% storage cost reduction on telemetry</text>
+
+          <rect x="335" y="170" width="250" height="85" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="190" fill="#fbbf24" font-size="11" font-weight="bold">Compute Savings</text>
+          <text x="345" y="208" fill="#cbd5e1" font-size="9">On-Demand: 100% baseline</text>
+          <text x="345" y="225" fill="#34d399" font-size="9">1-Yr / 3-Yr Reserved: 40% - 60% savings</text>
+          <text x="345" y="242" fill="#38bdf8" font-size="9">Spot Instances: 75% discount (stateless)</text>
+
+          <rect x="335" y="265" width="250" height="80" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="285" fill="#34d399" font-size="11" font-weight="bold">Egress Zero-Tax via Private Link</text>
+          <text x="345" y="303" fill="#f87171" font-size="9">Internet Egress: $0.09/GB &#8594; Private: $0.00</text>
+          <text x="345" y="320" fill="#34d399" font-size="9">&#10003; 10TB transfer saves $900/month</text>
+
+          <!-- 3. DSA Partition Equal Subset Sum -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d48GradDsa)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">Subset Sum (LC #416)</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">0/1 Knapsack Transformation</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">Target sum S = totalSum / 2</text>
+          <text x="645" y="122" fill="#f87171" font-size="9">If totalSum % 2 != 0 &#8594; return false</text>
+          <text x="645" y="140" fill="#38bdf8" font-size="10">dp[j] = dp[j] || dp[j - num]</text>
+          <text x="645" y="158" fill="#fbbf24" font-size="9">Reverse iteration: j = target .. num</text>
+          <text x="645" y="175" fill="#34d399" font-size="9" font-weight="bold">Time: O(N * S), Space: O(S)</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Array Partition Walkthrough</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">[1, 5, 11, 5] &#8594; sum = 22, target = 11</text>
+          <text x="645" y="266" fill="#34d399" font-size="9">&#8226; Subset 1: [1, 5, 5] = 11</text>
+          <text x="645" y="284" fill="#34d399" font-size="9">&#8226; Subset 2: [11] = 11</text>
+          <text x="645" y="303" fill="#38bdf8" font-size="9">Early exit when dp[target] == true</text>
+          <text x="645" y="320" fill="#94a3b8" font-size="8">Bitset optimization: 60x acceleration</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Technical Notes: Cloud Architecture Patterns & Cost Optimization</h1>
+<h3>1. Multi-Region Failover Topologies</h3>
+<ul>
+<li><strong>Active-Passive (Warm Standby)</strong>: Primary region processes 100% of write traffic; secondary region hosts scaled-down compute and read replicas. Failover requires DNS record update + compute scale-out. RTO: 3–10 minutes, RPO: Asynchronous replication lag (seconds).</li>
+<li><strong>Active-Active (Dual-Region)</strong>: Both regions process active reads and writes. Requires distributed conflict resolution (CRDTs, Last-Write-Wins, or partitioned tenancy). RTO: < 1 minute, RPO: Near zero.</li>
+</ul>
+<h3>2. Cloud Cost & Egress Bandwidth Economics</h3>
+<ul>
+<li><strong>Compute Commitments</strong>: On-Demand provides flexibility; 1-year and 3-year Savings Plans / Reserved Instances yield 40%–60% discounts; Spot instances provide up to 75%–90% discounts for fault-tolerant workers.</li>
+<li><strong>Egress Bandwidth Tax</strong>: Public internet egress is charged at ~$0.09/GB; inter-region traffic at ~$0.02/GB; inter-AZ at ~$0.01/GB. Routing intra-cloud traffic via <strong>Private Endpoints (Azure Private Link / AWS PrivateLink)</strong> eliminates public internet traversal and reduces egress fees to zero.</li>
+</ul>
+<h3>3. LeetCode #416: Partition Equal Subset Sum</h3>
+<ul>
+<li>Target sum $S = 	ext{totalSum} / 2$. If $	ext{totalSum}$ is odd, return <code>false</code>.</li>
+<li><strong>State Transition</strong>: <code>dp[j] = dp[j] || dp[j - num]</code>.</li>
+<li>Reverse traversal in 1D array ($j = 	ext{target} \dots 	ext{num}$) ensures each element is used at most once (0/1 Knapsack property).</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 48: Cloud Architecture Patterns (AWS/Azure)</h1>
+<h2>Overview</h2>
+<p>Enterprise distributed systems running in public cloud providers (AWS, Azure) must guarantee business continuity across catastrophic regional outages while optimizing cloud spend. Day 48 explores multi-region failover (Active-Passive vs Active-Active), database replication lag bounds, blob storage lifecycle tiering, cloud compute and egress cost optimization, and LeetCode #416 Partition Equal Subset Sum (0/1 Knapsack variation).</p>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong>Multi-Region Failover Architecture</strong>: Warm Standby / Pilot Light vs Active-Active dual-write topologies with Azure Front Door / AWS Route 53 health probing.</li>
+<li><strong>RTO & RPO Metrics</strong>: Calculating Recovery Time Objective (RTO) and Recovery Point Objective (RPO) based on DNS propagation and asynchronous replication lag.</li>
+<li><strong>Storage Lifecycle Policy</strong>: Transitioning unaccessed objects through Hot, Cool, Cold, and Archive tiers.</li>
+<li><strong>FinOps & Cost Optimization</strong>: Maximizing compute savings through Reserved Instances and Spot instances; eliminating data egress bandwidth taxes via Private Endpoints.</li>
+<li><strong>Algorithm (LC #416)</strong>: Partition Equal Subset Sum solved via 0/1 knapsack 2D DP table and space-optimized 1D boolean array.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Compare Active-Passive (Pilot Light vs Warm Standby) and Active-Active multi-region architectures.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Pilot Light</strong>: Core data is replicated continuously (e.g. database replica, storage sync), but compute resources are off or minimal (e.g. AMIs/container images ready). During disaster recovery, compute must be provisioned. RTO: 15–30 minutes, Low cost.</li>
+<li><strong>Warm Standby</strong>: Compute runs at a reduced capacity (e.g. 20% replicas) alongside hot database read replicas. During failover, autoscaling ramps compute to 100%. RTO: 3–5 minutes, Moderate cost.</li>
+<li><strong>Active-Active</strong>: Full compute and multi-primary or multi-write data layers run in 2+ regions simultaneously. Traffic is routed via latency or geoproximity. RTO: < 30 seconds, Highest cost and engineering complexity (handling split-brain and write conflicts).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What are RTO and RPO, and how do you design systems to meet strict financial SLAs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Recovery Time Objective (RTO)</strong>: Maximum acceptable duration of downtime before system recovery.</li>
+<li><strong>Recovery Point Objective (RPO)</strong>: Maximum acceptable age of data lost due to a disaster event.</li>
+</ul>
+<p>For strict financial SLAs (e.g., RTO < 1 min, RPO = 0), synchronous multi-region replication (or 3-AZ synchronous quorum like AWS Aurora Global DB or Azure Cosmos DB multi-region strong consistency) is required. If asynchronous replication is used, RPO equals the replication lag; any un-replicated commits at failover time represent permanent data loss.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you prevent split-brain during automated regional failover?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>When primary and secondary regions lose connectivity, the secondary might assume the primary died and self-promote, causing concurrent divergent writes. Mitigations:</p>
+<ol>
+<li><strong>Third-Party Quorum / Witness</strong>: A lightweight arbiter in a 3rd independent region or global consensus service (Route 53 ARC / Front Door health check controller) must vote on leader promotion.</li>
+<li><strong>Fencing Tokens</strong>: Use epoch-based fencing tokens on shared storage or databases to invalidate requests from a split-brained former primary.</li>
+<li><strong>Automated Demotion / STONITH</strong>: Shoot The Other Node In The Head—the orchestration platform revokes IAM permissions or shuts down ingress on the primary before promoting the secondary.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How do cloud egress charges affect microservices architecture, and how do you optimize them?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Data egress across availability zones (~$0.01/GB), regions (~$0.02/GB), and the internet (~$0.09/GB) constitutes a major portion of cloud bills. Optimizations:</p>
+<ol>
+<li><strong>AZ Affinity</strong>: Co-locate high-bandwidth chatty microservices within the same Availability Zone where possible.</li>
+<li><strong>Private Endpoints</strong>: Use Azure Private Link or AWS VPC Endpoints to route traffic internally rather than traversing public IPs.</li>
+<li><strong>Edge Caching</strong>: Deploy CloudFront or Azure Front Door with gzip/Brotli compression to cache static assets and API responses at the edge.</li>
+<li><strong>Binary Protocols</strong>: Replace large verbose JSON payloads with Protobuf or MessagePack to reduce wire payload sizes by 60–80%.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you architect workloads to safely leverage Spot / Preemptible instances?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Spot instances offer up to 90% savings but can be terminated by the cloud provider with a 30-to-120-second warning notice. Best practices:</p>
+<ol>
+<li><strong>Stateless & Resumable Tasks</strong>: Use Spot for background video transcoding, batch processing, and queue workers (RabbitMQ/SQS), where failed tasks are retried via Dead Letter Queues.</li>
+<li><strong>Termination Hook Listeners</strong>: Monitor AWS EC2 Metadata service (<code>/latest/meta-data/spot/instance-action</code>) or Azure Scheduled Events to gracefully drain connections and checkpoint progress within the grace period.</li>
+<li><strong>Mixed Instance Pools</strong>: Combine 20–30% On-Demand baseline capacity with 70–80% Spot instances across diverse instance types and availability zones.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does Azure Cosmos DB or AWS DynamoDB handle multi-region conflict resolution in Active-Active?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>When concurrent writes occur on the same record in different regions:</p>
+<ul>
+<li><strong>Last-Write-Wins (LWW)</strong>: Uses UTC timestamps to select the latest write. Susceptible to clock skew (NTP drift).</li>
+<li><strong>Custom Conflict Resolution / Stored Procedures</strong>: Application code merges fields (e.g. merging shopping cart item arrays).</li>
+<li><strong>CRDTs (Conflict-free Replicated Data Types)</strong>: Commutative operations (incrementing counters, add-only sets) converge mathematically without central coordination.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Explain the trade-offs of Object Storage Lifecycle Tiering (Hot, Cool, Cold, Archive).</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Hot</strong>: Lowest access/retrieval fee, highest storage cost (~$0.018/GB). Ideal for active, frequently accessed data.</li>
+<li><strong>Cool</strong>: Lower storage cost (~$0.010/GB), small retrieval fee, 30-day minimum retention.</li>
+<li><strong>Cold</strong>: Even lower storage cost (~$0.0045/GB), moderate retrieval fee, 90-day minimum retention.</li>
+<li><strong>Archive</strong>: Extremely low storage cost (~$0.00099/GB), highest retrieval fee, hours of retrieval latency (rehydration), 180-day minimum retention.</li>
+</ul>
+<p><em>Trap</em>: Prematurely moving frequently accessed data to Archive can incur exorbitant retrieval and early-deletion penalty fees.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is Cloud FinOps and how does it integrate into the engineering lifecycle?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>FinOps is the operational framework bringing financial accountability to cloud engineering:</p>
+<ol>
+<li><strong>Tagging & Cost Allocation</strong>: Enforcing mandatory tags (<code>CostCenter</code>, <code>Environment</code>, <code>ServiceOwner</code>) via Azure Policy or AWS SCPs.</li>
+<li><strong>Unit Economics</strong>: Measuring cost per business transaction (e.g., cost per order processed, cost per active user).</li>
+<li><strong>Right-Sizing & Auto-Shutdown</strong>: Automated scripts terminating idle dev/test environments overnight and scaling down overprovisioned VM/container SKUs based on P95 utilization.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Why must the 1D dynamic programming array for 0/1 Knapsack be traversed backwards?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>In 0/1 Knapsack, each item can be chosen at most once. If we traverse the DP array forwards ($j = num \dots target$):</p>
+<p><code>dp[j] = dp[j] || dp[j - num]</code> would use the updated value of <code>dp[j - num]</code> from the <em>same</em> item iteration, effectively allowing the same item to be reused multiple times (which solves the Unbounded Knapsack problem). Traversing backwards ($j = target \dots num$) guarantees that <code>dp[j - num]</code> reflects the state from the <em>previous</em> item iteration.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How can Bitset / BigInteger optimization accelerate Partition Equal Subset Sum?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>The boolean DP array transition can be viewed as shifting a bitmask:</p>
+<p><code>bitset = bitset | (bitset &lt;&lt; num)</code></p>
+<p>With bitwise operations, a 64-bit integer can compute 64 states simultaneously using CPU SIMD instructions. For target sums up to $10^5$, a bitset evaluates the knapsack in $\mathcal{O}(N \cdot 	ext{Target} / 64)$ operations—yielding a 50x–60x speedup over standard boolean arrays.</p>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day48.CloudArchitecture/CloudArchitectureEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd48-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d48-src-code-0" class="language-csharp">namespace Day48.CloudArchitecture;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public enum RoutingMode
+{
+    ActivePassiveWarmStandby,
+    ActiveActive
+}
+
+public record RegionHealth(string Region, bool IsHealthy, double LatencyMs, double ErrorRatePercent);
+
+public class MultiRegionTrafficRouter
+{
+    public RoutingMode Mode { get; }
+    public string PrimaryRegion { get; }
+    public string SecondaryRegion { get; }
+    public double ErrorRateFailoverThreshold { get; set; } = 20.0; // percent
+
+    public MultiRegionTrafficRouter(
+        string primaryRegion,
+        string secondaryRegion,
+        RoutingMode mode = RoutingMode.ActivePassiveWarmStandby)
+    {
+        PrimaryRegion = primaryRegion;
+        SecondaryRegion = secondaryRegion;
+        Mode = mode;
+    }
+
+    public string RouteTraffic(RegionHealth primaryHealth, RegionHealth secondaryHealth)
+    {
+        if (Mode == RoutingMode.ActivePassiveWarmStandby)
+        {
+            if (primaryHealth.IsHealthy &amp;&amp; primaryHealth.ErrorRatePercent &lt; ErrorRateFailoverThreshold)
+            {
+                return PrimaryRegion;
+            }
+
+            if (secondaryHealth.IsHealthy)
+            {
+                return SecondaryRegion;
+            }
+
+            // Both degraded: route to the one with lower error rate
+            return primaryHealth.ErrorRatePercent &lt;= secondaryHealth.ErrorRatePercent
+                ? PrimaryRegion
+                : SecondaryRegion;
+        }
+        else // ActiveActive
+        {
+            if (!primaryHealth.IsHealthy &amp;&amp; secondaryHealth.IsHealthy) return SecondaryRegion;
+            if (primaryHealth.IsHealthy &amp;&amp; !secondaryHealth.IsHealthy) return PrimaryRegion;
+
+            // Route to region with lowest latency
+            return primaryHealth.LatencyMs &lt;= secondaryHealth.LatencyMs ? PrimaryRegion : SecondaryRegion;
+        }
+    }
+
+    public (int rtoMinutes, int rpoSeconds) EstimateDisasterRecoveryBounds(double replicationLagSec)
+    {
+        if (Mode == RoutingMode.ActivePassiveWarmStandby)
+        {
+            // Warm standby takes ~2-5 mins DNS propagation + warm up, RPO is DB replication lag
+            int rto = 5;
+            int rpo = (int)Math.Ceiling(replicationLagSec);
+            return (rto, rpo);
+        }
+        else // Active-Active
+        {
+            // Immediate automated failover (&lt; 1 min), RPO near 0 or replication lag
+            int rto = 1;
+            int rpo = (int)Math.Ceiling(replicationLagSec);
+            return (rto, rpo);
+        }
+    }
+}
+
+public class DatabaseReplicationLagTracker
+{
+    public double CurrentLagMilliseconds { get; private set; }
+
+    public void RecordReplicationEvent(DateTime primaryCommitTime, DateTime replicaApplyTime)
+    {
+        CurrentLagMilliseconds = Math.Max(0, (replicaApplyTime - primaryCommitTime).TotalMilliseconds);
+    }
+
+    public bool IsReadConsistent(double maxAcceptableStalenessMs)
+    {
+        return CurrentLagMilliseconds &lt;= maxAcceptableStalenessMs;
+    }
+}
+
+public enum StorageTier
+{
+    Hot,
+    Cool,
+    Cold,
+    Archive
+}
+
+public class BlobStorageLifecycleEngine
+{
+    public static StorageTier EvaluateTier(int daysSinceModified)
+    {
+        if (daysSinceModified &gt;= 180) return StorageTier.Archive;
+        if (daysSinceModified &gt;= 90) return StorageTier.Cold;
+        if (daysSinceModified &gt;= 30) return StorageTier.Cool;
+        return StorageTier.Hot;
+    }
+
+    public static double CalculateMonthlyStorageCost(double sizeGb, StorageTier tier)
+    {
+        // Indicative Azure/AWS pricing per GB/month:
+        // Hot: $0.018/GB, Cool: $0.010/GB, Cold: $0.0045/GB, Archive: $0.00099/GB
+        double rate = tier switch
+        {
+            StorageTier.Hot =&gt; 0.018,
+            StorageTier.Cool =&gt; 0.010,
+            StorageTier.Cold =&gt; 0.0045,
+            StorageTier.Archive =&gt; 0.00099,
+            _ =&gt; 0.018
+        };
+        return sizeGb * rate;
+    }
+}
+
+public class CloudCostOptimizationCalculator
+{
+    public static double ComputeMonthlyComputeCost(int instances, double hourlyOnDemandRate, string commitmentType)
+    {
+        double hourlyRate = commitmentType.ToLowerInvariant() switch
+        {
+            &quot;ondemand&quot; =&gt; hourlyOnDemandRate,
+            &quot;1year_reserved&quot; =&gt; hourlyOnDemandRate * 0.60, // 40% discount
+            &quot;3year_reserved&quot; =&gt; hourlyOnDemandRate * 0.40, // 60% discount
+            &quot;spot&quot; =&gt; hourlyOnDemandRate * 0.25,           // 75% discount
+            _ =&gt; hourlyOnDemandRate
+        };
+
+        return instances * hourlyRate * 730; // 730 average hours per month
+    }
+
+    public static double CalculateEgressCost(double gigabytesTransferred, string transferType)
+    {
+        // Pricing per GB:
+        // Internet egress: $0.09/GB
+        // Inter-region egress: $0.02/GB
+        // Inter-AZ egress: $0.01/GB
+        // Private endpoint / intra-VNet: $0.00/GB
+        double rate = transferType.ToLowerInvariant() switch
+        {
+            &quot;internet&quot; =&gt; 0.09,
+            &quot;inter_region&quot; =&gt; 0.02,
+            &quot;inter_az&quot; =&gt; 0.01,
+            &quot;private_endpoint&quot; =&gt; 0.00,
+            _ =&gt; 0.09
+        };
+
+        return gigabytesTransferred * rate;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day48.CloudArchitecture/PartitionEqualSubsetSumSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd48-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d48-src-code-1" class="language-csharp">namespace Day48.CloudArchitecture;
+
+using System;
+using System.Linq;
+
+public class PartitionEqualSubsetSumSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #416: Partition Equal Subset Sum.
+    /// Classic 2D Dynamic Programming solution O(N * Target).
+    /// &lt;/summary&gt;
+    public static bool CanPartition2D(int[] nums)
+    {
+        if (nums == null || nums.Length &lt;= 1) return false;
+
+        int totalSum = nums.Sum();
+        if (totalSum % 2 != 0) return false; // Odd sum cannot be partitioned equally
+
+        int target = totalSum / 2;
+        int n = nums.Length;
+        bool[,] dp = new bool[n + 1, target + 1];
+
+        for (int i = 0; i &lt;= n; i++)
+        {
+            dp[i, 0] = true; // sum 0 is always achievable with empty subset
+        }
+
+        for (int i = 1; i &lt;= n; i++)
+        {
+            int num = nums[i - 1];
+            for (int j = 1; j &lt;= target; j++)
+            {
+                if (j &gt;= num)
+                {
+                    dp[i, j] = dp[i - 1, j] || dp[i - 1, j - num];
+                }
+                else
+                {
+                    dp[i, j] = dp[i - 1, j];
+                }
+            }
+        }
+
+        return dp[n, target];
+    }
+
+    /// &lt;summary&gt;
+    /// Space-optimized 1D boolean array DP running right-to-left O(Target) space.
+    /// &lt;/summary&gt;
+    public static bool CanPartition1D(int[] nums)
+    {
+        if (nums == null || nums.Length &lt;= 1) return false;
+
+        int totalSum = nums.Sum();
+        if (totalSum % 2 != 0) return false;
+
+        int target = totalSum / 2;
+        bool[] dp = new bool[target + 1];
+        dp[0] = true;
+
+        foreach (int num in nums)
+        {
+            for (int j = target; j &gt;= num; j--)
+            {
+                if (dp[j - num])
+                {
+                    dp[j] = true;
+                }
+            }
+            if (dp[target]) return true; // Early exit
+        }
+
+        return dp[target];
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day48.CloudArchitecture.Tests/Day48Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd48-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d48-tests-code-0" class="language-csharp">namespace Day48.CloudArchitecture.Tests;
+
+using System;
+using Day48.CloudArchitecture;
+using Xunit;
+
+public class Day48Tests
+{
+    [Fact]
+    public void Test1_ActivePassiveRouter_RoutesToPrimaryWhenHealthy()
+    {
+        var router = new MultiRegionTrafficRouter(&quot;eastus&quot;, &quot;westus2&quot;, RoutingMode.ActivePassiveWarmStandby);
+        var primaryHealth = new RegionHealth(&quot;eastus&quot;, IsHealthy: true, LatencyMs: 25.0, ErrorRatePercent: 0.5);
+        var secondaryHealth = new RegionHealth(&quot;westus2&quot;, IsHealthy: true, LatencyMs: 70.0, ErrorRatePercent: 0.1);
+
+        string target = router.RouteTraffic(primaryHealth, secondaryHealth);
+
+        Assert.Equal(&quot;eastus&quot;, target);
+    }
+
+    [Fact]
+    public void Test2_ActivePassiveRouter_FailsOverToSecondaryOnHighErrorRate()
+    {
+        var router = new MultiRegionTrafficRouter(&quot;eastus&quot;, &quot;westus2&quot;, RoutingMode.ActivePassiveWarmStandby);
+        var primaryHealth = new RegionHealth(&quot;eastus&quot;, IsHealthy: true, LatencyMs: 25.0, ErrorRatePercent: 45.0);
+        var secondaryHealth = new RegionHealth(&quot;westus2&quot;, IsHealthy: true, LatencyMs: 70.0, ErrorRatePercent: 0.2);
+
+        string target = router.RouteTraffic(primaryHealth, secondaryHealth);
+
+        Assert.Equal(&quot;westus2&quot;, target);
+    }
+
+    [Fact]
+    public void Test3_ActiveActiveRouter_RoutesToLowestLatencyHealthyRegion()
+    {
+        var router = new MultiRegionTrafficRouter(&quot;eastus&quot;, &quot;westus2&quot;, RoutingMode.ActiveActive);
+        var primaryHealth = new RegionHealth(&quot;eastus&quot;, IsHealthy: true, LatencyMs: 80.0, ErrorRatePercent: 1.0);
+        var secondaryHealth = new RegionHealth(&quot;westus2&quot;, IsHealthy: true, LatencyMs: 35.0, ErrorRatePercent: 0.8);
+
+        string target = router.RouteTraffic(primaryHealth, secondaryHealth);
+
+        Assert.Equal(&quot;westus2&quot;, target);
+    }
+
+    [Fact]
+    public void Test4_EstimateDisasterRecoveryBounds_CalculatesRtoAndRpo()
+    {
+        var warmStandby = new MultiRegionTrafficRouter(&quot;eastus&quot;, &quot;westus2&quot;, RoutingMode.ActivePassiveWarmStandby);
+        var (rtoWarm, rpoWarm) = warmStandby.EstimateDisasterRecoveryBounds(replicationLagSec: 8.5);
+
+        Assert.Equal(5, rtoWarm);
+        Assert.Equal(9, rpoWarm);
+
+        var activeActive = new MultiRegionTrafficRouter(&quot;eastus&quot;, &quot;westus2&quot;, RoutingMode.ActiveActive);
+        var (rtoActive, rpoActive) = activeActive.EstimateDisasterRecoveryBounds(replicationLagSec: 2.1);
+
+        Assert.Equal(1, rtoActive);
+        Assert.Equal(3, rpoActive);
+    }
+
+    [Fact]
+    public void Test5_DatabaseReplicationLagTracker_EvaluatesStaleReadBound()
+    {
+        var tracker = new DatabaseReplicationLagTracker();
+        var now = DateTime.UtcNow;
+
+        tracker.RecordReplicationEvent(now.AddSeconds(-2), now); // 2000 ms lag
+
+        Assert.False(tracker.IsReadConsistent(maxAcceptableStalenessMs: 500));
+        Assert.True(tracker.IsReadConsistent(maxAcceptableStalenessMs: 3000));
+    }
+
+    [Fact]
+    public void Test6_BlobStorageLifecycle_TransitionsTiersByAge()
+    {
+        Assert.Equal(StorageTier.Hot, BlobStorageLifecycleEngine.EvaluateTier(daysSinceModified: 10));
+        Assert.Equal(StorageTier.Cool, BlobStorageLifecycleEngine.EvaluateTier(daysSinceModified: 45));
+        Assert.Equal(StorageTier.Cold, BlobStorageLifecycleEngine.EvaluateTier(daysSinceModified: 120));
+        Assert.Equal(StorageTier.Archive, BlobStorageLifecycleEngine.EvaluateTier(daysSinceModified: 200));
+
+        double hotCost = BlobStorageLifecycleEngine.CalculateMonthlyStorageCost(1000, StorageTier.Hot);
+        double archiveCost = BlobStorageLifecycleEngine.CalculateMonthlyStorageCost(1000, StorageTier.Archive);
+
+        Assert.True(archiveCost &lt; hotCost);
+    }
+
+    [Fact]
+    public void Test7_CloudCostOptimization_ComputeSavingsCalculatedAccurately()
+    {
+        double onDemand = CloudCostOptimizationCalculator.ComputeMonthlyComputeCost(10, 0.50, &quot;ondemand&quot;);
+        double reserved1Yr = CloudCostOptimizationCalculator.ComputeMonthlyComputeCost(10, 0.50, &quot;1year_reserved&quot;);
+        double spot = CloudCostOptimizationCalculator.ComputeMonthlyComputeCost(10, 0.50, &quot;spot&quot;);
+
+        Assert.True(reserved1Yr &lt; onDemand);
+        Assert.True(spot &lt; reserved1Yr);
+    }
+
+    [Fact]
+    public void Test8_CloudCostOptimization_EgressNetworkCostReduction()
+    {
+        double internetCost = CloudCostOptimizationCalculator.CalculateEgressCost(10000, &quot;internet&quot;);
+        double privateEndpointCost = CloudCostOptimizationCalculator.CalculateEgressCost(10000, &quot;private_endpoint&quot;);
+
+        Assert.Equal(900.0, internetCost);
+        Assert.Equal(0.0, privateEndpointCost);
+    }
+
+    [Theory]
+    [InlineData(new int[] { 1, 5, 11, 5 }, true)]
+    [InlineData(new int[] { 1, 2, 3, 5 }, false)]
+    [InlineData(new int[] { 1, 2, 3, 4, 5, 6, 7 }, true)]
+    [InlineData(new int[] { 2, 2, 2, 2 }, true)]
+    public void Test9_PartitionEqualSubsetSum_1DAnd2DProduceIdenticalResults(int[] nums, bool expected)
+    {
+        bool res2D = PartitionEqualSubsetSumSolver.CanPartition2D(nums);
+        bool res1D = PartitionEqualSubsetSumSolver.CanPartition1D(nums);
+
+        Assert.Equal(expected, res2D);
+        Assert.Equal(expected, res1D);
+    }
+
+    [Fact]
+    public void Test10_PartitionEqualSubsetSum_EdgeCasesHandled()
+    {
+        Assert.False(PartitionEqualSubsetSumSolver.CanPartition1D(null!));
+        Assert.False(PartitionEqualSubsetSumSolver.CanPartition1D(Array.Empty&lt;int&gt;()));
+        Assert.False(PartitionEqualSubsetSumSolver.CanPartition1D(new int[] { 100 }));
+        Assert.False(PartitionEqualSubsetSumSolver.CanPartition1D(new int[] { 1, 2, 4 })); // sum 7 is odd
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Technical Notes: Cloud Architecture Patterns & Cost Optimization</h1>
+<h3>1. Multi-Region Failover Topologies</h3>
+<ul>
+<li><strong>Active-Passive (Warm Standby)</strong>: Primary region processes 100% of write traffic; secondary region hosts scaled-down compute and read replicas. Failover requires DNS record update + compute scale-out. RTO: 3–10 minutes, RPO: Asynchronous replication lag (seconds).</li>
+<li><strong>Active-Active (Dual-Region)</strong>: Both regions process active reads and writes. Requires distributed conflict resolution (CRDTs, Last-Write-Wins, or partitioned tenancy). RTO: < 1 minute, RPO: Near zero.</li>
+</ul>
+<h3>2. Cloud Cost & Egress Bandwidth Economics</h3>
+<ul>
+<li><strong>Compute Commitments</strong>: On-Demand provides flexibility; 1-year and 3-year Savings Plans / Reserved Instances yield 40%–60% discounts; Spot instances provide up to 75%–90% discounts for fault-tolerant workers.</li>
+<li><strong>Egress Bandwidth Tax</strong>: Public internet egress is charged at ~$0.09/GB; inter-region traffic at ~$0.02/GB; inter-AZ at ~$0.01/GB. Routing intra-cloud traffic via <strong>Private Endpoints (Azure Private Link / AWS PrivateLink)</strong> eliminates public internet traversal and reduces egress fees to zero.</li>
+</ul>
+<h3>3. LeetCode #416: Partition Equal Subset Sum</h3>
+<ul>
+<li>Target sum $S = 	ext{totalSum} / 2$. If $	ext{totalSum}$ is odd, return <code>false</code>.</li>
+<li><strong>State Transition</strong>: <code>dp[j] = dp[j] || dp[j - num]</code>.</li>
+<li>Reverse traversal in 1D array ($j = 	ext{target} \dots 	ext{num}$) ensures each element is used at most once (0/1 Knapsack property).</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 48: Cloud Architecture Patterns (AWS/Azure)</h1>
+<h2>Overview</h2>
+<p>Enterprise distributed systems running in public cloud providers (AWS, Azure) must guarantee business continuity across catastrophic regional outages while optimizing cloud spend. Day 48 explores multi-region failover (Active-Passive vs Active-Active), database replication lag bounds, blob storage lifecycle tiering, cloud compute and egress cost optimization, and LeetCode #416 Partition Equal Subset Sum (0/1 Knapsack variation).</p>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong>Multi-Region Failover Architecture</strong>: Warm Standby / Pilot Light vs Active-Active dual-write topologies with Azure Front Door / AWS Route 53 health probing.</li>
+<li><strong>RTO & RPO Metrics</strong>: Calculating Recovery Time Objective (RTO) and Recovery Point Objective (RPO) based on DNS propagation and asynchronous replication lag.</li>
+<li><strong>Storage Lifecycle Policy</strong>: Transitioning unaccessed objects through Hot, Cool, Cold, and Archive tiers.</li>
+<li><strong>FinOps & Cost Optimization</strong>: Maximizing compute savings through Reserved Instances and Spot instances; eliminating data egress bandwidth taxes via Private Endpoints.</li>
+<li><strong>Algorithm (LC #416)</strong>: Partition Equal Subset Sum solved via 0/1 knapsack 2D DP table and space-optimized 1D boolean array.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">Compare Active-Passive (Pilot Light vs Warm Standby) and Active-Active multi-region architectures.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Pilot Light</strong>: Core data is replicated continuously (e.g. database replica, storage sync), but compute resources are off or minimal (e.g. AMIs/container images ready). During disaster recovery, compute must be provisioned. RTO: 15–30 minutes, Low cost.</li>
+<li><strong>Warm Standby</strong>: Compute runs at a reduced capacity (e.g. 20% replicas) alongside hot database read replicas. During failover, autoscaling ramps compute to 100%. RTO: 3–5 minutes, Moderate cost.</li>
+<li><strong>Active-Active</strong>: Full compute and multi-primary or multi-write data layers run in 2+ regions simultaneously. Traffic is routed via latency or geoproximity. RTO: < 30 seconds, Highest cost and engineering complexity (handling split-brain and write conflicts).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What are RTO and RPO, and how do you design systems to meet strict financial SLAs?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Recovery Time Objective (RTO)</strong>: Maximum acceptable duration of downtime before system recovery.</li>
+<li><strong>Recovery Point Objective (RPO)</strong>: Maximum acceptable age of data lost due to a disaster event.</li>
+</ul>
+<p>For strict financial SLAs (e.g., RTO < 1 min, RPO = 0), synchronous multi-region replication (or 3-AZ synchronous quorum like AWS Aurora Global DB or Azure Cosmos DB multi-region strong consistency) is required. If asynchronous replication is used, RPO equals the replication lag; any un-replicated commits at failover time represent permanent data loss.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you prevent split-brain during automated regional failover?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>When primary and secondary regions lose connectivity, the secondary might assume the primary died and self-promote, causing concurrent divergent writes. Mitigations:</p>
+<ol>
+<li><strong>Third-Party Quorum / Witness</strong>: A lightweight arbiter in a 3rd independent region or global consensus service (Route 53 ARC / Front Door health check controller) must vote on leader promotion.</li>
+<li><strong>Fencing Tokens</strong>: Use epoch-based fencing tokens on shared storage or databases to invalidate requests from a split-brained former primary.</li>
+<li><strong>Automated Demotion / STONITH</strong>: Shoot The Other Node In The Head—the orchestration platform revokes IAM permissions or shuts down ingress on the primary before promoting the secondary.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How do cloud egress charges affect microservices architecture, and how do you optimize them?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Data egress across availability zones (~$0.01/GB), regions (~$0.02/GB), and the internet (~$0.09/GB) constitutes a major portion of cloud bills. Optimizations:</p>
+<ol>
+<li><strong>AZ Affinity</strong>: Co-locate high-bandwidth chatty microservices within the same Availability Zone where possible.</li>
+<li><strong>Private Endpoints</strong>: Use Azure Private Link or AWS VPC Endpoints to route traffic internally rather than traversing public IPs.</li>
+<li><strong>Edge Caching</strong>: Deploy CloudFront or Azure Front Door with gzip/Brotli compression to cache static assets and API responses at the edge.</li>
+<li><strong>Binary Protocols</strong>: Replace large verbose JSON payloads with Protobuf or MessagePack to reduce wire payload sizes by 60–80%.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you architect workloads to safely leverage Spot / Preemptible instances?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Spot instances offer up to 90% savings but can be terminated by the cloud provider with a 30-to-120-second warning notice. Best practices:</p>
+<ol>
+<li><strong>Stateless & Resumable Tasks</strong>: Use Spot for background video transcoding, batch processing, and queue workers (RabbitMQ/SQS), where failed tasks are retried via Dead Letter Queues.</li>
+<li><strong>Termination Hook Listeners</strong>: Monitor AWS EC2 Metadata service (<code>/latest/meta-data/spot/instance-action</code>) or Azure Scheduled Events to gracefully drain connections and checkpoint progress within the grace period.</li>
+<li><strong>Mixed Instance Pools</strong>: Combine 20–30% On-Demand baseline capacity with 70–80% Spot instances across diverse instance types and availability zones.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How does Azure Cosmos DB or AWS DynamoDB handle multi-region conflict resolution in Active-Active?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>When concurrent writes occur on the same record in different regions:</p>
+<ul>
+<li><strong>Last-Write-Wins (LWW)</strong>: Uses UTC timestamps to select the latest write. Susceptible to clock skew (NTP drift).</li>
+<li><strong>Custom Conflict Resolution / Stored Procedures</strong>: Application code merges fields (e.g. merging shopping cart item arrays).</li>
+<li><strong>CRDTs (Conflict-free Replicated Data Types)</strong>: Commutative operations (incrementing counters, add-only sets) converge mathematically without central coordination.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Explain the trade-offs of Object Storage Lifecycle Tiering (Hot, Cool, Cold, Archive).</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Hot</strong>: Lowest access/retrieval fee, highest storage cost (~$0.018/GB). Ideal for active, frequently accessed data.</li>
+<li><strong>Cool</strong>: Lower storage cost (~$0.010/GB), small retrieval fee, 30-day minimum retention.</li>
+<li><strong>Cold</strong>: Even lower storage cost (~$0.0045/GB), moderate retrieval fee, 90-day minimum retention.</li>
+<li><strong>Archive</strong>: Extremely low storage cost (~$0.00099/GB), highest retrieval fee, hours of retrieval latency (rehydration), 180-day minimum retention.</li>
+</ul>
+<p><em>Trap</em>: Prematurely moving frequently accessed data to Archive can incur exorbitant retrieval and early-deletion penalty fees.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">What is Cloud FinOps and how does it integrate into the engineering lifecycle?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>FinOps is the operational framework bringing financial accountability to cloud engineering:</p>
+<ol>
+<li><strong>Tagging & Cost Allocation</strong>: Enforcing mandatory tags (<code>CostCenter</code>, <code>Environment</code>, <code>ServiceOwner</code>) via Azure Policy or AWS SCPs.</li>
+<li><strong>Unit Economics</strong>: Measuring cost per business transaction (e.g., cost per order processed, cost per active user).</li>
+<li><strong>Right-Sizing & Auto-Shutdown</strong>: Automated scripts terminating idle dev/test environments overnight and scaling down overprovisioned VM/container SKUs based on P95 utilization.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Why must the 1D dynamic programming array for 0/1 Knapsack be traversed backwards?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>In 0/1 Knapsack, each item can be chosen at most once. If we traverse the DP array forwards ($j = num \dots target$):</p>
+<p><code>dp[j] = dp[j] || dp[j - num]</code> would use the updated value of <code>dp[j - num]</code> from the <em>same</em> item iteration, effectively allowing the same item to be reused multiple times (which solves the Unbounded Knapsack problem). Traversing backwards ($j = target \dots num$) guarantees that <code>dp[j - num]</code> reflects the state from the <em>previous</em> item iteration.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How can Bitset / BigInteger optimization accelerate Partition Equal Subset Sum?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>The boolean DP array transition can be viewed as shifting a bitmask:</p>
+<p><code>bitset = bitset | (bitset &lt;&lt; num)</code></p>
+<p>With bitwise operations, a 64-bit integer can compute 64 states simultaneously using CPU SIMD instructions. For target sums up to $10^5$, a bitset evaluates the knapsack in $\mathcal{O}(N \cdot 	ext{Target} / 64)$ operations—yielding a 50x–60x speedup over standard boolean arrays.</p>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day48.CloudArchitecture/CloudArchitectureEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd48-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d48-src-code-0" class="language-csharp">namespace Day48.CloudArchitecture;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public enum RoutingMode
+{
+    ActivePassiveWarmStandby,
+    ActiveActive
+}
+
+public record RegionHealth(string Region, bool IsHealthy, double LatencyMs, double ErrorRatePercent);
+
+public class MultiRegionTrafficRouter
+{
+    public RoutingMode Mode { get; }
+    public string PrimaryRegion { get; }
+    public string SecondaryRegion { get; }
+    public double ErrorRateFailoverThreshold { get; set; } = 20.0; // percent
+
+    public MultiRegionTrafficRouter(
+        string primaryRegion,
+        string secondaryRegion,
+        RoutingMode mode = RoutingMode.ActivePassiveWarmStandby)
+    {
+        PrimaryRegion = primaryRegion;
+        SecondaryRegion = secondaryRegion;
+        Mode = mode;
+    }
+
+    public string RouteTraffic(RegionHealth primaryHealth, RegionHealth secondaryHealth)
+    {
+        if (Mode == RoutingMode.ActivePassiveWarmStandby)
+        {
+            if (primaryHealth.IsHealthy &amp;&amp; primaryHealth.ErrorRatePercent &lt; ErrorRateFailoverThreshold)
+            {
+                return PrimaryRegion;
+            }
+
+            if (secondaryHealth.IsHealthy)
+            {
+                return SecondaryRegion;
+            }
+
+            // Both degraded: route to the one with lower error rate
+            return primaryHealth.ErrorRatePercent &lt;= secondaryHealth.ErrorRatePercent
+                ? PrimaryRegion
+                : SecondaryRegion;
+        }
+        else // ActiveActive
+        {
+            if (!primaryHealth.IsHealthy &amp;&amp; secondaryHealth.IsHealthy) return SecondaryRegion;
+            if (primaryHealth.IsHealthy &amp;&amp; !secondaryHealth.IsHealthy) return PrimaryRegion;
+
+            // Route to region with lowest latency
+            return primaryHealth.LatencyMs &lt;= secondaryHealth.LatencyMs ? PrimaryRegion : SecondaryRegion;
+        }
+    }
+
+    public (int rtoMinutes, int rpoSeconds) EstimateDisasterRecoveryBounds(double replicationLagSec)
+    {
+        if (Mode == RoutingMode.ActivePassiveWarmStandby)
+        {
+            // Warm standby takes ~2-5 mins DNS propagation + warm up, RPO is DB replication lag
+            int rto = 5;
+            int rpo = (int)Math.Ceiling(replicationLagSec);
+            return (rto, rpo);
+        }
+        else // Active-Active
+        {
+            // Immediate automated failover (&lt; 1 min), RPO near 0 or replication lag
+            int rto = 1;
+            int rpo = (int)Math.Ceiling(replicationLagSec);
+            return (rto, rpo);
+        }
+    }
+}
+
+public class DatabaseReplicationLagTracker
+{
+    public double CurrentLagMilliseconds { get; private set; }
+
+    public void RecordReplicationEvent(DateTime primaryCommitTime, DateTime replicaApplyTime)
+    {
+        CurrentLagMilliseconds = Math.Max(0, (replicaApplyTime - primaryCommitTime).TotalMilliseconds);
+    }
+
+    public bool IsReadConsistent(double maxAcceptableStalenessMs)
+    {
+        return CurrentLagMilliseconds &lt;= maxAcceptableStalenessMs;
+    }
+}
+
+public enum StorageTier
+{
+    Hot,
+    Cool,
+    Cold,
+    Archive
+}
+
+public class BlobStorageLifecycleEngine
+{
+    public static StorageTier EvaluateTier(int daysSinceModified)
+    {
+        if (daysSinceModified &gt;= 180) return StorageTier.Archive;
+        if (daysSinceModified &gt;= 90) return StorageTier.Cold;
+        if (daysSinceModified &gt;= 30) return StorageTier.Cool;
+        return StorageTier.Hot;
+    }
+
+    public static double CalculateMonthlyStorageCost(double sizeGb, StorageTier tier)
+    {
+        // Indicative Azure/AWS pricing per GB/month:
+        // Hot: $0.018/GB, Cool: $0.010/GB, Cold: $0.0045/GB, Archive: $0.00099/GB
+        double rate = tier switch
+        {
+            StorageTier.Hot =&gt; 0.018,
+            StorageTier.Cool =&gt; 0.010,
+            StorageTier.Cold =&gt; 0.0045,
+            StorageTier.Archive =&gt; 0.00099,
+            _ =&gt; 0.018
+        };
+        return sizeGb * rate;
+    }
+}
+
+public class CloudCostOptimizationCalculator
+{
+    public static double ComputeMonthlyComputeCost(int instances, double hourlyOnDemandRate, string commitmentType)
+    {
+        double hourlyRate = commitmentType.ToLowerInvariant() switch
+        {
+            &quot;ondemand&quot; =&gt; hourlyOnDemandRate,
+            &quot;1year_reserved&quot; =&gt; hourlyOnDemandRate * 0.60, // 40% discount
+            &quot;3year_reserved&quot; =&gt; hourlyOnDemandRate * 0.40, // 60% discount
+            &quot;spot&quot; =&gt; hourlyOnDemandRate * 0.25,           // 75% discount
+            _ =&gt; hourlyOnDemandRate
+        };
+
+        return instances * hourlyRate * 730; // 730 average hours per month
+    }
+
+    public static double CalculateEgressCost(double gigabytesTransferred, string transferType)
+    {
+        // Pricing per GB:
+        // Internet egress: $0.09/GB
+        // Inter-region egress: $0.02/GB
+        // Inter-AZ egress: $0.01/GB
+        // Private endpoint / intra-VNet: $0.00/GB
+        double rate = transferType.ToLowerInvariant() switch
+        {
+            &quot;internet&quot; =&gt; 0.09,
+            &quot;inter_region&quot; =&gt; 0.02,
+            &quot;inter_az&quot; =&gt; 0.01,
+            &quot;private_endpoint&quot; =&gt; 0.00,
+            _ =&gt; 0.09
+        };
+
+        return gigabytesTransferred * rate;
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day48.CloudArchitecture/PartitionEqualSubsetSumSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd48-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d48-src-code-1" class="language-csharp">namespace Day48.CloudArchitecture;
+
+using System;
+using System.Linq;
+
+public class PartitionEqualSubsetSumSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #416: Partition Equal Subset Sum.
+    /// Classic 2D Dynamic Programming solution O(N * Target).
+    /// &lt;/summary&gt;
+    public static bool CanPartition2D(int[] nums)
+    {
+        if (nums == null || nums.Length &lt;= 1) return false;
+
+        int totalSum = nums.Sum();
+        if (totalSum % 2 != 0) return false; // Odd sum cannot be partitioned equally
+
+        int target = totalSum / 2;
+        int n = nums.Length;
+        bool[,] dp = new bool[n + 1, target + 1];
+
+        for (int i = 0; i &lt;= n; i++)
+        {
+            dp[i, 0] = true; // sum 0 is always achievable with empty subset
+        }
+
+        for (int i = 1; i &lt;= n; i++)
+        {
+            int num = nums[i - 1];
+            for (int j = 1; j &lt;= target; j++)
+            {
+                if (j &gt;= num)
+                {
+                    dp[i, j] = dp[i - 1, j] || dp[i - 1, j - num];
+                }
+                else
+                {
+                    dp[i, j] = dp[i - 1, j];
+                }
+            }
+        }
+
+        return dp[n, target];
+    }
+
+    /// &lt;summary&gt;
+    /// Space-optimized 1D boolean array DP running right-to-left O(Target) space.
+    /// &lt;/summary&gt;
+    public static bool CanPartition1D(int[] nums)
+    {
+        if (nums == null || nums.Length &lt;= 1) return false;
+
+        int totalSum = nums.Sum();
+        if (totalSum % 2 != 0) return false;
+
+        int target = totalSum / 2;
+        bool[] dp = new bool[target + 1];
+        dp[0] = true;
+
+        foreach (int num in nums)
+        {
+            for (int j = target; j &gt;= num; j--)
+            {
+                if (dp[j - num])
+                {
+                    dp[j] = true;
+                }
+            }
+            if (dp[target]) return true; // Early exit
+        }
+
+        return dp[target];
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day48.CloudArchitecture.Tests/Day48Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd48-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d48-tests-code-0" class="language-csharp">namespace Day48.CloudArchitecture.Tests;
+
+using System;
+using Day48.CloudArchitecture;
+using Xunit;
+
+public class Day48Tests
+{
+    [Fact]
+    public void Test1_ActivePassiveRouter_RoutesToPrimaryWhenHealthy()
+    {
+        var router = new MultiRegionTrafficRouter(&quot;eastus&quot;, &quot;westus2&quot;, RoutingMode.ActivePassiveWarmStandby);
+        var primaryHealth = new RegionHealth(&quot;eastus&quot;, IsHealthy: true, LatencyMs: 25.0, ErrorRatePercent: 0.5);
+        var secondaryHealth = new RegionHealth(&quot;westus2&quot;, IsHealthy: true, LatencyMs: 70.0, ErrorRatePercent: 0.1);
+
+        string target = router.RouteTraffic(primaryHealth, secondaryHealth);
+
+        Assert.Equal(&quot;eastus&quot;, target);
+    }
+
+    [Fact]
+    public void Test2_ActivePassiveRouter_FailsOverToSecondaryOnHighErrorRate()
+    {
+        var router = new MultiRegionTrafficRouter(&quot;eastus&quot;, &quot;westus2&quot;, RoutingMode.ActivePassiveWarmStandby);
+        var primaryHealth = new RegionHealth(&quot;eastus&quot;, IsHealthy: true, LatencyMs: 25.0, ErrorRatePercent: 45.0);
+        var secondaryHealth = new RegionHealth(&quot;westus2&quot;, IsHealthy: true, LatencyMs: 70.0, ErrorRatePercent: 0.2);
+
+        string target = router.RouteTraffic(primaryHealth, secondaryHealth);
+
+        Assert.Equal(&quot;westus2&quot;, target);
+    }
+
+    [Fact]
+    public void Test3_ActiveActiveRouter_RoutesToLowestLatencyHealthyRegion()
+    {
+        var router = new MultiRegionTrafficRouter(&quot;eastus&quot;, &quot;westus2&quot;, RoutingMode.ActiveActive);
+        var primaryHealth = new RegionHealth(&quot;eastus&quot;, IsHealthy: true, LatencyMs: 80.0, ErrorRatePercent: 1.0);
+        var secondaryHealth = new RegionHealth(&quot;westus2&quot;, IsHealthy: true, LatencyMs: 35.0, ErrorRatePercent: 0.8);
+
+        string target = router.RouteTraffic(primaryHealth, secondaryHealth);
+
+        Assert.Equal(&quot;westus2&quot;, target);
+    }
+
+    [Fact]
+    public void Test4_EstimateDisasterRecoveryBounds_CalculatesRtoAndRpo()
+    {
+        var warmStandby = new MultiRegionTrafficRouter(&quot;eastus&quot;, &quot;westus2&quot;, RoutingMode.ActivePassiveWarmStandby);
+        var (rtoWarm, rpoWarm) = warmStandby.EstimateDisasterRecoveryBounds(replicationLagSec: 8.5);
+
+        Assert.Equal(5, rtoWarm);
+        Assert.Equal(9, rpoWarm);
+
+        var activeActive = new MultiRegionTrafficRouter(&quot;eastus&quot;, &quot;westus2&quot;, RoutingMode.ActiveActive);
+        var (rtoActive, rpoActive) = activeActive.EstimateDisasterRecoveryBounds(replicationLagSec: 2.1);
+
+        Assert.Equal(1, rtoActive);
+        Assert.Equal(3, rpoActive);
+    }
+
+    [Fact]
+    public void Test5_DatabaseReplicationLagTracker_EvaluatesStaleReadBound()
+    {
+        var tracker = new DatabaseReplicationLagTracker();
+        var now = DateTime.UtcNow;
+
+        tracker.RecordReplicationEvent(now.AddSeconds(-2), now); // 2000 ms lag
+
+        Assert.False(tracker.IsReadConsistent(maxAcceptableStalenessMs: 500));
+        Assert.True(tracker.IsReadConsistent(maxAcceptableStalenessMs: 3000));
+    }
+
+    [Fact]
+    public void Test6_BlobStorageLifecycle_TransitionsTiersByAge()
+    {
+        Assert.Equal(StorageTier.Hot, BlobStorageLifecycleEngine.EvaluateTier(daysSinceModified: 10));
+        Assert.Equal(StorageTier.Cool, BlobStorageLifecycleEngine.EvaluateTier(daysSinceModified: 45));
+        Assert.Equal(StorageTier.Cold, BlobStorageLifecycleEngine.EvaluateTier(daysSinceModified: 120));
+        Assert.Equal(StorageTier.Archive, BlobStorageLifecycleEngine.EvaluateTier(daysSinceModified: 200));
+
+        double hotCost = BlobStorageLifecycleEngine.CalculateMonthlyStorageCost(1000, StorageTier.Hot);
+        double archiveCost = BlobStorageLifecycleEngine.CalculateMonthlyStorageCost(1000, StorageTier.Archive);
+
+        Assert.True(archiveCost &lt; hotCost);
+    }
+
+    [Fact]
+    public void Test7_CloudCostOptimization_ComputeSavingsCalculatedAccurately()
+    {
+        double onDemand = CloudCostOptimizationCalculator.ComputeMonthlyComputeCost(10, 0.50, &quot;ondemand&quot;);
+        double reserved1Yr = CloudCostOptimizationCalculator.ComputeMonthlyComputeCost(10, 0.50, &quot;1year_reserved&quot;);
+        double spot = CloudCostOptimizationCalculator.ComputeMonthlyComputeCost(10, 0.50, &quot;spot&quot;);
+
+        Assert.True(reserved1Yr &lt; onDemand);
+        Assert.True(spot &lt; reserved1Yr);
+    }
+
+    [Fact]
+    public void Test8_CloudCostOptimization_EgressNetworkCostReduction()
+    {
+        double internetCost = CloudCostOptimizationCalculator.CalculateEgressCost(10000, &quot;internet&quot;);
+        double privateEndpointCost = CloudCostOptimizationCalculator.CalculateEgressCost(10000, &quot;private_endpoint&quot;);
+
+        Assert.Equal(900.0, internetCost);
+        Assert.Equal(0.0, privateEndpointCost);
+    }
+
+    [Theory]
+    [InlineData(new int[] { 1, 5, 11, 5 }, true)]
+    [InlineData(new int[] { 1, 2, 3, 5 }, false)]
+    [InlineData(new int[] { 1, 2, 3, 4, 5, 6, 7 }, true)]
+    [InlineData(new int[] { 2, 2, 2, 2 }, true)]
+    public void Test9_PartitionEqualSubsetSum_1DAnd2DProduceIdenticalResults(int[] nums, bool expected)
+    {
+        bool res2D = PartitionEqualSubsetSumSolver.CanPartition2D(nums);
+        bool res1D = PartitionEqualSubsetSumSolver.CanPartition1D(nums);
+
+        Assert.Equal(expected, res2D);
+        Assert.Equal(expected, res1D);
+    }
+
+    [Fact]
+    public void Test10_PartitionEqualSubsetSum_EdgeCasesHandled()
+    {
+        Assert.False(PartitionEqualSubsetSumSolver.CanPartition1D(null!));
+        Assert.False(PartitionEqualSubsetSumSolver.CanPartition1D(Array.Empty&lt;int&gt;()));
+        Assert.False(PartitionEqualSubsetSumSolver.CanPartition1D(new int[] { 100 }));
+        Assert.False(PartitionEqualSubsetSumSolver.CanPartition1D(new int[] { 1, 2, 4 })); // sum 7 is odd
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 48 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

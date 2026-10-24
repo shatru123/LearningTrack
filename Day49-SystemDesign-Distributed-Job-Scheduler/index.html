@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 49: System Design: Distributed Job Scheduler | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 49</span>
+        <span class="badge badge-category">System Design &amp; DSA</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day48-Cloud-Architecture-Patterns/index.html" class="nav-btn">← Day 48</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+<option value="../Day42-Docker-Compose-Microservices/index.html">Day 42: Docker Compose for Microservic...</option>
+<option value="../Day43-Kubernetes-Architecture-Pods-Deployments/index.html">Day 43: Kubernetes Architecture: Pods,...</option>
+<option value="../Day44-Kubernetes-ConfigMaps-Secrets-Ingress/index.html">Day 44: Kubernetes ConfigMaps, Secrets...</option>
+<option value="../Day45-Kubernetes-Probes-HPA/index.html">Day 45: Kubernetes Probes & Auto-Scali...</option>
+<option value="../Day46-CICD-GitHub-Actions-DotNet/index.html">Day 46: CI/CD with GitHub Actions for ...</option>
+<option value="../Day47-Terraform-IaC-Cloud/index.html">Day 47: Infrastructure as Code with Te...</option>
+<option value="../Day48-Cloud-Architecture-Patterns/index.html">Day 48: Cloud Architecture Patterns (A...</option>
+<option value="../Day49-SystemDesign-Distributed-Job-Scheduler/index.html">Day 49: System Design: Distributed Job...</option>
+<option value="../Day50-Phase2-Distributed-Architecture-Benchmark/index.html">Day 50: Phase 2 Review & Distributed A...</option>
+<option value="../Day51-AI-LLM-Architecture-Foundations/index.html">Day 51: AI & LLM Architecture Foundati...</option>
+
+        </select>
+        <a href="../Day50-Phase2-Distributed-Architecture-Benchmark/index.html" class="nav-btn">Day 50 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 49: System Design: Distributed Job Scheduler</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d49GradSched" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ec4899" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#be185d" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d49GradWorkers" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#6d28d9" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d49GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Distributed Job Scheduler -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d49GradSched)" stroke="#ec4899" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#f472b6" font-size="14" font-weight="bold">Distributed Job Scheduler</text>
+
+          <rect x="35" y="65" width="250" height="75" rx="5" fill="#0f172a" stroke="#db2777"/>
+          <text x="45" y="85" fill="#f472b6" font-size="11" font-weight="bold">Leader Node (Lease Lock)</text>
+          <text x="45" y="103" fill="#cbd5e1" font-size="9">Fencing Token: monotonic epoch T_1</text>
+          <text x="45" y="120" fill="#34d399" font-size="9">&#10003; Polls timing wheel &amp; dispatches tasks</text>
+          <text x="45" y="132" fill="#94a3b8" font-size="8">Lease TTL: 15s with heartbeat renewal</text>
+
+          <rect x="35" y="150" width="250" height="85" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="170" fill="#fbbf24" font-size="11" font-weight="bold">Hierarchical Timing Wheel</text>
+          <text x="45" y="188" fill="#cbd5e1" font-size="9">O(1) insertion &amp; due task retrieval</text>
+          <text x="45" y="205" fill="#38bdf8" font-size="9">Supports 5-field cron &amp; delayed tasks</text>
+          <text x="45" y="222" fill="#94a3b8" font-size="8">Misfire policies: FireNow / RescheduleNext</text>
+
+          <rect x="35" y="245" width="250" height="100" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="265" fill="#38bdf8" font-size="11" font-weight="bold">At-Least-Once Delivery</text>
+          <text x="45" y="283" fill="#cbd5e1" font-size="9">Idempotency Token: hash(job, fireTime)</text>
+          <text x="45" y="300" fill="#f87171" font-size="9">Retry with exponential backoff &amp; jitter</text>
+          <text x="45" y="318" fill="#34d399" font-size="9">Guarantees at-most-once execution</text>
+          <text x="45" y="333" fill="#94a3b8" font-size="8">delay = base * 2^retry * (1 + jitter)</text>
+
+          <!-- 2. Worker Registry & Failover -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d49GradWorkers)" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#a78bfa" font-size="14" font-weight="bold">Worker Registry &amp; Failover</text>
+
+          <rect x="335" y="65" width="250" height="80" rx="5" fill="#0f172a" stroke="#7c3aed"/>
+          <text x="345" y="85" fill="#a78bfa" font-size="11" font-weight="bold">Worker Liveness Heartbeats</text>
+          <text x="345" y="103" fill="#cbd5e1" font-size="9">Workers ping coordinator every 5s</text>
+          <text x="345" y="120" fill="#34d399" font-size="9">Worker A: 4 capacity [Alive]</text>
+          <text x="345" y="135" fill="#34d399" font-size="9">Worker B: 4 capacity [Alive]</text>
+
+          <rect x="335" y="155" width="250" height="90" rx="5" fill="#0f172a" stroke="#dc2626"/>
+          <text x="345" y="175" fill="#f87171" font-size="11" font-weight="bold">Dead Worker Eviction</text>
+          <text x="345" y="193" fill="#cbd5e1" font-size="9">Heartbeat timeout elapsed &gt; 10s</text>
+          <text x="345" y="210" fill="#f87171" font-size="9">Worker evicted from active pool</text>
+          <text x="345" y="228" fill="#fbbf24" font-size="9">&#8635; Unacknowledged jobs re-enqueued</text>
+
+          <rect x="335" y="255" width="250" height="90" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="275" fill="#34d399" font-size="11" font-weight="bold">Leader Failover Simulation</text>
+          <text x="345" y="293" fill="#cbd5e1" font-size="9">Leader lease expires on partition</text>
+          <text x="345" y="310" fill="#fbbf24" font-size="9">Candidate 2 elected: Fencing Token T_2</text>
+          <text x="345" y="328" fill="#f87171" font-size="9">Stale leader T_1 writes rejected!</text>
+
+          <!-- 3. DSA Trapping Rain Water -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d49GradDsa)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">Rain Water (LC #42)</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">Two Pointers (Optimal)</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">left = 0, right = n - 1</text>
+          <text x="645" y="122" fill="#38bdf8" font-size="10">height[left] &lt; height[right]</text>
+          <text x="645" y="140" fill="#cbd5e1" font-size="9">&#8594; water += max(0, leftMax - height[l])</text>
+          <text x="645" y="158" fill="#fbbf24" font-size="9">Converges to global maximum peak</text>
+          <text x="645" y="175" fill="#34d399" font-size="9" font-weight="bold">Time: O(N), Space: O(1)</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Monotonic Decreasing Stack</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">Stores indices of descending bars</text>
+          <text x="645" y="266" fill="#34d399" font-size="9">Calculates water layer horizontally</text>
+          <text x="645" y="284" fill="#38bdf8" font-size="9">boundedH = min(left, right) - bottom</text>
+          <text x="645" y="303" fill="#cbd5e1" font-size="9">trapped = boundedH * distance</text>
+          <text x="645" y="320" fill="#94a3b8" font-size="8">Time: O(N), Space: O(N)</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Technical Notes: Distributed Job Scheduler Architecture</h1>
+<h3>1. Leader Election & Monotonic Fencing Tokens</h3>
+<p>In a distributed scheduler cluster, only the leader node queries the job database and enqueues due tasks to worker queues:</p>
+<ul>
+<li><strong>Lease Lock</strong>: Leader acquires a time-bounded lease in Redis or Zookeeper/etcd.</li>
+<li><strong>Fencing Token</strong>: To prevent a GC-paused or partition-delayed former leader from corrupting state, each leadership election increments a strictly monotonic 64-bit integer (<code>FencingToken</code>). Database updates reject writes from stale fencing tokens.</li>
+</ul>
+<h3>2. Worker Node Liveness & Failover</h3>
+<p>Worker nodes maintain periodic heartbeats (e.g., every 5s). When a worker fails:</p>
+<ol>
+<li>Heartbeat monitor detects elapsed time exceeds timeout threshold (e.g., 15s).</li>
+<li>Worker node is evicted from active pool.</li>
+<li>Unacknowledged in-flight tasks assigned to the dead worker are re-enqueued to the pending queue for other workers to claim.</li>
+</ol>
+<h3>3. LeetCode #42: Trapping Rain Water</h3>
+<ul>
+<li><strong>Two Pointers</strong>: Maintain <code>leftMax</code> and <code>rightMax</code>. At each step, if <code>height[left] &lt; height[right]</code>, the water level is bounded by <code>leftMax</code>. If <code>height[left] &gt;= leftMax</code>, update <code>leftMax</code>; otherwise, add <code>leftMax - height[left]</code>. Advance <code>left</code>. Symmetric for <code>right</code>. Time: $\mathcal{O}(N)$, Space: $\mathcal{O}(1)$.</li>
+<li><strong>Monotonic Stack</strong>: Keep a stack of decreasing bar indices. When a taller bar is encountered, pop the bottom, calculate the horizontal layer of trapped water between current bar and the new stack top: <code>boundedHeight = min(height[left], height[right]) - height[bottom]</code>, <code>width = right - left - 1</code>. Time: $\mathcal{O}(N)$, Space: $\mathcal{O}(N)$.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 49: System Design: Distributed Job Scheduler</h1>
+<h2>Overview</h2>
+<p>High-scale architectures require robust background and distributed job scheduling frameworks (e.g. Hangfire Pro, Quartz.NET clustering, Temporal, Cadence) to execute millions of recurring and delayed tasks reliably. Day 49 covers distributed leader election with monotonic fencing tokens, worker node heartbeats and dead node task reassignment, at-least-once task dispatch with idempotency tokens, and LeetCode #42 Trapping Rain Water (Hard) solved via both Two-Pointer and Monotonic Decreasing Stack approaches.</p>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong>Leader Election with Fencing Tokens</strong>: Preventing split-brain race conditions when distributed nodes compete to coordinate task schedules.</li>
+<li><strong>Worker Registry & Liveness Heartbeats</strong>: Monitoring distributed worker node health and automatically reallocating uncompleted tasks upon node failure.</li>
+<li><strong>Task Dispatch & Idempotency</strong>: Guaranteeing at-least-once delivery with at-most-once execution via unique execution tokens.</li>
+<li><strong>Retry Backoff with Jitter</strong>: Mitigating thundering herd stampedes when downstream dependencies fail.</li>
+<li><strong>Algorithm (LC #42)</strong>: Trapping Rain Water using two pointers ($\mathcal{O}(N)$ time, $\mathcal{O}(1)$ space) and monotonic decreasing stack ($\mathcal{O}(N)$ space).</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do you design a distributed job scheduler to guarantee that a recurring cron job never runs concurrently on two nodes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Leader-Follower Clustering</strong>: Run a leader election (via etcd, Consul, or Redis Redlock with lease). Only the elected leader generates trigger instances.</li>
+<li><strong>Database Row-Level Lock</strong>: The leader updates the job record using <code>SELECT ... FOR UPDATE</code> or conditional write (<code>UPDATE Jobs SET Status = &#x27;Running&#x27;, Version = Version + 1 WHERE Id = @Id AND Version = @ExpectedVersion</code>).</li>
+<li><strong>Fencing Tokens</strong>: Every job execution ticket includes an epoch/fencing token. Workers check this token against a distributed lock before starting execution.</li>
+<li><strong>Idempotency Key</strong>: Execution key <code>hash(jobId, scheduledFireTimeUtc)</code> ensures deduplication if multiple instances accidentally trigger.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What happens when the leader node suffers a 30-second Stop-the-World GC pause?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>During the GC pause, the leader cannot send heartbeat pings. The cluster considers the leader dead, elects a new leader, and issues a higher fencing token ($T_2 > T_1$). When the paused leader awakens:</p>
+<ul>
+<li>It attempts to write state using its stale fencing token ($T_1$).</li>
+<li>Storage / worker queues reject the write because $T_1 < T_2$.</li>
+<li>The old leader catches the fencing token mismatch exception, realizes it has lost leadership, and demotes itself to a follower.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you implement delayed tasks (e.g., &quot;send email in 3 days&quot;) at scale?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Hashed / Hierarchical Timing Wheel</strong>: Circular buffer with time slots (seconds, minutes, hours). Tasks are placed in slots matching <code>(targetTime - currentTime) % wheelSize</code>. Offers $\mathcal{O}(1)$ insertion and expiration check.</li>
+<li><strong>Redis Sorted Sets (ZSET)</strong>: Store <code>member = taskId</code>, <code>score = targetTimestampUtc</code>. A background poller runs <code>ZRANGEBYSCORE tasks -inf &lt;now&gt;</code> to fetch due jobs with $\mathcal{O}(\log N + M)$ efficiency.</li>
+<li><strong>Database Partitioning</strong>: Partition scheduled jobs table by fire date (<code>fire_date</code>), querying only today\'s partition with an index on <code>fire_time</code>.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Explain the difference between At-Least-Once and At-Most-Once execution semantics in job scheduling.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>At-Least-Once</strong>: Scheduler dispatches the task and waits for an explicit ACK. If the worker crashes mid-execution or the ACK is lost over the network, the scheduler re-dispatches the task. Requires workers to be strictly <strong>idempotent</strong>.</li>
+<li><strong>At-Most-Once</strong>: Scheduler marks the task as completed immediately upon dispatching it to the worker. If the worker crashes, the task is never re-run. Suitable only for non-critical telemetry or cache warmups.</li>
+</ul>
+<p>Enterprise financial workflows use At-Least-Once with application-level idempotency tables.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What are Misfire Policies in Quartz/Hangfire, and when do you use each?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A misfire occurs when a job was scheduled to run at time $T$, but all worker threads were exhausted or the scheduler was down until $T + \Delta$.</p>
+<ul>
+<li><strong>Fire Now</strong>: Immediately execute the missed job, then resume normal schedule (e.g. daily database backup).</li>
+<li><strong>Ignore / Reschedule Next</strong>: Discard the missed execution and wait for the next scheduled cron tick (e.g. real-time stock ticker snapshot).</li>
+<li><strong>Fire All Missed</strong>: Sequentially replay all missed triggers (e.g. hourly financial ledger reconciliation).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you prevent the &quot;Thundering Herd&quot; problem when 10,000 jobs are scheduled at midnight (00:00:00)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Cron Jitter / Staggering</strong>: Add randomized jitter to trigger times (e.g., $00:00 \pm 180$ seconds) across non-time-critical jobs.</li>
+<li><strong>Priority Rate-Limiting Queues</strong>: Enqueue tasks into high, medium, and low priority queues, and throttle worker pull rates using token buckets.</li>
+<li><strong>Backpressure</strong>: Workers pull tasks only when they have free concurrency slots, preventing queue buffer overflows.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Compare Quartz.NET, Hangfire Pro, and Temporal/Cadence for enterprise scheduling.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Quartz.NET</strong>: Mature, highly configurable cron engine; stores triggers in SQL tables via ADO.NET; lacks native distributed workflows or visual dashboard out of the box.</li>
+<li><strong>Hangfire Pro</strong>: Excellent ASP.NET Core integration; Redis/SQL storage; beautiful web dashboard; great for fire-and-forget, delayed, and recurring jobs; weaker on long-running complex multi-step orchestration.</li>
+<li><strong>Temporal / Cadence</strong>: Event-sourced code-as-configuration workflow orchestrator; resilient to process crashes, network partitions, and month-long pauses; superior for distributed state machine workflows and human-in-the-loop tasks.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How do you monitor worker node liveness without overwhelming the database with heartbeat writes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>Avoid writing heartbeats directly to relational databases.</li>
+<li>Use <strong>Redis Key Expiry</strong>: Worker sets <code>SET worker:id:heartbeat &quot;alive&quot; EX 10</code> every 3 seconds. If the key expires, Redis Keyspace Notifications (<code>__keyevent@0__:expired</code>) alert the scheduler.</li>
+<li>Alternatively, use a lightweight gossip protocol (e.g. SWIM / Consul) where workers ping peer subsets, reducing $O(N)$ central load to $O(1)$ per node.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Contrast Two-Pointer vs Monotonic Stack for LeetCode #42 Trapping Rain Water.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Two Pointers</strong>:</li>
+<li>Traversal: Converges from both ends towards the highest peak.</li>
+<li>Computation: Calculates water column-by-column vertically ($leftMax - height[left]$).</li>
+<li>Complexity: $\mathcal{O}(N)$ time, $\mathcal{O}(1)$ auxiliary space.</li>
+<li><strong>Monotonic Stack</strong>:</li>
+<li>Traversal: Scans left to right once.</li>
+<li>Computation: Calculates water layer-by-layer horizontally bounded by left and right walls.</li>
+<li>Complexity: $\mathcal{O}(N)$ time, $\mathcal{O}(N)$ auxiliary space.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">Can Trapping Rain Water be generalized to 3D terrain (LeetCode #407)? What algorithm is required?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Yes, in 3D terrain (height map grid $M 	imes N$), water spills over the lowest boundary cell.</p>
+<ul>
+<li>The 2D two-pointer approach fails because boundaries form an arbitrary 2D perimeter rather than just two endpoints.</li>
+<li><strong>Algorithm</strong>: Use a <strong>Min-Heap (Priority Queue)</strong>.</li>
+</ul>
+<ol>
+<li>Push all outer boundary cells into the min-heap and mark them visited.</li>
+<li>While the heap is not empty, pop the lowest cell $(x, y)$ with height $H$.</li>
+<li>Explore all 4 adjacent unvisited neighbors. If neighbor height $H_{neighbor} < H$, water trapped $= H - H_{neighbor}$.</li>
+<li>Push neighbor into the heap with effective height $\max(H, H_{neighbor})$.</li>
+</ol>
+<ul>
+<li>Complexity: $\mathcal{O}(M \cdot N \log(M \cdot N))$ time, $\mathcal{O}(M \cdot N)$ space.</li>
+</ul>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day49.DistributedJobScheduler/DistributedJobSchedulerEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd49-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d49-src-code-0" class="language-csharp">namespace Day49.DistributedJobScheduler;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public class SchedulerLeaderElection
+{
+    private readonly object _lock = new();
+    public string? CurrentLeaderId { get; private set; }
+    public long FencingToken { get; private set; }
+    public DateTime LeaseExpiresAtUtc { get; private set; }
+
+    public bool TryAcquireOrRenewLease(string candidateId, TimeSpan leaseDuration, DateTime nowUtc, out long grantedFencingToken)
+    {
+        lock (_lock)
+        {
+            if (CurrentLeaderId == null || nowUtc &gt;= LeaseExpiresAtUtc || CurrentLeaderId == candidateId)
+            {
+                if (CurrentLeaderId != candidateId)
+                {
+                    FencingToken++; // Increment monotonic fencing token on leadership transition
+                }
+                CurrentLeaderId = candidateId;
+                LeaseExpiresAtUtc = nowUtc.Add(leaseDuration);
+                grantedFencingToken = FencingToken;
+                return true;
+            }
+
+            grantedFencingToken = 0;
+            return false;
+        }
+    }
+
+    public void RelinquishLeadership(string leaderId)
+    {
+        lock (_lock)
+        {
+            if (CurrentLeaderId == leaderId)
+            {
+                CurrentLeaderId = null;
+                LeaseExpiresAtUtc = DateTime.MinValue;
+            }
+        }
+    }
+}
+
+public record WorkerNode(string WorkerId, int MaxCapacity, DateTime LastHeartbeatUtc);
+
+public class WorkerNodeRegistry
+{
+    private readonly Dictionary&lt;string, WorkerNode&gt; _workers = new();
+    private readonly Dictionary&lt;string, string&gt; _taskAssignments = new(); // TaskId -&gt; WorkerId
+
+    public void RegisterOrHeartbeat(string workerId, int capacity, DateTime nowUtc)
+    {
+        _workers[workerId] = new WorkerNode(workerId, capacity, nowUtc);
+    }
+
+    public void AssignTask(string taskId, string workerId)
+    {
+        _taskAssignments[taskId] = workerId;
+    }
+
+    public List&lt;string&gt; EvictDeadWorkers(TimeSpan timeout, DateTime nowUtc)
+    {
+        var deadWorkers = _workers.Values
+            .Where(w =&gt; nowUtc - w.LastHeartbeatUtc &gt; timeout)
+            .Select(w =&gt; w.WorkerId)
+            .ToList();
+
+        var reallocatedTasks = new List&lt;string&gt;();
+
+        foreach (var deadWorker in deadWorkers)
+        {
+            _workers.Remove(deadWorker);
+
+            var tasksToReallocate = _taskAssignments
+                .Where(kvp =&gt; kvp.Value == deadWorker)
+                .Select(kvp =&gt; kvp.Key)
+                .ToList();
+
+            foreach (var t in tasksToReallocate)
+            {
+                _taskAssignments.Remove(t);
+                reallocatedTasks.Add(t);
+            }
+        }
+
+        return reallocatedTasks;
+    }
+
+    public bool IsWorkerAlive(string workerId) =&gt; _workers.ContainsKey(workerId);
+}
+
+public record ScheduledTask(
+    string TaskId,
+    DateTime DueAtUtc,
+    int RetryCount = 0,
+    int MaxRetries = 3);
+
+public class DistributedTaskScheduler
+{
+    private readonly List&lt;ScheduledTask&gt; _taskQueue = new();
+    private readonly HashSet&lt;string&gt; _processedExecutionTokens = new();
+
+    public void EnqueueTask(ScheduledTask task)
+    {
+        _taskQueue.Add(task);
+    }
+
+    public List&lt;ScheduledTask&gt; PollDueTasks(DateTime nowUtc)
+    {
+        var dueTasks = _taskQueue.Where(t =&gt; t.DueAtUtc &lt;= nowUtc).ToList();
+        foreach (var t in dueTasks)
+        {
+            _taskQueue.Remove(t);
+        }
+        return dueTasks;
+    }
+
+    public bool TryExecuteWithIdempotencyToken(string executionToken)
+    {
+        if (_processedExecutionTokens.Contains(executionToken))
+        {
+            return false; // Duplicate execution rejected
+        }
+
+        _processedExecutionTokens.Add(executionToken);
+        return true;
+    }
+
+    public static TimeSpan CalculateBackoffWithJitter(int retryCount, int baseDelayMs = 100)
+    {
+        // Exponential backoff: base * 2^retry
+        double delay = baseDelayMs * Math.Pow(2, Math.Min(retryCount, 6));
+        // Deterministic jitter simulation (+ 10%)
+        return TimeSpan.FromMilliseconds(delay * 1.1);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day49.DistributedJobScheduler/TrappingRainWaterSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd49-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d49-src-code-1" class="language-csharp">namespace Day49.DistributedJobScheduler;
+
+using System;
+using System.Collections.Generic;
+
+public class TrappingRainWaterSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #42: Trapping Rain Water.
+    /// Optimal Two-Pointer approach: O(N) time, O(1) space.
+    /// &lt;/summary&gt;
+    public static int TrapTwoPointers(int[] height)
+    {
+        if (height == null || height.Length &lt; 3) return 0;
+
+        int left = 0;
+        int right = height.Length - 1;
+        int leftMax = 0;
+        int rightMax = 0;
+        int totalWater = 0;
+
+        while (left &lt; right)
+        {
+            if (height[left] &lt; height[right])
+            {
+                if (height[left] &gt;= leftMax)
+                {
+                    leftMax = height[left];
+                }
+                else
+                {
+                    totalWater += leftMax - height[left];
+                }
+                left++;
+            }
+            else
+            {
+                if (height[right] &gt;= rightMax)
+                {
+                    rightMax = height[right];
+                }
+                else
+                {
+                    totalWater += rightMax - height[right];
+                }
+                right--;
+            }
+        }
+
+        return totalWater;
+    }
+
+    /// &lt;summary&gt;
+    /// Monotonic Stack approach: O(N) time, O(N) space.
+    /// Computes trapped water bounded horizontally between left and right walls.
+    /// &lt;/summary&gt;
+    public static int TrapMonotonicStack(int[] height)
+    {
+        if (height == null || height.Length &lt; 3) return 0;
+
+        var stack = new Stack&lt;int&gt;(); // Stores indices of decreasing bars
+        int totalWater = 0;
+
+        for (int i = 0; i &lt; height.Length; i++)
+        {
+            while (stack.Count &gt; 0 &amp;&amp; height[i] &gt; height[stack.Peek()])
+            {
+                int bottomIdx = stack.Pop();
+
+                if (stack.Count == 0) break; // No left boundary
+
+                int leftIdx = stack.Peek();
+                int boundedHeight = Math.Min(height[leftIdx], height[i]) - height[bottomIdx];
+                int distance = i - leftIdx - 1;
+
+                totalWater += boundedHeight * distance;
+            }
+
+            stack.Push(i);
+        }
+
+        return totalWater;
+    }
+
+    /// &lt;summary&gt;
+    /// Dynamic Programming prefix/suffix max approach: O(N) time, O(N) space.
+    /// &lt;/summary&gt;
+    public static int TrapDp(int[] height)
+    {
+        if (height == null || height.Length &lt; 3) return 0;
+
+        int n = height.Length;
+        int[] leftMax = new int[n];
+        int[] rightMax = new int[n];
+
+        leftMax[0] = height[0];
+        for (int i = 1; i &lt; n; i++)
+        {
+            leftMax[i] = Math.Max(leftMax[i - 1], height[i]);
+        }
+
+        rightMax[n - 1] = height[n - 1];
+        for (int i = n - 2; i &gt;= 0; i--)
+        {
+            rightMax[i] = Math.Max(rightMax[i + 1], height[i]);
+        }
+
+        int totalWater = 0;
+        for (int i = 0; i &lt; n; i++)
+        {
+            int trapped = Math.Min(leftMax[i], rightMax[i]) - height[i];
+            if (trapped &gt; 0)
+            {
+                totalWater += trapped;
+            }
+        }
+
+        return totalWater;
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day49.DistributedJobScheduler.Tests/Day49Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd49-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d49-tests-code-0" class="language-csharp">namespace Day49.DistributedJobScheduler.Tests;
+
+using System;
+using Day49.DistributedJobScheduler;
+using Xunit;
+
+public class Day49Tests
+{
+    [Fact]
+    public void Test1_LeaderElection_AcquiresLeaseAndFencingToken()
+    {
+        var election = new SchedulerLeaderElection();
+        var now = DateTime.UtcNow;
+
+        bool success = election.TryAcquireOrRenewLease(&quot;node-1&quot;, TimeSpan.FromSeconds(10), now, out long token1);
+
+        Assert.True(success);
+        Assert.Equal(&quot;node-1&quot;, election.CurrentLeaderId);
+        Assert.Equal(1, token1);
+    }
+
+    [Fact]
+    public void Test2_LeaderElection_PreventsSplitBrainDuringActiveLease()
+    {
+        var election = new SchedulerLeaderElection();
+        var now = DateTime.UtcNow;
+
+        election.TryAcquireOrRenewLease(&quot;node-1&quot;, TimeSpan.FromSeconds(10), now, out _);
+        bool candidateAcquire = election.TryAcquireOrRenewLease(&quot;node-2&quot;, TimeSpan.FromSeconds(10), now.AddSeconds(2), out _);
+
+        Assert.False(candidateAcquire);
+        Assert.Equal(&quot;node-1&quot;, election.CurrentLeaderId);
+    }
+
+    [Fact]
+    public void Test3_LeaderElection_FailsOverWithMonotonicFencingTokenWhenExpired()
+    {
+        var election = new SchedulerLeaderElection();
+        var now = DateTime.UtcNow;
+
+        election.TryAcquireOrRenewLease(&quot;node-1&quot;, TimeSpan.FromSeconds(5), now, out _);
+        bool newLeaderAcquired = election.TryAcquireOrRenewLease(&quot;node-2&quot;, TimeSpan.FromSeconds(5), now.AddSeconds(6), out long token2);
+
+        Assert.True(newLeaderAcquired);
+        Assert.Equal(&quot;node-2&quot;, election.CurrentLeaderId);
+        Assert.Equal(2, token2); // Incremented fencing token
+    }
+
+    [Fact]
+    public void Test4_WorkerRegistry_HeartbeatAndDeadWorkerEviction()
+    {
+        var registry = new WorkerNodeRegistry();
+        var now = DateTime.UtcNow;
+
+        registry.RegisterOrHeartbeat(&quot;worker-A&quot;, capacity: 4, now);
+        registry.RegisterOrHeartbeat(&quot;worker-B&quot;, capacity: 4, now);
+        registry.AssignTask(&quot;task-101&quot;, &quot;worker-A&quot;);
+        registry.AssignTask(&quot;task-102&quot;, &quot;worker-B&quot;);
+
+        // Advance clock by 15s; worker-B heartbeats at +12s, worker-A misses
+        registry.RegisterOrHeartbeat(&quot;worker-B&quot;, capacity: 4, now.AddSeconds(12));
+
+        var reallocated = registry.EvictDeadWorkers(TimeSpan.FromSeconds(10), now.AddSeconds(15));
+
+        Assert.Contains(&quot;task-101&quot;, reallocated);
+        Assert.DoesNotContain(&quot;task-102&quot;, reallocated);
+        Assert.False(registry.IsWorkerAlive(&quot;worker-A&quot;));
+        Assert.True(registry.IsWorkerAlive(&quot;worker-B&quot;));
+    }
+
+    [Fact]
+    public void Test5_TaskScheduler_PollsDueTasksAccurately()
+    {
+        var scheduler = new DistributedTaskScheduler();
+        var now = DateTime.UtcNow;
+
+        scheduler.EnqueueTask(new ScheduledTask(&quot;task-past&quot;, now.AddMinutes(-5)));
+        scheduler.EnqueueTask(new ScheduledTask(&quot;task-future&quot;, now.AddMinutes(10)));
+
+        var due = scheduler.PollDueTasks(now);
+
+        Assert.Single(due);
+        Assert.Equal(&quot;task-past&quot;, due[0].TaskId);
+    }
+
+    [Fact]
+    public void Test6_TaskScheduler_IdempotencyTokenRejectsDuplicateExecution()
+    {
+        var scheduler = new DistributedTaskScheduler();
+        string token = &quot;token-job-99-attempt-1&quot;;
+
+        bool firstRun = scheduler.TryExecuteWithIdempotencyToken(token);
+        bool duplicateRun = scheduler.TryExecuteWithIdempotencyToken(token);
+
+        Assert.True(firstRun);
+        Assert.False(duplicateRun);
+    }
+
+    [Fact]
+    public void Test7_TaskScheduler_ExponentialBackoffWithJitter()
+    {
+        var delay0 = DistributedTaskScheduler.CalculateBackoffWithJitter(0, 100);
+        var delay1 = DistributedTaskScheduler.CalculateBackoffWithJitter(1, 100);
+        var delay2 = DistributedTaskScheduler.CalculateBackoffWithJitter(2, 100);
+
+        Assert.True(delay1 &gt; delay0);
+        Assert.True(delay2 &gt; delay1);
+        Assert.Equal(110.0, delay0.TotalMilliseconds); // 100 * 1 * 1.1
+        Assert.Equal(220.0, delay1.TotalMilliseconds); // 100 * 2 * 1.1
+    }
+
+    [Theory]
+    [InlineData(new int[] { 0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1 }, 6)]
+    [InlineData(new int[] { 4, 2, 0, 3, 2, 5 }, 9)]
+    [InlineData(new int[] { 3, 0, 0, 2, 0, 4 }, 10)]
+    [InlineData(new int[] { 2, 0, 2 }, 2)]
+    public void Test8_TrappingRainWater_TwoPointersAndStackMatch(int[] height, int expected)
+    {
+        int resTwoPointers = TrappingRainWaterSolver.TrapTwoPointers(height);
+        int resStack = TrappingRainWaterSolver.TrapMonotonicStack(height);
+        int resDp = TrappingRainWaterSolver.TrapDp(height);
+
+        Assert.Equal(expected, resTwoPointers);
+        Assert.Equal(expected, resStack);
+        Assert.Equal(expected, resDp);
+    }
+
+    [Fact]
+    public void Test9_TrappingRainWater_FlatAndMonotonicTerrain_ReturnsZero()
+    {
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(new int[] { 5, 5, 5, 5 }));
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(new int[] { 1, 2, 3, 4, 5 }));
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(new int[] { 5, 4, 3, 2, 1 }));
+    }
+
+    [Fact]
+    public void Test10_TrappingRainWater_EdgeCasesHandled()
+    {
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(null!));
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(Array.Empty&lt;int&gt;()));
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(new int[] { 1 }));
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(new int[] { 1, 2 }));
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Technical Notes: Distributed Job Scheduler Architecture</h1>
+<h3>1. Leader Election & Monotonic Fencing Tokens</h3>
+<p>In a distributed scheduler cluster, only the leader node queries the job database and enqueues due tasks to worker queues:</p>
+<ul>
+<li><strong>Lease Lock</strong>: Leader acquires a time-bounded lease in Redis or Zookeeper/etcd.</li>
+<li><strong>Fencing Token</strong>: To prevent a GC-paused or partition-delayed former leader from corrupting state, each leadership election increments a strictly monotonic 64-bit integer (<code>FencingToken</code>). Database updates reject writes from stale fencing tokens.</li>
+</ul>
+<h3>2. Worker Node Liveness & Failover</h3>
+<p>Worker nodes maintain periodic heartbeats (e.g., every 5s). When a worker fails:</p>
+<ol>
+<li>Heartbeat monitor detects elapsed time exceeds timeout threshold (e.g., 15s).</li>
+<li>Worker node is evicted from active pool.</li>
+<li>Unacknowledged in-flight tasks assigned to the dead worker are re-enqueued to the pending queue for other workers to claim.</li>
+</ol>
+<h3>3. LeetCode #42: Trapping Rain Water</h3>
+<ul>
+<li><strong>Two Pointers</strong>: Maintain <code>leftMax</code> and <code>rightMax</code>. At each step, if <code>height[left] &lt; height[right]</code>, the water level is bounded by <code>leftMax</code>. If <code>height[left] &gt;= leftMax</code>, update <code>leftMax</code>; otherwise, add <code>leftMax - height[left]</code>. Advance <code>left</code>. Symmetric for <code>right</code>. Time: $\mathcal{O}(N)$, Space: $\mathcal{O}(1)$.</li>
+<li><strong>Monotonic Stack</strong>: Keep a stack of decreasing bar indices. When a taller bar is encountered, pop the bottom, calculate the horizontal layer of trapped water between current bar and the new stack top: <code>boundedHeight = min(height[left], height[right]) - height[bottom]</code>, <code>width = right - left - 1</code>. Time: $\mathcal{O}(N)$, Space: $\mathcal{O}(N)$.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 49: System Design: Distributed Job Scheduler</h1>
+<h2>Overview</h2>
+<p>High-scale architectures require robust background and distributed job scheduling frameworks (e.g. Hangfire Pro, Quartz.NET clustering, Temporal, Cadence) to execute millions of recurring and delayed tasks reliably. Day 49 covers distributed leader election with monotonic fencing tokens, worker node heartbeats and dead node task reassignment, at-least-once task dispatch with idempotency tokens, and LeetCode #42 Trapping Rain Water (Hard) solved via both Two-Pointer and Monotonic Decreasing Stack approaches.</p>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong>Leader Election with Fencing Tokens</strong>: Preventing split-brain race conditions when distributed nodes compete to coordinate task schedules.</li>
+<li><strong>Worker Registry & Liveness Heartbeats</strong>: Monitoring distributed worker node health and automatically reallocating uncompleted tasks upon node failure.</li>
+<li><strong>Task Dispatch & Idempotency</strong>: Guaranteeing at-least-once delivery with at-most-once execution via unique execution tokens.</li>
+<li><strong>Retry Backoff with Jitter</strong>: Mitigating thundering herd stampedes when downstream dependencies fail.</li>
+<li><strong>Algorithm (LC #42)</strong>: Trapping Rain Water using two pointers ($\mathcal{O}(N)$ time, $\mathcal{O}(1)$ space) and monotonic decreasing stack ($\mathcal{O}(N)$ space).</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do you design a distributed job scheduler to guarantee that a recurring cron job never runs concurrently on two nodes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Leader-Follower Clustering</strong>: Run a leader election (via etcd, Consul, or Redis Redlock with lease). Only the elected leader generates trigger instances.</li>
+<li><strong>Database Row-Level Lock</strong>: The leader updates the job record using <code>SELECT ... FOR UPDATE</code> or conditional write (<code>UPDATE Jobs SET Status = &#x27;Running&#x27;, Version = Version + 1 WHERE Id = @Id AND Version = @ExpectedVersion</code>).</li>
+<li><strong>Fencing Tokens</strong>: Every job execution ticket includes an epoch/fencing token. Workers check this token against a distributed lock before starting execution.</li>
+<li><strong>Idempotency Key</strong>: Execution key <code>hash(jobId, scheduledFireTimeUtc)</code> ensures deduplication if multiple instances accidentally trigger.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">What happens when the leader node suffers a 30-second Stop-the-World GC pause?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>During the GC pause, the leader cannot send heartbeat pings. The cluster considers the leader dead, elects a new leader, and issues a higher fencing token ($T_2 > T_1$). When the paused leader awakens:</p>
+<ul>
+<li>It attempts to write state using its stale fencing token ($T_1$).</li>
+<li>Storage / worker queues reject the write because $T_1 < T_2$.</li>
+<li>The old leader catches the fencing token mismatch exception, realizes it has lost leadership, and demotes itself to a follower.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">How do you implement delayed tasks (e.g., &quot;send email in 3 days&quot;) at scale?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Hashed / Hierarchical Timing Wheel</strong>: Circular buffer with time slots (seconds, minutes, hours). Tasks are placed in slots matching <code>(targetTime - currentTime) % wheelSize</code>. Offers $\mathcal{O}(1)$ insertion and expiration check.</li>
+<li><strong>Redis Sorted Sets (ZSET)</strong>: Store <code>member = taskId</code>, <code>score = targetTimestampUtc</code>. A background poller runs <code>ZRANGEBYSCORE tasks -inf &lt;now&gt;</code> to fetch due jobs with $\mathcal{O}(\log N + M)$ efficiency.</li>
+<li><strong>Database Partitioning</strong>: Partition scheduled jobs table by fire date (<code>fire_date</code>), querying only today\'s partition with an index on <code>fire_time</code>.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">Explain the difference between At-Least-Once and At-Most-Once execution semantics in job scheduling.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>At-Least-Once</strong>: Scheduler dispatches the task and waits for an explicit ACK. If the worker crashes mid-execution or the ACK is lost over the network, the scheduler re-dispatches the task. Requires workers to be strictly <strong>idempotent</strong>.</li>
+<li><strong>At-Most-Once</strong>: Scheduler marks the task as completed immediately upon dispatching it to the worker. If the worker crashes, the task is never re-run. Suitable only for non-critical telemetry or cache warmups.</li>
+</ul>
+<p>Enterprise financial workflows use At-Least-Once with application-level idempotency tables.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">What are Misfire Policies in Quartz/Hangfire, and when do you use each?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>A misfire occurs when a job was scheduled to run at time $T$, but all worker threads were exhausted or the scheduler was down until $T + \Delta$.</p>
+<ul>
+<li><strong>Fire Now</strong>: Immediately execute the missed job, then resume normal schedule (e.g. daily database backup).</li>
+<li><strong>Ignore / Reschedule Next</strong>: Discard the missed execution and wait for the next scheduled cron tick (e.g. real-time stock ticker snapshot).</li>
+<li><strong>Fire All Missed</strong>: Sequentially replay all missed triggers (e.g. hourly financial ledger reconciliation).</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">How do you prevent the &quot;Thundering Herd&quot; problem when 10,000 jobs are scheduled at midnight (00:00:00)?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Cron Jitter / Staggering</strong>: Add randomized jitter to trigger times (e.g., $00:00 \pm 180$ seconds) across non-time-critical jobs.</li>
+<li><strong>Priority Rate-Limiting Queues</strong>: Enqueue tasks into high, medium, and low priority queues, and throttle worker pull rates using token buckets.</li>
+<li><strong>Backpressure</strong>: Workers pull tasks only when they have free concurrency slots, preventing queue buffer overflows.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">Compare Quartz.NET, Hangfire Pro, and Temporal/Cadence for enterprise scheduling.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Quartz.NET</strong>: Mature, highly configurable cron engine; stores triggers in SQL tables via ADO.NET; lacks native distributed workflows or visual dashboard out of the box.</li>
+<li><strong>Hangfire Pro</strong>: Excellent ASP.NET Core integration; Redis/SQL storage; beautiful web dashboard; great for fire-and-forget, delayed, and recurring jobs; weaker on long-running complex multi-step orchestration.</li>
+<li><strong>Temporal / Cadence</strong>: Event-sourced code-as-configuration workflow orchestrator; resilient to process crashes, network partitions, and month-long pauses; superior for distributed state machine workflows and human-in-the-loop tasks.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">How do you monitor worker node liveness without overwhelming the database with heartbeat writes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li>Avoid writing heartbeats directly to relational databases.</li>
+<li>Use <strong>Redis Key Expiry</strong>: Worker sets <code>SET worker:id:heartbeat &quot;alive&quot; EX 10</code> every 3 seconds. If the key expires, Redis Keyspace Notifications (<code>__keyevent@0__:expired</code>) alert the scheduler.</li>
+<li>Alternatively, use a lightweight gossip protocol (e.g. SWIM / Consul) where workers ping peer subsets, reducing $O(N)$ central load to $O(1)$ per node.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Contrast Two-Pointer vs Monotonic Stack for LeetCode #42 Trapping Rain Water.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Two Pointers</strong>:</li>
+<li>Traversal: Converges from both ends towards the highest peak.</li>
+<li>Computation: Calculates water column-by-column vertically ($leftMax - height[left]$).</li>
+<li>Complexity: $\mathcal{O}(N)$ time, $\mathcal{O}(1)$ auxiliary space.</li>
+<li><strong>Monotonic Stack</strong>:</li>
+<li>Traversal: Scans left to right once.</li>
+<li>Computation: Calculates water layer-by-layer horizontally bounded by left and right walls.</li>
+<li>Complexity: $\mathcal{O}(N)$ time, $\mathcal{O}(N)$ auxiliary space.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">Can Trapping Rain Water be generalized to 3D terrain (LeetCode #407)? What algorithm is required?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Yes, in 3D terrain (height map grid $M 	imes N$), water spills over the lowest boundary cell.</p>
+<ul>
+<li>The 2D two-pointer approach fails because boundaries form an arbitrary 2D perimeter rather than just two endpoints.</li>
+<li><strong>Algorithm</strong>: Use a <strong>Min-Heap (Priority Queue)</strong>.</li>
+</ul>
+<ol>
+<li>Push all outer boundary cells into the min-heap and mark them visited.</li>
+<li>While the heap is not empty, pop the lowest cell $(x, y)$ with height $H$.</li>
+<li>Explore all 4 adjacent unvisited neighbors. If neighbor height $H_{neighbor} < H$, water trapped $= H - H_{neighbor}$.</li>
+<li>Push neighbor into the heap with effective height $\max(H, H_{neighbor})$.</li>
+</ol>
+<ul>
+<li>Complexity: $\mathcal{O}(M \cdot N \log(M \cdot N))$ time, $\mathcal{O}(M \cdot N)$ space.</li>
+</ul>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day49.DistributedJobScheduler/DistributedJobSchedulerEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd49-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d49-src-code-0" class="language-csharp">namespace Day49.DistributedJobScheduler;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public class SchedulerLeaderElection
+{
+    private readonly object _lock = new();
+    public string? CurrentLeaderId { get; private set; }
+    public long FencingToken { get; private set; }
+    public DateTime LeaseExpiresAtUtc { get; private set; }
+
+    public bool TryAcquireOrRenewLease(string candidateId, TimeSpan leaseDuration, DateTime nowUtc, out long grantedFencingToken)
+    {
+        lock (_lock)
+        {
+            if (CurrentLeaderId == null || nowUtc &gt;= LeaseExpiresAtUtc || CurrentLeaderId == candidateId)
+            {
+                if (CurrentLeaderId != candidateId)
+                {
+                    FencingToken++; // Increment monotonic fencing token on leadership transition
+                }
+                CurrentLeaderId = candidateId;
+                LeaseExpiresAtUtc = nowUtc.Add(leaseDuration);
+                grantedFencingToken = FencingToken;
+                return true;
+            }
+
+            grantedFencingToken = 0;
+            return false;
+        }
+    }
+
+    public void RelinquishLeadership(string leaderId)
+    {
+        lock (_lock)
+        {
+            if (CurrentLeaderId == leaderId)
+            {
+                CurrentLeaderId = null;
+                LeaseExpiresAtUtc = DateTime.MinValue;
+            }
+        }
+    }
+}
+
+public record WorkerNode(string WorkerId, int MaxCapacity, DateTime LastHeartbeatUtc);
+
+public class WorkerNodeRegistry
+{
+    private readonly Dictionary&lt;string, WorkerNode&gt; _workers = new();
+    private readonly Dictionary&lt;string, string&gt; _taskAssignments = new(); // TaskId -&gt; WorkerId
+
+    public void RegisterOrHeartbeat(string workerId, int capacity, DateTime nowUtc)
+    {
+        _workers[workerId] = new WorkerNode(workerId, capacity, nowUtc);
+    }
+
+    public void AssignTask(string taskId, string workerId)
+    {
+        _taskAssignments[taskId] = workerId;
+    }
+
+    public List&lt;string&gt; EvictDeadWorkers(TimeSpan timeout, DateTime nowUtc)
+    {
+        var deadWorkers = _workers.Values
+            .Where(w =&gt; nowUtc - w.LastHeartbeatUtc &gt; timeout)
+            .Select(w =&gt; w.WorkerId)
+            .ToList();
+
+        var reallocatedTasks = new List&lt;string&gt;();
+
+        foreach (var deadWorker in deadWorkers)
+        {
+            _workers.Remove(deadWorker);
+
+            var tasksToReallocate = _taskAssignments
+                .Where(kvp =&gt; kvp.Value == deadWorker)
+                .Select(kvp =&gt; kvp.Key)
+                .ToList();
+
+            foreach (var t in tasksToReallocate)
+            {
+                _taskAssignments.Remove(t);
+                reallocatedTasks.Add(t);
+            }
+        }
+
+        return reallocatedTasks;
+    }
+
+    public bool IsWorkerAlive(string workerId) =&gt; _workers.ContainsKey(workerId);
+}
+
+public record ScheduledTask(
+    string TaskId,
+    DateTime DueAtUtc,
+    int RetryCount = 0,
+    int MaxRetries = 3);
+
+public class DistributedTaskScheduler
+{
+    private readonly List&lt;ScheduledTask&gt; _taskQueue = new();
+    private readonly HashSet&lt;string&gt; _processedExecutionTokens = new();
+
+    public void EnqueueTask(ScheduledTask task)
+    {
+        _taskQueue.Add(task);
+    }
+
+    public List&lt;ScheduledTask&gt; PollDueTasks(DateTime nowUtc)
+    {
+        var dueTasks = _taskQueue.Where(t =&gt; t.DueAtUtc &lt;= nowUtc).ToList();
+        foreach (var t in dueTasks)
+        {
+            _taskQueue.Remove(t);
+        }
+        return dueTasks;
+    }
+
+    public bool TryExecuteWithIdempotencyToken(string executionToken)
+    {
+        if (_processedExecutionTokens.Contains(executionToken))
+        {
+            return false; // Duplicate execution rejected
+        }
+
+        _processedExecutionTokens.Add(executionToken);
+        return true;
+    }
+
+    public static TimeSpan CalculateBackoffWithJitter(int retryCount, int baseDelayMs = 100)
+    {
+        // Exponential backoff: base * 2^retry
+        double delay = baseDelayMs * Math.Pow(2, Math.Min(retryCount, 6));
+        // Deterministic jitter simulation (+ 10%)
+        return TimeSpan.FromMilliseconds(delay * 1.1);
+    }
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day49.DistributedJobScheduler/TrappingRainWaterSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd49-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d49-src-code-1" class="language-csharp">namespace Day49.DistributedJobScheduler;
+
+using System;
+using System.Collections.Generic;
+
+public class TrappingRainWaterSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #42: Trapping Rain Water.
+    /// Optimal Two-Pointer approach: O(N) time, O(1) space.
+    /// &lt;/summary&gt;
+    public static int TrapTwoPointers(int[] height)
+    {
+        if (height == null || height.Length &lt; 3) return 0;
+
+        int left = 0;
+        int right = height.Length - 1;
+        int leftMax = 0;
+        int rightMax = 0;
+        int totalWater = 0;
+
+        while (left &lt; right)
+        {
+            if (height[left] &lt; height[right])
+            {
+                if (height[left] &gt;= leftMax)
+                {
+                    leftMax = height[left];
+                }
+                else
+                {
+                    totalWater += leftMax - height[left];
+                }
+                left++;
+            }
+            else
+            {
+                if (height[right] &gt;= rightMax)
+                {
+                    rightMax = height[right];
+                }
+                else
+                {
+                    totalWater += rightMax - height[right];
+                }
+                right--;
+            }
+        }
+
+        return totalWater;
+    }
+
+    /// &lt;summary&gt;
+    /// Monotonic Stack approach: O(N) time, O(N) space.
+    /// Computes trapped water bounded horizontally between left and right walls.
+    /// &lt;/summary&gt;
+    public static int TrapMonotonicStack(int[] height)
+    {
+        if (height == null || height.Length &lt; 3) return 0;
+
+        var stack = new Stack&lt;int&gt;(); // Stores indices of decreasing bars
+        int totalWater = 0;
+
+        for (int i = 0; i &lt; height.Length; i++)
+        {
+            while (stack.Count &gt; 0 &amp;&amp; height[i] &gt; height[stack.Peek()])
+            {
+                int bottomIdx = stack.Pop();
+
+                if (stack.Count == 0) break; // No left boundary
+
+                int leftIdx = stack.Peek();
+                int boundedHeight = Math.Min(height[leftIdx], height[i]) - height[bottomIdx];
+                int distance = i - leftIdx - 1;
+
+                totalWater += boundedHeight * distance;
+            }
+
+            stack.Push(i);
+        }
+
+        return totalWater;
+    }
+
+    /// &lt;summary&gt;
+    /// Dynamic Programming prefix/suffix max approach: O(N) time, O(N) space.
+    /// &lt;/summary&gt;
+    public static int TrapDp(int[] height)
+    {
+        if (height == null || height.Length &lt; 3) return 0;
+
+        int n = height.Length;
+        int[] leftMax = new int[n];
+        int[] rightMax = new int[n];
+
+        leftMax[0] = height[0];
+        for (int i = 1; i &lt; n; i++)
+        {
+            leftMax[i] = Math.Max(leftMax[i - 1], height[i]);
+        }
+
+        rightMax[n - 1] = height[n - 1];
+        for (int i = n - 2; i &gt;= 0; i--)
+        {
+            rightMax[i] = Math.Max(rightMax[i + 1], height[i]);
+        }
+
+        int totalWater = 0;
+        for (int i = 0; i &lt; n; i++)
+        {
+            int trapped = Math.Min(leftMax[i], rightMax[i]) - height[i];
+            if (trapped &gt; 0)
+            {
+                totalWater += trapped;
+            }
+        }
+
+        return totalWater;
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day49.DistributedJobScheduler.Tests/Day49Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd49-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d49-tests-code-0" class="language-csharp">namespace Day49.DistributedJobScheduler.Tests;
+
+using System;
+using Day49.DistributedJobScheduler;
+using Xunit;
+
+public class Day49Tests
+{
+    [Fact]
+    public void Test1_LeaderElection_AcquiresLeaseAndFencingToken()
+    {
+        var election = new SchedulerLeaderElection();
+        var now = DateTime.UtcNow;
+
+        bool success = election.TryAcquireOrRenewLease(&quot;node-1&quot;, TimeSpan.FromSeconds(10), now, out long token1);
+
+        Assert.True(success);
+        Assert.Equal(&quot;node-1&quot;, election.CurrentLeaderId);
+        Assert.Equal(1, token1);
+    }
+
+    [Fact]
+    public void Test2_LeaderElection_PreventsSplitBrainDuringActiveLease()
+    {
+        var election = new SchedulerLeaderElection();
+        var now = DateTime.UtcNow;
+
+        election.TryAcquireOrRenewLease(&quot;node-1&quot;, TimeSpan.FromSeconds(10), now, out _);
+        bool candidateAcquire = election.TryAcquireOrRenewLease(&quot;node-2&quot;, TimeSpan.FromSeconds(10), now.AddSeconds(2), out _);
+
+        Assert.False(candidateAcquire);
+        Assert.Equal(&quot;node-1&quot;, election.CurrentLeaderId);
+    }
+
+    [Fact]
+    public void Test3_LeaderElection_FailsOverWithMonotonicFencingTokenWhenExpired()
+    {
+        var election = new SchedulerLeaderElection();
+        var now = DateTime.UtcNow;
+
+        election.TryAcquireOrRenewLease(&quot;node-1&quot;, TimeSpan.FromSeconds(5), now, out _);
+        bool newLeaderAcquired = election.TryAcquireOrRenewLease(&quot;node-2&quot;, TimeSpan.FromSeconds(5), now.AddSeconds(6), out long token2);
+
+        Assert.True(newLeaderAcquired);
+        Assert.Equal(&quot;node-2&quot;, election.CurrentLeaderId);
+        Assert.Equal(2, token2); // Incremented fencing token
+    }
+
+    [Fact]
+    public void Test4_WorkerRegistry_HeartbeatAndDeadWorkerEviction()
+    {
+        var registry = new WorkerNodeRegistry();
+        var now = DateTime.UtcNow;
+
+        registry.RegisterOrHeartbeat(&quot;worker-A&quot;, capacity: 4, now);
+        registry.RegisterOrHeartbeat(&quot;worker-B&quot;, capacity: 4, now);
+        registry.AssignTask(&quot;task-101&quot;, &quot;worker-A&quot;);
+        registry.AssignTask(&quot;task-102&quot;, &quot;worker-B&quot;);
+
+        // Advance clock by 15s; worker-B heartbeats at +12s, worker-A misses
+        registry.RegisterOrHeartbeat(&quot;worker-B&quot;, capacity: 4, now.AddSeconds(12));
+
+        var reallocated = registry.EvictDeadWorkers(TimeSpan.FromSeconds(10), now.AddSeconds(15));
+
+        Assert.Contains(&quot;task-101&quot;, reallocated);
+        Assert.DoesNotContain(&quot;task-102&quot;, reallocated);
+        Assert.False(registry.IsWorkerAlive(&quot;worker-A&quot;));
+        Assert.True(registry.IsWorkerAlive(&quot;worker-B&quot;));
+    }
+
+    [Fact]
+    public void Test5_TaskScheduler_PollsDueTasksAccurately()
+    {
+        var scheduler = new DistributedTaskScheduler();
+        var now = DateTime.UtcNow;
+
+        scheduler.EnqueueTask(new ScheduledTask(&quot;task-past&quot;, now.AddMinutes(-5)));
+        scheduler.EnqueueTask(new ScheduledTask(&quot;task-future&quot;, now.AddMinutes(10)));
+
+        var due = scheduler.PollDueTasks(now);
+
+        Assert.Single(due);
+        Assert.Equal(&quot;task-past&quot;, due[0].TaskId);
+    }
+
+    [Fact]
+    public void Test6_TaskScheduler_IdempotencyTokenRejectsDuplicateExecution()
+    {
+        var scheduler = new DistributedTaskScheduler();
+        string token = &quot;token-job-99-attempt-1&quot;;
+
+        bool firstRun = scheduler.TryExecuteWithIdempotencyToken(token);
+        bool duplicateRun = scheduler.TryExecuteWithIdempotencyToken(token);
+
+        Assert.True(firstRun);
+        Assert.False(duplicateRun);
+    }
+
+    [Fact]
+    public void Test7_TaskScheduler_ExponentialBackoffWithJitter()
+    {
+        var delay0 = DistributedTaskScheduler.CalculateBackoffWithJitter(0, 100);
+        var delay1 = DistributedTaskScheduler.CalculateBackoffWithJitter(1, 100);
+        var delay2 = DistributedTaskScheduler.CalculateBackoffWithJitter(2, 100);
+
+        Assert.True(delay1 &gt; delay0);
+        Assert.True(delay2 &gt; delay1);
+        Assert.Equal(110.0, delay0.TotalMilliseconds); // 100 * 1 * 1.1
+        Assert.Equal(220.0, delay1.TotalMilliseconds); // 100 * 2 * 1.1
+    }
+
+    [Theory]
+    [InlineData(new int[] { 0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1 }, 6)]
+    [InlineData(new int[] { 4, 2, 0, 3, 2, 5 }, 9)]
+    [InlineData(new int[] { 3, 0, 0, 2, 0, 4 }, 10)]
+    [InlineData(new int[] { 2, 0, 2 }, 2)]
+    public void Test8_TrappingRainWater_TwoPointersAndStackMatch(int[] height, int expected)
+    {
+        int resTwoPointers = TrappingRainWaterSolver.TrapTwoPointers(height);
+        int resStack = TrappingRainWaterSolver.TrapMonotonicStack(height);
+        int resDp = TrappingRainWaterSolver.TrapDp(height);
+
+        Assert.Equal(expected, resTwoPointers);
+        Assert.Equal(expected, resStack);
+        Assert.Equal(expected, resDp);
+    }
+
+    [Fact]
+    public void Test9_TrappingRainWater_FlatAndMonotonicTerrain_ReturnsZero()
+    {
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(new int[] { 5, 5, 5, 5 }));
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(new int[] { 1, 2, 3, 4, 5 }));
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(new int[] { 5, 4, 3, 2, 1 }));
+    }
+
+    [Fact]
+    public void Test10_TrappingRainWater_EdgeCasesHandled()
+    {
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(null!));
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(Array.Empty&lt;int&gt;()));
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(new int[] { 1 }));
+        Assert.Equal(0, TrappingRainWaterSolver.TrapTwoPointers(new int[] { 1, 2 }));
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 49 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>

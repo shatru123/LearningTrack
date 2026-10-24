@@ -2682,6 +2682,429 @@ def get_day_svg(day_num):
         </svg>
         """
 
+    if day_num == 47:
+        return """
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d47GradTf" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#6d28d9" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d47GradState" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0284c7" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#0369a1" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d47GradLis" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Terraform HCL & DAG -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d47GradTf)" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#a78bfa" font-size="14" font-weight="bold">Terraform HCL &amp; DAG</text>
+
+          <rect x="35" y="65" width="250" height="50" rx="5" fill="#0f172a" stroke="#7c3aed"/>
+          <text x="45" y="85" fill="#a78bfa" font-size="11" font-weight="bold">Tier 0: Resource Group</text>
+          <text x="45" y="100" fill="#94a3b8" font-size="9">azurerm_resource_group.rg (in-degree: 0)</text>
+
+          <rect x="35" y="125" width="250" height="55" rx="5" fill="#0f172a" stroke="#7c3aed"/>
+          <text x="45" y="145" fill="#a78bfa" font-size="11" font-weight="bold">Tier 1: VNet &amp; Subnets</text>
+          <text x="45" y="160" fill="#94a3b8" font-size="9">snet-postgres (delegation: flexibleServers)</text>
+
+          <rect x="35" y="190" width="250" height="55" rx="5" fill="#0f172a" stroke="#7c3aed"/>
+          <text x="45" y="210" fill="#a78bfa" font-size="11" font-weight="bold">Tier 2: Managed Database</text>
+          <text x="45" y="225" fill="#94a3b8" font-size="9">azurerm_postgresql_flexible_server (v16)</text>
+
+          <rect x="35" y="255" width="250" height="90" rx="5" fill="#0f172a" stroke="#a78bfa"/>
+          <text x="45" y="275" fill="#c4b5fd" font-size="11" font-weight="bold">Tier 3: Container App &amp; Ingress</text>
+          <text x="45" y="292" fill="#cbd5e1" font-size="9">cae-microservices-env + log analytics</text>
+          <text x="45" y="307" fill="#38bdf8" font-size="9">Connection string injected from secret</text>
+          <text x="45" y="322" fill="#34d399" font-size="8">&#10003; Kahn's topological sort execution order</text>
+
+          <!-- 2. Remote State & Locking -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d47GradState)" stroke="#0284c7" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#38bdf8" font-size="14" font-weight="bold">Remote State &amp; Locking</text>
+
+          <rect x="335" y="65" width="250" height="85" rx="5" fill="#0f172a" stroke="#0284c7"/>
+          <text x="345" y="85" fill="#38bdf8" font-size="11" font-weight="bold">Distributed State Lease Lock</text>
+          <text x="345" y="103" fill="#cbd5e1" font-size="9">Azure Blob lease / AWS DynamoDB item</text>
+          <text x="345" y="120" fill="#f87171" font-size="9">&#9888; Rejects concurrent apply (lock error)</text>
+          <text x="345" y="135" fill="#34d399" font-size="8">Prevents state corruption &amp; split-brain</text>
+
+          <rect x="335" y="160" width="250" height="85" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="180" fill="#fbbf24" font-size="11" font-weight="bold">Plan Diff Engine</text>
+          <text x="345" y="198" fill="#34d399" font-size="9">+ create (new resources in HCL)</text>
+          <text x="345" y="215" fill="#fbbf24" font-size="9">~ update in-place (attribute delta)</text>
+          <text x="345" y="232" fill="#f87171" font-size="9">- destroy (removed from config)</text>
+
+          <rect x="335" y="255" width="250" height="90" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="275" fill="#f87171" font-size="11" font-weight="bold">Drift &amp; Sensitive Outputs</text>
+          <text x="345" y="293" fill="#cbd5e1" font-size="9">Drift: Live cloud state != tfstate</text>
+          <text x="345" y="310" fill="#a78bfa" font-size="9">Output: sensitive = true</text>
+          <text x="345" y="325" fill="#34d399" font-size="8">Redacted: (sensitive value) in console</text>
+
+          <!-- 3. DSA LIS -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d47GradLis)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">LIS (LeetCode #300)</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">Patience Sorting Binary Search</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">tails[k]: smallest tail of LIS len k+1</text>
+          <text x="645" y="122" fill="#38bdf8" font-size="10">Binary search tails for lower_bound(x)</text>
+          <text x="645" y="140" fill="#cbd5e1" font-size="9">Found: replace tails[idx] with x</text>
+          <text x="645" y="158" fill="#fbbf24" font-size="9">Not found: tails.Add(x)</text>
+          <text x="645" y="175" fill="#34d399" font-size="9" font-weight="bold">Time: O(N log N), Space: O(N)</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">LIS Array Reconstruction</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">[10, 9, 2, 5, 3, 7, 101, 18]</text>
+          <text x="645" y="266" fill="#34d399" font-size="9">&#8226; LIS Length: 4</text>
+          <text x="645" y="284" fill="#38bdf8" font-size="9">&#8226; Sequence: [2, 3, 7, 101] or [2, 3, 7, 18]</text>
+          <text x="645" y="303" fill="#cbd5e1" font-size="9">Predecessor array parent[i]</text>
+          <text x="645" y="320" fill="#94a3b8" font-size="8">Backtrack from bestEndIndex</text>
+        </svg>
+        """
+
+    if day_num == 48:
+        return """
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d48GradRegion" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d48GradCost" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#d97706" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d48GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Multi-Region Failover -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d48GradRegion)" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#60a5fa" font-size="14" font-weight="bold">Multi-Region Cloud DR</text>
+
+          <rect x="35" y="65" width="250" height="60" rx="5" fill="#0f172a" stroke="#2563eb"/>
+          <text x="45" y="85" fill="#60a5fa" font-size="11" font-weight="bold">Anycast DNS / Azure Front Door</text>
+          <text x="45" y="100" fill="#cbd5e1" font-size="9">Health Probes: 10s interval, threshold 3</text>
+          <text x="45" y="113" fill="#94a3b8" font-size="8">Circuit breaker trip on 25% error rate</text>
+
+          <rect x="35" y="135" width="250" height="70" rx="5" fill="#0f172a" stroke="#10b981"/>
+          <text x="45" y="155" fill="#34d399" font-size="11" font-weight="bold">Primary: eastus (Active)</text>
+          <text x="45" y="172" fill="#cbd5e1" font-size="9">PostgreSQL Primary (RW) + Compute</text>
+          <text x="45" y="188" fill="#38bdf8" font-size="9">Async replication stream &#8594; Secondary</text>
+
+          <rect x="35" y="215" width="250" height="70" rx="5" fill="#0f172a" stroke="#f59e0b"/>
+          <text x="45" y="235" fill="#fbbf24" font-size="11" font-weight="bold">Secondary: westus2 (Warm Standby)</text>
+          <text x="45" y="252" fill="#cbd5e1" font-size="9">Read Replica (RO) + Scaled down compute</text>
+          <text x="45" y="268" fill="#94a3b8" font-size="8">Promoted to RW on primary failure</text>
+
+          <rect x="35" y="295" width="250" height="50" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="315" fill="#cbd5e1" font-size="9">RTO: 5 mins | RPO: replication lag (~10s)</text>
+          <text x="45" y="330" fill="#34d399" font-size="8">&#10003; Bound staleness check prevents stale reads</text>
+
+          <!-- 2. Cost Optimization & Lifecycle -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d48GradCost)" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#fbbf24" font-size="14" font-weight="bold">FinOps &amp; Storage Lifecycle</text>
+
+          <rect x="335" y="65" width="250" height="95" rx="5" fill="#0f172a" stroke="#d97706"/>
+          <text x="345" y="85" fill="#fbbf24" font-size="11" font-weight="bold">Storage Tier Transitions</text>
+          <text x="345" y="103" fill="#cbd5e1" font-size="9">Hot: $0.018/GB (&lt;30 days)</text>
+          <text x="345" y="120" fill="#38bdf8" font-size="9">Cool: $0.010/GB (30-90 days)</text>
+          <text x="345" y="137" fill="#60a5fa" font-size="9">Cold: $0.0045/GB | Archive: $0.00099/GB</text>
+          <text x="345" y="152" fill="#34d399" font-size="8">94% storage cost reduction on telemetry</text>
+
+          <rect x="335" y="170" width="250" height="85" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="190" fill="#fbbf24" font-size="11" font-weight="bold">Compute Savings</text>
+          <text x="345" y="208" fill="#cbd5e1" font-size="9">On-Demand: 100% baseline</text>
+          <text x="345" y="225" fill="#34d399" font-size="9">1-Yr / 3-Yr Reserved: 40% - 60% savings</text>
+          <text x="345" y="242" fill="#38bdf8" font-size="9">Spot Instances: 75% discount (stateless)</text>
+
+          <rect x="335" y="265" width="250" height="80" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="285" fill="#34d399" font-size="11" font-weight="bold">Egress Zero-Tax via Private Link</text>
+          <text x="345" y="303" fill="#f87171" font-size="9">Internet Egress: $0.09/GB &#8594; Private: $0.00</text>
+          <text x="345" y="320" fill="#34d399" font-size="9">&#10003; 10TB transfer saves $900/month</text>
+
+          <!-- 3. DSA Partition Equal Subset Sum -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d48GradDsa)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">Subset Sum (LC #416)</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">0/1 Knapsack Transformation</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">Target sum S = totalSum / 2</text>
+          <text x="645" y="122" fill="#f87171" font-size="9">If totalSum % 2 != 0 &#8594; return false</text>
+          <text x="645" y="140" fill="#38bdf8" font-size="10">dp[j] = dp[j] || dp[j - num]</text>
+          <text x="645" y="158" fill="#fbbf24" font-size="9">Reverse iteration: j = target .. num</text>
+          <text x="645" y="175" fill="#34d399" font-size="9" font-weight="bold">Time: O(N * S), Space: O(S)</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Array Partition Walkthrough</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">[1, 5, 11, 5] &#8594; sum = 22, target = 11</text>
+          <text x="645" y="266" fill="#34d399" font-size="9">&#8226; Subset 1: [1, 5, 5] = 11</text>
+          <text x="645" y="284" fill="#34d399" font-size="9">&#8226; Subset 2: [11] = 11</text>
+          <text x="645" y="303" fill="#38bdf8" font-size="9">Early exit when dp[target] == true</text>
+          <text x="645" y="320" fill="#94a3b8" font-size="8">Bitset optimization: 60x acceleration</text>
+        </svg>
+        """
+
+    if day_num == 49:
+        return """
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d49GradSched" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ec4899" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#be185d" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d49GradWorkers" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#6d28d9" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d49GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Distributed Job Scheduler -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d49GradSched)" stroke="#ec4899" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#f472b6" font-size="14" font-weight="bold">Distributed Job Scheduler</text>
+
+          <rect x="35" y="65" width="250" height="75" rx="5" fill="#0f172a" stroke="#db2777"/>
+          <text x="45" y="85" fill="#f472b6" font-size="11" font-weight="bold">Leader Node (Lease Lock)</text>
+          <text x="45" y="103" fill="#cbd5e1" font-size="9">Fencing Token: monotonic epoch T_1</text>
+          <text x="45" y="120" fill="#34d399" font-size="9">&#10003; Polls timing wheel &amp; dispatches tasks</text>
+          <text x="45" y="132" fill="#94a3b8" font-size="8">Lease TTL: 15s with heartbeat renewal</text>
+
+          <rect x="35" y="150" width="250" height="85" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="170" fill="#fbbf24" font-size="11" font-weight="bold">Hierarchical Timing Wheel</text>
+          <text x="45" y="188" fill="#cbd5e1" font-size="9">O(1) insertion &amp; due task retrieval</text>
+          <text x="45" y="205" fill="#38bdf8" font-size="9">Supports 5-field cron &amp; delayed tasks</text>
+          <text x="45" y="222" fill="#94a3b8" font-size="8">Misfire policies: FireNow / RescheduleNext</text>
+
+          <rect x="35" y="245" width="250" height="100" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="265" fill="#38bdf8" font-size="11" font-weight="bold">At-Least-Once Delivery</text>
+          <text x="45" y="283" fill="#cbd5e1" font-size="9">Idempotency Token: hash(job, fireTime)</text>
+          <text x="45" y="300" fill="#f87171" font-size="9">Retry with exponential backoff &amp; jitter</text>
+          <text x="45" y="318" fill="#34d399" font-size="9">Guarantees at-most-once execution</text>
+          <text x="45" y="333" fill="#94a3b8" font-size="8">delay = base * 2^retry * (1 + jitter)</text>
+
+          <!-- 2. Worker Registry & Failover -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d49GradWorkers)" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#a78bfa" font-size="14" font-weight="bold">Worker Registry &amp; Failover</text>
+
+          <rect x="335" y="65" width="250" height="80" rx="5" fill="#0f172a" stroke="#7c3aed"/>
+          <text x="345" y="85" fill="#a78bfa" font-size="11" font-weight="bold">Worker Liveness Heartbeats</text>
+          <text x="345" y="103" fill="#cbd5e1" font-size="9">Workers ping coordinator every 5s</text>
+          <text x="345" y="120" fill="#34d399" font-size="9">Worker A: 4 capacity [Alive]</text>
+          <text x="345" y="135" fill="#34d399" font-size="9">Worker B: 4 capacity [Alive]</text>
+
+          <rect x="335" y="155" width="250" height="90" rx="5" fill="#0f172a" stroke="#dc2626"/>
+          <text x="345" y="175" fill="#f87171" font-size="11" font-weight="bold">Dead Worker Eviction</text>
+          <text x="345" y="193" fill="#cbd5e1" font-size="9">Heartbeat timeout elapsed &gt; 10s</text>
+          <text x="345" y="210" fill="#f87171" font-size="9">Worker evicted from active pool</text>
+          <text x="345" y="228" fill="#fbbf24" font-size="9">&#8635; Unacknowledged jobs re-enqueued</text>
+
+          <rect x="335" y="255" width="250" height="90" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="275" fill="#34d399" font-size="11" font-weight="bold">Leader Failover Simulation</text>
+          <text x="345" y="293" fill="#cbd5e1" font-size="9">Leader lease expires on partition</text>
+          <text x="345" y="310" fill="#fbbf24" font-size="9">Candidate 2 elected: Fencing Token T_2</text>
+          <text x="345" y="328" fill="#f87171" font-size="9">Stale leader T_1 writes rejected!</text>
+
+          <!-- 3. DSA Trapping Rain Water -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d49GradDsa)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">Rain Water (LC #42)</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">Two Pointers (Optimal)</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">left = 0, right = n - 1</text>
+          <text x="645" y="122" fill="#38bdf8" font-size="10">height[left] &lt; height[right]</text>
+          <text x="645" y="140" fill="#cbd5e1" font-size="9">&#8594; water += max(0, leftMax - height[l])</text>
+          <text x="645" y="158" fill="#fbbf24" font-size="9">Converges to global maximum peak</text>
+          <text x="645" y="175" fill="#34d399" font-size="9" font-weight="bold">Time: O(N), Space: O(1)</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Monotonic Decreasing Stack</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">Stores indices of descending bars</text>
+          <text x="645" y="266" fill="#34d399" font-size="9">Calculates water layer horizontally</text>
+          <text x="645" y="284" fill="#38bdf8" font-size="9">boundedH = min(left, right) - bottom</text>
+          <text x="645" y="303" fill="#cbd5e1" font-size="9">trapped = boundedH * distance</text>
+          <text x="645" y="320" fill="#94a3b8" font-size="8">Time: O(N), Space: O(N)</text>
+        </svg>
+        """
+
+    if day_num == 50:
+        return """
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d50GradBench" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#eab308" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#ca8a04" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d50GradScore" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d50GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Phase 2 Architecture Benchmark -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d50GradBench)" stroke="#eab308" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#facc15" font-size="14" font-weight="bold">Phase 2 Architecture Benchmark</text>
+
+          <rect x="35" y="65" width="250" height="75" rx="5" fill="#0f172a" stroke="#ca8a04"/>
+          <text x="45" y="85" fill="#facc15" font-size="11" font-weight="bold">Chaos Engineering Fault Injection</text>
+          <text x="45" y="103" fill="#cbd5e1" font-size="9">Circuit Breaker: trips at threshold 3</text>
+          <text x="45" y="120" fill="#34d399" font-size="9">&#10003; Fast fallback prevents thread exhaustion</text>
+          <text x="45" y="132" fill="#94a3b8" font-size="8">Half-Open probe automatically self-heals</text>
+
+          <rect x="35" y="150" width="250" height="85" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="170" fill="#38bdf8" font-size="11" font-weight="bold">Transactional Outbox Drain</text>
+          <text x="45" y="188" fill="#f87171" font-size="9">RabbitMQ broker offline: messages buffered</text>
+          <text x="45" y="205" fill="#34d399" font-size="9">Broker recovered: 100% drained safely</text>
+          <text x="45" y="222" fill="#cbd5e1" font-size="8">Zero message loss in financial ledger</text>
+
+          <rect x="35" y="245" width="250" height="100" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="265" fill="#34d399" font-size="11" font-weight="bold">Latency Percentile Profiling</text>
+          <text x="45" y="283" fill="#cbd5e1" font-size="9">P50: 100ms | P95: 190ms | P99: 198ms</text>
+          <text x="45" y="300" fill="#a78bfa" font-size="9">Non-blocking async pipelines verified</text>
+          <text x="45" y="318" fill="#34d399" font-size="9">&#10003; Sub-200ms tail latency target achieved</text>
+          <text x="45" y="333" fill="#94a3b8" font-size="8">High throughput: 10k ops/sec validated</text>
+
+          <!-- 2. Phase 2 Audit Scorecard -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d50GradScore)" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#60a5fa" font-size="14" font-weight="bold">Phase 2 Audit Scorecard</text>
+
+          <rect x="335" y="65" width="250" height="170" rx="5" fill="#0f172a" stroke="#2563eb"/>
+          <text x="345" y="85" fill="#60a5fa" font-size="11" font-weight="bold">100% Readiness Certification</text>
+          <text x="345" y="103" fill="#34d399" font-size="9">&#10003; Microservices &amp; Bounded Contexts</text>
+          <text x="345" y="120" fill="#34d399" font-size="9">&#10003; YARP Gateway &amp; Polly Resilience</text>
+          <text x="345" y="137" fill="#34d399" font-size="9">&#10003; RabbitMQ &amp; MassTransit Sagas</text>
+          <text x="345" y="154" fill="#34d399" font-size="9">&#10003; Transactional Outbox &amp; Idempotency</text>
+          <text x="345" y="171" fill="#34d399" font-size="9">&#10003; OpenTelemetry Distributed Tracing</text>
+          <text x="345" y="188" fill="#34d399" font-size="9">&#10003; Prometheus, Grafana &amp; Jaeger</text>
+          <text x="345" y="205" fill="#34d399" font-size="9">&#10003; Kubernetes Ingress, Probes &amp; HPA</text>
+          <text x="345" y="222" fill="#34d399" font-size="9">&#10003; GitHub Actions CI/CD &amp; Terraform</text>
+
+          <rect x="335" y="245" width="250" height="100" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="265" fill="#facc15" font-size="11" font-weight="bold">Milestone Assessment: PASS</text>
+          <text x="345" y="283" fill="#cbd5e1" font-size="9">Total days evaluated: 25 days (Days 26-50)</text>
+          <text x="345" y="300" fill="#34d399" font-size="9">Architecture Score: 100.0 / 100.0</text>
+          <text x="345" y="318" fill="#38bdf8" font-size="9">Status: Enterprise Production Ready</text>
+          <text x="345" y="333" fill="#a78bfa" font-size="8">Next: Phase 3 AI &amp; LLM Foundations</text>
+
+          <!-- 3. DSA Merge K Sorted Lists -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d50GradDsa)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">Merge K Lists (LC #23)</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">Min-Heap Priority Queue</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">Heap size = K (list heads)</text>
+          <text x="645" y="122" fill="#38bdf8" font-size="10">Smallest = pq.Dequeue()</text>
+          <text x="645" y="140" fill="#cbd5e1" font-size="9">curr.next = smallest</text>
+          <text x="645" y="158" fill="#fbbf24" font-size="9">If smallest.next != null &#8594; Enqueue</text>
+          <text x="645" y="175" fill="#34d399" font-size="9" font-weight="bold">Time: O(N log K), Space: O(K)</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Divide &amp; Conquer Merging</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">Pairwise merge adjacent lists</text>
+          <text x="645" y="266" fill="#34d399" font-size="9">K &#8594; K/2 &#8594; K/4 &#8594; .. &#8594; 1</text>
+          <text x="645" y="284" fill="#38bdf8" font-size="9">log K merge rounds</text>
+          <text x="645" y="303" fill="#cbd5e1" font-size="9">Pointer manipulation in-place</text>
+          <text x="645" y="320" fill="#34d399" font-size="8">Auxiliary Space: O(1)</text>
+        </svg>
+        """
+
+    if day_num == 51:
+        return """
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d51GradAttn" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#0891b2" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d51GradSample" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#6d28d9" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d51GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Transformer Self-Attention -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d51GradAttn)" stroke="#06b6d4" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#22d3ee" font-size="14" font-weight="bold">Transformer Attention &amp; PE</text>
+
+          <rect x="35" y="65" width="250" height="85" rx="5" fill="#0f172a" stroke="#0891b2"/>
+          <text x="45" y="85" fill="#22d3ee" font-size="11" font-weight="bold">Scaled Dot-Product Attention</text>
+          <text x="45" y="103" fill="#cbd5e1" font-size="9">Attention(Q,K,V) = softmax(QK^T / &#8730;d_k)V</text>
+          <text x="45" y="120" fill="#fbbf24" font-size="9">&#8730;d_k scale prevents vanishing gradients</text>
+          <text x="45" y="135" fill="#34d399" font-size="8">Multi-head projection: d_model &#8594; H x d_k</text>
+
+          <rect x="35" y="160" width="250" height="85" rx="5" fill="#0f172a" stroke="#dc2626"/>
+          <text x="45" y="180" fill="#f87171" font-size="11" font-weight="bold">Causal Autoregressive Mask</text>
+          <text x="45" y="198" fill="#cbd5e1" font-size="9">Upper triangular mask: j &gt; i &#8594; -&#8734;</text>
+          <text x="45" y="215" fill="#34d399" font-size="9">exp(-&#8734;) = 0: no future token leakage</text>
+          <text x="45" y="232" fill="#94a3b8" font-size="8">Strict left-to-right generation constraint</text>
+
+          <rect x="35" y="255" width="250" height="90" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="275" fill="#a78bfa" font-size="11" font-weight="bold">Sinusoidal Positional Encoding</text>
+          <text x="45" y="293" fill="#cbd5e1" font-size="9">PE(pos, 2i) = sin(pos / 10000^(2i/d))</text>
+          <text x="45" y="310" fill="#cbd5e1" font-size="9">PE(pos, 2i+1) = cos(pos / 10000^(2i/d))</text>
+          <text x="45" y="328" fill="#34d399" font-size="8">Injects token order into permutation matrix</text>
+
+          <!-- 2. Tokenizer & Sampling -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d51GradSample)" stroke="#8b5cf6" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#a78bfa" font-size="14" font-weight="bold">Tokenization &amp; Sampling</text>
+
+          <rect x="335" y="65" width="250" height="85" rx="5" fill="#0f172a" stroke="#7c3aed"/>
+          <text x="345" y="85" fill="#a78bfa" font-size="11" font-weight="bold">Byte-Pair Encoding (BPE)</text>
+          <text x="345" y="103" fill="#cbd5e1" font-size="9">Iterative most-frequent pair merging</text>
+          <text x="345" y="120" fill="#34d399" font-size="9">e.g. ('l','o') &#8594; 'lo' + ('w') &#8594; 'low'</text>
+          <text x="345" y="135" fill="#94a3b8" font-size="8">Eliminates Out-Of-Vocabulary (OOV) tokens</text>
+
+          <rect x="335" y="160" width="250" height="85" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="180" fill="#fbbf24" font-size="11" font-weight="bold">Temperature &amp; Top-P (Nucleus)</text>
+          <text x="345" y="198" fill="#cbd5e1" font-size="9">Temp T=0.2: sharp peak | T=2.0: uniform</text>
+          <text x="345" y="215" fill="#38bdf8" font-size="9">Top-P=0.9: cuts cumulative tail tokens</text>
+          <text x="345" y="232" fill="#34d399" font-size="8">Dynamically adapts vocabulary candidate pool</text>
+
+          <rect x="335" y="255" width="250" height="90" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="275" fill="#f87171" font-size="11" font-weight="bold">Repetition Penalty</text>
+          <text x="345" y="293" fill="#cbd5e1" font-size="9">logit -= count * freq_pen + pres_pen</text>
+          <text x="345" y="310" fill="#34d399" font-size="9">Prevents degenerate repetitive loops</text>
+          <text x="345" y="328" fill="#a78bfa" font-size="8">Encourages novel semantic exploration</text>
+
+          <!-- 3. DSA Unique Paths & LCS -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d51GradDsa)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">Unique Paths &amp; LCS</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">Unique Paths (LC #62)</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">dp[i,j] = dp[i-1,j] + dp[i,j-1]</text>
+          <text x="645" y="122" fill="#38bdf8" font-size="10">Space: O(min(m, n)) rolling array</text>
+          <text x="645" y="140" fill="#fbbf24" font-size="9">Combinatorics: C(m+n-2, m-1)</text>
+          <text x="645" y="158" fill="#34d399" font-size="9">Time: O(m+n), Space: O(1)</text>
+          <text x="645" y="175" fill="#94a3b8" font-size="8">Exact integer multiplication/division</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">LCS (LC #1143)</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">match: dp[i-1, j-1] + 1</text>
+          <text x="645" y="266" fill="#38bdf8" font-size="9">mismatch: max(dp[i-1,j], dp[i,j-1])</text>
+          <text x="645" y="284" fill="#34d399" font-size="9">Backtrack from (M, N) for string</text>
+          <text x="645" y="303" fill="#cbd5e1" font-size="9">"abcde" &amp; "ace" &#8594; "ace" (len 3)</text>
+          <text x="645" y="320" fill="#94a3b8" font-size="8">Time: O(M * N), Space: O(M * N)</text>
+        </svg>
+        """
+
     return ""
 
 def format_interview_qa(interview_md):

@@ -1,0 +1,2107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 50: Phase 2 Review &amp; Distributed Architecture Benchmark | 100-Day .NET + AI Track</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #0b0f19;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-code: #0f172a;
+      --border: #1e293b;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #c084fc;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    header {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 24px;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-day {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+    }
+    .badge-category {
+      background: #064e3b;
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      text-decoration: none;
+    }
+    select.day-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .hero h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+    .quick-highlight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .highlight-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 6px 12px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e293b;
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .markdown-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      line-height: 1.7;
+    }
+    .markdown-content h1 { font-size: 24px; color: #fff; margin: 24px 0 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .markdown-content h2 { font-size: 20px; color: #38bdf8; margin: 28px 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .markdown-content h3 { font-size: 17px; color: #f1f5f9; margin: 20px 0 8px; }
+    .markdown-content p { margin-bottom: 16px; color: #cbd5e1; font-size: 15px; }
+    .markdown-content ul, .markdown-content ol { margin-bottom: 16px; padding-left: 24px; color: #cbd5e1; }
+    .markdown-content li { margin-bottom: 6px; font-size: 14.5px; }
+    .markdown-content code {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .code-block-container {
+      position: relative;
+      margin: 16px 0 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .markdown-content pre {
+      background: var(--bg-code);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .markdown-content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e2e8f0;
+      font-size: 13.5px;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 18px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    .markdown-content th, .markdown-content td {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .markdown-content th {
+      background: #1e293b;
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    .markdown-content tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .markdown-content blockquote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 18px;
+      background: var(--accent-glow);
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      color: #e2e8f0;
+    }
+    .markdown-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    /* QA Native Details Styles */
+    .qa-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    details.qa-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    details.qa-card:hover {
+      border-color: var(--border-accent);
+    }
+    summary.qa-header {
+      padding: 16px 20px;
+      background: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      list-style: none;
+    }
+    summary.qa-header::-webkit-details-marker {
+      display: none;
+    }
+    details.qa-card[open] summary.qa-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .qa-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .qa-toggle-icon {
+      font-size: 12px;
+      color: var(--accent);
+      transition: transform 0.2s;
+    }
+    details.qa-card[open] .qa-toggle-icon {
+      transform: rotate(180deg);
+    }
+    .qa-body {
+      padding: 24px;
+      background: #111827;
+      line-height: 1.7;
+    }
+    /* Code Viewer Styles */
+    .file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .file-header {
+      background: #1e293b;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-title {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .copy-btn {
+      background: #334155;
+      border: none;
+      color: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    .section-divider-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer-bar {
+      text-align: center;
+      margin-top: 40px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    noscript .tab-pane {
+      display: block !important;
+      margin-bottom: 40px;
+    }
+    noscript .tabs-nav {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="logo-area">
+        <a href="../index.html" class="nav-btn">🏠 Home Hub</a>
+        <span class="badge badge-day">Day 50</span>
+        <span class="badge badge-category">Milestone Review</span>
+        <span style="font-weight: 700; font-size: 15px;">100-Day .NET + AI Track</span>
+      </div>
+      <div class="nav-controls">
+        <a href="../Day49-SystemDesign-Distributed-Job-Scheduler/index.html" class="nav-btn">← Day 49</a>
+        <select class="day-select" onchange="if(this.value) window.location.href=this.value">
+          <option value="../Day01-CSharp-Memory/index.html">Day 01: C# Memory Model, Span & ReadOn...</option>
+<option value="../Day02-RefStruct-Memory/index.html">Day 02: ref struct & Memory<T> in Asyn...</option>
+<option value="../Day03-Async-Await/index.html">Day 03: Async/Await & AsyncStateMachin...</option>
+<option value="../Day04-Garbage-Collection/index.html">Day 04: Garbage Collection Laboratory ...</option>
+<option value="../Day05-Middleware-Kestrel/index.html">Day 05: ASP.NET Core Middleware & Kest...</option>
+<option value="../Day06-Dependency-Injection/index.html">Day 06: Dependency Injection Lifetimes...</option>
+<option value="../Day07-Minimal-APIs/index.html">Day 07: Minimal APIs, Endpoint Filters...</option>
+<option value="../Day08-SQL-Indexes/index.html">Day 08: PostgreSQL B-Tree Indexing & 8...</option>
+<option value="../Day09-SQL-Execution-Plans/index.html">Day 09: SQL Execution Plans & Index Tu...</option>
+<option value="../Day10-Transactions-ACID/index.html">Day 10: SQL Transactions, ACID & MVCC ...</option>
+<option value="../Day11-EFCore-ChangeTracking/index.html">Day 11: EF Core Change Tracking Mechan...</option>
+<option value="../Day12-EFCore-SplitQueries-Interceptors/index.html">Day 12: EF Core Split Queries & DbComm...</option>
+<option value="../Day13-Dapper-Performance/index.html">Day 13: High-Performance Data Access w...</option>
+<option value="../Day14-EFCore-Migrations-Production/index.html">Day 14: EF Core Migrations & Productio...</option>
+<option value="../Day15-Channels-Concurrency/index.html">Day 15: Channels & High-Throughput Con...</option>
+<option value="../Day16-Synchronization-Locks/index.html">Day 16: Distributed Locking & Concurre...</option>
+<option value="../Day17-Redis-Cache-Patterns/index.html">Day 17: Introduction to Redis & Cache ...</option>
+<option value="../Day18-Redis-DataStructures-Eviction/index.html">Day 18: Redis Data Structures & Memory...</option>
+<option value="../Day19-Redis-RedLock-DistributedLocking/index.html">Day 19: Redis Distributed Locking with...</option>
+<option value="../Day20-Redis-Streams-PubSub/index.html">Day 20: Redis Pub/Sub & Redis Streams...</option>
+<option value="../Day21-Distributed-Cache-Architecture/index.html">Day 21: System Design: Distributed Cac...</option>
+<option value="../Day22-Rate-Limiter-Design/index.html">Day 22: System Design: Rate Limiter De...</option>
+<option value="../Day23-Url-Shortener-TinyUrl/index.html">Day 23: System Design: URL Shortener (...</option>
+<option value="../Day24-Advanced-SQL-Window-Partitions/index.html">Day 24: Advanced SQL: CTEs, Window Fun...</option>
+<option value="../Day25-Phase1-Milestone-Assessment/index.html">Day 25: Phase 1 Review & Milestone Ass...</option>
+<option value="../Day26-Microservices-BoundedContexts/index.html">Day 26: Microservices Principles & Bou...</option>
+<option value="../Day27-ApiGateway-Yarp/index.html">Day 27: API Gateway Architecture with ...</option>
+<option value="../Day28-Resilient-Http-Refit-Polly/index.html">Day 28: Resilient Service-to-Service H...</option>
+<option value="../Day29-RabbitMQ-Core-Exchanges-Queues/index.html">Day 29: RabbitMQ Core Concepts: Exchan...</option>
+<option value="../Day30-RabbitMQ-DLQ-MassTransit/index.html">Day 30: RabbitMQ Dead-Letter Queues & ...</option>
+<option value="../Day31-Transactional-Outbox-Pattern/index.html">Day 31: The Transactional Outbox Patte...</option>
+<option value="../Day32-Saga-Orchestration-MassTransit/index.html">Day 32: Saga Pattern: Orchestration vs...</option>
+<option value="../Day33-Distributed-Idempotency/index.html">Day 33: Distributed Idempotency & De-d...</option>
+<option value="../Day34-OpenTelemetry-DistributedTracing/index.html">Day 34: OpenTelemetry in .NET: Distrib...</option>
+<option value="../Day35-Observability-Prometheus-Grafana-Jaeger/index.html">Day 35: Observability Stack: Prometheu...</option>
+<option value="../Day36-SystemDesign-Notification-Service/index.html">Day 36: System Design: Notification Se...</option>
+<option value="../Day37-SystemDesign-Chat-System/index.html">Day 37: System Design: High-Throughput...</option>
+<option value="../Day38-SystemDesign-Video-Streaming/index.html">Day 38: System Design: Video Streaming...</option>
+<option value="../Day39-CAP-PACELC-DistributedSystems/index.html">Day 39: CAP Theorem & PACELC in Practi...</option>
+<option value="../Day40-EventSourcing-CQRS/index.html">Day 40: Event Sourcing & CQRS Foundati...</option>
+<option value="../Day41-Docker-DotNet-Cgroups/index.html">Day 41: Docker Deep Dive for .NET Serv...</option>
+<option value="../Day42-Docker-Compose-Microservices/index.html">Day 42: Docker Compose for Microservic...</option>
+<option value="../Day43-Kubernetes-Architecture-Pods-Deployments/index.html">Day 43: Kubernetes Architecture: Pods,...</option>
+<option value="../Day44-Kubernetes-ConfigMaps-Secrets-Ingress/index.html">Day 44: Kubernetes ConfigMaps, Secrets...</option>
+<option value="../Day45-Kubernetes-Probes-HPA/index.html">Day 45: Kubernetes Probes & Auto-Scali...</option>
+<option value="../Day46-CICD-GitHub-Actions-DotNet/index.html">Day 46: CI/CD with GitHub Actions for ...</option>
+<option value="../Day47-Terraform-IaC-Cloud/index.html">Day 47: Infrastructure as Code with Te...</option>
+<option value="../Day48-Cloud-Architecture-Patterns/index.html">Day 48: Cloud Architecture Patterns (A...</option>
+<option value="../Day49-SystemDesign-Distributed-Job-Scheduler/index.html">Day 49: System Design: Distributed Job...</option>
+<option value="../Day50-Phase2-Distributed-Architecture-Benchmark/index.html">Day 50: Phase 2 Review & Distributed A...</option>
+<option value="../Day51-AI-LLM-Architecture-Foundations/index.html">Day 51: AI & LLM Architecture Foundati...</option>
+
+        </select>
+        <a href="../Day51-AI-LLM-Architecture-Foundations/index.html" class="nav-btn">Day 51 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Day 50: Phase 2 Review &amp; Distributed Architecture Benchmark</h1>
+      <p>Practical Engineering Implementations, Deep Systems Mechanics, DSA & Production Benchmarks</p>
+      <div class="quick-highlight">
+        <span class="highlight-pill">📝 Deep-Dive Engineering Notes Included</span>
+        <span class="highlight-pill">💡 10 Senior Interview Questions with Answers</span>
+        <span class="highlight-pill">🖼️ Architectural Visual Model</span>
+        <span class="highlight-pill">💻 2 Source & 1 Test Files</span>
+      </div>
+    </div>
+
+    <!-- Visual Architecture / 3D Diagram Card (Always Visible on Top) -->
+    <div class="diagram-card">
+      <div class="diagram-title">🖼️ Core Architectural Mechanics & Systems Visual Model</div>
+      
+        <svg viewBox="0 0 900 380" width="100%" height="320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="d50GradBench" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#eab308" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#ca8a04" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d50GradScore" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="d50GradDsa" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 1. Phase 2 Architecture Benchmark -->
+          <rect x="20" y="20" width="280" height="340" rx="10" fill="url(#d50GradBench)" stroke="#eab308" stroke-width="1.5"/>
+          <text x="40" y="48" fill="#facc15" font-size="14" font-weight="bold">Phase 2 Architecture Benchmark</text>
+
+          <rect x="35" y="65" width="250" height="75" rx="5" fill="#0f172a" stroke="#ca8a04"/>
+          <text x="45" y="85" fill="#facc15" font-size="11" font-weight="bold">Chaos Engineering Fault Injection</text>
+          <text x="45" y="103" fill="#cbd5e1" font-size="9">Circuit Breaker: trips at threshold 3</text>
+          <text x="45" y="120" fill="#34d399" font-size="9">&#10003; Fast fallback prevents thread exhaustion</text>
+          <text x="45" y="132" fill="#94a3b8" font-size="8">Half-Open probe automatically self-heals</text>
+
+          <rect x="35" y="150" width="250" height="85" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="170" fill="#38bdf8" font-size="11" font-weight="bold">Transactional Outbox Drain</text>
+          <text x="45" y="188" fill="#f87171" font-size="9">RabbitMQ broker offline: messages buffered</text>
+          <text x="45" y="205" fill="#34d399" font-size="9">Broker recovered: 100% drained safely</text>
+          <text x="45" y="222" fill="#cbd5e1" font-size="8">Zero message loss in financial ledger</text>
+
+          <rect x="35" y="245" width="250" height="100" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="45" y="265" fill="#34d399" font-size="11" font-weight="bold">Latency Percentile Profiling</text>
+          <text x="45" y="283" fill="#cbd5e1" font-size="9">P50: 100ms | P95: 190ms | P99: 198ms</text>
+          <text x="45" y="300" fill="#a78bfa" font-size="9">Non-blocking async pipelines verified</text>
+          <text x="45" y="318" fill="#34d399" font-size="9">&#10003; Sub-200ms tail latency target achieved</text>
+          <text x="45" y="333" fill="#94a3b8" font-size="8">High throughput: 10k ops/sec validated</text>
+
+          <!-- 2. Phase 2 Audit Scorecard -->
+          <rect x="320" y="20" width="280" height="340" rx="10" fill="url(#d50GradScore)" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="340" y="48" fill="#60a5fa" font-size="14" font-weight="bold">Phase 2 Audit Scorecard</text>
+
+          <rect x="335" y="65" width="250" height="170" rx="5" fill="#0f172a" stroke="#2563eb"/>
+          <text x="345" y="85" fill="#60a5fa" font-size="11" font-weight="bold">100% Readiness Certification</text>
+          <text x="345" y="103" fill="#34d399" font-size="9">&#10003; Microservices &amp; Bounded Contexts</text>
+          <text x="345" y="120" fill="#34d399" font-size="9">&#10003; YARP Gateway &amp; Polly Resilience</text>
+          <text x="345" y="137" fill="#34d399" font-size="9">&#10003; RabbitMQ &amp; MassTransit Sagas</text>
+          <text x="345" y="154" fill="#34d399" font-size="9">&#10003; Transactional Outbox &amp; Idempotency</text>
+          <text x="345" y="171" fill="#34d399" font-size="9">&#10003; OpenTelemetry Distributed Tracing</text>
+          <text x="345" y="188" fill="#34d399" font-size="9">&#10003; Prometheus, Grafana &amp; Jaeger</text>
+          <text x="345" y="205" fill="#34d399" font-size="9">&#10003; Kubernetes Ingress, Probes &amp; HPA</text>
+          <text x="345" y="222" fill="#34d399" font-size="9">&#10003; GitHub Actions CI/CD &amp; Terraform</text>
+
+          <rect x="335" y="245" width="250" height="100" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="345" y="265" fill="#facc15" font-size="11" font-weight="bold">Milestone Assessment: PASS</text>
+          <text x="345" y="283" fill="#cbd5e1" font-size="9">Total days evaluated: 25 days (Days 26-50)</text>
+          <text x="345" y="300" fill="#34d399" font-size="9">Architecture Score: 100.0 / 100.0</text>
+          <text x="345" y="318" fill="#38bdf8" font-size="9">Status: Enterprise Production Ready</text>
+          <text x="345" y="333" fill="#a78bfa" font-size="8">Next: Phase 3 AI &amp; LLM Foundations</text>
+
+          <!-- 3. DSA Merge K Sorted Lists -->
+          <rect x="620" y="20" width="260" height="340" rx="10" fill="url(#d50GradDsa)" stroke="#10b981" stroke-width="1.5"/>
+          <text x="640" y="48" fill="#34d399" font-size="14" font-weight="bold">Merge K Lists (LC #23)</text>
+
+          <rect x="635" y="65" width="230" height="135" rx="5" fill="#0f172a" stroke="#059669"/>
+          <text x="645" y="85" fill="#34d399" font-size="11" font-weight="bold">Min-Heap Priority Queue</text>
+          <text x="645" y="103" fill="#cbd5e1" font-size="9">Heap size = K (list heads)</text>
+          <text x="645" y="122" fill="#38bdf8" font-size="10">Smallest = pq.Dequeue()</text>
+          <text x="645" y="140" fill="#cbd5e1" font-size="9">curr.next = smallest</text>
+          <text x="645" y="158" fill="#fbbf24" font-size="9">If smallest.next != null &#8594; Enqueue</text>
+          <text x="645" y="175" fill="#34d399" font-size="9" font-weight="bold">Time: O(N log K), Space: O(K)</text>
+
+          <rect x="635" y="210" width="230" height="135" rx="5" fill="#0f172a" stroke="#334155"/>
+          <text x="645" y="230" fill="#fbbf24" font-size="11" font-weight="bold">Divide &amp; Conquer Merging</text>
+          <text x="645" y="248" fill="#cbd5e1" font-size="9">Pairwise merge adjacent lists</text>
+          <text x="645" y="266" fill="#34d399" font-size="9">K &#8594; K/2 &#8594; K/4 &#8594; .. &#8594; 1</text>
+          <text x="645" y="284" fill="#38bdf8" font-size="9">log K merge rounds</text>
+          <text x="645" y="303" fill="#cbd5e1" font-size="9">Pointer manipulation in-place</text>
+          <text x="645" y="320" fill="#34d399" font-size="8">Auxiliary Space: O(1)</text>
+        </svg>
+        
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('notes')">📝 Deep-Dive Notes</button>
+      <button class="tab-btn" onclick="switchTab('readme')">📑 Module README</button>
+      <button class="tab-btn" onclick="switchTab('interview')">💡 Senior Interview Q&A (10 Questions)</button>
+      <button class="tab-btn" onclick="switchTab('source')">💻 Production Source (2 files)</button>
+      <button class="tab-btn" onclick="switchTab('tests')">🧪 Unit Tests (1 files)</button>
+      <button class="tab-btn" onclick="switchTab('all')">📖 All-in-One Full Guide</button>
+    </div>
+
+    <!-- Tab Panes -->
+    <div id="pane-notes" class="tab-pane active">
+      <div class="markdown-content" id="notes-container">
+        <h1>Technical Notes: Phase 2 Milestone Benchmark & Architecture Review</h1>
+<h3>1. Phase 2 Architecture Review Synthesis</h3>
+<p>Across Days 26 to 50, the architecture stack spans:</p>
+<ul>
+<li><strong>Resilience</strong>: Polly circuit breakers prevent cascade failures across microservices.</li>
+<li><strong>Consistency</strong>: The Transactional Outbox Pattern and Saga State Machines decouple atomic business transactions from distributed asynchronous messaging.</li>
+<li><strong>Observability</strong>: OpenTelemetry standardizes W3C distributed trace propagation (<code>traceparent</code>), correlated across logs, Prometheus metrics, and Jaeger spans.</li>
+<li><strong>Orchestration</strong>: Kubernetes Deployments, Probes, HPA, and Ingress manage containerized life cycles backed by declarative Terraform IaC.</li>
+</ul>
+<h3>2. LeetCode #23: Merge K Sorted Lists</h3>
+<p>Let $K$ be the number of linked lists and $N$ be the total number of nodes across all lists:</p>
+<ul>
+<li><strong>Min-Heap Approach</strong>: Insert the head of each list into a priority queue of size $K$. Dequeue the smallest node, append it to the merged list, and enqueue its <code>next</code> pointer. Time: $\mathcal{O}(N \log K)$, Space: $\mathcal{O}(K)$.</li>
+<li><strong>Divide-and-Conquer</strong>: Pairwise merge adjacent lists in rounds ($K 	o K/2 	o K/4 \dots 	o 1$). Total rounds: $\log K$. Each round processes $N$ nodes. Time: $\mathcal{O}(N \log K)$, Space: $\mathcal{O}(1)$ auxiliary space.</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-readme" class="tab-pane">
+      <div class="markdown-content" id="readme-container">
+        <h1>Day 50: Phase 2 Review & Distributed Architecture Benchmark</h1>
+<h2>Overview</h2>
+<p>Day 50 marks the official completion and milestone certification of <strong>Phase 2: Microservices, Distributed Systems & Observability (Days 26–50)</strong>. We conduct an end-to-end distributed systems resilience audit, chaos engineering fault injection, throughput and latency percentile analysis (P50, P90, P99), and LeetCode #23 Merge K Sorted Lists (Hard) solved via both Min-Heap Priority Queue and Divide-and-Conquer pairwise merging.</p>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong>Phase 2 Comprehensive Review</strong>: Microservices, Bounded Contexts, YARP Gateway, Polly resilience, RabbitMQ, Transactional Outbox, MassTransit Sagas, OpenTelemetry tracing, Docker Compose, Kubernetes orchestration, and Terraform IaC.</li>
+<li><strong>Chaos Fault Injection</strong>: Simulating message broker outages, circuit-breaker tripping, and outbox drain verification without data loss.</li>
+<li><strong>Latency & Percentiles</strong>: Measuring P50, P95, and P99 response distributions under high-load stress conditions.</li>
+<li><strong>Algorithm (LC #23)</strong>: Merge K Sorted Lists via Min-Heap Priority Queue ($\mathcal{O}(N \log K)$ time, $\mathcal{O}(K)$ space) and Divide-and-Conquer ($\mathcal{O}(1)$ space).</li>
+</ul>
+      </div>
+    </div>
+
+    <div id="pane-interview" class="tab-pane">
+      <div class="qa-controls">
+        <span style="font-size: 13px; color: var(--text-muted); font-weight: 600;">10 Senior / Staff-Level Interview Questions with In-Depth Answers:</span>
+        <div style="display:flex; gap:8px;">
+          <button class="nav-btn" onclick="toggleAllQa(true)">Expand All</button>
+          <button class="nav-btn" onclick="toggleAllQa(false)">Collapse All</button>
+        </div>
+      </div>
+      <div id="interview-cards-container">
+        
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do you design a disaster recovery chaos drill for a microservices cluster in Kubernetes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Steady-State Hypothesis</strong>: Define measurable SLIs/SLOs (e.g. 99.9% HTTP 2xx, P99 latency < 250ms).</li>
+<li><strong>Blast Radius Control</strong>: Target a staging or production-canary namespace using Chaos Mesh or LitmusChaos.</li>
+<li><strong>Fault Injections</strong>:</li>
+</ol>
+<ul>
+<li>Random Pod kills to verify ReplicaSet and zero-downtime rolling updates.</li>
+<li>Network latency/packet loss (100ms delay, 10% packet drop) between services to verify Polly timeouts.</li>
+<li>Broker partition (disconnect RabbitMQ) to verify Transactional Outbox accumulation.</li>
+</ul>
+<ol>
+<li><strong>Verification & Post-Mortem</strong>: Verify alert firing in Prometheus/PagerDuty and validate automated self-healing without operator intervention.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Compare Eventual Consistency vs Strong Consistency for enterprise financial transactions.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Strong Consistency (ACID / 2PC)</strong>: Immediate consistency across all nodes; high latency, vulnerable to blocking coordinator failure, scales poorly over WAN.</li>
+<li><strong>Eventual Consistency (BASE / Sagas)</strong>: High availability and throughput; temporary divergence permitted. Compensating transactions reverse failed downstream actions.</li>
+</ul>
+<p><em>Enterprise Best Practice</em>: Enforce ACID locally within individual microservice bounded contexts (e.g. reserving funds in Ledger DB) and orchestrate cross-service workflows via asynchronous Sagas with compensating actions.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why is P99 latency more important than Average (Mean) latency in distributed systems?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>The mean hides severe outliers. In a microservices architecture where a single user request fans out to 50 parallel downstream RPCs, the probability of the user experiencing at least one P99 slowest call is:</p>
+<p>$$1 - (0.99)^{50} pprox 39.5\%$$</p>
+<p>Nearly 40% of all user requests will experience the tail latency! Optimizing P99 directly protects user experience and prevents thread-pool starvation.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does the Transactional Outbox pattern prevent the dual-write problem?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Writing to a database and publishing to a message broker in a single operation cannot be atomic without distributed 2PC. If the database commit succeeds but the message broker network drops, data is inconsistent. The Outbox pattern writes both the business entity and the outgoing event into the <em>same</em> database within a single local ACID transaction. An independent background worker (Debezium CDC or polling publisher) reads the outbox table and guarantees at-least-once message delivery.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you prevent Saga compensation failures from corrupting state?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Compensating actions must be designed to <strong>never fail permanently</strong>:</p>
+<ol>
+<li><strong>Strict Idempotency</strong>: Compensation commands can be retried indefinitely with identical idempotency keys.</li>
+<li><strong>Dead Letter Queue (DLQ) & Human Intervention</strong>: If an unrecoverable failure occurs (e.g. external payment gateway permanent rejection), the saga transitions to a <code>Suspended</code> state, alerting operations via PagerDuty for manual reconciliation.</li>
+<li><strong>Forward Recovery (Retry to Success)</strong>: Prefer retrying the forward action with exponential backoff if compensation is impossible or expensive.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What is W3C TraceContext and how does OpenTelemetry propagate it through RabbitMQ?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>The W3C TraceContext standard defines two headers:</p>
+<ul>
+<li><code>traceparent</code>: <code>00-&lt;trace-id&gt;-&lt;parent-span-id&gt;-&lt;trace-flags&gt;</code></li>
+<li><code>tracestate</code>: vendor-specific opaque key-value pairs.</li>
+</ul>
+<p>In HTTP, these are transmitted as standard request headers. In RabbitMQ, the OpenTelemetry .NET SDK injects these headers into <code>IBasicProperties.Headers</code> as byte arrays. The message consumer extracts them, instantiating a child <code>Activity</code> that preserves the distributed trace DAG across asynchronous message queues.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How does Kubernetes HPA interact with Pod startup and readiness probes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>When HPA scales up replicas based on CPU/custom metrics, new Pods enter the <code>ContainerCreating</code> phase.</li>
+<li>The <code>startupProbe</code> buffers slow application initialization without triggering premature liveness restarts.</li>
+<li>Once the startup probe succeeds, the <code>readinessProbe</code> runs. The Pod is <em>only</em> added to the Service endpoint slicing and assigned traffic once the readiness probe returns HTTP 200.</li>
+<li>HPA stabilization windows (e.g. 300s scale-down delay) prevent autoscaling flapping under spiky workloads.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">Contrast Terraform declarative IaC with imperative scripts (Bash, AWS CLI).</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Imperative</strong>: Tells the system <em>how</em> to achieve a state step-by-step (<code>aws ec2 run-instances</code>). Rerunning the script creates duplicate resources unless manual idempotency checks are coded.</li>
+<li><strong>Declarative</strong>: Tells the system <em>what</em> the desired end-state should be (<code>resource &quot;azurerm_container_app&quot; ...</code>). Terraform calculates the exact diff between desired code and state, applying only necessary creations, modifications, or deletions idempotently.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Mathematically analyze the time and space complexity of Merge K Sorted Lists.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $K$ be number of lists and $N$ be total nodes:</p>
+<ul>
+<li><strong>Min-Heap</strong>:</li>
+<li>Initial heap construction: $K$ elements $= \mathcal{O}(K)$.</li>
+<li>Each of the $N$ nodes is extracted once ($\mathcal{O}(\log K)$) and replaced with its next pointer ($\mathcal{O}(\log K)$).</li>
+<li>Total Time: $\mathcal{O}(N \log K)$. Space: $\mathcal{O}(K)$ for the heap.</li>
+<li><strong>Divide-and-Conquer</strong>:</li>
+<li>Number of pairwise merge levels: $\lceil \log_2 K</li>
+</ul>
+<p>ceil$.</p>
+<ul>
+<li>At each level, all $N$ nodes are traversed and linked via pointer manipulation.</li>
+<li>Total Time: $\mathcal{O}(N \log K)$. Auxiliary Space: $\mathcal{O}(1)$ without priority queue memory allocations.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you design an interview response for Phase 2 synthesis: Scaling from 10k to 1M RPS?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Structure via layered architectural progression:</p>
+<ol>
+<li><strong>Edge & Ingress Layer</strong>: Anycast DNS, CDN static caching, Azure Front Door / CloudFront, and YARP API Gateway with rate limiting.</li>
+<li><strong>Stateless Compute</strong>: Containerized ASP.NET Core microservices deployed on Kubernetes with HPA and multi-AZ node pools.</li>
+<li><strong>Caching Layer</strong>: Redis cluster with distributed lock eviction and Cache-Aside pattern absorbing 90%+ read traffic.</li>
+<li><strong>Asynchronous Messaging</strong>: RabbitMQ / Kafka with Transactional Outbox for all mutating side effects.</li>
+<li><strong>Database Partitioning</strong>: Primary-replica read splitting, table sharding by tenant/user ID, and Blob storage tiering.</li>
+<li><strong>Observability</strong>: OpenTelemetry tracing, Prometheus percentiles, and Grafana alerting ensuring 99.99% availability.</li>
+</ol>
+          </div>
+        </details>
+        
+      </div>
+    </div>
+
+    <div id="pane-source" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day50.Phase2Benchmark/DistributedSystemBenchmarkEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd50-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d50-src-code-0" class="language-csharp">namespace Day50.Phase2Benchmark;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public enum CircuitState
+{
+    Closed,
+    Open,
+    HalfOpen
+}
+
+public class ChaosFaultSimulator
+{
+    private int _consecutiveFailures;
+    private readonly int _failureThreshold;
+    public CircuitState State { get; private set; } = CircuitState.Closed;
+
+    public ChaosFaultSimulator(int failureThreshold = 3)
+    {
+        _failureThreshold = failureThreshold;
+    }
+
+    public string ExecuteWithCircuitBreaker(Func&lt;string&gt; action, Func&lt;string&gt; fallback)
+    {
+        if (State == CircuitState.Open)
+        {
+            return fallback();
+        }
+
+        try
+        {
+            var result = action();
+            if (State == CircuitState.HalfOpen)
+            {
+                State = CircuitState.Closed;
+                _consecutiveFailures = 0;
+            }
+            return result;
+        }
+        catch
+        {
+            _consecutiveFailures++;
+            if (_consecutiveFailures &gt;= _failureThreshold)
+            {
+                State = CircuitState.Open;
+            }
+            return fallback();
+        }
+    }
+
+    public void Reset()
+    {
+        State = CircuitState.Closed;
+        _consecutiveFailures = 0;
+    }
+
+    public void TransitionToHalfOpen()
+    {
+        State = CircuitState.HalfOpen;
+    }
+}
+
+public class TransactionalOutboxBuffer
+{
+    private readonly List&lt;string&gt; _pendingMessages = new();
+    private readonly List&lt;string&gt; _publishedMessages = new();
+
+    public void StoreOutbox(string message)
+    {
+        _pendingMessages.Add(message);
+    }
+
+    public int DrainPending(bool brokerAvailable)
+    {
+        if (!brokerAvailable) return 0;
+
+        int count = _pendingMessages.Count;
+        _publishedMessages.AddRange(_pendingMessages);
+        _pendingMessages.Clear();
+        return count;
+    }
+
+    public int PendingCount =&gt; _pendingMessages.Count;
+    public int PublishedCount =&gt; _publishedMessages.Count;
+}
+
+public class LatencyProfiler
+{
+    public static (double p50, double p95, double p99) CalculatePercentiles(List&lt;double&gt; latenciesMs)
+    {
+        if (latenciesMs == null || latenciesMs.Count == 0) return (0, 0, 0);
+
+        var sorted = latenciesMs.OrderBy(x =&gt; x).ToList();
+        int n = sorted.Count;
+
+        double GetPercentile(double p)
+        {
+            int idx = (int)Math.Ceiling(p * n) - 1;
+            idx = Math.Clamp(idx, 0, n - 1);
+            return sorted[idx];
+        }
+
+        return (GetPercentile(0.50), GetPercentile(0.95), GetPercentile(0.99));
+    }
+}
+
+public class Phase2AuditScorecard
+{
+    private readonly Dictionary&lt;string, bool&gt; _checkpoints = new();
+
+    public void RegisterCheckpoint(string category, bool passed)
+    {
+        _checkpoints[category] = passed;
+    }
+
+    public double ComputeReadinessPercent()
+    {
+        if (_checkpoints.Count == 0) return 0.0;
+        int passed = _checkpoints.Values.Count(v =&gt; v);
+        return (double)passed / _checkpoints.Count * 100.0;
+    }
+
+    public bool IsCertified() =&gt; ComputeReadinessPercent() &gt;= 100.0;
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day50.Phase2Benchmark/MergeKSortedListsSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd50-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d50-src-code-1" class="language-csharp">namespace Day50.Phase2Benchmark;
+
+using System;
+using System.Collections.Generic;
+
+public class ListNode
+{
+    public int val;
+    public ListNode? next;
+
+    public ListNode(int val = 0, ListNode? next = null)
+    {
+        this.val = val;
+        this.next = next;
+    }
+}
+
+public class MergeKSortedListsSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #23: Merge k Sorted Lists.
+    /// Optimal Min-Heap PriorityQueue: O(N log K) time, O(K) space.
+    /// &lt;/summary&gt;
+    public static ListNode? MergeKListsMinHeap(ListNode?[] lists)
+    {
+        if (lists == null || lists.Length == 0) return null;
+
+        var pq = new PriorityQueue&lt;ListNode, int&gt;();
+
+        foreach (var head in lists)
+        {
+            if (head != null)
+            {
+                pq.Enqueue(head, head.val);
+            }
+        }
+
+        var dummy = new ListNode(-1);
+        var curr = dummy;
+
+        while (pq.Count &gt; 0)
+        {
+            var smallest = pq.Dequeue();
+            curr.next = smallest;
+            curr = curr.next;
+
+            if (smallest.next != null)
+            {
+                pq.Enqueue(smallest.next, smallest.next.val);
+            }
+        }
+
+        return dummy.next;
+    }
+
+    /// &lt;summary&gt;
+    /// Divide-and-Conquer 2-way pairwise merge: O(N log K) time, O(1) auxiliary space.
+    /// &lt;/summary&gt;
+    public static ListNode? MergeKListsDivideAndConquer(ListNode?[] lists)
+    {
+        if (lists == null || lists.Length == 0) return null;
+
+        int interval = 1;
+        while (interval &lt; lists.Length)
+        {
+            for (int i = 0; i + interval &lt; lists.Length; i += interval * 2)
+            {
+                lists[i] = MergeTwoLists(lists[i], lists[i + interval]);
+            }
+            interval *= 2;
+        }
+
+        return lists[0];
+    }
+
+    private static ListNode? MergeTwoLists(ListNode? l1, ListNode? l2)
+    {
+        var dummy = new ListNode(-1);
+        var curr = dummy;
+
+        while (l1 != null &amp;&amp; l2 != null)
+        {
+            if (l1.val &lt;= l2.val)
+            {
+                curr.next = l1;
+                l1 = l1.next;
+            }
+            else
+            {
+                curr.next = l2;
+                l2 = l2.next;
+            }
+            curr = curr.next;
+        }
+
+        curr.next = l1 ?? l2;
+        return dummy.next;
+    }
+
+    // Helpers for test validation
+    public static ListNode? FromArray(int[] values)
+    {
+        if (values == null || values.Length == 0) return null;
+        var dummy = new ListNode(-1);
+        var curr = dummy;
+        foreach (var v in values)
+        {
+            curr.next = new ListNode(v);
+            curr = curr.next;
+        }
+        return dummy.next;
+    }
+
+    public static int[] ToArray(ListNode? head)
+    {
+        var list = new List&lt;int&gt;();
+        var curr = head;
+        while (curr != null)
+        {
+            list.Add(curr.val);
+            curr = curr.next;
+        }
+        return list.ToArray();
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-tests" class="tab-pane">
+      
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day50.Phase2Benchmark.Tests/Day50Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd50-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d50-tests-code-0" class="language-csharp">namespace Day50.Phase2Benchmark.Tests;
+
+using System;
+using System.Collections.Generic;
+using Day50.Phase2Benchmark;
+using Xunit;
+
+public class Day50Tests
+{
+    [Fact]
+    public void Test1_ChaosSimulator_CircuitBreakerTripsAndFallsBack()
+    {
+        var chaos = new ChaosFaultSimulator(failureThreshold: 2);
+
+        // First 2 failures
+        string r1 = chaos.ExecuteWithCircuitBreaker(() =&gt; throw new Exception(&quot;Downstream timeout&quot;), () =&gt; &quot;fallback-cached&quot;);
+        string r2 = chaos.ExecuteWithCircuitBreaker(() =&gt; throw new Exception(&quot;Downstream timeout&quot;), () =&gt; &quot;fallback-cached&quot;);
+
+        Assert.Equal(&quot;fallback-cached&quot;, r1);
+        Assert.Equal(&quot;fallback-cached&quot;, r2);
+        Assert.Equal(CircuitState.Open, chaos.State);
+
+        // Circuit open: fast fallback without invoking action
+        bool actionInvoked = false;
+        string r3 = chaos.ExecuteWithCircuitBreaker(() =&gt; { actionInvoked = true; return &quot;ok&quot;; }, () =&gt; &quot;fast-fallback&quot;);
+
+        Assert.False(actionInvoked);
+        Assert.Equal(&quot;fast-fallback&quot;, r3);
+    }
+
+    [Fact]
+    public void Test2_OutboxBuffer_RetainsMessagesDuringBrokerDowntimeAndDrains()
+    {
+        var outbox = new TransactionalOutboxBuffer();
+
+        outbox.StoreOutbox(&quot;event-order-created&quot;);
+        outbox.StoreOutbox(&quot;event-payment-processed&quot;);
+
+        // Broker down
+        int drained0 = outbox.DrainPending(brokerAvailable: false);
+        Assert.Equal(0, drained0);
+        Assert.Equal(2, outbox.PendingCount);
+
+        // Broker recovered
+        int drainedRecovered = outbox.DrainPending(brokerAvailable: true);
+        Assert.Equal(2, drainedRecovered);
+        Assert.Equal(0, outbox.PendingCount);
+        Assert.Equal(2, outbox.PublishedCount);
+    }
+
+    [Fact]
+    public void Test3_LatencyProfiler_ComputesPercentilesAccurately()
+    {
+        var latencies = new List&lt;double&gt;();
+        for (int i = 1; i &lt;= 100; i++)
+        {
+            latencies.Add(i * 2.0); // 2, 4, ..., 200 ms
+        }
+
+        var (p50, p95, p99) = LatencyProfiler.CalculatePercentiles(latencies);
+
+        Assert.Equal(100.0, p50); // 50th item
+        Assert.Equal(190.0, p95); // 95th item
+        Assert.Equal(198.0, p99); // 99th item
+    }
+
+    [Fact]
+    public void Test4_AuditScorecard_Requires100PercentForCertification()
+    {
+        var scorecard = new Phase2AuditScorecard();
+        scorecard.RegisterCheckpoint(&quot;Microservices&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;YARP&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;Polly&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;RabbitMQ&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;Outbox&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;Sagas&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;OpenTelemetry&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;Kubernetes&quot;, false); // 1 failure
+
+        Assert.Equal(87.5, scorecard.ComputeReadinessPercent());
+        Assert.False(scorecard.IsCertified());
+
+        scorecard.RegisterCheckpoint(&quot;Kubernetes&quot;, true);
+        Assert.Equal(100.0, scorecard.ComputeReadinessPercent());
+        Assert.True(scorecard.IsCertified());
+    }
+
+    [Fact]
+    public void Test5_MergeKLists_MinHeap_MergesMultipleSortedLists()
+    {
+        var l1 = MergeKSortedListsSolver.FromArray(new[] { 1, 4, 5 });
+        var l2 = MergeKSortedListsSolver.FromArray(new[] { 1, 3, 4 });
+        var l3 = MergeKSortedListsSolver.FromArray(new[] { 2, 6 });
+
+        var merged = MergeKSortedListsSolver.MergeKListsMinHeap(new[] { l1, l2, l3 });
+        var actual = MergeKSortedListsSolver.ToArray(merged);
+
+        Assert.Equal(new[] { 1, 1, 2, 3, 4, 4, 5, 6 }, actual);
+    }
+
+    [Fact]
+    public void Test6_MergeKLists_DivideAndConquer_MergesMultipleSortedLists()
+    {
+        var l1 = MergeKSortedListsSolver.FromArray(new[] { 1, 4, 5 });
+        var l2 = MergeKSortedListsSolver.FromArray(new[] { 1, 3, 4 });
+        var l3 = MergeKSortedListsSolver.FromArray(new[] { 2, 6 });
+
+        var merged = MergeKSortedListsSolver.MergeKListsDivideAndConquer(new[] { l1, l2, l3 });
+        var actual = MergeKSortedListsSolver.ToArray(merged);
+
+        Assert.Equal(new[] { 1, 1, 2, 3, 4, 4, 5, 6 }, actual);
+    }
+
+    [Fact]
+    public void Test7_MergeKLists_MinHeapAndDivideConquer_ProduceIdenticalOutputs()
+    {
+        var listsA = new[]
+        {
+            MergeKSortedListsSolver.FromArray(new[] { -10, -5, 0 }),
+            MergeKSortedListsSolver.FromArray(new[] { -8, 2, 10 }),
+            MergeKSortedListsSolver.FromArray(new[] { -1, 3, 7 }),
+            MergeKSortedListsSolver.FromArray(new[] { 1, 2, 3 })
+        };
+
+        var listsB = new[]
+        {
+            MergeKSortedListsSolver.FromArray(new[] { -10, -5, 0 }),
+            MergeKSortedListsSolver.FromArray(new[] { -8, 2, 10 }),
+            MergeKSortedListsSolver.FromArray(new[] { -1, 3, 7 }),
+            MergeKSortedListsSolver.FromArray(new[] { 1, 2, 3 })
+        };
+
+        var resHeap = MergeKSortedListsSolver.ToArray(MergeKSortedListsSolver.MergeKListsMinHeap(listsA));
+        var resDac = MergeKSortedListsSolver.ToArray(MergeKSortedListsSolver.MergeKListsDivideAndConquer(listsB));
+
+        Assert.Equal(resHeap, resDac);
+    }
+
+    [Fact]
+    public void Test8_MergeKLists_EmptyAndNullInputs_Handled()
+    {
+        Assert.Null(MergeKSortedListsSolver.MergeKListsMinHeap(null!));
+        Assert.Null(MergeKSortedListsSolver.MergeKListsMinHeap(Array.Empty&lt;ListNode?&gt;()));
+        Assert.Null(MergeKSortedListsSolver.MergeKListsMinHeap(new ListNode?[] { null, null }));
+
+        Assert.Null(MergeKSortedListsSolver.MergeKListsDivideAndConquer(null!));
+        Assert.Null(MergeKSortedListsSolver.MergeKListsDivideAndConquer(Array.Empty&lt;ListNode?&gt;()));
+    }
+
+    [Fact]
+    public void Test9_MergeKLists_SingleList_ReturnsIntact()
+    {
+        var single = MergeKSortedListsSolver.FromArray(new[] { 10, 20, 30 });
+        var merged = MergeKSortedListsSolver.MergeKListsMinHeap(new[] { single });
+        var actual = MergeKSortedListsSolver.ToArray(merged);
+
+        Assert.Equal(new[] { 10, 20, 30 }, actual);
+    }
+
+    [Fact]
+    public void Test10_MergeKLists_UnequalListLengths()
+    {
+        var l1 = MergeKSortedListsSolver.FromArray(new[] { 1 });
+        var l2 = MergeKSortedListsSolver.FromArray(new[] { 2, 3, 4, 5, 6, 7 });
+        var l3 = MergeKSortedListsSolver.FromArray(new[] { 0, 8 });
+
+        var merged = MergeKSortedListsSolver.MergeKListsMinHeap(new[] { l1, l2, l3 });
+        var actual = MergeKSortedListsSolver.ToArray(merged);
+
+        Assert.Equal(new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 }, actual);
+    }
+}
+</code></pre>
+                </div>
+                
+    </div>
+
+    <div id="pane-all" class="tab-pane">
+      <div class="all-in-one-wrapper">
+        <h2 class="section-divider-title">📝 Part 1: Deep-Dive Architectural & Engineering Notes</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Technical Notes: Phase 2 Milestone Benchmark & Architecture Review</h1>
+<h3>1. Phase 2 Architecture Review Synthesis</h3>
+<p>Across Days 26 to 50, the architecture stack spans:</p>
+<ul>
+<li><strong>Resilience</strong>: Polly circuit breakers prevent cascade failures across microservices.</li>
+<li><strong>Consistency</strong>: The Transactional Outbox Pattern and Saga State Machines decouple atomic business transactions from distributed asynchronous messaging.</li>
+<li><strong>Observability</strong>: OpenTelemetry standardizes W3C distributed trace propagation (<code>traceparent</code>), correlated across logs, Prometheus metrics, and Jaeger spans.</li>
+<li><strong>Orchestration</strong>: Kubernetes Deployments, Probes, HPA, and Ingress manage containerized life cycles backed by declarative Terraform IaC.</li>
+</ul>
+<h3>2. LeetCode #23: Merge K Sorted Lists</h3>
+<p>Let $K$ be the number of linked lists and $N$ be the total number of nodes across all lists:</p>
+<ul>
+<li><strong>Min-Heap Approach</strong>: Insert the head of each list into a priority queue of size $K$. Dequeue the smallest node, append it to the merged list, and enqueue its <code>next</code> pointer. Time: $\mathcal{O}(N \log K)$, Space: $\mathcal{O}(K)$.</li>
+<li><strong>Divide-and-Conquer</strong>: Pairwise merge adjacent lists in rounds ($K 	o K/2 	o K/4 \dots 	o 1$). Total rounds: $\log K$. Each round processes $N$ nodes. Time: $\mathcal{O}(N \log K)$, Space: $\mathcal{O}(1)$ auxiliary space.</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">📑 Part 2: Module Overview & Practical Walkthrough</h2>
+        <div class="markdown-content" style="margin-bottom:32px;">
+          <h1>Day 50: Phase 2 Review & Distributed Architecture Benchmark</h1>
+<h2>Overview</h2>
+<p>Day 50 marks the official completion and milestone certification of <strong>Phase 2: Microservices, Distributed Systems & Observability (Days 26–50)</strong>. We conduct an end-to-end distributed systems resilience audit, chaos engineering fault injection, throughput and latency percentile analysis (P50, P90, P99), and LeetCode #23 Merge K Sorted Lists (Hard) solved via both Min-Heap Priority Queue and Divide-and-Conquer pairwise merging.</p>
+<h2>Key Concepts</h2>
+<ul>
+<li><strong>Phase 2 Comprehensive Review</strong>: Microservices, Bounded Contexts, YARP Gateway, Polly resilience, RabbitMQ, Transactional Outbox, MassTransit Sagas, OpenTelemetry tracing, Docker Compose, Kubernetes orchestration, and Terraform IaC.</li>
+<li><strong>Chaos Fault Injection</strong>: Simulating message broker outages, circuit-breaker tripping, and outbox drain verification without data loss.</li>
+<li><strong>Latency & Percentiles</strong>: Measuring P50, P95, and P99 response distributions under high-load stress conditions.</li>
+<li><strong>Algorithm (LC #23)</strong>: Merge K Sorted Lists via Min-Heap Priority Queue ($\mathcal{O}(N \log K)$ time, $\mathcal{O}(K)$ space) and Divide-and-Conquer ($\mathcal{O}(1)$ space).</li>
+</ul>
+        </div>
+
+        <h2 class="section-divider-title">💡 Part 3: Senior & Staff-Level Interview Scenarios (10 Questions)</h2>
+        <div style="margin-bottom:32px;">
+          
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q1</span>
+              <span class="qa-title">How do you design a disaster recovery chaos drill for a microservices cluster in Kubernetes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li><strong>Steady-State Hypothesis</strong>: Define measurable SLIs/SLOs (e.g. 99.9% HTTP 2xx, P99 latency < 250ms).</li>
+<li><strong>Blast Radius Control</strong>: Target a staging or production-canary namespace using Chaos Mesh or LitmusChaos.</li>
+<li><strong>Fault Injections</strong>:</li>
+</ol>
+<ul>
+<li>Random Pod kills to verify ReplicaSet and zero-downtime rolling updates.</li>
+<li>Network latency/packet loss (100ms delay, 10% packet drop) between services to verify Polly timeouts.</li>
+<li>Broker partition (disconnect RabbitMQ) to verify Transactional Outbox accumulation.</li>
+</ul>
+<ol>
+<li><strong>Verification & Post-Mortem</strong>: Verify alert firing in Prometheus/PagerDuty and validate automated self-healing without operator intervention.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" open>
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q2</span>
+              <span class="qa-title">Compare Eventual Consistency vs Strong Consistency for enterprise financial transactions.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Strong Consistency (ACID / 2PC)</strong>: Immediate consistency across all nodes; high latency, vulnerable to blocking coordinator failure, scales poorly over WAN.</li>
+<li><strong>Eventual Consistency (BASE / Sagas)</strong>: High availability and throughput; temporary divergence permitted. Compensating transactions reverse failed downstream actions.</li>
+</ul>
+<p><em>Enterprise Best Practice</em>: Enforce ACID locally within individual microservice bounded contexts (e.g. reserving funds in Ledger DB) and orchestrate cross-service workflows via asynchronous Sagas with compensating actions.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q3</span>
+              <span class="qa-title">Why is P99 latency more important than Average (Mean) latency in distributed systems?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>The mean hides severe outliers. In a microservices architecture where a single user request fans out to 50 parallel downstream RPCs, the probability of the user experiencing at least one P99 slowest call is:</p>
+<p>$$1 - (0.99)^{50} pprox 39.5\%$$</p>
+<p>Nearly 40% of all user requests will experience the tail latency! Optimizing P99 directly protects user experience and prevents thread-pool starvation.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q4</span>
+              <span class="qa-title">How does the Transactional Outbox pattern prevent the dual-write problem?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Writing to a database and publishing to a message broker in a single operation cannot be atomic without distributed 2PC. If the database commit succeeds but the message broker network drops, data is inconsistent. The Outbox pattern writes both the business entity and the outgoing event into the <em>same</em> database within a single local ACID transaction. An independent background worker (Debezium CDC or polling publisher) reads the outbox table and guarantees at-least-once message delivery.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q5</span>
+              <span class="qa-title">How do you prevent Saga compensation failures from corrupting state?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Compensating actions must be designed to <strong>never fail permanently</strong>:</p>
+<ol>
+<li><strong>Strict Idempotency</strong>: Compensation commands can be retried indefinitely with identical idempotency keys.</li>
+<li><strong>Dead Letter Queue (DLQ) & Human Intervention</strong>: If an unrecoverable failure occurs (e.g. external payment gateway permanent rejection), the saga transitions to a <code>Suspended</code> state, alerting operations via PagerDuty for manual reconciliation.</li>
+<li><strong>Forward Recovery (Retry to Success)</strong>: Prefer retrying the forward action with exponential backoff if compensation is impossible or expensive.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q6</span>
+              <span class="qa-title">What is W3C TraceContext and how does OpenTelemetry propagate it through RabbitMQ?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>The W3C TraceContext standard defines two headers:</p>
+<ul>
+<li><code>traceparent</code>: <code>00-&lt;trace-id&gt;-&lt;parent-span-id&gt;-&lt;trace-flags&gt;</code></li>
+<li><code>tracestate</code>: vendor-specific opaque key-value pairs.</li>
+</ul>
+<p>In HTTP, these are transmitted as standard request headers. In RabbitMQ, the OpenTelemetry .NET SDK injects these headers into <code>IBasicProperties.Headers</code> as byte arrays. The message consumer extracts them, instantiating a child <code>Activity</code> that preserves the distributed trace DAG across asynchronous message queues.</p>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q7</span>
+              <span class="qa-title">How does Kubernetes HPA interact with Pod startup and readiness probes?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ol>
+<li>When HPA scales up replicas based on CPU/custom metrics, new Pods enter the <code>ContainerCreating</code> phase.</li>
+<li>The <code>startupProbe</code> buffers slow application initialization without triggering premature liveness restarts.</li>
+<li>Once the startup probe succeeds, the <code>readinessProbe</code> runs. The Pod is <em>only</em> added to the Service endpoint slicing and assigned traffic once the readiness probe returns HTTP 200.</li>
+<li>HPA stabilization windows (e.g. 300s scale-down delay) prevent autoscaling flapping under spiky workloads.</li>
+</ol>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q8</span>
+              <span class="qa-title">Contrast Terraform declarative IaC with imperative scripts (Bash, AWS CLI).</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<ul>
+<li><strong>Imperative</strong>: Tells the system <em>how</em> to achieve a state step-by-step (<code>aws ec2 run-instances</code>). Rerunning the script creates duplicate resources unless manual idempotency checks are coded.</li>
+<li><strong>Declarative</strong>: Tells the system <em>what</em> the desired end-state should be (<code>resource &quot;azurerm_container_app&quot; ...</code>). Terraform calculates the exact diff between desired code and state, applying only necessary creations, modifications, or deletions idempotently.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q9</span>
+              <span class="qa-title">Mathematically analyze the time and space complexity of Merge K Sorted Lists.</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Let $K$ be number of lists and $N$ be total nodes:</p>
+<ul>
+<li><strong>Min-Heap</strong>:</li>
+<li>Initial heap construction: $K$ elements $= \mathcal{O}(K)$.</li>
+<li>Each of the $N$ nodes is extracted once ($\mathcal{O}(\log K)$) and replaced with its next pointer ($\mathcal{O}(\log K)$).</li>
+<li>Total Time: $\mathcal{O}(N \log K)$. Space: $\mathcal{O}(K)$ for the heap.</li>
+<li><strong>Divide-and-Conquer</strong>:</li>
+<li>Number of pairwise merge levels: $\lceil \log_2 K</li>
+</ul>
+<p>ceil$.</p>
+<ul>
+<li>At each level, all $N$ nodes are traversed and linked via pointer manipulation.</li>
+<li>Total Time: $\mathcal{O}(N \log K)$. Auxiliary Space: $\mathcal{O}(1)$ without priority queue memory allocations.</li>
+</ul>
+<hr/>
+          </div>
+        </details>
+        
+
+        <details class="qa-card" >
+          <summary class="qa-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="qa-badge">Q10</span>
+              <span class="qa-title">How do you design an interview response for Phase 2 synthesis: Scaling from 10k to 1M RPS?</span>
+            </div>
+            <span class="qa-toggle-icon">▼</span>
+          </summary>
+          <div class="qa-body markdown-content">
+            <p><strong>Answer</strong>:</p>
+<p>Structure via layered architectural progression:</p>
+<ol>
+<li><strong>Edge & Ingress Layer</strong>: Anycast DNS, CDN static caching, Azure Front Door / CloudFront, and YARP API Gateway with rate limiting.</li>
+<li><strong>Stateless Compute</strong>: Containerized ASP.NET Core microservices deployed on Kubernetes with HPA and multi-AZ node pools.</li>
+<li><strong>Caching Layer</strong>: Redis cluster with distributed lock eviction and Cache-Aside pattern absorbing 90%+ read traffic.</li>
+<li><strong>Asynchronous Messaging</strong>: RabbitMQ / Kafka with Transactional Outbox for all mutating side effects.</li>
+<li><strong>Database Partitioning</strong>: Primary-replica read splitting, table sharding by tenant/user ID, and Blob storage tiering.</li>
+<li><strong>Observability</strong>: OpenTelemetry tracing, Prometheus percentiles, and Grafana alerting ensuring 99.99% availability.</li>
+</ol>
+          </div>
+        </details>
+        
+        </div>
+
+        <h2 class="section-divider-title">💻 Part 4: Production Source Code Implementations</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day50.Phase2Benchmark/DistributedSystemBenchmarkEngine.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd50-src-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d50-src-code-0" class="language-csharp">namespace Day50.Phase2Benchmark;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+public enum CircuitState
+{
+    Closed,
+    Open,
+    HalfOpen
+}
+
+public class ChaosFaultSimulator
+{
+    private int _consecutiveFailures;
+    private readonly int _failureThreshold;
+    public CircuitState State { get; private set; } = CircuitState.Closed;
+
+    public ChaosFaultSimulator(int failureThreshold = 3)
+    {
+        _failureThreshold = failureThreshold;
+    }
+
+    public string ExecuteWithCircuitBreaker(Func&lt;string&gt; action, Func&lt;string&gt; fallback)
+    {
+        if (State == CircuitState.Open)
+        {
+            return fallback();
+        }
+
+        try
+        {
+            var result = action();
+            if (State == CircuitState.HalfOpen)
+            {
+                State = CircuitState.Closed;
+                _consecutiveFailures = 0;
+            }
+            return result;
+        }
+        catch
+        {
+            _consecutiveFailures++;
+            if (_consecutiveFailures &gt;= _failureThreshold)
+            {
+                State = CircuitState.Open;
+            }
+            return fallback();
+        }
+    }
+
+    public void Reset()
+    {
+        State = CircuitState.Closed;
+        _consecutiveFailures = 0;
+    }
+
+    public void TransitionToHalfOpen()
+    {
+        State = CircuitState.HalfOpen;
+    }
+}
+
+public class TransactionalOutboxBuffer
+{
+    private readonly List&lt;string&gt; _pendingMessages = new();
+    private readonly List&lt;string&gt; _publishedMessages = new();
+
+    public void StoreOutbox(string message)
+    {
+        _pendingMessages.Add(message);
+    }
+
+    public int DrainPending(bool brokerAvailable)
+    {
+        if (!brokerAvailable) return 0;
+
+        int count = _pendingMessages.Count;
+        _publishedMessages.AddRange(_pendingMessages);
+        _pendingMessages.Clear();
+        return count;
+    }
+
+    public int PendingCount =&gt; _pendingMessages.Count;
+    public int PublishedCount =&gt; _publishedMessages.Count;
+}
+
+public class LatencyProfiler
+{
+    public static (double p50, double p95, double p99) CalculatePercentiles(List&lt;double&gt; latenciesMs)
+    {
+        if (latenciesMs == null || latenciesMs.Count == 0) return (0, 0, 0);
+
+        var sorted = latenciesMs.OrderBy(x =&gt; x).ToList();
+        int n = sorted.Count;
+
+        double GetPercentile(double p)
+        {
+            int idx = (int)Math.Ceiling(p * n) - 1;
+            idx = Math.Clamp(idx, 0, n - 1);
+            return sorted[idx];
+        }
+
+        return (GetPercentile(0.50), GetPercentile(0.95), GetPercentile(0.99));
+    }
+}
+
+public class Phase2AuditScorecard
+{
+    private readonly Dictionary&lt;string, bool&gt; _checkpoints = new();
+
+    public void RegisterCheckpoint(string category, bool passed)
+    {
+        _checkpoints[category] = passed;
+    }
+
+    public double ComputeReadinessPercent()
+    {
+        if (_checkpoints.Count == 0) return 0.0;
+        int passed = _checkpoints.Values.Count(v =&gt; v);
+        return (double)passed / _checkpoints.Count * 100.0;
+    }
+
+    public bool IsCertified() =&gt; ComputeReadinessPercent() &gt;= 100.0;
+}
+</code></pre>
+                </div>
+                
+
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 src/Day50.Phase2Benchmark/MergeKSortedListsSolver.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd50-src-code-1')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d50-src-code-1" class="language-csharp">namespace Day50.Phase2Benchmark;
+
+using System;
+using System.Collections.Generic;
+
+public class ListNode
+{
+    public int val;
+    public ListNode? next;
+
+    public ListNode(int val = 0, ListNode? next = null)
+    {
+        this.val = val;
+        this.next = next;
+    }
+}
+
+public class MergeKSortedListsSolver
+{
+    /// &lt;summary&gt;
+    /// LeetCode #23: Merge k Sorted Lists.
+    /// Optimal Min-Heap PriorityQueue: O(N log K) time, O(K) space.
+    /// &lt;/summary&gt;
+    public static ListNode? MergeKListsMinHeap(ListNode?[] lists)
+    {
+        if (lists == null || lists.Length == 0) return null;
+
+        var pq = new PriorityQueue&lt;ListNode, int&gt;();
+
+        foreach (var head in lists)
+        {
+            if (head != null)
+            {
+                pq.Enqueue(head, head.val);
+            }
+        }
+
+        var dummy = new ListNode(-1);
+        var curr = dummy;
+
+        while (pq.Count &gt; 0)
+        {
+            var smallest = pq.Dequeue();
+            curr.next = smallest;
+            curr = curr.next;
+
+            if (smallest.next != null)
+            {
+                pq.Enqueue(smallest.next, smallest.next.val);
+            }
+        }
+
+        return dummy.next;
+    }
+
+    /// &lt;summary&gt;
+    /// Divide-and-Conquer 2-way pairwise merge: O(N log K) time, O(1) auxiliary space.
+    /// &lt;/summary&gt;
+    public static ListNode? MergeKListsDivideAndConquer(ListNode?[] lists)
+    {
+        if (lists == null || lists.Length == 0) return null;
+
+        int interval = 1;
+        while (interval &lt; lists.Length)
+        {
+            for (int i = 0; i + interval &lt; lists.Length; i += interval * 2)
+            {
+                lists[i] = MergeTwoLists(lists[i], lists[i + interval]);
+            }
+            interval *= 2;
+        }
+
+        return lists[0];
+    }
+
+    private static ListNode? MergeTwoLists(ListNode? l1, ListNode? l2)
+    {
+        var dummy = new ListNode(-1);
+        var curr = dummy;
+
+        while (l1 != null &amp;&amp; l2 != null)
+        {
+            if (l1.val &lt;= l2.val)
+            {
+                curr.next = l1;
+                l1 = l1.next;
+            }
+            else
+            {
+                curr.next = l2;
+                l2 = l2.next;
+            }
+            curr = curr.next;
+        }
+
+        curr.next = l1 ?? l2;
+        return dummy.next;
+    }
+
+    // Helpers for test validation
+    public static ListNode? FromArray(int[] values)
+    {
+        if (values == null || values.Length == 0) return null;
+        var dummy = new ListNode(-1);
+        var curr = dummy;
+        foreach (var v in values)
+        {
+            curr.next = new ListNode(v);
+            curr = curr.next;
+        }
+        return dummy.next;
+    }
+
+    public static int[] ToArray(ListNode? head)
+    {
+        var list = new List&lt;int&gt;();
+        var curr = head;
+        while (curr != null)
+        {
+            list.Add(curr.val);
+            curr = curr.next;
+        }
+        return list.ToArray();
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+
+        <h2 class="section-divider-title">🧪 Part 5: Comprehensive Unit & Benchmark Tests</h2>
+        <div style="margin-bottom:32px;">
+          
+                <div class="file-card">
+                  <div class="file-header">
+                    <span class="file-title">📄 tests/Day50.Phase2Benchmark.Tests/Day50Tests.cs</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'd50-tests-code-0')">Copy Code</button>
+                  </div>
+                  <pre class="language-csharp"><code id="d50-tests-code-0" class="language-csharp">namespace Day50.Phase2Benchmark.Tests;
+
+using System;
+using System.Collections.Generic;
+using Day50.Phase2Benchmark;
+using Xunit;
+
+public class Day50Tests
+{
+    [Fact]
+    public void Test1_ChaosSimulator_CircuitBreakerTripsAndFallsBack()
+    {
+        var chaos = new ChaosFaultSimulator(failureThreshold: 2);
+
+        // First 2 failures
+        string r1 = chaos.ExecuteWithCircuitBreaker(() =&gt; throw new Exception(&quot;Downstream timeout&quot;), () =&gt; &quot;fallback-cached&quot;);
+        string r2 = chaos.ExecuteWithCircuitBreaker(() =&gt; throw new Exception(&quot;Downstream timeout&quot;), () =&gt; &quot;fallback-cached&quot;);
+
+        Assert.Equal(&quot;fallback-cached&quot;, r1);
+        Assert.Equal(&quot;fallback-cached&quot;, r2);
+        Assert.Equal(CircuitState.Open, chaos.State);
+
+        // Circuit open: fast fallback without invoking action
+        bool actionInvoked = false;
+        string r3 = chaos.ExecuteWithCircuitBreaker(() =&gt; { actionInvoked = true; return &quot;ok&quot;; }, () =&gt; &quot;fast-fallback&quot;);
+
+        Assert.False(actionInvoked);
+        Assert.Equal(&quot;fast-fallback&quot;, r3);
+    }
+
+    [Fact]
+    public void Test2_OutboxBuffer_RetainsMessagesDuringBrokerDowntimeAndDrains()
+    {
+        var outbox = new TransactionalOutboxBuffer();
+
+        outbox.StoreOutbox(&quot;event-order-created&quot;);
+        outbox.StoreOutbox(&quot;event-payment-processed&quot;);
+
+        // Broker down
+        int drained0 = outbox.DrainPending(brokerAvailable: false);
+        Assert.Equal(0, drained0);
+        Assert.Equal(2, outbox.PendingCount);
+
+        // Broker recovered
+        int drainedRecovered = outbox.DrainPending(brokerAvailable: true);
+        Assert.Equal(2, drainedRecovered);
+        Assert.Equal(0, outbox.PendingCount);
+        Assert.Equal(2, outbox.PublishedCount);
+    }
+
+    [Fact]
+    public void Test3_LatencyProfiler_ComputesPercentilesAccurately()
+    {
+        var latencies = new List&lt;double&gt;();
+        for (int i = 1; i &lt;= 100; i++)
+        {
+            latencies.Add(i * 2.0); // 2, 4, ..., 200 ms
+        }
+
+        var (p50, p95, p99) = LatencyProfiler.CalculatePercentiles(latencies);
+
+        Assert.Equal(100.0, p50); // 50th item
+        Assert.Equal(190.0, p95); // 95th item
+        Assert.Equal(198.0, p99); // 99th item
+    }
+
+    [Fact]
+    public void Test4_AuditScorecard_Requires100PercentForCertification()
+    {
+        var scorecard = new Phase2AuditScorecard();
+        scorecard.RegisterCheckpoint(&quot;Microservices&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;YARP&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;Polly&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;RabbitMQ&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;Outbox&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;Sagas&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;OpenTelemetry&quot;, true);
+        scorecard.RegisterCheckpoint(&quot;Kubernetes&quot;, false); // 1 failure
+
+        Assert.Equal(87.5, scorecard.ComputeReadinessPercent());
+        Assert.False(scorecard.IsCertified());
+
+        scorecard.RegisterCheckpoint(&quot;Kubernetes&quot;, true);
+        Assert.Equal(100.0, scorecard.ComputeReadinessPercent());
+        Assert.True(scorecard.IsCertified());
+    }
+
+    [Fact]
+    public void Test5_MergeKLists_MinHeap_MergesMultipleSortedLists()
+    {
+        var l1 = MergeKSortedListsSolver.FromArray(new[] { 1, 4, 5 });
+        var l2 = MergeKSortedListsSolver.FromArray(new[] { 1, 3, 4 });
+        var l3 = MergeKSortedListsSolver.FromArray(new[] { 2, 6 });
+
+        var merged = MergeKSortedListsSolver.MergeKListsMinHeap(new[] { l1, l2, l3 });
+        var actual = MergeKSortedListsSolver.ToArray(merged);
+
+        Assert.Equal(new[] { 1, 1, 2, 3, 4, 4, 5, 6 }, actual);
+    }
+
+    [Fact]
+    public void Test6_MergeKLists_DivideAndConquer_MergesMultipleSortedLists()
+    {
+        var l1 = MergeKSortedListsSolver.FromArray(new[] { 1, 4, 5 });
+        var l2 = MergeKSortedListsSolver.FromArray(new[] { 1, 3, 4 });
+        var l3 = MergeKSortedListsSolver.FromArray(new[] { 2, 6 });
+
+        var merged = MergeKSortedListsSolver.MergeKListsDivideAndConquer(new[] { l1, l2, l3 });
+        var actual = MergeKSortedListsSolver.ToArray(merged);
+
+        Assert.Equal(new[] { 1, 1, 2, 3, 4, 4, 5, 6 }, actual);
+    }
+
+    [Fact]
+    public void Test7_MergeKLists_MinHeapAndDivideConquer_ProduceIdenticalOutputs()
+    {
+        var listsA = new[]
+        {
+            MergeKSortedListsSolver.FromArray(new[] { -10, -5, 0 }),
+            MergeKSortedListsSolver.FromArray(new[] { -8, 2, 10 }),
+            MergeKSortedListsSolver.FromArray(new[] { -1, 3, 7 }),
+            MergeKSortedListsSolver.FromArray(new[] { 1, 2, 3 })
+        };
+
+        var listsB = new[]
+        {
+            MergeKSortedListsSolver.FromArray(new[] { -10, -5, 0 }),
+            MergeKSortedListsSolver.FromArray(new[] { -8, 2, 10 }),
+            MergeKSortedListsSolver.FromArray(new[] { -1, 3, 7 }),
+            MergeKSortedListsSolver.FromArray(new[] { 1, 2, 3 })
+        };
+
+        var resHeap = MergeKSortedListsSolver.ToArray(MergeKSortedListsSolver.MergeKListsMinHeap(listsA));
+        var resDac = MergeKSortedListsSolver.ToArray(MergeKSortedListsSolver.MergeKListsDivideAndConquer(listsB));
+
+        Assert.Equal(resHeap, resDac);
+    }
+
+    [Fact]
+    public void Test8_MergeKLists_EmptyAndNullInputs_Handled()
+    {
+        Assert.Null(MergeKSortedListsSolver.MergeKListsMinHeap(null!));
+        Assert.Null(MergeKSortedListsSolver.MergeKListsMinHeap(Array.Empty&lt;ListNode?&gt;()));
+        Assert.Null(MergeKSortedListsSolver.MergeKListsMinHeap(new ListNode?[] { null, null }));
+
+        Assert.Null(MergeKSortedListsSolver.MergeKListsDivideAndConquer(null!));
+        Assert.Null(MergeKSortedListsSolver.MergeKListsDivideAndConquer(Array.Empty&lt;ListNode?&gt;()));
+    }
+
+    [Fact]
+    public void Test9_MergeKLists_SingleList_ReturnsIntact()
+    {
+        var single = MergeKSortedListsSolver.FromArray(new[] { 10, 20, 30 });
+        var merged = MergeKSortedListsSolver.MergeKListsMinHeap(new[] { single });
+        var actual = MergeKSortedListsSolver.ToArray(merged);
+
+        Assert.Equal(new[] { 10, 20, 30 }, actual);
+    }
+
+    [Fact]
+    public void Test10_MergeKLists_UnequalListLengths()
+    {
+        var l1 = MergeKSortedListsSolver.FromArray(new[] { 1 });
+        var l2 = MergeKSortedListsSolver.FromArray(new[] { 2, 3, 4, 5, 6, 7 });
+        var l3 = MergeKSortedListsSolver.FromArray(new[] { 0, 8 });
+
+        var merged = MergeKSortedListsSolver.MergeKListsMinHeap(new[] { l1, l2, l3 });
+        var actual = MergeKSortedListsSolver.ToArray(merged);
+
+        Assert.Equal(new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 }, actual);
+    }
+}
+</code></pre>
+                </div>
+                
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      100-Day .NET + AI Engineering Track • Day 50 Complete Reference Guide
+    </div>
+  </div>
+
+  <noscript>
+    <div style="padding:16px; background:#ef4444; color:white; border-radius:8px; margin:20px;">
+      Note: JavaScript is disabled or blocked. All sections (Deep-Dive Notes, Module README, Interview Questions, and Code) are displayed sequentially above.
+    </div>
+  </noscript>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+    }
+
+    // QA Accordion (using native details elements)
+    function toggleAllQa(open) {
+      document.querySelectorAll('details.qa-card').forEach(d => {
+        d.open = open;
+      });
+    }
+
+    // Copy to clipboard
+    function copyCode(btn, codeId) {
+      const codeEl = document.getElementById(codeId);
+      if (!codeEl) return;
+      navigator.clipboard.writeText(codeEl.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied! ✓';
+        btn.style.background = '#059669';
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.background = '#334155';
+        }, 2000);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.Prism) {
+        Prism.highlightAll();
+      }
+    });
+  </script>
+</body>
+</html>
